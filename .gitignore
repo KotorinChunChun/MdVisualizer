@@ -1,0 +1,39 @@
+# ============================================================================
+# .gitignore (MarkdownViewer)
+# ============================================================================
+
+dev/
+release/
+samples/
+
+# ビルド成果物・中間生成物
+target/
+src-tauri/target/
+node_modules/
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.pdb
+
+# ローカル環境変数・認証情報
+.env
+.env.local
+secrets.json
+
+# OS・エディタ固有のキャッシュファイル
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.user
+
+# ログファイル・実行時一時データ
+*.log
+*.sqlite
+tmp/
+
+# AIキャッシュ
+.claude/
