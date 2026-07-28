@@ -56,6 +56,13 @@ body {
 .view-controls select { margin-left:4px; background:var(--btn-bg); color:var(--text-primary); border:1px solid var(--border-color); }
 .fold-controls { display: inline-flex; gap: 4px; }
 .fold-controls button { padding: 1px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 3px; cursor: pointer; }
+.search-bar { display: inline-flex; align-items: center; gap: 5px; min-width: 330px; }
+.search-bar input[type="text"], .search-bar input:not([type]) { min-width: 150px; padding: 2px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); }
+.search-bar label { display: inline-flex; align-items: center; gap: 1px; }
+.search-bar span { color: var(--text-muted); white-space: nowrap; }
+.search-bar button { border: 0; color: var(--text-primary); background: transparent; cursor: pointer; font-size: 16px; }
+.markdown-body mark[data-markdown-search] { background: #fbbf24; color: #111827; border-radius: 2px; }
+.markdown-body mark[data-markdown-search][data-active="true"] { outline: 2px solid #f97316; }
 
 .header-bar {
   display: flex;

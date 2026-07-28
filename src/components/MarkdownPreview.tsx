@@ -12,6 +12,7 @@ interface MarkdownPreviewProps {
   baseDir: string;
   imageVersions: Record<string, number>;
   onStartCrop: (target: CropTarget) => void;
+  contentRef?: React.Ref<HTMLDivElement>;
 }
 
 export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
@@ -19,9 +20,10 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   baseDir,
   imageVersions,
   onStartCrop,
+  contentRef,
 }) => {
   return (
-    <div className="markdown-body">
+    <div className="markdown-body" ref={contentRef}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize, rehypeFoldSections]}
