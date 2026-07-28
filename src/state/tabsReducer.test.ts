@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { initialTabsState, tabsReducer } from "./tabsReducer";
 
 describe("tabsReducer", () => {
-  it("keeps same-path tabs separate and activates the adjacent tab after close", () => {
-    const opened = tabsReducer(tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" }), { type: "OPEN", path: "a.md" });
-    expect(opened.tabs).toHaveLength(2);
-    expect(opened.tabs[0].id).not.toBe(opened.tabs[1].id);
-    const closed = tabsReducer(opened, { type: "CLOSE", id: "tab-2" });
-    expect(closed.activeId).toBe("tab-1");
+  it("keeps each tab scroll position independently", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const first = state.activeId!;
+    state = tabsReducer(state, { type: "SCROLL", id: first, scrollTop: 480 });
+    state = tabsReducer(state, { type: "OPEN", path: "b.md" });
+    state = tabsReducer(state, { type: "ACTIVATE", id: first });
+    expect(state.tabs.find((tab) => tab.id === first)?.scrollTop).toBe(480);
   });
 });

@@ -63,6 +63,12 @@ export function App() {
   const search = useSearch(markdownRef);
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
 
+  useEffect(() => {
+    if (!containerRef.current || !activeTab) return;
+    const frame = window.requestAnimationFrame(() => { if (containerRef.current) containerRef.current.scrollTop = activeTab.scrollTop; });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTab?.id, activeTab?.document?.path]);
+
   const loadTab = useCallback(async (id: string, path: string, generation: number) => {
     const loadKey = `${id}:${generation}`;
     if (inFlightLoads.current.has(loadKey)) return;
@@ -243,7 +249,7 @@ export function App() {
         <SearchBar search={search} inputRef={searchInputRef} />
       </div>
 
-      <main className={`preview-container view-${viewMode}`} ref={containerRef} style={{ zoom: zoom / 100 }}>
+      <main className={`preview-container view-${viewMode}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: zoom / 100 }}>
         {activeTab?.loading ? (
           <div className="empty-state">
             <div className="empty-icon">⏳</div>
