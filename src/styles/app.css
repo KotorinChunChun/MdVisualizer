@@ -48,6 +48,9 @@ body {
 .tab.active { background: var(--bg-color); color: var(--text-primary); }
 .tab span { overflow: hidden; text-overflow: ellipsis; }
 .tab button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 16px; }
+.context-menu { position: fixed; z-index: 50; display: grid; min-width: 180px; padding: 4px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 8px 24px #0008; }
+.context-menu button { padding: 7px 10px; border: 0; color: var(--text-primary); background: transparent; text-align: left; cursor: pointer; }
+.context-menu button:hover { background: var(--btn-hover); }
 
 .header-bar {
   display: flex;

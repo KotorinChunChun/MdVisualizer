@@ -23,7 +23,8 @@ export type TabsAction =
   | { type: "CLOSE"; id: string }
   | { type: "LOADED"; id: string; generation: number; document: MarkdownLoadResult }
   | { type: "FAILED"; id: string; generation: number; error: string }
-  | { type: "SCROLL"; id: string; scrollTop: number };
+  | { type: "SCROLL"; id: string; scrollTop: number }
+  | { type: "MOVE"; id: string; toIndex: number };
 
 export const initialTabsState: TabsState = { tabs: [], activeId: null, nextId: 1 };
 
@@ -54,6 +55,14 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       return updateTab(state, action.id, (tab) => tab.generation === action.generation ? { ...tab, loading: false, error: action.error } : tab);
     case "SCROLL":
       return updateTab(state, action.id, (tab) => ({ ...tab, scrollTop: action.scrollTop }));
+    case "MOVE": {
+      const from = state.tabs.findIndex((tab) => tab.id === action.id);
+      if (from < 0 || action.toIndex < 0 || action.toIndex >= state.tabs.length || from === action.toIndex) return state;
+      const tabs = [...state.tabs];
+      const [tab] = tabs.splice(from, 1);
+      tabs.splice(action.toIndex, 0, tab);
+      return { ...state, tabs };
+    }
   }
 }
 

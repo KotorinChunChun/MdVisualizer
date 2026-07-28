@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { HeaderBar } from "./components/HeaderBar";
 import { TabBar } from "./components/TabBar";
+import { ContextMenu } from "./components/ContextMenu";
 import { MarkdownPreview } from "./components/MarkdownPreview";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
@@ -16,6 +17,8 @@ export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
@@ -55,6 +58,23 @@ export function App() {
   const reload = useCallback(() => {
     if (activeTab) dispatch({ type: "RELOAD", id: activeTab.id });
   }, [activeTab]);
+
+  const closeTab = useCallback((id: string) => {
+    const tab = tabsState.tabs.find((candidate) => candidate.id === id);
+    if (tab) setClosedPaths((previous) => [tab.path, ...previous].slice(0, 50));
+    dispatch({ type: "CLOSE", id });
+  }, [tabsState.tabs]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "t") {
+        const [path, ...remaining] = closedPaths;
+        if (path) { event.preventDefault(); setClosedPaths(remaining); dispatch({ type: "OPEN", path }); }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [closedPaths]);
 
   const updateImageVersion = useCallback((imgPath: string) => {
     setImageVersions((previous) => ({ ...previous, [imgPath]: (previous[imgPath] || 0) + 1 }));
@@ -123,7 +143,7 @@ export function App() {
 
   return (
     <div className="app-container">
-      <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={(id) => dispatch({ type: "CLOSE", id })} />
+      <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       <HeaderBar filePath={activeTab?.path ?? null} onReload={reload} />
 
       <main className="preview-container" ref={containerRef}>
@@ -170,6 +190,13 @@ export function App() {
         onRestore={handleRestore}
         onClose={() => setToast(null)}
       />
+      {contextTab && (() => {
+        const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);
+        if (!tab) return null;
+        const index = tabsState.tabs.indexOf(tab);
+        const close = (id: string) => { closeTab(id); setContextTab(null); };
+        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} />;
+      })()}
     </div>
   );
 }
