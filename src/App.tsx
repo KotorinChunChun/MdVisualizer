@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { HeaderBar } from "./components/HeaderBar";
 import { TabBar } from "./components/TabBar";
@@ -66,8 +66,27 @@ export function App() {
   const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
-  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, setSearchExpandedIds);
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
+  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, setSearchExpandedIds);
+  const restoringSearchFor = useRef<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (!activeTab) return;
+    restoringSearchFor.current = activeTab.id;
+    search.setQuery(activeTab.search.query);
+    search.setRegex(activeTab.search.regex);
+    search.setCaseSensitive(activeTab.search.caseSensitive);
+    search.setActiveIndex(activeTab.search.activeIndex);
+  }, [activeTab?.id]);
+
+  useEffect(() => {
+    if (!activeTab) return;
+    if (restoringSearchFor.current === activeTab.id) {
+      restoringSearchFor.current = null;
+      return;
+    }
+    dispatch({ type: "SEARCH", id: activeTab.id, search: { query: search.query, regex: search.regex, caseSensitive: search.caseSensitive, activeIndex: search.activeIndex } });
+  }, [activeTab?.id, search.query, search.regex, search.caseSensitive, search.activeIndex]);
 
   useEffect(() => {
     if (!containerRef.current || !activeTab) return;

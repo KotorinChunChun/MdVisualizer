@@ -10,4 +10,13 @@ describe("tabsReducer", () => {
     state = tabsReducer(state, { type: "ACTIVATE", id: first });
     expect(state.tabs.find((tab) => tab.id === first)?.scrollTop).toBe(480);
   });
+
+  it("keeps search options independently for each tab", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const first = state.activeId!;
+    state = tabsReducer(state, { type: "SEARCH", id: first, search: { query: "alpha", regex: false, caseSensitive: true, activeIndex: 2 } });
+    state = tabsReducer(state, { type: "OPEN", path: "b.md" });
+    state = tabsReducer(state, { type: "ACTIVATE", id: first });
+    expect(state.tabs.find((tab) => tab.id === first)?.search).toEqual({ query: "alpha", regex: false, caseSensitive: true, activeIndex: 2 });
+  });
 });

@@ -9,6 +9,7 @@ export interface SearchState {
   setCaseSensitive: (caseSensitive: boolean) => void;
   resultCount: number;
   activeIndex: number;
+  setActiveIndex: (index: number) => void;
   next: () => void;
   previous: () => void;
   error: string | null;
@@ -118,7 +119,7 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
       document.head.append(highlightStyle);
     }
     setResultCount(count);
-    setActiveIndex(count ? 0 : -1);
+    setActiveIndex((current) => count ? Math.min(Math.max(current, 0), count - 1) : -1);
     onMatchedFoldIdsRef.current?.([...matchedFoldIds]);
     return () => {
       removeOwnedMarks(root);
@@ -140,5 +141,5 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
     setActiveIndex((current) => (current + delta + resultCount) % resultCount);
   };
 
-  return { query, setQuery, regex, setRegex, caseSensitive, setCaseSensitive, resultCount, activeIndex, next: () => move(1), previous: () => move(-1), error, clear: () => setQuery("") };
+  return { query, setQuery, regex, setRegex, caseSensitive, setCaseSensitive, resultCount, activeIndex, setActiveIndex, next: () => move(1), previous: () => move(-1), error, clear: () => setQuery("") };
 }

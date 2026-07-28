@@ -8,6 +8,7 @@ export interface TabState {
   loading: boolean;
   scrollTop: number;
   generation: number;
+  search: { query: string; regex: boolean; caseSensitive: boolean; activeIndex: number };
 }
 
 export interface TabsState {
@@ -24,6 +25,7 @@ export type TabsAction =
   | { type: "LOADED"; id: string; generation: number; document: MarkdownLoadResult }
   | { type: "FAILED"; id: string; generation: number; error: string }
   | { type: "SCROLL"; id: string; scrollTop: number }
+  | { type: "SEARCH"; id: string; search: TabState["search"] }
   | { type: "MOVE"; id: string; toIndex: number };
 
 export const initialTabsState: TabsState = { tabs: [], activeId: null, nextId: 1 };
@@ -33,7 +35,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "OPEN": {
       const id = `tab-${state.nextId}`;
       return {
-        tabs: [...state.tabs, { id, path: action.path, document: null, error: null, loading: true, scrollTop: 0, generation: 1 }],
+        tabs: [...state.tabs, { id, path: action.path, document: null, error: null, loading: true, scrollTop: 0, generation: 1, search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 } }],
         activeId: id,
         nextId: state.nextId + 1,
       };
@@ -55,6 +57,8 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       return updateTab(state, action.id, (tab) => tab.generation === action.generation ? { ...tab, loading: false, error: action.error } : tab);
     case "SCROLL":
       return updateTab(state, action.id, (tab) => ({ ...tab, scrollTop: action.scrollTop }));
+    case "SEARCH":
+      return updateTab(state, action.id, (tab) => ({ ...tab, search: action.search }));
     case "MOVE": {
       const from = state.tabs.findIndex((tab) => tab.id === action.id);
       if (from < 0 || action.toIndex < 0 || action.toIndex >= state.tabs.length || from === action.toIndex) return state;
