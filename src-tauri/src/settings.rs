@@ -60,8 +60,9 @@ fn load_settings_unlocked(path: &Path) -> AppResult<Value> {
 
 #[cfg(test)]
 mod tests {
- use super::*; use tempfile::tempdir;
+ use super::*; use std::sync::{Arc, Barrier}; use std::thread; use tempfile::tempdir;
  #[test] fn merges_independent_keys() { let dir=tempdir().unwrap(); let p=dir.path().join("settings.json"); let mut a=Map::new(); a.insert("theme".into(), Value::from("dark")); merge_settings(&p,a).unwrap(); let mut b=Map::new(); b.insert("zoom".into(), Value::from(125)); let result=merge_settings(&p,b).unwrap(); assert_eq!(result["theme"], "dark"); assert_eq!(result["zoom"],125); }
  #[test] fn corrupt_settings_are_quarantined() { let dir=tempdir().unwrap(); let p=dir.path().join("settings.json"); fs::write(&p, "not json").unwrap(); assert!(load_settings(&p).unwrap().is_object()); assert!(!p.exists()); assert!(fs::read_dir(dir.path()).unwrap().any(|entry| entry.unwrap().file_name().to_string_lossy().starts_with("settings.corrupt."))); }
  #[test] fn merges_fold_state_by_document_path() { let dir=tempdir().unwrap(); let p=dir.path().join("settings.json"); merge_fold_state(&p, "a.md".into(), serde_json::json!({"a": true})).unwrap(); let result=merge_fold_state(&p, "b.md".into(), serde_json::json!({"b": false})).unwrap(); assert_eq!(result["foldStates"]["a.md"]["a"], true); assert_eq!(result["foldStates"]["b.md"]["b"], false); }
+ #[test] fn concurrent_key_updates_preserve_both_values() { let dir=tempdir().unwrap(); let p=dir.path().join("settings.json"); let barrier=Arc::new(Barrier::new(2)); let mut workers=Vec::new(); for (key, value) in [("theme", "dark"), ("viewMode", "compact")] { let path=p.clone(); let gate=barrier.clone(); workers.push(thread::spawn(move || { gate.wait(); let mut update=Map::new(); update.insert(key.into(), Value::from(value)); merge_settings(&path, update).unwrap(); })); } for worker in workers { worker.join().unwrap(); } let result=load_settings(&p).unwrap(); assert_eq!(result["theme"], "dark"); assert_eq!(result["viewMode"], "compact"); }
 }

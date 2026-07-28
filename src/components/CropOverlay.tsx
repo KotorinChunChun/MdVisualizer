@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { cropImage } from "../lib/commands";
 import { CropTarget } from "../hooks/useCropEditor";
+import { cropPixels } from "../lib/cropGeometry";
 
 interface CropOverlayProps {
   target: CropTarget;
@@ -109,10 +110,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
     setIsSaving(true);
 
     try {
-      const cropX = Math.round((box.x / 100) * naturalSize.w);
-      const cropY = Math.round((box.y / 100) * naturalSize.h);
-      const cropW = Math.round((box.w / 100) * naturalSize.w);
-      const cropH = Math.round((box.h / 100) * naturalSize.h);
+      const { x: cropX, y: cropY, width: cropW, height: cropH } = cropPixels(box, naturalSize);
 
       const res = await cropImage({
         path: target.fullPath,

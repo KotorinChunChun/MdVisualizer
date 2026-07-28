@@ -1,7 +1,7 @@
 use crate::errors::{AppError, AppResult};
 use chardetng::{EncodingDetector, Iso2022JpDetection, Utf8Detection};
 use chrono::{DateTime, Local};
-use encoding_rs::{Encoding, UTF_16BE, UTF_16LE, UTF_8};
+use encoding_rs::{Encoding, SHIFT_JIS, UTF_16BE, UTF_16LE, UTF_8};
 use regex::Regex;
 use serde::Serialize;
 use std::fs;
@@ -68,10 +68,25 @@ fn decode_markdown(bytes: &[u8]) -> (String, String) {
         let mut detector = EncodingDetector::new(Iso2022JpDetection::Deny);
         detector.feed(bytes, true);
         let detected = detector.guess(None, Utf8Detection::Allow);
-        (detected, detected.name(), bytes)
+        let (detected_text, _, _) = detected.decode(bytes);
+        let (shift_jis_text, _, shift_jis_had_errors) = SHIFT_JIS.decode(bytes);
+        // Short Japanese Shift_JIS documents can otherwise be guessed as a
+        // Western encoding. Prefer a lossless Shift_JIS decode only when it
+        // actually produces Japanese characters and the guessed decode does not.
+        if !shift_jis_had_errors && contains_japanese(&shift_jis_text) && !contains_japanese(&detected_text) {
+            (SHIFT_JIS, "Shift_JIS", bytes)
+        } else {
+            (detected, detected.name(), bytes)
+        }
     };
     let (decoded, _, _) = encoding.decode(payload);
     (decoded.into_owned(), label.to_string())
+}
+
+fn contains_japanese(value: &str) -> bool {
+    value.chars().any(|character| matches!(character,
+        '\u{3040}'..='\u{30ff}' | '\u{3400}'..='\u{4dbf}' | '\u{4e00}'..='\u{9fff}' | '\u{ff66}'..='\u{ff9f}'
+    ))
 }
 
 /// Markdown本文中の画像参照 (`![alt](path)` および `<img src="path">`) からローカル絶対パスを抽出
@@ -150,5 +165,17 @@ mod tests {
         let (content, encoding) = decode_markdown(&[0xFF, 0xFE, b'A', 0]);
         assert_eq!(content, "A");
         assert_eq!(encoding, "UTF-16LE");
+    }
+
+    #[test]
+    fn detects_utf8_bom_and_shift_jis() {
+        let (utf8, utf8_encoding) = decode_markdown(&[0xEF, 0xBB, 0xBF, b'A']);
+        assert_eq!(utf8, "A");
+        assert_eq!(utf8_encoding, "UTF-8 BOM");
+
+        let (encoded, _, _) = SHIFT_JIS.encode("日本語");
+        let (shift_jis, shift_jis_encoding) = decode_markdown(&encoded);
+        assert_eq!(shift_jis, "日本語");
+        assert_eq!(shift_jis_encoding, "Shift_JIS");
     }
 }

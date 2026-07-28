@@ -13,7 +13,7 @@ import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { getInitialFiles, loadMarkdown, loadSettings, openContainingFolder, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets } from "./lib/commands";
 import { ToastState } from "./types/app";
-import { initialTabsState, tabsReducer } from "./state/tabsReducer";
+import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import "./styles/app.css";
 import "./styles/crop.css";
 import "./styles/themes.css";
@@ -63,7 +63,7 @@ export function App() {
     void saveSettings({ theme, zoom, viewMode, autoReload, mermaidMode }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
   }, [settingsLoaded, theme, zoom, viewMode, autoReload, mermaidMode]);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
-  const [closedPaths, setClosedPaths] = useState<string[]>([]);
+  const [closedTabs, setClosedTabs] = useState<ClosedTabState[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
@@ -158,15 +158,15 @@ export function App() {
 
   const closeTab = useCallback((id: string) => {
     const tab = tabsState.tabs.find((candidate) => candidate.id === id);
-    if (tab) setClosedPaths((previous) => [tab.path, ...previous].slice(0, 50));
+    if (tab) setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, search: tab.search }, ...previous].slice(0, 50));
     dispatch({ type: "CLOSE", id });
   }, [tabsState.tabs]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "t") {
-        const [path, ...remaining] = closedPaths;
-        if (path) { event.preventDefault(); setClosedPaths(remaining); dispatch({ type: "OPEN", path }); }
+        const [tab, ...remaining] = closedTabs;
+        if (tab) { event.preventDefault(); setClosedTabs(remaining); dispatch({ type: "RESTORE", tab }); }
       }
 
       if (event.key === "F11") {
@@ -213,7 +213,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closedPaths, foldAll, reload, search]);
+  }, [closedTabs, foldAll, reload, search]);
 
   const updateImageVersion = useCallback((imgPath: string) => {
     setImageVersions((previous) => ({ ...previous, [imgPath]: (previous[imgPath] || 0) + 1 }));

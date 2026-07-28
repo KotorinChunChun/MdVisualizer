@@ -81,3 +81,37 @@ pub fn crop_image(req: CropImageRequest, backup_mgr: &BackupManager) -> AppResul
         height: crop_h,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::{Rgba, RgbaImage};
+    use tempfile::tempdir;
+
+    #[test]
+    fn crops_image_and_restores_its_first_backup() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("image.png");
+        let image = RgbaImage::from_pixel(100, 80, Rgba([20, 40, 60, 255]));
+        image.save(&path).unwrap();
+        let manager = BackupManager::new().unwrap();
+        let result = crop_image(CropImageRequest { path: path.to_string_lossy().into_owned(), x: 10, y: 20, width: 50, height: 30 }, &manager).unwrap();
+        assert_eq!((result.width, result.height), (50, 30));
+        assert!(result.backup_available);
+        assert_eq!(image::image_dimensions(&path).unwrap(), (50, 30));
+        assert!(manager.restore(&path).unwrap());
+        assert_eq!(image::image_dimensions(&path).unwrap(), (100, 80));
+    }
+
+    #[test]
+    fn invalid_image_does_not_overwrite_the_original() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("broken.png");
+        let original = b"not an image";
+        fs::write(&path, original).unwrap();
+        let manager = BackupManager::new().unwrap();
+        assert!(crop_image(CropImageRequest { path: path.to_string_lossy().into_owned(), x: 0, y: 0, width: 1, height: 1 }, &manager).is_err());
+        assert_eq!(fs::read(&path).unwrap(), original);
+        assert!(manager.has_backup(&path));
+    }
+}

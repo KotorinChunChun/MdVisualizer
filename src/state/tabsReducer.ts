@@ -17,8 +17,15 @@ export interface TabsState {
   nextId: number;
 }
 
+export interface ClosedTabState {
+  path: string;
+  scrollTop: number;
+  search: TabState["search"];
+}
+
 export type TabsAction =
   | { type: "OPEN"; path: string }
+  | { type: "RESTORE"; tab: ClosedTabState }
   | { type: "ACTIVATE"; id: string }
   | { type: "RELOAD"; id: string }
   | { type: "CLOSE"; id: string }
@@ -33,13 +40,10 @@ export const initialTabsState: TabsState = { tabs: [], activeId: null, nextId: 1
 export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
   switch (action.type) {
     case "OPEN": {
-      const id = `tab-${state.nextId}`;
-      return {
-        tabs: [...state.tabs, { id, path: action.path, document: null, error: null, loading: true, scrollTop: 0, generation: 1, search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 } }],
-        activeId: id,
-        nextId: state.nextId + 1,
-      };
+      return openTab(state, { path: action.path, scrollTop: 0, search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 } });
     }
+    case "RESTORE":
+      return openTab(state, action.tab);
     case "ACTIVATE":
       return state.tabs.some((tab) => tab.id === action.id) ? { ...state, activeId: action.id } : state;
     case "RELOAD":
@@ -72,4 +76,13 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
 
 function updateTab(state: TabsState, id: string, update: (tab: TabState) => TabState): TabsState {
   return { ...state, tabs: state.tabs.map((tab) => tab.id === id ? update(tab) : tab) };
+}
+
+function openTab(state: TabsState, tab: ClosedTabState): TabsState {
+  const id = `tab-${state.nextId}`;
+  return {
+    tabs: [...state.tabs, { id, path: tab.path, document: null, error: null, loading: true, scrollTop: tab.scrollTop, generation: 1, search: tab.search }],
+    activeId: id,
+    nextId: state.nextId + 1,
+  };
 }

@@ -19,4 +19,9 @@ describe("tabsReducer", () => {
     state = tabsReducer(state, { type: "ACTIVATE", id: first });
     expect(state.tabs.find((tab) => tab.id === first)?.search).toEqual({ query: "alpha", regex: false, caseSensitive: true, activeIndex: 2 });
   });
+
+  it("restores scroll position and search state for a closed tab", () => {
+    const state = tabsReducer(initialTabsState, { type: "RESTORE", tab: { path: "a.md", scrollTop: 480, search: { query: "alpha", regex: true, caseSensitive: false, activeIndex: 1 } } });
+    expect(state.tabs[0]).toMatchObject({ path: "a.md", scrollTop: 480, search: { query: "alpha", regex: true, caseSensitive: false, activeIndex: 1 } });
+  });
 });
