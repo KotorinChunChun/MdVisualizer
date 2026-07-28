@@ -10,6 +10,7 @@ pub mod watcher;
 
 use app_state::AppState;
 use commands::*;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -28,6 +29,15 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(state)
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                let state = window.state::<AppState>();
+                let mut watcher_guard = state.watcher.lock().unwrap();
+                if let Some(watcher) = watcher_guard.as_mut() {
+                    let _ = watcher.remove_window_targets(window.label());
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             load_settings,
             save_settings,

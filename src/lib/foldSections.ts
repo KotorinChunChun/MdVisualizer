@@ -6,7 +6,7 @@ type HastNode = {
 };
 
 const headingLevel = (node: HastNode): number | null => {
-  const match = node.type === "element" && node.tagName?.match(/^h([1-4])$/);
+  const match = node.type === "element" && node.tagName?.match(/^h([1-6])$/);
   return match ? Number(match[1]) : null;
 };
 

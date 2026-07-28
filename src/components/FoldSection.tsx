@@ -9,7 +9,7 @@ export function FoldSection({ children }: FoldSectionProps) {
   const parts = Children.toArray(children);
   const heading = parts[0] as ReactElement<{ children?: ReactNode; className?: string }> | undefined;
   const content = parts[1];
-  const HeadingTag = (heading?.type ?? "h2") as "h1" | "h2" | "h3" | "h4";
+  const HeadingTag = (heading?.type ?? "h2") as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
   useEffect(() => {
     const handleCommand = (event: Event) => {

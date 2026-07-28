@@ -162,21 +162,25 @@ body {
 .view-print .markdown-body h1,
 .view-print .markdown-body h2,
 .view-print .markdown-body h3,
-.view-print .markdown-body h4 { color: #1f2328; border-color: #d0d7de; }
+.view-print .markdown-body h4,
+.view-print .markdown-body h5,
+.view-print .markdown-body h6 { color: #1f2328; border-color: #d0d7de; }
 .view-print .markdown-body pre,
 .view-print .markdown-body code { background: #f6f8fa; color: #1f2328; }
 .view-presentation { padding: 7vh 12%; }
 .view-presentation .markdown-body { max-width: 1100px; font-size: 1.25em; }
 .view-presentation .markdown-body h1 { font-size: 2.4em; margin-top: 1em; }
 .view-presentation .markdown-body h2 { font-size: 1.8em; }
-.view-images .markdown-body > :not(p:has(img)):not(h1):not(h2):not(h3):not(h4) { display: none; }
+.view-images .markdown-body > :not(p:has(img)):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) { display: none; }
 .view-images .markdown-body p:has(img) { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
 .view-images .markdown-img { width: 100%; margin: 0; }
 
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
-.markdown-body h4 {
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
   color: var(--text-primary);
   margin-top: 1.5em;
   margin-bottom: 0.5em;
