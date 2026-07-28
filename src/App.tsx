@@ -76,6 +76,10 @@ export function App() {
     if (activeTab) dispatch({ type: "RELOAD", id: activeTab.id });
   }, [activeTab]);
 
+  const foldAll = useCallback((command: "collapse" | "expand") => {
+    window.dispatchEvent(new CustomEvent("markdown-fold-command", { detail: command }));
+  }, []);
+
   const closeTab = useCallback((id: string) => {
     const tab = tabsState.tabs.find((candidate) => candidate.id === id);
     if (tab) setClosedPaths((previous) => [tab.path, ...previous].slice(0, 50));
@@ -95,6 +99,12 @@ export function App() {
         return;
       }
 
+      if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "t") {
+        event.preventDefault();
+        foldAll("collapse");
+        return;
+      }
+
       if (!event.ctrlKey || event.altKey || event.metaKey) return;
       if (event.key === "+" || event.key === "=") {
         event.preventDefault();
@@ -109,7 +119,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closedPaths]);
+  }, [closedPaths, foldAll]);
 
   const updateImageVersion = useCallback((imgPath: string) => {
     setImageVersions((previous) => ({ ...previous, [imgPath]: (previous[imgPath] || 0) + 1 }));
@@ -181,6 +191,10 @@ export function App() {
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       <HeaderBar filePath={activeTab?.path ?? null} onReload={reload} />
       <div className="view-controls">
+        <span className="fold-controls" aria-label="見出しの折りたたみ">
+          <button type="button" onClick={() => foldAll("collapse")}>Fold all</button>
+          <button type="button" onClick={() => foldAll("expand")}>Unfold all</button>
+        </span>
         <label>Theme: <select value={theme} onChange={(e) => setTheme(e.target.value)}>{["system", "dark", "light", "github", "solarized", "nord"].map((x) => <option key={x}>{x}</option>)}</select></label>
         <label>View: <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>{["standard", "wide", "compact", "print", "presentation", "images"].map((x) => <option key={x}>{x}</option>)}</select></label>
         <label>Zoom: <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>{[50, 67, 80, 90, 100, 110, 125, 150, 175, 200].map((x) => <option key={x} value={x}>{x}%</option>)}</select></label>

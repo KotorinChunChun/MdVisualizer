@@ -1,4 +1,4 @@
-import { Children, type ReactElement, type ReactNode, useState } from "react";
+import { Children, type ReactElement, type ReactNode, useEffect, useState } from "react";
 
 interface FoldSectionProps {
   children?: ReactNode;
@@ -10,6 +10,16 @@ export function FoldSection({ children }: FoldSectionProps) {
   const heading = parts[0] as ReactElement<{ children?: ReactNode; className?: string }> | undefined;
   const content = parts[1];
   const HeadingTag = (heading?.type ?? "h2") as "h1" | "h2" | "h3" | "h4";
+
+  useEffect(() => {
+    const handleCommand = (event: Event) => {
+      const command = (event as CustomEvent<"collapse" | "expand">).detail;
+      if (command === "collapse") setCollapsed(true);
+      if (command === "expand") setCollapsed(false);
+    };
+    window.addEventListener("markdown-fold-command", handleCommand);
+    return () => window.removeEventListener("markdown-fold-command", handleCommand);
+  }, []);
 
   return (
     <section className="fold-section">

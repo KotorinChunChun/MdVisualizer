@@ -54,6 +54,8 @@ body {
 .status-bar { min-height: 28px; padding: 5px 12px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 12px; background: var(--panel-bg); }
 .view-controls { display:flex; gap:12px; padding:6px 12px; background:var(--panel-bg); border-bottom:1px solid var(--border-color); font-size:12px; }
 .view-controls select { margin-left:4px; background:var(--btn-bg); color:var(--text-primary); border:1px solid var(--border-color); }
+.fold-controls { display: inline-flex; gap: 4px; }
+.fold-controls button { padding: 1px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 3px; cursor: pointer; }
 
 .header-bar {
   display: flex;
