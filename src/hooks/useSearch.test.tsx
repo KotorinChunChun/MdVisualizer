@@ -21,4 +21,19 @@ describe("useSearch", () => {
     act(() => screen.getByRole("button", { name: "clear" }).click());
     expect(document.querySelectorAll("mark[data-markdown-search]")).toHaveLength(0);
   });
+
+  it("uses and cleans a namespaced native highlight registry when available", () => {
+    const previousCss = globalThis.CSS;
+    const highlights = new Map<string, unknown>();
+    class FakeHighlight { constructor(..._ranges: Range[]) {} }
+    Object.assign(globalThis, { CSS: { highlights }, Highlight: FakeHighlight });
+    const { unmount } = render(<Harness />);
+    act(() => screen.getByRole("button", { name: "search" }).click());
+    expect(highlights.has("markdown-search-main")).toBe(true);
+    expect(document.querySelectorAll("mark[data-markdown-search]")).toHaveLength(0);
+    unmount();
+    expect(highlights.has("markdown-search-main")).toBe(false);
+    Object.assign(globalThis, { CSS: previousCss });
+    delete (globalThis as unknown as { Highlight?: unknown }).Highlight;
+  });
 });

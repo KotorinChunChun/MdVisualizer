@@ -26,7 +26,7 @@ function removeOwnedMarks(root: HTMLElement) {
   root.normalize();
 }
 
-export function useSearch(rootRef: RefObject<HTMLElement | null>): SearchState {
+export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "main"): SearchState {
   const [query, setQuery] = useState("");
   const [regex, setRegex] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
@@ -60,6 +60,11 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>): SearchState {
     const nodes: Text[] = [];
     while (walker.nextNode()) nodes.push(walker.currentNode as Text);
 
+    const nativeHighlights = (globalThis.CSS as (typeof CSS & { highlights?: Map<string, unknown> }) | undefined)?.highlights;
+    const HighlightConstructor = (globalThis as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
+    const highlightName = `markdown-search-${scopeId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+    const ranges: Range[] = [];
+
     let count = 0;
     for (const node of nodes) {
       const text = node.data;
@@ -70,6 +75,14 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>): SearchState {
       let cursor = 0;
       for (const match of matches) {
         const start = match.index ?? 0;
+        if (nativeHighlights && HighlightConstructor) {
+          const range = document.createRange();
+          range.setStart(node, start);
+          range.setEnd(node, start + match[0].length);
+          ranges.push(range);
+          count += 1;
+          continue;
+        }
         fragment.append(text.slice(cursor, start));
         const mark = document.createElement("mark");
         mark.dataset.markdownSearch = "true";
@@ -78,13 +91,27 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>): SearchState {
         cursor = start + match[0].length;
         count += 1;
       }
-      fragment.append(text.slice(cursor));
-      node.replaceWith(fragment);
+      if (!(nativeHighlights && HighlightConstructor)) {
+        fragment.append(text.slice(cursor));
+        node.replaceWith(fragment);
+      }
+    }
+    let highlightStyle: HTMLStyleElement | null = null;
+    if (nativeHighlights && HighlightConstructor) {
+      nativeHighlights.set(highlightName, new HighlightConstructor(...ranges));
+      highlightStyle = document.createElement("style");
+      highlightStyle.dataset.markdownSearchStyle = highlightName;
+      highlightStyle.textContent = `::highlight(${highlightName}) { background: #fbbf24; color: #111827; }`;
+      document.head.append(highlightStyle);
     }
     setResultCount(count);
     setActiveIndex(count ? 0 : -1);
-    return () => removeOwnedMarks(root);
-  }, [rootRef, pattern, caseSensitive]);
+    return () => {
+      removeOwnedMarks(root);
+      nativeHighlights?.delete(highlightName);
+      highlightStyle?.remove();
+    };
+  }, [rootRef, pattern, caseSensitive, scopeId]);
 
   useEffect(() => {
     const marks = rootRef.current?.querySelectorAll<HTMLElement>("mark[data-markdown-search]") ?? [];

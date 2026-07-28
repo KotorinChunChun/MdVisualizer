@@ -62,7 +62,7 @@ export function App() {
   const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
-  const search = useSearch(markdownRef);
+  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`);
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
 
   useEffect(() => {
