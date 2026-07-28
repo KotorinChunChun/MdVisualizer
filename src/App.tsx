@@ -11,7 +11,7 @@ import { SearchBar } from "./components/SearchBar";
 import { useCropEditor } from "./hooks/useCropEditor";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
-import { getInitialFiles, loadMarkdown, loadSettings, openContainingFolder, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveSettings, syncWatchTargets } from "./lib/commands";
+import { getInitialFiles, loadMarkdown, loadSettings, openContainingFolder, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { initialTabsState, tabsReducer } from "./state/tabsReducer";
 import "./styles/app.css";
@@ -60,8 +60,8 @@ export function App() {
 
   useEffect(() => {
     if (!settingsLoaded) return;
-    void saveSettings({ theme, zoom, viewMode, autoReload, foldStates, mermaidMode }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
-  }, [settingsLoaded, theme, zoom, viewMode, autoReload, foldStates, mermaidMode]);
+    void saveSettings({ theme, zoom, viewMode, autoReload, mermaidMode }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
+  }, [settingsLoaded, theme, zoom, viewMode, autoReload, mermaidMode]);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
@@ -120,7 +120,11 @@ export function App() {
 
   const handleFoldChange = useCallback((foldId: string, collapsed: boolean) => {
     if (!activeTab || !foldId) return;
-    setFoldStates((current) => ({ ...current, [activeTab.path]: { ...current[activeTab.path], [foldId]: collapsed } }));
+    setFoldStates((current) => {
+      const next = { ...current[activeTab.path], [foldId]: collapsed };
+      void saveFoldState(activeTab.path, next).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
+      return { ...current, [activeTab.path]: next };
+    });
   }, [activeTab]);
 
   const handleSearchFoldManualOverride = useCallback((foldId: string) => {

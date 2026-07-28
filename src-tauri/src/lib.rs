@@ -41,6 +41,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             load_settings,
             save_settings,
+            save_fold_state,
             get_initial_files,
             open_in_new_window,
             load_markdown,
