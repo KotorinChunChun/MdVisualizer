@@ -4,6 +4,7 @@ import { CropImageRequest, CropImageResult, MarkdownLoadResult } from "../types/
 export async function getInitialFiles(): Promise<string[]> {
   return await invoke<string[]>("get_initial_files");
 }
+export async function openInNewWindow(path: string): Promise<void> { await invoke<void>("open_in_new_window", { path }); }
 
 export async function loadMarkdown(path: string): Promise<MarkdownLoadResult> {
   return await invoke<MarkdownLoadResult>("load_markdown", { path });

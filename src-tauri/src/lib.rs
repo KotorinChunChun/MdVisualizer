@@ -28,6 +28,7 @@ pub fn run() {
         .manage(state)
         .invoke_handler(tauri::generate_handler![
             get_initial_files,
+            open_in_new_window,
             load_markdown,
             start_watch,
             stop_watch,
