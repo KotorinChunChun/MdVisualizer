@@ -1,37 +1,73 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { HeaderBar } from "./components/HeaderBar";
+import { TabBar } from "./components/TabBar";
 import { MarkdownPreview } from "./components/MarkdownPreview";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
-import { useMarkdownFile } from "./hooks/useMarkdownFile";
 import { useCropEditor } from "./hooks/useCropEditor";
 import { useTauriEvents } from "./hooks/useTauriEvents";
-import { restoreImage } from "./lib/commands";
+import { getInitialFiles, loadMarkdown, restoreImage, syncWatchTargets } from "./lib/commands";
 import { ToastState } from "./types/app";
+import { initialTabsState, tabsReducer } from "./state/tabsReducer";
 import "./styles/app.css";
 import "./styles/crop.css";
 
 export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const inFlightLoads = useRef(new Set<string>());
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
+  const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
+  const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
 
-  const {
-    filePath,
-    markdownData,
-    imageVersions,
-    error,
-    loading,
-    reload,
-    updateImageVersion,
-  } = useMarkdownFile(containerRef);
+  const loadTab = useCallback(async (id: string, path: string, generation: number) => {
+    const loadKey = `${id}:${generation}`;
+    if (inFlightLoads.current.has(loadKey)) return;
+    inFlightLoads.current.add(loadKey);
+    try {
+      const document = await loadMarkdown(path);
+      dispatch({ type: "LOADED", id, generation, document });
+    } catch (error) {
+      dispatch({ type: "FAILED", id, generation, error: String(error) });
+    } finally {
+      inFlightLoads.current.delete(loadKey);
+    }
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      const paths = await getInitialFiles();
+      paths.forEach((path) => dispatch({ type: "OPEN", path }));
+    })();
+  }, []);
+
+  useEffect(() => {
+    for (const tab of tabsState.tabs) {
+      if (tab.loading) void loadTab(tab.id, tab.path, tab.generation);
+    }
+  }, [tabsState.tabs, loadTab]);
+
+  useEffect(() => {
+    const targets = tabsState.tabs.flatMap((tab) => tab.document ? [tab.document.path, ...tab.document.image_paths] : []);
+    if (targets.length > 0) void syncWatchTargets("main", targets);
+  }, [tabsState.tabs]);
+
+  const reload = useCallback(() => {
+    if (activeTab) dispatch({ type: "RELOAD", id: activeTab.id });
+  }, [activeTab]);
+
+  const updateImageVersion = useCallback((imgPath: string) => {
+    setImageVersions((previous) => ({ ...previous, [imgPath]: (previous[imgPath] || 0) + 1 }));
+  }, []);
 
   const { cropTarget, startCrop, cancelCrop } = useCropEditor();
 
   const handleMarkdownChanged = useCallback(
-    (_path: string) => {
-      reload();
+    (path: string) => {
+      const tab = tabsState.tabs.find((candidate) => candidate.path === path);
+      if (tab) dispatch({ type: "RELOAD", id: tab.id });
     },
-    [reload]
+    [tabsState.tabs]
   );
 
   const handleImageChanged = useCallback(
@@ -87,24 +123,25 @@ export function App() {
 
   return (
     <div className="app-container">
-      <HeaderBar filePath={filePath} onReload={reload} />
+      <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={(id) => dispatch({ type: "CLOSE", id })} />
+      <HeaderBar filePath={activeTab?.path ?? null} onReload={reload} />
 
       <main className="preview-container" ref={containerRef}>
-        {loading ? (
+        {activeTab?.loading ? (
           <div className="empty-state">
             <div className="empty-icon">⏳</div>
             <div className="empty-title">読み込み中...</div>
           </div>
-        ) : error ? (
+        ) : activeTab?.error ? (
           <div className="empty-state">
             <div className="empty-icon">⚠️</div>
             <div className="empty-title">ファイルを読み込めません</div>
-            <div className="empty-desc">{error}</div>
+            <div className="empty-desc">{activeTab.error}</div>
           </div>
-        ) : markdownData ? (
+        ) : activeTab?.document ? (
           <MarkdownPreview
-            content={markdownData.content}
-            baseDir={markdownData.base_dir}
+            content={activeTab.document.content}
+            baseDir={activeTab.document.base_dir}
             imageVersions={imageVersions}
             onStartCrop={startCrop}
           />

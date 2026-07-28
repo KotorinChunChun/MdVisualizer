@@ -43,6 +43,12 @@ body {
   position: relative;
 }
 
+.tab-bar { display: flex; min-height: 36px; overflow-x: auto; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); }
+.tab { display: flex; align-items: center; gap: 8px; max-width: 240px; padding: 7px 10px; border-right: 1px solid var(--border-color); color: var(--text-muted); cursor: pointer; white-space: nowrap; overflow: hidden; }
+.tab.active { background: var(--bg-color); color: var(--text-primary); }
+.tab span { overflow: hidden; text-overflow: ellipsis; }
+.tab button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 16px; }
+
 .header-bar {
   display: flex;
   align-items: center;
