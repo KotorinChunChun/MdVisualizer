@@ -5,6 +5,7 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 pub fn with_lock<T>(path: &Path, work: impl FnOnce() -> AppResult<T>) -> AppResult<T> {
+    ensure_parent_directory(path)?;
     let lock_path = path.with_extension("lock");
     let lock = OpenOptions::new().create(true).read(true).write(true).open(lock_path)
         .map_err(|e| AppError::IoError(format!("open lock: {e}")))?;
@@ -22,8 +23,7 @@ pub fn with_lock<T>(path: &Path, work: impl FnOnce() -> AppResult<T>) -> AppResu
 }
 
 pub fn atomic_write(path: &Path, content: &[u8]) -> AppResult<()> {
-    let parent = path.parent().ok_or_else(|| AppError::IoError("missing parent directory".into()))?;
-    fs::create_dir_all(parent).map_err(|e| AppError::IoError(format!("create parent: {e}")))?;
+    ensure_parent_directory(path)?;
     let temp = path.with_extension(format!("{}.{}.tmp", std::process::id(), chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()));
     fs::write(&temp, content).map_err(|e| AppError::IoError(format!("write temp: {e}")))?;
     OpenOptions::new().write(true).open(&temp).and_then(|f| f.sync_all()).map_err(|e| AppError::IoError(format!("sync temp: {e}")))?;
@@ -44,6 +44,13 @@ pub fn atomic_write(path: &Path, content: &[u8]) -> AppResult<()> {
     Ok(())
 }
 
+fn ensure_parent_directory(path: &Path) -> AppResult<()> {
+    match path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+        Some(parent) => fs::create_dir_all(parent).map_err(|e| AppError::IoError(format!("create parent: {e}"))),
+        None => Ok(()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -57,5 +64,13 @@ mod tests {
         atomic_write(&path, b"new").unwrap();
         assert_eq!(fs::read_to_string(&path).unwrap(), "new");
         assert!(!fs::read_dir(dir.path()).unwrap().any(|entry| entry.unwrap().file_name().to_string_lossy().ends_with(".tmp")));
+    }
+
+    #[test]
+    fn creates_missing_parent_before_opening_lock() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("first-launch").join("settings.json");
+        with_lock(&path, || Ok(())).unwrap();
+        assert!(path.parent().unwrap().join("settings.lock").exists());
     }
 }
