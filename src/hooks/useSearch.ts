@@ -36,6 +36,9 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
   const [resultCount, setResultCount] = useState(0);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
+  const nativeRangesRef = useRef<Range[]>([]);
+  const nativeHighlightsRef = useRef<Map<string, unknown> | undefined>(undefined);
+  const nativeHighlightNamesRef = useRef<{ all: string; active: string } | null>(null);
   const pattern = useMemo(() => query ? (regex ? query : escapeRegex(query)) : "", [query, regex]);
 
   useEffect(() => {
@@ -66,7 +69,8 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
 
     const nativeHighlights = (globalThis.CSS as (typeof CSS & { highlights?: Map<string, unknown> }) | undefined)?.highlights;
     const HighlightConstructor = (globalThis as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
-    const highlightName = `markdown-search-${scopeId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+    const highlightBase = `markdown-search-${scopeId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+    const highlightNames = { all: highlightBase, active: `${highlightBase}-active` };
     const ranges: Range[] = [];
     const matchedFoldIds = new Set<string>();
     const collectFoldIds = (element: Element | null) => {
@@ -112,10 +116,13 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
     }
     let highlightStyle: HTMLStyleElement | null = null;
     if (nativeHighlights && HighlightConstructor) {
-      nativeHighlights.set(highlightName, new HighlightConstructor(...ranges));
+      nativeRangesRef.current = ranges;
+      nativeHighlightsRef.current = nativeHighlights;
+      nativeHighlightNamesRef.current = highlightNames;
+      nativeHighlights.set(highlightNames.all, new HighlightConstructor(...ranges));
       highlightStyle = document.createElement("style");
-      highlightStyle.dataset.markdownSearchStyle = highlightName;
-      highlightStyle.textContent = `::highlight(${highlightName}) { background: #fbbf24; color: #111827; }`;
+      highlightStyle.dataset.markdownSearchStyle = highlightNames.all;
+      highlightStyle.textContent = `::highlight(${highlightNames.all}) { background: #fbbf24; color: #111827; } ::highlight(${highlightNames.active}) { background: #f97316; color: #111827; }`;
       document.head.append(highlightStyle);
     }
     setResultCount(count);
@@ -123,7 +130,10 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
     onMatchedFoldIdsRef.current?.([...matchedFoldIds]);
     return () => {
       removeOwnedMarks(root);
-      nativeHighlights?.delete(highlightName);
+      nativeHighlights?.delete(highlightNames.all);
+      nativeHighlights?.delete(highlightNames.active);
+      nativeRangesRef.current = [];
+      nativeHighlightNamesRef.current = null;
       highlightStyle?.remove();
     };
   }, [rootRef, pattern, caseSensitive, scopeId]);
@@ -133,6 +143,16 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
     marks.forEach((mark, index) => mark.dataset.active = index === activeIndex ? "true" : "false");
     if (activeIndex >= 0 && typeof marks[activeIndex]?.scrollIntoView === "function") {
       marks[activeIndex].scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+    const highlights = nativeHighlightsRef.current;
+    const names = nativeHighlightNamesRef.current;
+    const HighlightConstructor = (globalThis as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
+    const range = nativeRangesRef.current[activeIndex];
+    if (highlights && names && HighlightConstructor) {
+      if (range) highlights.set(names.active, new HighlightConstructor(range));
+      else highlights.delete(names.active);
+      const target = range?.startContainer.parentElement;
+      if (target instanceof HTMLElement && typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "center", behavior: "smooth" });
     }
   }, [rootRef, activeIndex, resultCount]);
 

@@ -30,9 +30,11 @@ describe("useSearch", () => {
     const { unmount } = render(<Harness />);
     act(() => screen.getByRole("button", { name: "search" }).click());
     expect(highlights.has("markdown-search-main")).toBe(true);
+    expect(highlights.has("markdown-search-main-active")).toBe(true);
     expect(document.querySelectorAll("mark[data-markdown-search]")).toHaveLength(0);
     unmount();
     expect(highlights.has("markdown-search-main")).toBe(false);
+    expect(highlights.has("markdown-search-main-active")).toBe(false);
     Object.assign(globalThis, { CSS: previousCss });
     delete (globalThis as unknown as { Highlight?: unknown }).Highlight;
   });

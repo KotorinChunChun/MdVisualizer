@@ -5,7 +5,7 @@ interface SearchBarProps { search: SearchState; inputRef: React.RefObject<HTMLIn
 export function SearchBar({ search, inputRef }: SearchBarProps) {
   return (
     <div className="search-bar" role="search">
-      <input ref={inputRef} value={search.query} onChange={(event) => search.setQuery(event.target.value)} placeholder="Search document" aria-label="文書を検索" />
+      <input ref={inputRef} value={search.query} onChange={(event) => search.setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.shiftKey ? search.previous() : search.next(); } }} placeholder="Search document" aria-label="文書を検索" />
       <label><input type="checkbox" checked={search.caseSensitive} onChange={(event) => search.setCaseSensitive(event.target.checked)} />Aa</label>
       <label><input type="checkbox" checked={search.regex} onChange={(event) => search.setRegex(event.target.checked)} />.*</label>
       <button type="button" onClick={search.previous} disabled={!search.resultCount} aria-label="前の検索結果">↑</button>
