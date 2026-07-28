@@ -27,7 +27,7 @@ export function App() {
   const [theme, setTheme] = useState("dark");
   const [zoom, setZoom] = useState(100);
   const [viewMode, setViewMode] = useState("standard");
-  const [autoReload, setAutoReload] = useState(true);
+  const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
   const [settingsLoaded, setSettingsLoaded] = useState(false);
@@ -50,7 +50,8 @@ export function App() {
       if (typeof settings.theme === "string") setTheme(settings.theme);
       if (typeof settings.zoom === "number") setZoom(settings.zoom);
       if (typeof settings.viewMode === "string") setViewMode(settings.viewMode);
-      if (typeof settings.autoReload === "boolean") setAutoReload(settings.autoReload);
+      if (["on", "off", "manual"].includes(String(settings.autoReload))) setAutoReload(settings.autoReload as "on" | "off" | "manual");
+      else if (typeof settings.autoReload === "boolean") setAutoReload(settings.autoReload ? "on" : "off");
       if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
       if (["on", "off", "error-code", "always-code"].includes(String(settings.mermaidMode))) setMermaidMode(settings.mermaidMode as typeof mermaidMode);
     }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" })).finally(() => setSettingsLoaded(true));
@@ -102,8 +103,8 @@ export function App() {
 
   useEffect(() => {
     const targets = tabsState.tabs.flatMap((tab) => tab.document ? [tab.document.path, ...tab.document.image_paths] : []);
-    if (autoReload && targets.length > 0) void syncWatchTargets(windowLabel, targets);
-    if (!autoReload) void removeWindowWatchTargets(windowLabel);
+    if (autoReload !== "off" && targets.length > 0) void syncWatchTargets(windowLabel, targets);
+    if (autoReload === "off") void removeWindowWatchTargets(windowLabel);
   }, [tabsState.tabs, autoReload, windowLabel]);
 
   useEffect(() => () => { void removeWindowWatchTargets(windowLabel); }, [windowLabel]);
@@ -146,6 +147,12 @@ export function App() {
         return;
       }
 
+      if (event.key === "F5") {
+        event.preventDefault();
+        reload();
+        return;
+      }
+
       if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "t") {
         event.preventDefault();
         foldAll("collapse");
@@ -178,7 +185,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closedPaths, foldAll, search]);
+  }, [closedPaths, foldAll, reload, search]);
 
   const updateImageVersion = useCallback((imgPath: string) => {
     setImageVersions((previous) => ({ ...previous, [imgPath]: (previous[imgPath] || 0) + 1 }));
@@ -190,7 +197,7 @@ export function App() {
     (path: string) => {
       const tab = tabsState.tabs.find((candidate) => candidate.path === path);
       if (!tab) return;
-      if (autoReload) dispatch({ type: "RELOAD", id: tab.id });
+      if (autoReload === "on") dispatch({ type: "RELOAD", id: tab.id });
       else setHasExternalChange(true);
     },
     [tabsState.tabs, autoReload]
@@ -259,10 +266,10 @@ export function App() {
         <label>Theme: <select value={theme} onChange={(e) => setTheme(e.target.value)}>{["system", "dark", "light", "github", "solarized", "nord"].map((x) => <option key={x}>{x}</option>)}</select></label>
         <label>View: <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>{["standard", "wide", "compact", "print", "presentation", "images"].map((x) => <option key={x}>{x}</option>)}</select></label>
         <label>Zoom: <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>{[50, 67, 80, 90, 100, 110, 125, 150, 175, 200].map((x) => <option key={x} value={x}>{x}%</option>)}</select></label>
-        <label><input type="checkbox" checked={autoReload} onChange={(event) => setAutoReload(event.target.checked)} />Auto reload</label>
+        <label>Auto reload: <select value={autoReload} onChange={(event) => setAutoReload(event.target.value as typeof autoReload)}><option value="on">ON</option><option value="manual">手動のみ</option><option value="off">OFF</option></select></label>
         <label>Mermaid: <select value={mermaidMode} onChange={(event) => setMermaidMode(event.target.value as typeof mermaidMode)}><option value="on">ON</option><option value="off">OFF</option><option value="error-code">エラー時コード</option><option value="always-code">常にコード</option></select></label>
         <span className="external-actions"><button type="button" disabled={!activeTab} onClick={() => openActiveWith("folder")}>フォルダを開く</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("vscode")}>VS Code</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("notepad")}>メモ帳</button></span>
-        {!autoReload && hasExternalChange && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
+        {autoReload === "manual" && hasExternalChange && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
         <SearchBar search={search} inputRef={searchInputRef} />
       </div>
 
@@ -316,7 +323,7 @@ export function App() {
         onRestore={handleRestore}
         onClose={() => setToast(null)}
       />
-      <StatusBar document={activeTab?.document ?? null} />
+      <StatusBar document={activeTab?.document ?? null} autoReload={autoReload} zoom={zoom} changed={hasExternalChange} />
       {contextTab && (() => {
         const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);
         if (!tab) return null;
