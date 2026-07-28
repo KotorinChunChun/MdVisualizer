@@ -5,7 +5,7 @@ export const markdownSanitizeSchema = {
   ...defaultSchema,
   attributes: {
     ...defaultSchema.attributes,
-    "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "id", "title", "data-fold-level"],
+    "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "id", "title", "data-fold-level", "data-fold-id"],
     a: [...(defaultSchema.attributes?.a ?? []), "target", "rel"],
     img: [...(defaultSchema.attributes?.img ?? []), "src", "alt", "width", "height"],
   },

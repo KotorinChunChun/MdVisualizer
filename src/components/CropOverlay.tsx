@@ -27,7 +27,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
 }) => {
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  const [box, setBox] = useState<Box>({ x: 10, y: 10, w: 80, h: 80 });
+  const [box, setBox] = useState<Box>({ x: 0, y: 0, w: 100, h: 100 });
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [displayedSize, setDisplayedSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [isSaving, setIsSaving] = useState(false);

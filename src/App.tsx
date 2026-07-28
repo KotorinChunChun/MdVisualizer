@@ -129,6 +129,17 @@ export function App() {
 
   useEffect(() => () => { void removeWindowWatchTargets(windowLabel); }, [windowLabel]);
 
+  useEffect(() => {
+    if (!contextTab) return;
+    const dismissOnOutsidePointer = (event: PointerEvent) => {
+      if (!(event.target instanceof Element) || !event.target.closest(".context-menu")) setContextTab(null);
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setContextTab(null); };
+    document.addEventListener("pointerdown", dismissOnOutsidePointer, true);
+    window.addEventListener("keydown", dismissOnEscape);
+    return () => { document.removeEventListener("pointerdown", dismissOnOutsidePointer, true); window.removeEventListener("keydown", dismissOnEscape); };
+  }, [contextTab]);
+
   const reload = useCallback(() => {
     if (activeTab) { dispatch({ type: "RELOAD", id: activeTab.id }); setHasExternalChange(false); }
   }, [activeTab]);
@@ -359,7 +370,7 @@ export function App() {
         if (!tab) return null;
         const index = tabsState.tabs.indexOf(tab);
         const close = (id: string) => { closeTab(id); setContextTab(null); };
-        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => { void openInNewWindow(tab.path); setContextTab(null); }} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
+        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => { void openInNewWindow(tab.path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" })); setContextTab(null); }} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
       })()}
     </div>
   );

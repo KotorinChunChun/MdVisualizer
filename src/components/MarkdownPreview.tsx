@@ -49,7 +49,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
         components={{
           section: ({ node, children }) => {
             const foldId = String(node?.properties?.["data-fold-id"] ?? "");
-            return <FoldSection foldId={foldId} collapsed={foldState[foldId] ?? false} onCollapsedChange={onFoldChange} forceExpanded={searchExpandedIds.includes(foldId)} onManualOverride={onSearchFoldManualOverride}>{children}</FoldSection>;
+            return <FoldSection foldId={foldId} collapsed={foldState[foldId]} onCollapsedChange={onFoldChange} forceExpanded={searchExpandedIds.includes(foldId)} onManualOverride={onSearchFoldManualOverride}>{children}</FoldSection>;
           },
           code: ({ className, children, ...props }) => className?.includes("language-mermaid") ? <MermaidBlock source={String(children ?? "")} theme={theme} mode={mermaidMode} /> : className?.includes("language-") ? <CodeBlock className={className}>{children}</CodeBlock> : <code className={className} {...props}>{children}</code>,
           table: ({ children }) => <div className="table-scroll"><table>{children}</table></div>,

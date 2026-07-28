@@ -39,9 +39,13 @@ pub fn open_in_new_window(app_handle: AppHandle, state: State<'_, AppState>, pat
     if !Path::new(&path).exists() { return Err(AppError::FileNotFound(path).to_string()); }
     let label = format!("viewer-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis());
     state.initial_files.lock().unwrap().insert(label.clone(), vec![path]);
-    WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
-        .title("MarkdownViewer").inner_size(1000.0, 750.0).build().map_err(|e| e.to_string())?;
-    Ok(())
+    let window_handle = app_handle.clone();
+    app_handle.run_on_main_thread(move || {
+        if let Err(error) = WebviewWindowBuilder::new(&window_handle, &label, WebviewUrl::App("index.html".into()))
+            .title("MarkdownViewer").inner_size(1000.0, 750.0).build() {
+            eprintln!("Failed to open viewer window: {error}");
+        }
+    }).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
