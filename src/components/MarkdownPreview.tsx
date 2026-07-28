@@ -10,6 +10,7 @@ import { rehypeFoldSections } from "../lib/foldSections";
 import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
 import { CodeBlock } from "./CodeBlock";
 import { MermaidBlock } from "./MermaidBlock";
+import { openExternalUrl } from "../lib/commands";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -18,6 +19,7 @@ interface MarkdownPreviewProps {
   onStartCrop: (target: CropTarget) => void;
   contentRef?: React.Ref<HTMLDivElement>;
   theme?: string;
+  onError?: (message: string) => void;
 }
 
 export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
@@ -27,6 +29,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   onStartCrop,
   contentRef,
   theme = "dark",
+  onError,
 }) => {
   return (
     <div className="markdown-body" ref={contentRef}>
@@ -37,6 +40,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
           section: ({ children }) => <FoldSection>{children}</FoldSection>,
           code: ({ className, children, ...props }) => className?.includes("language-mermaid") ? <MermaidBlock source={String(children ?? "")} theme={theme} /> : className?.includes("language-") ? <CodeBlock className={className}>{children}</CodeBlock> : <code className={className} {...props}>{children}</code>,
           table: ({ children }) => <div className="table-scroll"><table>{children}</table></div>,
+          a: ({ href, children, ...props }) => <a {...props} href={href} onClick={(event) => { event.preventDefault(); if (!href) return; void openExternalUrl(href).catch((error) => onError?.(String(error))); }}>{children}</a>,
           img: ({ src, alt }) => (
             <ImageRenderer
               src={src}

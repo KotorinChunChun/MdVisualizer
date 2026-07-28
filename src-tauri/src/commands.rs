@@ -117,3 +117,27 @@ pub fn open_external_editor(app_handle: AppHandle, path: String) -> Result<(), S
         .open_path(path, None::<&str>)
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn open_containing_folder(path: String) -> Result<(), String> {
+    if !Path::new(&path).exists() { return Err(AppError::FileNotFound(path).to_string()); }
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("explorer").arg(format!("/select,{}", path)).spawn().map_err(|error| error.to_string())?;
+    #[cfg(not(target_os = "windows"))]
+    return Err("Opening a containing folder is only implemented for Windows.".into());
+    Ok(())
+}
+
+#[tauri::command]
+pub fn open_in_editor(path: String, editor: String) -> Result<(), String> {
+    if !Path::new(&path).exists() { return Err(AppError::FileNotFound(path).to_string()); }
+    let program = match editor.as_str() { "vscode" => "code", "notepad" => "notepad", _ => return Err("Unsupported editor.".into()) };
+    std::process::Command::new(program).arg(path).spawn().map_err(|error| format!("Could not start {program}: {error}"))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn open_external_url(app_handle: AppHandle, url: String) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) { return Err("Only HTTP(S) URLs may be opened externally.".into()); }
+    app_handle.opener().open_url(url, None::<&str>).map_err(|error| error.to_string())
+}

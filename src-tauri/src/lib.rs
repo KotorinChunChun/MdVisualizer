@@ -38,7 +38,10 @@ pub fn run() {
             remove_window_watch_targets,
             crop_image,
             restore_image,
-            open_external_editor
+            open_external_editor,
+            open_containing_folder,
+            open_in_editor,
+            open_external_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

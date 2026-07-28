@@ -248,6 +248,7 @@ export function App() {
             onStartCrop={startCrop}
             contentRef={markdownRef}
             theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+            onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })}
           />
         ) : (
           <div className="empty-state">
@@ -280,7 +281,7 @@ export function App() {
         if (!tab) return null;
         const index = tabsState.tabs.indexOf(tab);
         const close = (id: string) => { closeTab(id); setContextTab(null); };
-        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => { void openInNewWindow(tab.path); setContextTab(null); }} />;
+        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => { void openInNewWindow(tab.path); setContextTab(null); }} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
       })()}
     </div>
   );

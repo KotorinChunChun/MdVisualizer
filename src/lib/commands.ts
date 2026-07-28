@@ -37,3 +37,6 @@ export async function restoreImage(path: string): Promise<boolean> {
 export async function openExternalEditor(path: string): Promise<void> {
   return await invoke<void>("open_external_editor", { path });
 }
+export async function openContainingFolder(path: string): Promise<void> { await invoke<void>("open_containing_folder", { path }); }
+export async function openInEditor(path: string, editor: "vscode" | "notepad"): Promise<void> { await invoke<void>("open_in_editor", { path, editor }); }
+export async function openExternalUrl(url: string): Promise<void> { await invoke<void>("open_external_url", { url }); }
