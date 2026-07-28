@@ -11,7 +11,7 @@ import { SearchBar } from "./components/SearchBar";
 import { useCropEditor } from "./hooks/useCropEditor";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
-import { getInitialFiles, loadMarkdown, openInNewWindow, restoreImage, syncWatchTargets } from "./lib/commands";
+import { getInitialFiles, loadMarkdown, openInNewWindow, removeWindowWatchTargets, restoreImage, syncWatchTargets } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { initialTabsState, tabsReducer } from "./state/tabsReducer";
 import "./styles/app.css";
@@ -27,6 +27,9 @@ export function App() {
   const [theme, setTheme] = useState("dark");
   const [zoom, setZoom] = useState(100);
   const [viewMode, setViewMode] = useState("standard");
+  const [autoReload, setAutoReload] = useState(true);
+  const [hasExternalChange, setHasExternalChange] = useState(false);
+  const windowLabel = getCurrentWindow().label;
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -74,11 +77,14 @@ export function App() {
 
   useEffect(() => {
     const targets = tabsState.tabs.flatMap((tab) => tab.document ? [tab.document.path, ...tab.document.image_paths] : []);
-    if (targets.length > 0) void syncWatchTargets("main", targets);
-  }, [tabsState.tabs]);
+    if (autoReload && targets.length > 0) void syncWatchTargets(windowLabel, targets);
+    if (!autoReload) void removeWindowWatchTargets(windowLabel);
+  }, [tabsState.tabs, autoReload, windowLabel]);
+
+  useEffect(() => () => { void removeWindowWatchTargets(windowLabel); }, [windowLabel]);
 
   const reload = useCallback(() => {
-    if (activeTab) dispatch({ type: "RELOAD", id: activeTab.id });
+    if (activeTab) { dispatch({ type: "RELOAD", id: activeTab.id }); setHasExternalChange(false); }
   }, [activeTab]);
 
   const foldAll = useCallback((command: "collapse" | "expand") => {
@@ -147,9 +153,11 @@ export function App() {
   const handleMarkdownChanged = useCallback(
     (path: string) => {
       const tab = tabsState.tabs.find((candidate) => candidate.path === path);
-      if (tab) dispatch({ type: "RELOAD", id: tab.id });
+      if (!tab) return;
+      if (autoReload) dispatch({ type: "RELOAD", id: tab.id });
+      else setHasExternalChange(true);
     },
-    [tabsState.tabs]
+    [tabsState.tabs, autoReload]
   );
 
   const handleImageChanged = useCallback(
@@ -215,6 +223,8 @@ export function App() {
         <label>Theme: <select value={theme} onChange={(e) => setTheme(e.target.value)}>{["system", "dark", "light", "github", "solarized", "nord"].map((x) => <option key={x}>{x}</option>)}</select></label>
         <label>View: <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>{["standard", "wide", "compact", "print", "presentation", "images"].map((x) => <option key={x}>{x}</option>)}</select></label>
         <label>Zoom: <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>{[50, 67, 80, 90, 100, 110, 125, 150, 175, 200].map((x) => <option key={x} value={x}>{x}%</option>)}</select></label>
+        <label><input type="checkbox" checked={autoReload} onChange={(event) => setAutoReload(event.target.checked)} />Auto reload</label>
+        {!autoReload && hasExternalChange && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
         <SearchBar search={search} inputRef={searchInputRef} />
       </div>
 
