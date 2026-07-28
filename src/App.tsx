@@ -11,7 +11,7 @@ import { SearchBar } from "./components/SearchBar";
 import { useCropEditor } from "./hooks/useCropEditor";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
-import { getInitialFiles, loadMarkdown, loadSettings, openInNewWindow, removeWindowWatchTargets, restoreImage, saveSettings, syncWatchTargets } from "./lib/commands";
+import { getInitialFiles, loadMarkdown, loadSettings, openContainingFolder, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveSettings, syncWatchTargets } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { initialTabsState, tabsReducer } from "./state/tabsReducer";
 import "./styles/app.css";
@@ -119,6 +119,12 @@ export function App() {
   const handleFoldChange = useCallback((foldId: string, collapsed: boolean) => {
     if (!activeTab || !foldId) return;
     setFoldStates((current) => ({ ...current, [activeTab.path]: { ...current[activeTab.path], [foldId]: collapsed } }));
+  }, [activeTab]);
+
+  const openActiveWith = useCallback((kind: "folder" | "vscode" | "notepad") => {
+    if (!activeTab) return;
+    const operation = kind === "folder" ? openContainingFolder(activeTab.path) : openInEditor(activeTab.path, kind);
+    void operation.catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
   }, [activeTab]);
 
   const closeTab = useCallback((id: string) => {
@@ -255,6 +261,7 @@ export function App() {
         <label>Zoom: <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>{[50, 67, 80, 90, 100, 110, 125, 150, 175, 200].map((x) => <option key={x} value={x}>{x}%</option>)}</select></label>
         <label><input type="checkbox" checked={autoReload} onChange={(event) => setAutoReload(event.target.checked)} />Auto reload</label>
         <label>Mermaid: <select value={mermaidMode} onChange={(event) => setMermaidMode(event.target.value as typeof mermaidMode)}><option value="on">ON</option><option value="off">OFF</option><option value="error-code">エラー時コード</option><option value="always-code">常にコード</option></select></label>
+        <span className="external-actions"><button type="button" disabled={!activeTab} onClick={() => openActiveWith("folder")}>フォルダを開く</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("vscode")}>VS Code</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("notepad")}>メモ帳</button></span>
         {!autoReload && hasExternalChange && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
         <SearchBar search={search} inputRef={searchInputRef} />
       </div>
