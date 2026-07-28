@@ -5,12 +5,21 @@ type HastNode = {
   children?: HastNode[];
 };
 
+function textContent(node: HastNode): string {
+  if (typeof (node as HastNode & { value?: unknown }).value === "string") return (node as HastNode & { value: string }).value;
+  return node.children?.map(textContent).join("") ?? "";
+}
+
+function slugify(text: string): string {
+  return text.toLowerCase().trim().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/(^-|-$)/g, "") || "section";
+}
+
 const headingLevel = (node: HastNode): number | null => {
   const match = node.type === "element" && node.tagName?.match(/^h([1-6])$/);
   return match ? Number(match[1]) : null;
 };
 
-function foldRange(nodes: HastNode[]): HastNode[] {
+function foldRange(nodes: HastNode[], ids = new Map<string, number>()): HastNode[] {
   const result: HastNode[] = [];
   let index = 0;
 
@@ -30,17 +39,21 @@ function foldRange(nodes: HastNode[]): HastNode[] {
       end += 1;
     }
 
+    const baseId = slugify(textContent(heading));
+    const occurrence = (ids.get(baseId) ?? 0) + 1;
+    ids.set(baseId, occurrence);
+    const foldId = occurrence === 1 ? baseId : `${baseId}-${occurrence}`;
     result.push({
       type: "element",
       tagName: "section",
-      properties: { className: ["fold-section"], "data-fold-level": level },
+      properties: { className: ["fold-section"], "data-fold-level": level, "data-fold-id": foldId },
       children: [
         { ...heading, properties: { ...heading.properties, className: ["fold-heading"] } },
         {
           type: "element",
           tagName: "div",
           properties: { className: ["fold-content"] },
-          children: foldRange(nodes.slice(index + 1, end)),
+          children: foldRange(nodes.slice(index + 1, end), ids),
         },
       ],
     });

@@ -28,6 +28,7 @@ export function App() {
   const [zoom, setZoom] = useState(100);
   const [viewMode, setViewMode] = useState("standard");
   const [autoReload, setAutoReload] = useState(true);
+  const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [hasExternalChange, setHasExternalChange] = useState(false);
   const windowLabel = getCurrentWindow().label;
@@ -49,13 +50,14 @@ export function App() {
       if (typeof settings.zoom === "number") setZoom(settings.zoom);
       if (typeof settings.viewMode === "string") setViewMode(settings.viewMode);
       if (typeof settings.autoReload === "boolean") setAutoReload(settings.autoReload);
+      if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
     }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" })).finally(() => setSettingsLoaded(true));
   }, []);
 
   useEffect(() => {
     if (!settingsLoaded) return;
-    void saveSettings({ theme, zoom, viewMode, autoReload }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
-  }, [settingsLoaded, theme, zoom, viewMode, autoReload]);
+    void saveSettings({ theme, zoom, viewMode, autoReload, foldStates }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
+  }, [settingsLoaded, theme, zoom, viewMode, autoReload, foldStates]);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
@@ -111,6 +113,11 @@ export function App() {
   const foldAll = useCallback((command: "collapse" | "expand") => {
     window.dispatchEvent(new CustomEvent("markdown-fold-command", { detail: command }));
   }, []);
+
+  const handleFoldChange = useCallback((foldId: string, collapsed: boolean) => {
+    if (!activeTab || !foldId) return;
+    setFoldStates((current) => ({ ...current, [activeTab.path]: { ...current[activeTab.path], [foldId]: collapsed } }));
+  }, [activeTab]);
 
   const closeTab = useCallback((id: string) => {
     const tab = tabsState.tabs.find((candidate) => candidate.id === id);
@@ -270,6 +277,8 @@ export function App() {
             contentRef={markdownRef}
             theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })}
+            foldState={foldStates[activeTab.path]}
+            onFoldChange={handleFoldChange}
           />
         ) : (
           <div className="empty-state">

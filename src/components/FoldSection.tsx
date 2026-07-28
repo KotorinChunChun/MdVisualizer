@@ -2,10 +2,15 @@ import { Children, type ReactElement, type ReactNode, useEffect, useState } from
 
 interface FoldSectionProps {
   children?: ReactNode;
+  foldId?: string;
+  collapsed?: boolean;
+  onCollapsedChange?: (foldId: string, collapsed: boolean) => void;
 }
 
-export function FoldSection({ children }: FoldSectionProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function FoldSection({ children, foldId = "", collapsed: controlledCollapsed, onCollapsedChange }: FoldSectionProps) {
+  const [localCollapsed, setLocalCollapsed] = useState(false);
+  const collapsed = controlledCollapsed ?? localCollapsed;
+  const setCollapsed = (next: boolean) => { setLocalCollapsed(next); onCollapsedChange?.(foldId, next); };
   const parts = Children.toArray(children);
   const heading = parts[0] as ReactElement<{ children?: ReactNode; className?: string }> | undefined;
   const content = parts[1];
@@ -19,7 +24,7 @@ export function FoldSection({ children }: FoldSectionProps) {
     };
     window.addEventListener("markdown-fold-command", handleCommand);
     return () => window.removeEventListener("markdown-fold-command", handleCommand);
-  }, []);
+  }, [foldId, onCollapsedChange]);
 
   return (
     <section className="fold-section">
@@ -28,7 +33,7 @@ export function FoldSection({ children }: FoldSectionProps) {
           type="button"
           className="fold-toggle"
           aria-expanded={!collapsed}
-          onClick={() => setCollapsed((current) => !current)}
+          onClick={() => setCollapsed(!collapsed)}
         >
           <span aria-hidden="true" className="fold-chevron">{collapsed ? "▶" : "▼"}</span>
           {heading?.props.children}

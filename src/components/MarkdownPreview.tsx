@@ -20,6 +20,8 @@ interface MarkdownPreviewProps {
   contentRef?: React.Ref<HTMLDivElement>;
   theme?: string;
   onError?: (message: string) => void;
+  foldState?: Record<string, boolean>;
+  onFoldChange?: (foldId: string, collapsed: boolean) => void;
 }
 
 export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
@@ -30,6 +32,8 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   contentRef,
   theme = "dark",
   onError,
+  foldState = {},
+  onFoldChange,
 }) => {
   return (
     <div className="markdown-body" ref={contentRef}>
@@ -37,7 +41,10 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeFoldSections, [rehypeSanitize, markdownSanitizeSchema]]}
         components={{
-          section: ({ children }) => <FoldSection>{children}</FoldSection>,
+          section: ({ node, children }) => {
+            const foldId = String(node?.properties?.["data-fold-id"] ?? "");
+            return <FoldSection foldId={foldId} collapsed={foldState[foldId] ?? false} onCollapsedChange={onFoldChange}>{children}</FoldSection>;
+          },
           code: ({ className, children, ...props }) => className?.includes("language-mermaid") ? <MermaidBlock source={String(children ?? "")} theme={theme} /> : className?.includes("language-") ? <CodeBlock className={className}>{children}</CodeBlock> : <code className={className} {...props}>{children}</code>,
           table: ({ children }) => <div className="table-scroll"><table>{children}</table></div>,
           a: ({ href, children, ...props }) => <a {...props} href={href} onClick={(event) => { event.preventDefault(); if (!href) return; void openExternalUrl(href).catch((error) => onError?.(String(error))); }}>{children}</a>,

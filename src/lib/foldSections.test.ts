@@ -10,5 +10,11 @@ describe("fold sections", () => {
     expect(result[0].tagName).toBe("section");
     expect(result[0].children?.[1].children).toHaveLength(2);
     expect(result[0].children?.[1].children?.[1].tagName).toBe("section");
+    expect(result[0].properties?.["data-fold-id"]).toBe("a");
+  });
+
+  it("makes repeated headings distinct while keeping their stable slug", () => {
+    const result = __test__.foldRange([heading(2, "Same"), heading(2, "Same")]);
+    expect(result.map((section) => section.properties?.["data-fold-id"])).toEqual(["same", "same-2"]);
   });
 });
