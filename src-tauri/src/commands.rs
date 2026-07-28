@@ -8,9 +8,8 @@ use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
-pub fn get_initial_file(state: State<'_, AppState>) -> Result<Option<String>, String> {
-    let initial = state.initial_file.lock().unwrap();
-    Ok(initial.clone())
+pub fn get_initial_files(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    Ok(state.initial_files.clone())
 }
 
 #[tauri::command]
@@ -46,6 +45,37 @@ pub fn stop_watch(state: State<'_, AppState>) -> Result<(), String> {
     let mut watcher_guard = state.watcher.lock().unwrap();
     if let Some(watcher) = watcher_guard.as_mut() {
         watcher.stop();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn sync_watch_targets(
+    app_handle: AppHandle,
+    state: State<'_, AppState>,
+    window_label: String,
+    targets: Vec<String>,
+) -> Result<(), String> {
+    let mut watcher_guard = state.watcher.lock().unwrap();
+    if watcher_guard.is_none() {
+        *watcher_guard = Some(FileWatcher::new(app_handle).map_err(|e| e.to_string())?);
+    }
+    watcher_guard
+        .as_mut()
+        .expect("watcher was initialized")
+        .sync_window_targets(&window_label, &targets)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn remove_window_watch_targets(
+    state: State<'_, AppState>,
+    window_label: String,
+) -> Result<(), String> {
+    if let Some(watcher) = state.watcher.lock().unwrap().as_mut() {
+        watcher
+            .remove_window_targets(&window_label)
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

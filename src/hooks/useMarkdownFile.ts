@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getInitialFile, loadMarkdown, startWatch } from "../lib/commands";
+import { getInitialFiles, loadMarkdown, startWatch } from "../lib/commands";
 import { MarkdownLoadResult } from "../types/app";
 
 export function useMarkdownFile(containerRef: React.RefObject<HTMLDivElement | null>) {
@@ -48,9 +48,11 @@ export function useMarkdownFile(containerRef: React.RefObject<HTMLDivElement | n
   useEffect(() => {
     async function init() {
       try {
-        const initPath = await getInitialFile();
-        if (initPath) {
-          await loadFile(initPath);
+        const initialPaths = await getInitialFiles();
+        // v0.1.x は単一文書ビューのため、複数の起動引数を受け取った場合は先頭を表示する。
+        // v0.2.0 のタブ状態機械で全パスを個別タブとして開く。
+        if (initialPaths.length > 0) {
+          await loadFile(initialPaths[0]);
         } else {
           setLoading(false);
         }

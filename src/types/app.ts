@@ -3,6 +3,9 @@ export interface MarkdownLoadResult {
   content: string;
   base_dir: string;
   image_paths: string[];
+  encoding: string;
+  size_bytes: number;
+  modified_at: string;
 }
 
 export interface CropImageRequest {

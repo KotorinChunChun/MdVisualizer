@@ -12,21 +12,27 @@ use commands::*;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let args: Vec<String> = std::env::args().collect();
-    let initial_file = args.into_iter().skip(1).find(|arg| {
-        !arg.starts_with('-')
-            && (arg.to_lowercase().ends_with(".md") || arg.to_lowercase().ends_with(".markdown"))
-    });
+    let initial_files = args
+        .into_iter()
+        .skip(1)
+        .filter(|arg| {
+            !arg.starts_with('-')
+                && (arg.to_lowercase().ends_with(".md") || arg.to_lowercase().ends_with(".markdown"))
+        })
+        .collect();
 
-    let state = AppState::new(initial_file).expect("Failed to initialize AppState");
+    let state = AppState::new(initial_files).expect("Failed to initialize AppState");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .invoke_handler(tauri::generate_handler![
-            get_initial_file,
+            get_initial_files,
             load_markdown,
             start_watch,
             stop_watch,
+            sync_watch_targets,
+            remove_window_watch_targets,
             crop_image,
             restore_image,
             open_external_editor

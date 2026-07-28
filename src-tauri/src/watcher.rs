@@ -1,7 +1,7 @@
 use crate::errors::{AppError, AppResult};
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{Arc, Mutex};
@@ -18,6 +18,7 @@ pub struct FileWatcher {
     _app_handle: AppHandle,
     _tx: Sender<PathBuf>,
     watched_paths: Arc<Mutex<HashSet<PathBuf>>>,
+    window_targets: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
     _watcher: RecommendedWatcher,
 }
 
@@ -25,8 +26,9 @@ impl FileWatcher {
     pub fn new(app_handle: AppHandle) -> AppResult<Self> {
         let (tx_event, rx_event) = channel::<PathBuf>();
         let watched_paths = Arc::new(Mutex::new(HashSet::new()));
+        let window_targets = Arc::new(Mutex::new(HashMap::<String, HashSet<PathBuf>>::new()));
 
-        let watched_paths_clone = Arc::clone(&watched_paths);
+        let window_targets_clone = Arc::clone(&window_targets);
         let app_handle_clone = app_handle.clone();
 
         // デバウンス処理ワーカースレッド
@@ -54,8 +56,12 @@ impl FileWatcher {
                 });
 
                 for path in ready_paths {
-                    let watched = watched_paths_clone.lock().unwrap();
-                    if watched.contains(&path) || watched.iter().any(|p| p == &path) {
+                    let targets = window_targets_clone.lock().unwrap();
+                    let owners: Vec<String> = targets
+                        .iter()
+                        .filter_map(|(label, paths)| paths.contains(&path).then(|| label.clone()))
+                        .collect();
+                    if !owners.is_empty() {
                         let path_str = path.to_string_lossy().to_string();
                         let payload = FileChangedPayload {
                             path: path_str.clone(),
@@ -67,10 +73,12 @@ impl FileWatcher {
                             .unwrap_or("")
                             .to_lowercase();
 
-                        if ext == "md" || ext == "markdown" {
-                            let _ = app_handle_clone.emit("markdown-changed", payload);
-                        } else {
-                            let _ = app_handle_clone.emit("image-changed", payload);
+                        for label in owners {
+                            if ext == "md" || ext == "markdown" {
+                                let _ = app_handle_clone.emit_to(&label, "markdown-changed", payload.clone());
+                            } else {
+                                let _ = app_handle_clone.emit_to(&label, "image-changed", payload.clone());
+                            }
                         }
                     }
                 }
@@ -103,42 +111,64 @@ impl FileWatcher {
             _app_handle: app_handle,
             _tx: tx_event,
             watched_paths,
+            window_targets,
             _watcher: watcher,
         })
     }
 
     pub fn set_watch_targets(&mut self, main_md: &str, image_paths: &[String]) -> AppResult<()> {
+        let mut targets = vec![main_md.to_owned()];
+        targets.extend(image_paths.iter().cloned());
+        self.sync_window_targets("main", &targets)
+    }
+
+    /// Replaces only one window's target set, preserving every other window's watches.
+    pub fn sync_window_targets(&mut self, window_label: &str, targets: &[String]) -> AppResult<()> {
+        let normalized: HashSet<PathBuf> = targets
+            .iter()
+            .map(|target| {
+                let path = PathBuf::from(target);
+                path.canonicalize().unwrap_or(path)
+            })
+            .collect();
+        self.window_targets
+            .lock()
+            .unwrap()
+            .insert(window_label.to_owned(), normalized);
+        self.reconcile_watches()
+    }
+
+    pub fn remove_window_targets(&mut self, window_label: &str) -> AppResult<()> {
+        self.window_targets.lock().unwrap().remove(window_label);
+        self.reconcile_watches()
+    }
+
+    fn reconcile_watches(&mut self) -> AppResult<()> {
+        let desired: HashSet<PathBuf> = self
+            .window_targets
+            .lock()
+            .unwrap()
+            .values()
+            .flat_map(|paths| paths.iter().cloned())
+            .collect();
         let mut watched = self.watched_paths.lock().unwrap();
 
-        for p in watched.iter() {
-            let _ = self._watcher.unwatch(p);
+        for path in watched.difference(&desired) {
+            let _ = self._watcher.unwatch(path);
         }
-        watched.clear();
-
-        let md_path = PathBuf::from(main_md);
-        let canonical_md = md_path.canonicalize().unwrap_or(md_path);
-        if canonical_md.exists() {
-            if let Err(e) = self._watcher.watch(&canonical_md, RecursiveMode::NonRecursive) {
-                eprintln!("Failed to watch md file: {:?}", e);
-            }
-            watched.insert(canonical_md);
-        }
-
-        for img in image_paths {
-            let p = PathBuf::from(img);
-            let canonical_img = p.canonicalize().unwrap_or(p);
-            if canonical_img.exists() {
-                if let Err(e) = self._watcher.watch(&canonical_img, RecursiveMode::NonRecursive) {
-                    eprintln!("Failed to watch image file {:?}: {:?}", img, e);
-                }
-                watched.insert(canonical_img);
+        for path in desired.difference(&watched.clone()) {
+            if path.exists() {
+                self._watcher
+                    .watch(path, RecursiveMode::NonRecursive)
+                    .map_err(|e| AppError::WatchError(e.to_string()))?;
             }
         }
-
+        *watched = desired;
         Ok(())
     }
 
     pub fn stop(&mut self) {
+        self.window_targets.lock().unwrap().clear();
         let mut watched = self.watched_paths.lock().unwrap();
         for p in watched.iter() {
             let _ = self._watcher.unwatch(p);

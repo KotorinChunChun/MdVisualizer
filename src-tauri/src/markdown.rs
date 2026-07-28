@@ -1,4 +1,7 @@
 use crate::errors::{AppError, AppResult};
+use chardetng::{EncodingDetector, Iso2022JpDetection, Utf8Detection};
+use chrono::{DateTime, Local};
+use encoding_rs::{Encoding, UTF_16BE, UTF_16LE, UTF_8};
 use regex::Regex;
 use serde::Serialize;
 use std::fs;
@@ -10,6 +13,9 @@ pub struct MarkdownLoadResult {
     pub content: String,
     pub base_dir: String,
     pub image_paths: Vec<String>,
+    pub encoding: String,
+    pub size_bytes: u64,
+    pub modified_at: String,
 }
 
 pub fn load_markdown(path_str: &str) -> AppResult<MarkdownLoadResult> {
@@ -18,8 +24,16 @@ pub fn load_markdown(path_str: &str) -> AppResult<MarkdownLoadResult> {
         return Err(AppError::FileNotFound(path_str.to_string()));
     }
 
-    let content = fs::read_to_string(&path)
+    let bytes = fs::read(&path)
         .map_err(|e| AppError::IoError(format!("Failed to read markdown file: {}", e)))?;
+    let (content, encoding) = decode_markdown(&bytes);
+    let metadata = fs::metadata(&path)
+        .map_err(|e| AppError::IoError(format!("Failed to read markdown metadata: {}", e)))?;
+    let modified_at = metadata
+        .modified()
+        .ok()
+        .map(|time| DateTime::<Local>::from(time).format("%Y-%m-%d %H:%M").to_string())
+        .unwrap_or_else(|| "Unknown".to_string());
 
     let canonical_path = path.canonicalize().unwrap_or(path);
     let base_dir = canonical_path
@@ -35,7 +49,29 @@ pub fn load_markdown(path_str: &str) -> AppResult<MarkdownLoadResult> {
         content,
         base_dir,
         image_paths,
+        encoding,
+        size_bytes: metadata.len(),
+        modified_at,
     })
+}
+
+fn decode_markdown(bytes: &[u8]) -> (String, String) {
+    let (encoding, label, payload): (&'static Encoding, &str, &[u8]) = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        (UTF_8, "UTF-8 BOM", &bytes[3..])
+    } else if bytes.starts_with(&[0xFF, 0xFE]) {
+        (UTF_16LE, "UTF-16LE", &bytes[2..])
+    } else if bytes.starts_with(&[0xFE, 0xFF]) {
+        (UTF_16BE, "UTF-16BE", &bytes[2..])
+    } else if std::str::from_utf8(bytes).is_ok() {
+        (UTF_8, "UTF-8", bytes)
+    } else {
+        let mut detector = EncodingDetector::new(Iso2022JpDetection::Deny);
+        detector.feed(bytes, true);
+        let detected = detector.guess(None, Utf8Detection::Allow);
+        (detected, detected.name(), bytes)
+    };
+    let (decoded, _, _) = encoding.decode(payload);
+    (decoded.into_owned(), label.to_string())
 }
 
 /// Markdown本文中の画像参照 (`![alt](path)` および `<img src="path">`) からローカル絶対パスを抽出
@@ -108,5 +144,11 @@ mod tests {
         assert!(!is_local_image_path("https://example.com/img.png"));
         assert!(!is_local_image_path("data:image/png;base64,12345"));
     }
-}
 
+    #[test]
+    fn decodes_utf16le_bom() {
+        let (content, encoding) = decode_markdown(&[0xFF, 0xFE, b'A', 0]);
+        assert_eq!(content, "A");
+        assert_eq!(encoding, "UTF-16LE");
+    }
+}

@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CropImageRequest, CropImageResult, MarkdownLoadResult } from "../types/app";
 
-export async function getInitialFile(): Promise<string | null> {
-  return await invoke<string | null>("get_initial_file");
+export async function getInitialFiles(): Promise<string[]> {
+  return await invoke<string[]>("get_initial_files");
 }
 
 export async function loadMarkdown(path: string): Promise<MarkdownLoadResult> {
@@ -15,6 +15,14 @@ export async function startWatch(path: string): Promise<void> {
 
 export async function stopWatch(): Promise<void> {
   return await invoke<void>("stop_watch");
+}
+
+export async function syncWatchTargets(windowLabel: string, targets: string[]): Promise<void> {
+  await invoke<void>("sync_watch_targets", { windowLabel, targets });
+}
+
+export async function removeWindowWatchTargets(windowLabel: string): Promise<void> {
+  await invoke<void>("remove_window_watch_targets", { windowLabel });
 }
 
 export async function cropImage(request: CropImageRequest): Promise<CropImageResult> {
