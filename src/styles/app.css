@@ -217,6 +217,12 @@ body {
   border: 1px solid var(--border-color);
 }
 
+.code-block { position: relative; margin-bottom: 1em; }
+.code-block pre { margin-bottom: 0; }
+.code-copy { position: absolute; top: 8px; right: 8px; z-index: 1; padding: 3px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
+.table-scroll { overflow-x: auto; margin-bottom: 1em; }
+.table-scroll table { min-width: max-content; margin-bottom: 0; }
+
 .markdown-body pre code {
   background: none;
   padding: 0;
