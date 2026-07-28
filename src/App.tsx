@@ -284,7 +284,7 @@ export function App() {
             <div className="empty-icon">⏳</div>
             <div className="empty-title">読み込み中...</div>
           </div>
-        ) : activeTab?.error ? (
+        ) : activeTab?.error && !activeTab.document ? (
           <div className="empty-state">
             <div className="empty-icon">⚠️</div>
             <div className="empty-title">ファイルを読み込めません</div>

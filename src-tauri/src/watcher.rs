@@ -93,7 +93,7 @@ impl FileWatcher {
             move |res: Result<Event, notify::Error>| {
                 if let Ok(event) = res {
                     match event.kind {
-                        EventKind::Modify(_) | EventKind::Create(_) => {
+                        EventKind::Modify(_) | EventKind::Create(_) | EventKind::Remove(_) => {
                             for path in event.paths {
                                 let canonical = path.canonicalize().unwrap_or(path);
                                 let _ = tx_for_watcher.send(canonical);
@@ -144,13 +144,7 @@ impl FileWatcher {
     }
 
     fn reconcile_watches(&mut self) -> AppResult<()> {
-        let desired: HashSet<PathBuf> = self
-            .window_targets
-            .lock()
-            .unwrap()
-            .values()
-            .flat_map(|paths| paths.iter().cloned())
-            .collect();
+        let desired = desired_watch_paths(&self.window_targets.lock().unwrap());
         let mut watched = self.watched_paths.lock().unwrap();
 
         for path in watched.difference(&desired) {
@@ -174,5 +168,31 @@ impl FileWatcher {
             let _ = self._watcher.unwatch(p);
         }
         watched.clear();
+    }
+}
+
+fn desired_watch_paths(window_targets: &HashMap<String, HashSet<PathBuf>>) -> HashSet<PathBuf> {
+    window_targets.values().flat_map(|paths| paths.iter().cloned()).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn watch_set_is_the_union_of_all_window_targets() {
+        let mut targets = HashMap::new();
+        targets.insert("main".into(), HashSet::from([PathBuf::from("a.md"), PathBuf::from("shared.png")]));
+        targets.insert("viewer-1".into(), HashSet::from([PathBuf::from("b.md"), PathBuf::from("shared.png")]));
+        assert_eq!(desired_watch_paths(&targets), HashSet::from([PathBuf::from("a.md"), PathBuf::from("b.md"), PathBuf::from("shared.png")]));
+    }
+
+    #[test]
+    fn removing_one_window_preserves_paths_owned_by_another() {
+        let mut targets = HashMap::new();
+        targets.insert("main".into(), HashSet::from([PathBuf::from("shared.md")]));
+        targets.insert("viewer-1".into(), HashSet::from([PathBuf::from("shared.md"), PathBuf::from("other.md")]));
+        targets.remove("main");
+        assert_eq!(desired_watch_paths(&targets), HashSet::from([PathBuf::from("shared.md"), PathBuf::from("other.md")]));
     }
 }
