@@ -3,9 +3,26 @@ use crate::errors::AppError;
 use crate::image_ops::{crop_image as do_crop_image, CropImageRequest, CropImageResult};
 use crate::markdown::{load_markdown as do_load_markdown, MarkdownLoadResult};
 use crate::watcher::FileWatcher;
+use crate::settings::{load_settings as read_settings, merge_settings};
+use serde_json::{Map, Value};
 use std::path::Path;
-use tauri::{AppHandle, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_opener::OpenerExt;
+
+fn settings_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
+    app_handle.path().app_data_dir().map(|path| path.join("settings.json")).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn load_settings(app_handle: AppHandle) -> Result<Value, String> {
+    read_settings(&settings_path(&app_handle)?).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn save_settings(app_handle: AppHandle, updates: Value) -> Result<Value, String> {
+    let updates: Map<String, Value> = updates.as_object().cloned().ok_or_else(|| "Settings update must be an object.".to_string())?;
+    merge_settings(&settings_path(&app_handle)?, updates).map_err(|error| error.to_string())
+}
 
 #[tauri::command]
 pub fn get_initial_files(window: WebviewWindow, state: State<'_, AppState>) -> Result<Vec<String>, String> {

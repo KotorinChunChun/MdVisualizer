@@ -11,7 +11,7 @@ import { SearchBar } from "./components/SearchBar";
 import { useCropEditor } from "./hooks/useCropEditor";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
-import { getInitialFiles, loadMarkdown, openInNewWindow, removeWindowWatchTargets, restoreImage, syncWatchTargets } from "./lib/commands";
+import { getInitialFiles, loadMarkdown, loadSettings, openInNewWindow, removeWindowWatchTargets, restoreImage, saveSettings, syncWatchTargets } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { initialTabsState, tabsReducer } from "./state/tabsReducer";
 import "./styles/app.css";
@@ -28,6 +28,7 @@ export function App() {
   const [zoom, setZoom] = useState(100);
   const [viewMode, setViewMode] = useState("standard");
   const [autoReload, setAutoReload] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [hasExternalChange, setHasExternalChange] = useState(false);
   const windowLabel = getCurrentWindow().label;
 
@@ -41,6 +42,20 @@ export function App() {
     media.addEventListener("change", applyTheme);
     return () => media.removeEventListener("change", applyTheme);
   }, [theme]);
+
+  useEffect(() => {
+    void loadSettings().then((settings) => {
+      if (typeof settings.theme === "string") setTheme(settings.theme);
+      if (typeof settings.zoom === "number") setZoom(settings.zoom);
+      if (typeof settings.viewMode === "string") setViewMode(settings.viewMode);
+      if (typeof settings.autoReload === "boolean") setAutoReload(settings.autoReload);
+    }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" })).finally(() => setSettingsLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    void saveSettings({ theme, zoom, viewMode, autoReload }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
+  }, [settingsLoaded, theme, zoom, viewMode, autoReload]);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);

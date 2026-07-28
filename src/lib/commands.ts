@@ -1,6 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CropImageRequest, CropImageResult, MarkdownLoadResult } from "../types/app";
 
+export async function loadSettings(): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("load_settings"); }
+export async function saveSettings(updates: Record<string, unknown>): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("save_settings", { updates }); }
+
 export async function getInitialFiles(): Promise<string[]> {
   return await invoke<string[]>("get_initial_files");
 }

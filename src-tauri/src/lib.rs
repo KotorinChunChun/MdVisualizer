@@ -29,6 +29,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .invoke_handler(tauri::generate_handler![
+            load_settings,
+            save_settings,
             get_initial_files,
             open_in_new_window,
             load_markdown,
