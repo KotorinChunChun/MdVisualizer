@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { HeaderBar } from "./components/HeaderBar";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
+import { StatusBar } from "./components/StatusBar";
 import { MarkdownPreview } from "./components/MarkdownPreview";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
@@ -190,6 +191,7 @@ export function App() {
         onRestore={handleRestore}
         onClose={() => setToast(null)}
       />
+      <StatusBar document={activeTab?.document ?? null} />
       {contextTab && (() => {
         const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);
         if (!tab) return null;
