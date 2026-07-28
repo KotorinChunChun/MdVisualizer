@@ -48,7 +48,12 @@ npm run tauri dev -- C:\Project\README.md C:\Project\design.markdown
 npm test
 npm run build
 cargo test --manifest-path .\src-tauri\Cargo.toml
+npm run tauri build
 ```
+
+### 性能測定
+
+release EXEで10,000行のMarkdownを5回起動した測定では、起動時間の中央値は41ms、初回を含む最大は493ms、ワーキングセット最大は24.1MBでした。再測定には `dev/scripts/measure-performance.ps1` を使用します。
 
 ## セキュリティとデータ
 
