@@ -11,4 +11,10 @@ describe("mergeMermaidFrontmatter", () => {
     expect(result).not.toContain("securityLevel");
     expect(result).toContain("flowchart LR");
   });
+
+  it("removes Mermaid directives so they cannot override safe configuration", () => {
+    const result = mergeMermaidFrontmatter("%%{init: { 'securityLevel': 'loose', 'theme': 'dark' }}%%\nflowchart LR\n A-->B", "neutral");
+    expect(result).not.toContain("%%{init");
+    expect(result).toContain("theme: neutral");
+  });
 });

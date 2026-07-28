@@ -11,7 +11,7 @@ export function MermaidBlock({ source, theme, mode }: MermaidBlockProps) {
   useEffect(() => {
     let cancelled = false;
     if (mode === "off" || mode === "always-code") return;
-    if (source.length > 500_000) { setState({ svg: null, error: "Mermaid source is too large to render." }); return; }
+    if (source.length > 500_000 || (source.match(/(?:-->|---|==>|-.->)/g)?.length ?? 0) > 2_000) { setState({ svg: null, error: "Mermaid source is too large to render." }); return; }
     setState({ svg: null, error: null });
     void renderMermaid(source, `mermaid-${id}`, theme)
       .then((svg) => { if (!cancelled) setState({ svg, error: null }); })
