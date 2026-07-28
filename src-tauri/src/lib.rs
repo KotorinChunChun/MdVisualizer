@@ -2,8 +2,10 @@ pub mod app_state;
 pub mod backup;
 pub mod commands;
 pub mod errors;
+pub mod file_lock;
 pub mod image_ops;
 pub mod markdown;
+pub mod settings;
 pub mod watcher;
 
 use app_state::AppState;
