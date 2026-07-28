@@ -237,6 +237,7 @@ export function App() {
             imageVersions={imageVersions}
             onStartCrop={startCrop}
             contentRef={markdownRef}
+            theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
           />
         ) : (
           <div className="empty-state">

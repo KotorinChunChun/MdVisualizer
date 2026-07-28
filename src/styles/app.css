@@ -222,6 +222,10 @@ body {
 .code-copy { position: absolute; top: 8px; right: 8px; z-index: 1; padding: 3px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
 .table-scroll { overflow-x: auto; margin-bottom: 1em; }
 .table-scroll table { min-width: max-content; margin-bottom: 0; }
+.mermaid-block { overflow: auto; padding: 12px; margin-bottom: 1em; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; }
+.mermaid-block svg { display: block; max-width: 100%; height: auto; margin: auto; }
+.mermaid-loading { padding: 20px; color: var(--text-muted); }
+.mermaid-error { color: #f87171; white-space: pre-wrap; }
 
 .markdown-body pre code {
   background: none;

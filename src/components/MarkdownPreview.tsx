@@ -9,6 +9,7 @@ import { CropTarget } from "../hooks/useCropEditor";
 import { rehypeFoldSections } from "../lib/foldSections";
 import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
 import { CodeBlock } from "./CodeBlock";
+import { MermaidBlock } from "./MermaidBlock";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -16,6 +17,7 @@ interface MarkdownPreviewProps {
   imageVersions: Record<string, number>;
   onStartCrop: (target: CropTarget) => void;
   contentRef?: React.Ref<HTMLDivElement>;
+  theme?: string;
 }
 
 export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
@@ -24,6 +26,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   imageVersions,
   onStartCrop,
   contentRef,
+  theme = "dark",
 }) => {
   return (
     <div className="markdown-body" ref={contentRef}>
@@ -32,7 +35,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
         rehypePlugins={[rehypeRaw, rehypeFoldSections, [rehypeSanitize, markdownSanitizeSchema]]}
         components={{
           section: ({ children }) => <FoldSection>{children}</FoldSection>,
-          code: ({ className, children, ...props }) => className?.includes("language-") ? <CodeBlock className={className}>{children}</CodeBlock> : <code className={className} {...props}>{children}</code>,
+          code: ({ className, children, ...props }) => className?.includes("language-mermaid") ? <MermaidBlock source={String(children ?? "")} theme={theme} /> : className?.includes("language-") ? <CodeBlock className={className}>{children}</CodeBlock> : <code className={className} {...props}>{children}</code>,
           table: ({ children }) => <div className="table-scroll"><table>{children}</table></div>,
           img: ({ src, alt }) => (
             <ImageRenderer
