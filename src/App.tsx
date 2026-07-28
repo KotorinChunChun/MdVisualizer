@@ -29,6 +29,7 @@ export function App() {
   const [viewMode, setViewMode] = useState("standard");
   const [autoReload, setAutoReload] = useState(true);
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
+  const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [hasExternalChange, setHasExternalChange] = useState(false);
   const windowLabel = getCurrentWindow().label;
@@ -51,13 +52,14 @@ export function App() {
       if (typeof settings.viewMode === "string") setViewMode(settings.viewMode);
       if (typeof settings.autoReload === "boolean") setAutoReload(settings.autoReload);
       if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
+      if (["on", "off", "error-code", "always-code"].includes(String(settings.mermaidMode))) setMermaidMode(settings.mermaidMode as typeof mermaidMode);
     }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" })).finally(() => setSettingsLoaded(true));
   }, []);
 
   useEffect(() => {
     if (!settingsLoaded) return;
-    void saveSettings({ theme, zoom, viewMode, autoReload, foldStates }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
-  }, [settingsLoaded, theme, zoom, viewMode, autoReload, foldStates]);
+    void saveSettings({ theme, zoom, viewMode, autoReload, foldStates, mermaidMode }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
+  }, [settingsLoaded, theme, zoom, viewMode, autoReload, foldStates, mermaidMode]);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
@@ -252,6 +254,7 @@ export function App() {
         <label>View: <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>{["standard", "wide", "compact", "print", "presentation", "images"].map((x) => <option key={x}>{x}</option>)}</select></label>
         <label>Zoom: <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>{[50, 67, 80, 90, 100, 110, 125, 150, 175, 200].map((x) => <option key={x} value={x}>{x}%</option>)}</select></label>
         <label><input type="checkbox" checked={autoReload} onChange={(event) => setAutoReload(event.target.checked)} />Auto reload</label>
+        <label>Mermaid: <select value={mermaidMode} onChange={(event) => setMermaidMode(event.target.value as typeof mermaidMode)}><option value="on">ON</option><option value="off">OFF</option><option value="error-code">エラー時コード</option><option value="always-code">常にコード</option></select></label>
         {!autoReload && hasExternalChange && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
         <SearchBar search={search} inputRef={searchInputRef} />
       </div>
@@ -279,6 +282,7 @@ export function App() {
             onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })}
             foldState={foldStates[activeTab.path]}
             onFoldChange={handleFoldChange}
+            mermaidMode={mermaidMode}
           />
         ) : (
           <div className="empty-state">
