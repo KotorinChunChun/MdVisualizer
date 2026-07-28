@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { HeaderBar } from "./components/HeaderBar";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
@@ -21,7 +22,18 @@ export function App() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [theme, setTheme] = useState("dark");
   const [zoom, setZoom] = useState(100);
-  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  const [viewMode, setViewMode] = useState("standard");
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      document.documentElement.dataset.theme = theme === "system" ? (media.matches ? "dark" : "light") : theme;
+    };
+
+    applyTheme();
+    media.addEventListener("change", applyTheme);
+    return () => media.removeEventListener("change", applyTheme);
+  }, [theme]);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
@@ -75,6 +87,24 @@ export function App() {
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "t") {
         const [path, ...remaining] = closedPaths;
         if (path) { event.preventDefault(); setClosedPaths(remaining); dispatch({ type: "OPEN", path }); }
+      }
+
+      if (event.key === "F11") {
+        event.preventDefault();
+        void getCurrentWindow().isFullscreen().then((fullscreen) => getCurrentWindow().setFullscreen(!fullscreen));
+        return;
+      }
+
+      if (!event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        setZoom((current) => Math.min(200, current + 10));
+      } else if (event.key === "-") {
+        event.preventDefault();
+        setZoom((current) => Math.max(50, current - 10));
+      } else if (event.key === "0") {
+        event.preventDefault();
+        setZoom(100);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -150,9 +180,13 @@ export function App() {
     <div className="app-container">
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       <HeaderBar filePath={activeTab?.path ?? null} onReload={reload} />
-      <div className="view-controls"><label>Theme: <select value={theme} onChange={(e) => setTheme(e.target.value)}>{["dark","light","github","solarized","nord"].map((x) => <option key={x}>{x}</option>)}</select></label><label>Zoom: <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>{[50,67,80,90,100,110,125,150,175,200].map((x) => <option key={x} value={x}>{x}%</option>)}</select></label></div>
+      <div className="view-controls">
+        <label>Theme: <select value={theme} onChange={(e) => setTheme(e.target.value)}>{["system", "dark", "light", "github", "solarized", "nord"].map((x) => <option key={x}>{x}</option>)}</select></label>
+        <label>View: <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>{["standard", "wide", "compact", "print", "presentation", "images"].map((x) => <option key={x}>{x}</option>)}</select></label>
+        <label>Zoom: <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>{[50, 67, 80, 90, 100, 110, 125, 150, 175, 200].map((x) => <option key={x} value={x}>{x}%</option>)}</select></label>
+      </div>
 
-      <main className="preview-container" ref={containerRef} style={{ zoom: zoom / 100 }}>
+      <main className={`preview-container view-${viewMode}`} ref={containerRef} style={{ zoom: zoom / 100 }}>
         {activeTab?.loading ? (
           <div className="empty-state">
             <div className="empty-icon">⏳</div>
