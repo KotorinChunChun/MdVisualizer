@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useMemo, useState } from "react";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 
 export interface SearchState {
   query: string;
@@ -26,7 +26,9 @@ function removeOwnedMarks(root: HTMLElement) {
   root.normalize();
 }
 
-export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "main"): SearchState {
+export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "main", onMatchedFoldIds?: (ids: string[]) => void): SearchState {
+  const onMatchedFoldIdsRef = useRef(onMatchedFoldIds);
+  useEffect(() => { onMatchedFoldIdsRef.current = onMatchedFoldIds; }, [onMatchedFoldIds]);
   const [query, setQuery] = useState("");
   const [regex, setRegex] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
@@ -39,7 +41,7 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
     const root = rootRef.current;
     if (!root) return;
     removeOwnedMarks(root);
-    if (!pattern) { setResultCount(0); setActiveIndex(-1); setError(null); return; }
+    if (!pattern) { setResultCount(0); setActiveIndex(-1); setError(null); onMatchedFoldIdsRef.current?.([]); return; }
 
     let expression: RegExp;
     try {
@@ -49,6 +51,7 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
       setResultCount(0);
       setActiveIndex(-1);
       setError(`正規表現エラー: ${String(reason)}`);
+      onMatchedFoldIdsRef.current?.([]);
       return;
     }
 
@@ -64,6 +67,14 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
     const HighlightConstructor = (globalThis as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
     const highlightName = `markdown-search-${scopeId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
     const ranges: Range[] = [];
+    const matchedFoldIds = new Set<string>();
+    const collectFoldIds = (element: Element | null) => {
+      let current = element?.closest<HTMLElement>(".fold-section") ?? null;
+      while (current) {
+        if (current.dataset.foldId) matchedFoldIds.add(current.dataset.foldId);
+        current = current.parentElement?.closest<HTMLElement>(".fold-section") ?? null;
+      }
+    };
 
     let count = 0;
     for (const node of nodes) {
@@ -80,6 +91,7 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
           range.setStart(node, start);
           range.setEnd(node, start + match[0].length);
           ranges.push(range);
+          collectFoldIds(node.parentElement);
           count += 1;
           continue;
         }
@@ -88,6 +100,7 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
         mark.dataset.markdownSearch = "true";
         mark.textContent = match[0];
         fragment.append(mark);
+        collectFoldIds(node.parentElement);
         cursor = start + match[0].length;
         count += 1;
       }
@@ -106,6 +119,7 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
     }
     setResultCount(count);
     setActiveIndex(count ? 0 : -1);
+    onMatchedFoldIdsRef.current?.([...matchedFoldIds]);
     return () => {
       removeOwnedMarks(root);
       nativeHighlights?.delete(highlightName);

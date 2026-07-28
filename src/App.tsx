@@ -30,6 +30,7 @@ export function App() {
   const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
+  const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [hasExternalChange, setHasExternalChange] = useState(false);
   const windowLabel = getCurrentWindow().label;
@@ -65,7 +66,7 @@ export function App() {
   const [closedPaths, setClosedPaths] = useState<string[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
-  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`);
+  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, setSearchExpandedIds);
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
 
   useEffect(() => {
@@ -121,6 +122,10 @@ export function App() {
     if (!activeTab || !foldId) return;
     setFoldStates((current) => ({ ...current, [activeTab.path]: { ...current[activeTab.path], [foldId]: collapsed } }));
   }, [activeTab]);
+
+  const handleSearchFoldManualOverride = useCallback((foldId: string) => {
+    setSearchExpandedIds((ids) => ids.filter((id) => id !== foldId));
+  }, []);
 
   const openActiveWith = useCallback((kind: "folder" | "vscode" | "notepad") => {
     if (!activeTab) return;
@@ -297,6 +302,8 @@ export function App() {
             foldState={foldStates[activeTab.path]}
             onFoldChange={handleFoldChange}
             mermaidMode={mermaidMode}
+            searchExpandedIds={searchExpandedIds}
+            onSearchFoldManualOverride={handleSearchFoldManualOverride}
           />
         ) : (
           <div className="empty-state">

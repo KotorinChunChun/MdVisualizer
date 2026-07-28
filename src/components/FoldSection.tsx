@@ -5,11 +5,13 @@ interface FoldSectionProps {
   foldId?: string;
   collapsed?: boolean;
   onCollapsedChange?: (foldId: string, collapsed: boolean) => void;
+  forceExpanded?: boolean;
+  onManualOverride?: (foldId: string) => void;
 }
 
-export function FoldSection({ children, foldId = "", collapsed: controlledCollapsed, onCollapsedChange }: FoldSectionProps) {
+export function FoldSection({ children, foldId = "", collapsed: controlledCollapsed, onCollapsedChange, forceExpanded = false, onManualOverride }: FoldSectionProps) {
   const [localCollapsed, setLocalCollapsed] = useState(false);
-  const collapsed = controlledCollapsed ?? localCollapsed;
+  const collapsed = forceExpanded ? false : controlledCollapsed ?? localCollapsed;
   const setCollapsed = (next: boolean) => { setLocalCollapsed(next); onCollapsedChange?.(foldId, next); };
   const parts = Children.toArray(children);
   const heading = parts[0] as ReactElement<{ children?: ReactNode; className?: string }> | undefined;
@@ -27,13 +29,13 @@ export function FoldSection({ children, foldId = "", collapsed: controlledCollap
   }, [foldId, onCollapsedChange]);
 
   return (
-    <section className="fold-section">
+    <section className="fold-section" data-fold-id={foldId}>
       <HeadingTag className={heading?.props.className}>
         <button
           type="button"
           className="fold-toggle"
           aria-expanded={!collapsed}
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => { onManualOverride?.(foldId); setCollapsed(!collapsed); }}
         >
           <span aria-hidden="true" className="fold-chevron">{collapsed ? "▶" : "▼"}</span>
           {heading?.props.children}

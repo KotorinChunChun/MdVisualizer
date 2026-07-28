@@ -22,4 +22,11 @@ describe("FoldSection", () => {
     act(() => window.dispatchEvent(new CustomEvent("markdown-fold-command", { detail: "expand" })));
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
   });
+
+  it("temporarily expands a collapsed section for search while preserving its stored state", () => {
+    const { rerender } = render(<FoldSection foldId="details" collapsed><h2>Details</h2><div>Visible content</div></FoldSection>);
+    expect(screen.getByRole("button", { name: /Details/ }).getAttribute("aria-expanded")).toBe("false");
+    rerender(<FoldSection foldId="details" collapsed forceExpanded><h2>Details</h2><div>Visible content</div></FoldSection>);
+    expect(screen.getByRole("button", { name: /Details/ }).getAttribute("aria-expanded")).toBe("true");
+  });
 });
