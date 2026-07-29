@@ -19,7 +19,7 @@ import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
-import { DEFAULT_EXTERNAL_APPS, normalizeExternalApps, type ExternalAppConfig } from "./types/settings";
+import { DEFAULT_EXTERNAL_APPS, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -48,6 +48,7 @@ export function App() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
   const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
+  const presentationPositions = useRef<Record<string, string>>({});
   const [toast, setToast] = useState<ToastState | null>(null);
   const [theme, setTheme] = useState("system");
   const [zoom, setZoom] = useState(100);
@@ -59,6 +60,7 @@ export function App() {
   const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
   const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
+  const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
   const themeRef = useRef(theme);
   const zoomRef = useRef(zoom);
   const viewModeRef = useRef(viewMode);
@@ -131,8 +133,10 @@ export function App() {
       if (["on", "off", "error-code", "always-code"].includes(String(settings.mermaidMode))) { const value = settings.mermaidMode as typeof mermaidMode; mermaidModeRef.current = value; setMermaidMode(value); }
       const apps = normalizeExternalApps(settings.externalApps);
       setExternalApps(apps);
+      const lineThreshold = normalizePresentationLineThreshold(settings.presentationLineThreshold);
+      setPresentationLineThreshold(lineThreshold);
       if (!Array.isArray(settings.externalApps)) {
-        void saveSettings({ schemaVersion: 3, externalApps: apps }).catch((error) => {
+        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold }).catch((error) => {
           setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
         });
       }
@@ -162,6 +166,24 @@ export function App() {
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
+
+  useEffect(() => {
+    if (viewMode === "presentation" || !activeTab?.document) return;
+    const headingId = presentationPositions.current[activeTab.id];
+    if (!headingId) return;
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        const section = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-fold-id]") ?? [])]
+          .find((candidate) => candidate.dataset.foldId === headingId);
+        section?.scrollIntoView({ block: "start" });
+      });
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame) cancelAnimationFrame(secondFrame);
+    };
+  }, [activeTab?.document, activeTab?.generation, activeTab?.id, viewMode]);
   const activeImageBackupAvailable = Boolean(activeTab?.document && activeTab.document.image_paths.some((path) => imageBackups[path]));
   const updateSearchExpandedIds = useCallback((ids: string[]) => {
     setSearchExpandedIds((current) => current.length === ids.length && current.every((id, index) => id === ids[index]) ? current : ids);
@@ -379,10 +401,16 @@ export function App() {
 
   const openSettings = useCallback(() => dispatch({ type: "OPEN_SETTINGS" }), []);
 
-  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[]) => {
-    await saveSettings({ schemaVersion: 3, externalApps: apps });
-    setExternalApps(apps);
-    setToast({ id: String(Date.now()), message: "外部アプリ設定を保存しました", type: "success" });
+  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number) => {
+    try {
+      await saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold });
+      setExternalApps(apps);
+      setPresentationLineThreshold(lineThreshold);
+      setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
+    } catch (error) {
+      setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
+      throw error;
+    }
   }, []);
 
   const closeTab = useCallback((id: string) => {
@@ -564,7 +592,7 @@ export function App() {
 
       <main className={`preview-container view-${viewMode}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: zoom / 100 }}>
         {activeTab?.kind === "settings" ? (
-          <SettingsPanel apps={externalApps} onSave={saveExternalAppSettings} />
+          <SettingsPanel apps={externalApps} presentationLineThreshold={presentationLineThreshold} onSave={saveExternalAppSettings} />
         ) : activeTab?.loading ? (
           <div className="empty-state">
             <div className="empty-icon">⏳</div>
@@ -589,6 +617,9 @@ export function App() {
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
             onOpenDocument={handleOpenDocument}
+            lineThreshold={presentationLineThreshold}
+            initialHeadingId={presentationPositions.current[activeTab.id]}
+            onPageChange={(headingId) => { presentationPositions.current[activeTab.id] = headingId; }}
           />
         ) : activeTab?.document ? (
           <MarkdownPreview

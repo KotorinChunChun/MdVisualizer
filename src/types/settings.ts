@@ -49,6 +49,14 @@ export const DEFAULT_EXTERNAL_APPS: ExternalAppConfig[] = [
   },
 ];
 
+export const DEFAULT_PRESENTATION_LINE_THRESHOLD = 10;
+
+export function normalizePresentationLineThreshold(value: unknown): number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 100
+    ? value
+    : DEFAULT_PRESENTATION_LINE_THRESHOLD;
+}
+
 function isPlacement(value: unknown): value is ExternalAppPlacement {
   return value === "primary" || value === "menu";
 }
@@ -75,9 +83,9 @@ export function normalizeExternalApps(value: unknown): ExternalAppConfig[] {
       builtinKind,
     }];
   });
-  const presentBuiltins = new Set(apps.map((app) => app.builtinKind));
-  for (const builtin of DEFAULT_EXTERNAL_APPS) {
-    if (!presentBuiltins.has(builtin.builtinKind)) apps.push({ ...builtin, args: [...builtin.args] });
+  if (!apps.some((app) => app.builtinKind === "folder")) {
+    const folder = DEFAULT_EXTERNAL_APPS.find((app) => app.builtinKind === "folder")!;
+    apps.push({ ...folder, args: [...folder.args] });
   }
   return apps.sort((left, right) => left.order - right.order).map((app, order) => ({ ...app, order }));
 }

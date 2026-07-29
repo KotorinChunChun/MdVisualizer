@@ -8,18 +8,27 @@ describe("SettingsPanel", () => {
 
   it("edits placement and saves a normalized draft", async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
-    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} onSave={onSave} />);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
     fireEvent.change(screen.getAllByLabelText("表示場所")[2], { target: { value: "primary" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][0][2].placement).toBe("primary");
+    expect(onSave.mock.calls[0][1]).toBe(10);
   });
 
   it("keeps built-ins undeletable and validates custom executable", async () => {
-    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} onSave={vi.fn()} />);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={vi.fn()} />);
     expect((screen.getAllByRole("button", { name: "削除" })[0] as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "アプリを追加" }));
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     expect((await screen.findByRole("alert")).textContent).toContain("実行ファイル");
+  });
+
+  it("allows optional presets to be removed but keeps Folder", () => {
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={vi.fn()} />);
+    const buttons = screen.getAllByRole("button", { name: "削除" }) as HTMLButtonElement[];
+    expect(buttons[0].disabled).toBe(true);
+    expect(buttons[1].disabled).toBe(false);
+    expect(buttons[2].disabled).toBe(false);
   });
 });

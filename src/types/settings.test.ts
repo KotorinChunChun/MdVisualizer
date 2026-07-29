@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_EXTERNAL_APPS, normalizeExternalApps, validateExternalApp } from "./settings";
+import { DEFAULT_EXTERNAL_APPS, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizePresentationLineThreshold, validateExternalApp } from "./settings";
 
 describe("external app settings", () => {
   it("migrates missing settings to folder and VS Code buttons plus Notepad menu", () => {
@@ -11,7 +11,7 @@ describe("external app settings", () => {
     ]);
   });
 
-  it("repairs missing built-ins without losing custom applications", () => {
+  it("repairs the required Folder action without resurrecting optional presets", () => {
     const apps = normalizeExternalApps([{
       id: "custom",
       label: "Custom",
@@ -22,11 +22,17 @@ describe("external app settings", () => {
       order: 0,
     }]);
     expect(apps.some((app) => app.id === "custom")).toBe(true);
-    expect(new Set(apps.map((app) => app.builtinKind).filter(Boolean))).toEqual(new Set(["folder", "vscode", "notepad"]));
+    expect(new Set(apps.map((app) => app.builtinKind).filter(Boolean))).toEqual(new Set(["folder"]));
   });
 
   it("rejects unknown placeholders", () => {
     expect(validateExternalApp({ ...DEFAULT_EXTERNAL_APPS[1], builtinKind: undefined, executable: "tool", args: ["${shell}"] }))
       .toContain("${shell}");
+  });
+
+  it("normalizes the presentation source-line threshold", () => {
+    expect(normalizePresentationLineThreshold(25)).toBe(25);
+    expect(normalizePresentationLineThreshold(0)).toBe(DEFAULT_PRESENTATION_LINE_THRESHOLD);
+    expect(normalizePresentationLineThreshold("10")).toBe(DEFAULT_PRESENTATION_LINE_THRESHOLD);
   });
 });

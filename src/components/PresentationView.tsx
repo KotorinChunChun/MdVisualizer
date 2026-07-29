@@ -19,6 +19,9 @@ export function PresentationView({
   tabId,
   imageDisplaySizes,
   onOpenDocument,
+  lineThreshold = 10,
+  initialHeadingId,
+  onPageChange,
 }: {
   content: string;
   baseDir: string;
@@ -31,14 +34,19 @@ export function PresentationView({
   tabId: string;
   imageDisplaySizes: Record<string, ImageSize>;
   onOpenDocument?: (path: string) => void;
+  lineThreshold?: number;
+  initialHeadingId?: string;
+  onPageChange?: (headingId: string) => void;
 }) {
-  const model = useMemo(() => buildPresentationModel(content, 10), [content]);
-  const [pageIndex, setPageIndex] = useState(0);
+  const model = useMemo(() => buildPresentationModel(content, lineThreshold), [content, lineThreshold]);
+  const initialIndex = () => Math.max(0, model.pages.findIndex((candidate) => candidate.id === initialHeadingId || candidate.mergedChildId === initialHeadingId));
+  const [pageIndex, setPageIndex] = useState(initialIndex);
   const [imageTarget, setImageTarget] = useState<PresentationImageTarget | null>(null);
   const currentCrumbRef = useRef<HTMLButtonElement | null>(null);
   const page = model.pages[Math.min(pageIndex, model.pages.length - 1)];
 
-  useEffect(() => setPageIndex(0), [content, tabId]);
+  useEffect(() => setPageIndex(initialIndex()), [content, tabId, initialHeadingId, model]);
+  useEffect(() => onPageChange?.(page.id), [onPageChange, page.id]);
   useEffect(() => {
     currentCrumbRef.current?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
   }, [pageIndex]);

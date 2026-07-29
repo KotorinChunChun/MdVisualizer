@@ -12,6 +12,7 @@ export function PresentationImageModal({
   onEdit: (target: CropTarget) => void;
 }) {
   const [scale, setScale] = useState(1);
+  const [origin, setOrigin] = useState("50% 50%");
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -26,7 +27,7 @@ export function PresentationImageModal({
     <img
       src={target.src}
       alt={target.alt}
-      style={{ transform: `scale(${scale})` }}
+      style={{ transform: `scale(${scale})`, transformOrigin: origin }}
       title={target.cropTarget ? "もう一度クリックすると画像編集を開きます" : "ホイールで拡大・縮小できます"}
       onClick={(event) => {
         event.stopPropagation();
@@ -35,7 +36,11 @@ export function PresentationImageModal({
       onWheel={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        setScale((current) => Math.min(5, Math.max(0.5, current + (event.deltaY < 0 ? 0.2 : -0.2))));
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (bounds.width > 0 && bounds.height > 0) {
+          setOrigin(`${((event.clientX - bounds.left) / bounds.width) * 100}% ${((event.clientY - bounds.top) / bounds.height) * 100}%`);
+        }
+        setScale((current) => Math.min(5, Math.max(1, current + (event.deltaY < 0 ? 0.2 : -0.2))));
       }}
     />
     <output aria-live="polite">{Math.round(scale * 100)}%</output>

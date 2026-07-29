@@ -5,15 +5,19 @@ import "../styles/settings.css";
 
 export function SettingsPanel({
   apps,
+  presentationLineThreshold,
   onSave,
 }: {
   apps: ExternalAppConfig[];
-  onSave: (apps: ExternalAppConfig[]) => Promise<void>;
+  presentationLineThreshold: number;
+  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => apps.map((app) => ({ ...app, args: [...app.args] })));
+  const [lineThreshold, setLineThreshold] = useState(presentationLineThreshold);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   useEffect(() => setDraft(apps.map((app) => ({ ...app, args: [...app.args] }))), [apps]);
+  useEffect(() => setLineThreshold(presentationLineThreshold), [presentationLineThreshold]);
 
   const update = (id: string, patch: Partial<ExternalAppConfig>) => {
     setDraft((current) => current.map((app) => app.id === id ? { ...app, ...patch } : app));
@@ -33,7 +37,7 @@ export function SettingsPanel({
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft.map((app, order) => ({ ...app, order })));
+      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold);
     } catch (reason) {
       setError(String(reason));
     } finally {
@@ -47,6 +51,12 @@ export function SettingsPanel({
       <button type="button" className="settings-save" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
     </header>
     {error && <p role="alert" className="settings-error">{error}</p>}
+    <fieldset className="settings-section">
+      <legend>プレゼンテーション</legend>
+      <label>短い子見出しを親へ含める最大ソース行数
+        <input aria-label="プレゼン統合行数" type="number" min="1" max="100" value={lineThreshold} onChange={(event) => setLineThreshold(Math.min(100, Math.max(1, Number(event.target.value) || 1)))} />
+      </label>
+    </fieldset>
     <div className="settings-list">
       {draft.map((app, index) => <article className="settings-app" key={app.id}>
         <div className="settings-app__heading">
@@ -63,7 +73,7 @@ export function SettingsPanel({
         <div className="settings-app__actions">
           <button type="button" disabled={index === 0} onClick={() => move(index, -1)}>上へ</button>
           <button type="button" disabled={index === draft.length - 1} onClick={() => move(index, 1)}>下へ</button>
-          <button type="button" disabled={Boolean(app.builtinKind)} onClick={() => setDraft((current) => current.filter((candidate) => candidate.id !== app.id))}>削除</button>
+          <button type="button" disabled={app.builtinKind === "folder"} onClick={() => setDraft((current) => current.filter((candidate) => candidate.id !== app.id))}>削除</button>
         </div>
       </article>)}
     </div>
