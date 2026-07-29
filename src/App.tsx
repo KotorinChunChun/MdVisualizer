@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
@@ -11,6 +11,7 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { ExternalActions } from "./components/ExternalActions";
 import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type MediaPreviewTarget } from "./components/MediaPreviewModal";
+import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -25,6 +26,8 @@ import { ancestorFoldIds } from "./lib/foldSections";
 import { DEFAULT_EXTERNAL_APPS, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { localPathIdentity } from "./lib/pathIdentity";
+import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
+import { resolveImageSrc } from "./lib/path";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -71,6 +74,8 @@ export function App() {
   const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
   const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
+  const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
+  const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
   const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
   const navigationHistoryRef = useRef(emptyNavigationHistory());
   const themeRef = useRef(theme);
@@ -181,6 +186,25 @@ export function App() {
   mediaPreviewRef.current = mediaPreview;
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
+  const imageOccurrenceGroups = useMemo(() => {
+    if (!activeTab?.document || viewMode === "presentation") return [];
+    return groupImageOccurrences(collectImageOccurrences(activeTab.document.content, activeTab.document.base_dir));
+  }, [activeTab?.document, viewMode]);
+  const imageGalleryItems = useMemo<ImageGalleryItem[]>(() => {
+    const baseDir = activeTab?.document?.base_dir;
+    if (!baseDir) return [];
+    return imageOccurrenceGroups.map((group) => ({
+      path: group.path,
+      src: resolveImageSrc(group.source, baseDir),
+      filename: group.filename,
+      occurrences: group.occurrences.map(({ id, caption, sourceLine }) => ({ id, caption, sourceLine })),
+    }));
+  }, [activeTab?.document?.base_dir, imageOccurrenceGroups]);
+
+  useEffect(() => {
+    setImageGalleryOpen(false);
+    setActiveImageOccurrenceId(null);
+  }, [activeTab?.id]);
 
   useEffect(() => {
     if (viewMode === "presentation") {
@@ -436,6 +460,41 @@ export function App() {
   const recordNavigationPoint = useCallback(() => {
     navigationHistoryRef.current = recordNavigation(navigationHistoryRef.current, captureNavigationSnapshot());
   }, [captureNavigationSnapshot]);
+
+  const jumpToImageOccurrence = useCallback((occurrenceId: string) => {
+    const target = document.getElementById(occurrenceId);
+    if (!target || !activeTab?.document) return;
+    recordNavigationPoint();
+    setActiveImageOccurrenceId(occurrenceId);
+
+    const foldIds: string[] = [];
+    let section = target.closest<HTMLElement>("[data-fold-id]");
+    while (section) {
+      if (section.dataset.foldId) foldIds.push(section.dataset.foldId);
+      section = section.parentElement?.closest<HTMLElement>("[data-fold-id]") ?? null;
+    }
+    if (foldIds.length > 0) {
+      setFoldStates((current) => {
+        const currentForPath = current[activeTab.path] ?? {};
+        const nextForPath = { ...currentForPath };
+        let changed = false;
+        for (const foldId of foldIds) {
+          if (nextForPath[foldId]) {
+            nextForPath[foldId] = false;
+            changed = true;
+          }
+        }
+        if (!changed) return current;
+        void saveFoldState(activeTab.path, nextForPath).catch((error) => setToast({
+          id: String(Date.now()),
+          message: `折りたたみ状態の保存に失敗しました: ${String(error)}`,
+          type: "error",
+        }));
+        return { ...current, [activeTab.path]: nextForPath };
+      });
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => target.scrollIntoView({ block: "center" })));
+  }, [activeTab?.document, activeTab?.path, recordNavigationPoint]);
 
   const restoreNavigationSnapshot = useCallback((snapshot: NavigationSnapshot) => {
     if (snapshot.activeTabId && tabsStateRef.current.tabs.some((tab) => tab.id === snapshot.activeTabId)) {
@@ -731,6 +790,12 @@ export function App() {
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
           {viewMode !== "presentation" && <button type="button" disabled={!activeTab?.document} onClick={openSearch}>検索</button>}
+          {viewMode !== "presentation" && <button
+            type="button"
+            aria-pressed={imageGalleryOpen}
+            disabled={imageOccurrenceGroups.length === 0}
+            onClick={() => setImageGalleryOpen((open) => !open)}
+          >画像</button>}
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
         </div>
         {viewMode !== "presentation" && <div className="control-group fold-controls">
@@ -748,6 +813,14 @@ export function App() {
         {viewMode !== "presentation" && activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
       </div>}
 
+      <div className={`document-workspace${imageGalleryOpen && viewMode !== "presentation" ? " has-image-gallery" : ""}`}>
+      {activeTab?.document && viewMode !== "presentation" && <ImageGallery
+        items={imageGalleryItems}
+        activeOccurrenceId={activeImageOccurrenceId ?? undefined}
+        onJump={jumpToImageOccurrence}
+        isOpen={imageGalleryOpen}
+        onOpenChange={setImageGalleryOpen}
+      />}
       <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: viewMode === "presentation" && activeTab?.kind !== "settings" ? 1 : zoom / 100 }}>
         {activeTab?.kind === "settings" ? (
           <SettingsPanel apps={externalApps} presentationLineThreshold={presentationLineThreshold} onSave={saveExternalAppSettings} />
@@ -814,6 +887,7 @@ export function App() {
           </div>
         )}
       </main>
+      </div>
 
       {cropTarget && (
         <CropOverlay

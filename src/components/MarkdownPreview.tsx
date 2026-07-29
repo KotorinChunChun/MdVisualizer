@@ -16,6 +16,7 @@ import { openExternalUrl } from "../lib/commands";
 import { resolveLocalMarkdownPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
+import { imageOccurrenceId } from "../lib/imageOccurrences";
 
 type MarkdownNode = {
   type?: string;
@@ -129,7 +130,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
             }
             void openExternalUrl(href).catch((error) => onError?.(String(error)));
           }}>{children}</a>,
-          img: ({ src, alt }) => (
+          img: ({ node, src, alt }) => (
             <ImageRenderer
               src={src}
               alt={alt}
@@ -139,6 +140,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
               onDisplaySizeChange={src ? (size) => onImageDisplaySizeChange?.(src, size) : undefined}
               presentationMode={presentationMode}
               onMediaOpen={onMediaOpen}
+              occurrenceId={imageOccurrenceId(node?.position?.start.offset ?? 0)}
+              sourceLine={node?.position?.start.line}
             />
           ),
         }}

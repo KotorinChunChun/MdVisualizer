@@ -33,6 +33,24 @@ export function resolveImageSrc(src: string, baseDir: string): string {
   }
 }
 
+/** Resolves a local image reference to a normalized filesystem path. */
+export function resolveLocalImagePath(src: string, baseDir: string): string | null {
+  if (!src) return null;
+  const lower = src.toLowerCase();
+  if (lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("data:")) return null;
+  if (lower.startsWith("file://")) {
+    try {
+      return normalizeLocalPath(decodePath(new URL(src).pathname).replace(/^\/(?=[a-zA-Z]:)/, ""));
+    } catch {
+      return null;
+    }
+  }
+  const candidate = decodePath(src.split(/[?#]/, 1)[0]);
+  return isAbsoluteLocalPath(candidate)
+    ? normalizeLocalPath(candidate)
+    : normalizeLocalPath(`${baseDir.replace(/[\\/]$/, "")}/${candidate}`);
+}
+
 export function getFileName(pathStr: string): string {
   if (!pathStr) return "";
   const normalized = pathStr.replace(/\\/g, "/");

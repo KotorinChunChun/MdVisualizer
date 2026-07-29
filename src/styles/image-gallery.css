@@ -1,0 +1,124 @@
+.image-gallery-root {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.image-gallery-toggle,
+.image-gallery__header button,
+.image-gallery-card__summary,
+.image-gallery-card__occurrences button {
+  color: var(--text-primary);
+  background: var(--btn-bg);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.image-gallery-toggle {
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.55rem;
+}
+
+.image-gallery-backdrop { display: none; }
+
+.image-gallery {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 10;
+  box-sizing: border-box;
+  width: min(20rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 1.5rem);
+  overflow: auto;
+  margin-top: 0.6rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.18);
+}
+
+.image-gallery__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.8rem;
+  padding: 0 0.7rem 0 0.9rem;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.image-gallery__header button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.image-gallery__empty { padding: 0 0.9rem 0.9rem; color: var(--text-secondary); }
+.image-gallery__list,
+.image-gallery-card__occurrences { margin: 0; padding: 0; list-style: none; }
+.image-gallery__list { padding: 0.55rem; }
+.image-gallery-card + .image-gallery-card { margin-top: 0.45rem; }
+
+.image-gallery-card__summary {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  gap: 0.55rem;
+  padding: 0.4rem;
+  text-align: left;
+  border-radius: 0.55rem;
+}
+
+.image-gallery-card__summary:hover,
+.image-gallery-card__occurrences button:hover { background: var(--btn-hover); }
+.image-gallery-card__summary:focus-visible,
+.image-gallery-card__occurrences button:focus-visible,
+.image-gallery-toggle:focus-visible,
+.image-gallery__header button:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+
+.image-gallery-card__thumbnail {
+  display: block;
+  width: 4rem;
+  height: 3rem;
+  object-fit: cover;
+  background: var(--bg-color);
+  border-radius: 0.3rem;
+}
+
+.image-gallery-card__details { min-width: 0; display: grid; gap: 0.15rem; }
+.image-gallery-card__filename { overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.image-gallery-card__count { color: var(--text-secondary); font-size: 0.82rem; }
+.image-gallery-card__chevron { color: var(--text-secondary); font-size: 1.2rem; }
+
+.image-gallery-card__occurrences { display: grid; gap: 0.25rem; padding: 0.35rem 0.25rem 0.15rem 1rem; }
+.image-gallery-card__occurrences button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.5rem;
+  padding: 0.35rem 0.45rem;
+  overflow: hidden;
+  text-align: left;
+  border-color: transparent;
+  border-radius: 0.35rem;
+}
+.image-gallery-card__occurrences button > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.image-gallery-card__occurrences small { flex: 0 0 auto; color: var(--text-secondary); }
+.image-gallery-card__occurrences button[aria-current="location"] { font-weight: 750; background: color-mix(in srgb, var(--accent-color) 20%, var(--btn-bg)); border-color: color-mix(in srgb, var(--accent-color) 65%, var(--border-color)); }
+
+/* When this component is placed in unused horizontal space, the panel is a normal sidecar. */
+@media (min-width: 1500px) {
+  .image-gallery-root.is-open { width: 20rem; }
+  .image-gallery-toggle { width: 100%; }
+}
+
+/* At narrow widths, keep the document width intact and overlay the panel as a drawer. */
+@media (max-width: 1499px) {
+  .image-gallery { position: fixed; inset: 0 auto 0 0; z-index: 40; width: min(86vw, 22rem); max-height: none; margin: 0; border-width: 0 1px 0 0; border-radius: 0; box-shadow: 0.8rem 0 2rem rgba(0, 0, 0, 0.35); }
+  .image-gallery-backdrop { position: fixed; inset: 0; z-index: 35; display: block; width: 100vw; height: 100vh; padding: 0; background: rgba(0, 0, 0, 0.35); border: 0; }
+}

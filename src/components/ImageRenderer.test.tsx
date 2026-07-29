@@ -58,6 +58,13 @@ function ControlledImage() {
 }
 
 describe("ImageRenderer inline resize", () => {
+  it("exposes a stable gallery navigation anchor", () => {
+    render(<ImageRenderer src="image.png" alt="画像" baseDir="C:\\docs" imageVersions={{}} occurrenceId="markdown-image-42" sourceLine={7} />);
+    const anchor = document.getElementById("markdown-image-42");
+    expect(anchor?.dataset.imageOccurrenceId).toBe("markdown-image-42");
+    expect(anchor?.dataset.sourceLine).toBe("7");
+  });
+
   it("shows eight accessible resize handles after an image is loaded", () => {
     renderImage();
     fireEvent.load(screen.getByAltText("テスト画像"));

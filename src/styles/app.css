@@ -175,6 +175,23 @@ body {
   background-color: var(--bg-color);
 }
 
+.document-workspace {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  justify-content: center;
+}
+
+.document-workspace > .preview-container { flex: 1; }
+
+@media (min-width: 1500px) {
+  .document-workspace.has-image-gallery {
+    display: grid;
+    grid-template-columns: 20rem minmax(0, 73rem);
+  }
+}
+
 .markdown-body {
   max-width: 900px;
   margin: 0 auto;

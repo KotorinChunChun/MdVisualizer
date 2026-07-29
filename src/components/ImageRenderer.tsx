@@ -17,6 +17,8 @@ interface ImageRendererProps {
   onDisplaySizeChange?: (size: ImageSize) => void;
   presentationMode?: boolean;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
+  occurrenceId?: string;
+  sourceLine?: number;
 }
 
 export interface PresentationImageTarget {
@@ -34,6 +36,8 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   onDisplaySizeChange,
   presentationMode = false,
   onMediaOpen,
+  occurrenceId,
+  sourceLine,
 }) => {
   const [loadError, setLoadError] = useState(false);
   const {
@@ -99,6 +103,9 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
 
   return (
     <span
+      id={occurrenceId}
+      data-image-occurrence-id={occurrenceId}
+      data-source-line={sourceLine}
       className={`inline-image-resize ${isResizing ? "is-resizing" : ""} ${presentationMode ? "is-presentation" : ""}`}
       style={!presentationMode && size ? { width: `${size.width}px`, height: `${size.height}px` } : undefined}
     >
