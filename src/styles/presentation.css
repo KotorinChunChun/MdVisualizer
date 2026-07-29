@@ -1,0 +1,134 @@
+.preview-container.view-presentation {
+  padding: 0;
+  overflow: hidden;
+}
+
+.presentation-view {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-primary);
+}
+
+.presentation-breadcrumbs {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--border-color);
+  scrollbar-width: thin;
+}
+
+.presentation-breadcrumbs > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.presentation-breadcrumbs button {
+  padding: 0.25rem 0.45rem;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.presentation-breadcrumbs span:last-child button {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.presentation-stage {
+  overflow: auto;
+  padding: clamp(1rem, 3vw, 3rem);
+}
+
+.presentation-stage > .markdown-body {
+  max-width: 1100px;
+  margin: 0 auto;
+  font-size: clamp(1rem, 1.4vw, 1.35rem);
+}
+
+.presentation-stage .inline-image-resize.is-presentation {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+}
+
+.presentation-stage .markdown-img {
+  max-width: 100%;
+  max-height: calc(100vh - 15rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.presentation-children {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.8rem;
+  max-width: 1100px;
+  margin: 1.5rem auto 0;
+}
+
+.presentation-children button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 3.5rem;
+  padding: 0.8rem 1rem;
+  text-align: left;
+  border: 1px solid var(--border-color);
+}
+
+.presentation-navigation {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 0.9rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.presentation-navigation button:first-child { justify-self: start; }
+.presentation-navigation button:last-child { justify-self: end; }
+
+.presentation-image-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 3rem;
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.presentation-image-modal img {
+  display: block;
+  max-width: 90vw;
+  max-height: 86vh;
+  object-fit: contain;
+  cursor: zoom-in;
+  transform-origin: center;
+}
+
+.presentation-image-modal__close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+}
+
+.presentation-image-modal output {
+  position: fixed;
+  left: 1rem;
+  bottom: 2.5rem;
+  color: white;
+}

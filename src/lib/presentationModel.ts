@@ -1,0 +1,179 @@
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
+
+type MarkdownAstNode = {
+  type?: string;
+  depth?: number;
+  value?: string;
+  children?: MarkdownAstNode[];
+  position?: {
+    start: { line: number; offset?: number };
+    end: { line: number; offset?: number };
+  };
+};
+
+export interface PresentationHeading {
+  id: string;
+  title: string;
+  level: number;
+  headingStart: number;
+  bodyStart: number;
+  bodyEnd: number;
+  sectionEnd: number;
+  bodyLineCount: number;
+  parentId: string | null;
+  childIds: string[];
+}
+
+export interface PresentationCrumb {
+  id: string;
+  title: string;
+  index: number;
+  total: number;
+}
+
+export interface PresentationPage {
+  id: string;
+  title: string;
+  markdown: string;
+  childIds: string[];
+  mergedChildId: string | null;
+  breadcrumbs: PresentationCrumb[];
+  sourceLine: number;
+}
+
+export interface PresentationModel {
+  headings: Record<string, PresentationHeading>;
+  pages: PresentationPage[];
+  rootIds: string[];
+}
+
+const parser = unified().use(remarkParse).use(remarkGfm);
+
+function nodeText(node: MarkdownAstNode): string {
+  if (typeof node.value === "string") return node.value;
+  return (node.children ?? []).map(nodeText).join("");
+}
+
+function slug(value: string) {
+  return value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .replace(/^-+|-+$/g, "") || "heading";
+}
+
+function trimmedLogicalLineCount(markdown: string) {
+  const trimmed = markdown.replace(/^\s*\r?\n/, "").replace(/\s+$/, "");
+  return trimmed ? trimmed.split(/\r?\n/).length : 0;
+}
+
+export function buildPresentationModel(
+  markdown: string,
+  inlineChildLineLimit = 10,
+): PresentationModel {
+  const root = parser.parse(markdown) as MarkdownAstNode;
+  const astHeadings = (root.children ?? []).filter((node) => node.type === "heading" && node.position);
+  if (!astHeadings.length) {
+    return {
+      headings: {},
+      rootIds: [],
+      pages: [{
+        id: "document",
+        title: "ドキュメント",
+        markdown,
+        childIds: [],
+        mergedChildId: null,
+        breadcrumbs: [],
+        sourceLine: 1,
+      }],
+    };
+  }
+
+  const counts = new Map<string, number>();
+  const list: PresentationHeading[] = astHeadings.map((node, index) => {
+    const base = slug(nodeText(node));
+    const occurrence = (counts.get(base) ?? 0) + 1;
+    counts.set(base, occurrence);
+    const id = occurrence === 1 ? base : `${base}-${occurrence}`;
+    const headingStart = node.position!.start.offset ?? 0;
+    const bodyStart = node.position!.end.offset ?? headingStart;
+    const nextHeading = astHeadings[index + 1];
+    const bodyEnd = nextHeading?.position?.start.offset ?? markdown.length;
+    return {
+      id,
+      title: nodeText(node).trim() || "無題の見出し",
+      level: node.depth ?? 1,
+      headingStart,
+      bodyStart,
+      bodyEnd,
+      sectionEnd: markdown.length,
+      bodyLineCount: trimmedLogicalLineCount(markdown.slice(bodyStart, bodyEnd)),
+      parentId: null,
+      childIds: [],
+    };
+  });
+
+  const stack: PresentationHeading[] = [];
+  for (const heading of list) {
+    while (stack.length && stack[stack.length - 1].level >= heading.level) stack.pop();
+    const parent = stack[stack.length - 1];
+    if (parent) {
+      heading.parentId = parent.id;
+      parent.childIds.push(heading.id);
+    }
+    stack.push(heading);
+  }
+  for (let index = 0; index < list.length; index += 1) {
+    const heading = list[index];
+    heading.sectionEnd = list.slice(index + 1).find((candidate) => candidate.level <= heading.level)?.headingStart ?? markdown.length;
+  }
+
+  const headings = Object.fromEntries(list.map((heading) => [heading.id, heading]));
+  const mergedIds = new Set<string>();
+  for (const heading of list) {
+    if (mergedIds.has(heading.id)) continue;
+    if (heading.childIds.length !== 1) continue;
+    const child = headings[heading.childIds[0]];
+    if (child.bodyLineCount <= inlineChildLineLimit) mergedIds.add(child.id);
+  }
+
+  const siblingsOf = (heading: PresentationHeading) =>
+    heading.parentId ? headings[heading.parentId].childIds : list.filter((candidate) => !candidate.parentId).map((candidate) => candidate.id);
+  const breadcrumbsFor = (heading: PresentationHeading) => {
+    const chain: PresentationHeading[] = [];
+    for (let current: PresentationHeading | undefined = heading; current; current = current.parentId ? headings[current.parentId] : undefined) {
+      chain.unshift(current);
+    }
+    return chain.map((item) => {
+      const siblings = siblingsOf(item);
+      return { id: item.id, title: item.title, index: siblings.indexOf(item.id) + 1, total: siblings.length };
+    });
+  };
+
+  const pages = list.filter((heading) => !mergedIds.has(heading.id)).map((heading): PresentationPage => {
+    const mergedChild = heading.childIds.length === 1 && mergedIds.has(heading.childIds[0])
+      ? headings[heading.childIds[0]]
+      : null;
+    const ownMarkdown = markdown.slice(heading.headingStart, heading.bodyEnd).trim();
+    const mergedMarkdown = mergedChild
+      ? markdown.slice(mergedChild.headingStart, mergedChild.bodyEnd).trim()
+      : "";
+    return {
+      id: heading.id,
+      title: heading.title,
+      markdown: [ownMarkdown, mergedMarkdown].filter(Boolean).join("\n\n"),
+      childIds: mergedChild ? mergedChild.childIds : heading.childIds,
+      mergedChildId: mergedChild?.id ?? null,
+      breadcrumbs: breadcrumbsFor(heading),
+      sourceLine: astHeadings[list.indexOf(heading)].position?.start.line ?? 1,
+    };
+  });
+
+  return {
+    headings,
+    pages,
+    rootIds: list.filter((heading) => !heading.parentId).map((heading) => heading.id),
+  };
+}

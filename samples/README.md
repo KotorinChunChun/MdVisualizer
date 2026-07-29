@@ -9,6 +9,7 @@
 | `mermaid-gallery.md` | Mermaid代表図とエラー表示の確認 |
 | `local-links.md` | 相対Markdownリンクを新しいタブで開く確認 |
 | `linked-document.md` | ローカルリンクの遷移先 |
+| `presentation-hierarchy.md` | 階層型プレゼン、10行分割、パンくず、画像ポップアップ |
 | `images/sample.png` | ラスター画像、クロップ、表示縮小 |
 | `images/sample.svg` | SVG表示専用（編集操作なし） |
 

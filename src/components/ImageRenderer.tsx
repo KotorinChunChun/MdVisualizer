@@ -15,6 +15,14 @@ interface ImageRendererProps {
   /** Optional controlled display size; callers can persist this per tab without changing image data. */
   displaySize?: ImageSize | null;
   onDisplaySizeChange?: (size: ImageSize) => void;
+  presentationMode?: boolean;
+  onPresentationOpen?: (target: PresentationImageTarget) => void;
+}
+
+export interface PresentationImageTarget {
+  src: string;
+  alt: string;
+  cropTarget: CropTarget | null;
 }
 
 export const ImageRenderer: React.FC<ImageRendererProps> = ({
@@ -25,6 +33,8 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   onStartCrop,
   displaySize,
   onDisplaySizeChange,
+  presentationMode = false,
+  onPresentationOpen,
 }) => {
   const [loadError, setLoadError] = useState(false);
   const {
@@ -72,33 +82,37 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       e.stopPropagation();
       return;
     }
-    if (!isEditableLocalImage) return;
     e.preventDefault();
     e.stopPropagation();
 
-    onStartCrop({
+    const cropTarget = isEditableLocalImage ? {
       rawSrc: displaySrc,
       fullPath,
       filename: getFileName(fullPath),
-    });
+    } : null;
+    if (presentationMode) {
+      onPresentationOpen?.({ src: displaySrc, alt, cropTarget });
+      return;
+    }
+    if (cropTarget) onStartCrop(cropTarget);
   };
 
   return (
     <span
-      className={`inline-image-resize ${isResizing ? "is-resizing" : ""}`}
-      style={size ? { width: `${size.width}px`, height: `${size.height}px` } : undefined}
+      className={`inline-image-resize ${isResizing ? "is-resizing" : ""} ${presentationMode ? "is-presentation" : ""}`}
+      style={!presentationMode && size ? { width: `${size.width}px`, height: `${size.height}px` } : undefined}
     >
       <img
         ref={imageRef}
         src={displaySrc}
         alt={alt}
         className={`markdown-img inline-image-resize__image ${isEditableLocalImage ? "croppable" : ""}`}
-        title={isEditableLocalImage ? "クリックしてクロップ編集。枠のハンドルをドラッグして表示サイズを縮小" : alt}
+        title={presentationMode ? "クリックして拡大表示" : isEditableLocalImage ? "クリックしてクロップ編集。枠のハンドルをドラッグして表示サイズを縮小" : alt}
         onLoad={setInitialSize}
         onClick={handleClick}
         onError={() => setLoadError(true)}
       />
-      {isEditableLocalImage && (
+      {isEditableLocalImage && !presentationMode && (
         <InlineImageResizeOverlay
           onPointerDown={startResize}
           onKeyDown={resizeFromKeyboard}

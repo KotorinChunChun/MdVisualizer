@@ -9,6 +9,7 @@ import { Toast } from "./components/Toast";
 import { SearchBar } from "./components/SearchBar";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ExternalActions } from "./components/ExternalActions";
+import { PresentationView } from "./components/PresentationView";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -546,7 +547,7 @@ export function App() {
           <button type="button" disabled={!activeTab?.document} onClick={openSearch}>検索</button>
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
         </div>
-        <div className="control-group fold-controls">
+        {viewMode !== "presentation" && <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>
           <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
             const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset";
@@ -555,7 +556,7 @@ export function App() {
           }}>
             <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
           </select>
-        </div>
+        </div>}
         <ExternalActions apps={externalApps} disabled={!activeTab?.document} onExecute={executeExternalApp} />
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
         {activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
@@ -575,6 +576,20 @@ export function App() {
             <div className="empty-title">ファイルを読み込めません</div>
             <div className="empty-desc">{activeTab.error}</div>
           </div>
+        ) : activeTab?.document && viewMode === "presentation" ? (
+          <PresentationView
+            content={activeTab.document.content}
+            baseDir={activeTab.document.base_dir}
+            imageVersions={imageVersions}
+            onStartCrop={startCrop}
+            theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+            onError={handlePreviewError}
+            mermaidMode={mermaidMode}
+            windowId={windowLabel}
+            tabId={activeTab.id}
+            imageDisplaySizes={activeTab.imageDisplaySizes}
+            onOpenDocument={handleOpenDocument}
+          />
         ) : activeTab?.document ? (
           <MarkdownPreview
             content={activeTab.document.content}

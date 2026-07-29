@@ -16,6 +16,7 @@ import { MermaidBlock } from "./MermaidBlock";
 import { openExternalUrl } from "../lib/commands";
 import { resolveLocalMarkdownPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
+import type { PresentationImageTarget } from "./ImageRenderer";
 
 type MarkdownNode = {
   type?: string;
@@ -57,6 +58,8 @@ interface MarkdownPreviewProps {
   searchExpandedIds?: string[];
   onSearchFoldManualOverride?: (foldId: string) => void;
   onOpenDocument?: (path: string) => void;
+  presentationMode?: boolean;
+  onPresentationImageOpen?: (target: PresentationImageTarget) => void;
 }
 
 const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
@@ -77,6 +80,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   searchExpandedIds = [],
   onSearchFoldManualOverride,
   onOpenDocument,
+  presentationMode = false,
+  onPresentationImageOpen,
 }) => {
   const mermaidCount = countMermaidFences(content);
   let mermaidIndex = 0;
@@ -89,6 +94,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
         components={{
           section: ({ node, children }) => {
             const foldId = String(node?.properties?.["data-fold-id"] ?? "");
+            if (presentationMode) return <section className="presentation-markdown-section">{children}</section>;
             return <FoldSection foldId={foldId} collapsed={foldState[foldId]} onCollapsedChange={onFoldChange} forceExpanded={searchExpandedIds.includes(foldId)} onManualOverride={onSearchFoldManualOverride}>{children}</FoldSection>;
           },
           code: ({ node, className, children, ...props }) => {
@@ -134,6 +140,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
               onStartCrop={onStartCrop}
               displaySize={src ? imageDisplaySizes[src] : undefined}
               onDisplaySizeChange={src ? (size) => onImageDisplaySizeChange?.(src, size) : undefined}
+              presentationMode={presentationMode}
+              onPresentationOpen={onPresentationImageOpen}
             />
           ),
         }}
