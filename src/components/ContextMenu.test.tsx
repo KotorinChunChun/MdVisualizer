@@ -4,7 +4,7 @@ import { ContextMenu } from "./ContextMenu";
 
 vi.mock("../lib/commands", () => ({ openContainingFolder: vi.fn(), openInEditor: vi.fn() }));
 
-const tab = { id: "tab-1", path: "C:\\docs\\sample.md", document: null, error: null, loading: false, scrollTop: 0, generation: 1, search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 } };
+const tab = { id: "tab-1", path: "C:\\docs\\sample.md", document: null, error: null, loading: false, scrollTop: 0, generation: 1, imageDisplaySizes: {}, search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 } };
 
 describe("ContextMenu", () => {
   it("dismisses when focus leaves the menu", () => {

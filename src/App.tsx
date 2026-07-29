@@ -11,12 +11,31 @@ import { SearchBar } from "./components/SearchBar";
 import { useCropEditor } from "./hooks/useCropEditor";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
-import { getInitialFiles, loadMarkdown, loadSettings, openContainingFolder, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets } from "./lib/commands";
+import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
+import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import "./styles/app.css";
+import "./styles/content.css";
 import "./styles/crop.css";
 import "./styles/themes.css";
+
+// Keep this list in sync with StatusBar's fixed zoom choices.  Normalizing at
+// the state boundary also repairs legacy persisted values that were not a
+// selectable option.
+export const ZOOM_LEVELS = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200] as const;
+export type ZoomLevel = typeof ZOOM_LEVELS[number];
+
+export function normalizeZoom(value: number): ZoomLevel {
+  return ZOOM_LEVELS.reduce((nearest, candidate) =>
+    Math.abs(candidate - value) < Math.abs(nearest - value) ? candidate : nearest,
+  ZOOM_LEVELS[0]);
+}
+
+export function moveZoomLevel(current: number, direction: 1 | -1): number {
+  const index = ZOOM_LEVELS.indexOf(normalizeZoom(current));
+  return ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length - 1, index + direction))];
+}
 
 export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -24,16 +43,64 @@ export function App() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState("system");
   const [zoom, setZoom] = useState(100);
   const [viewMode, setViewMode] = useState("standard");
   const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
   const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const [hasExternalChange, setHasExternalChange] = useState(false);
+  const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
+  const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
+  const themeRef = useRef(theme);
+  const zoomRef = useRef(zoom);
+  const viewModeRef = useRef(viewMode);
+  const autoReloadRef = useRef(autoReload);
+  const mermaidModeRef = useRef(mermaidMode);
   const windowLabel = getCurrentWindow().label;
+
+  const persistSetting = useCallback((key: "theme" | "zoom" | "viewMode" | "autoReload" | "mermaidMode", value: string | number) => {
+    void saveSettings({ [key]: value }).catch((error) => {
+      setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
+    });
+  }, []);
+
+  const updateTheme = useCallback((value: string) => {
+    if (themeRef.current === value) return;
+    themeRef.current = value;
+    setTheme(value);
+    persistSetting("theme", value);
+  }, [persistSetting]);
+
+  const updateZoom = useCallback((value: number | ((current: number) => number)) => {
+    const requested = typeof value === "function" ? value(zoomRef.current) : value;
+    const next = normalizeZoom(requested);
+    if (zoomRef.current === next) return;
+    zoomRef.current = next;
+    setZoom(next);
+    persistSetting("zoom", next);
+  }, [persistSetting]);
+
+  const updateViewMode = useCallback((value: string) => {
+    if (viewModeRef.current === value) return;
+    viewModeRef.current = value;
+    setViewMode(value);
+    persistSetting("viewMode", value);
+  }, [persistSetting]);
+
+  const updateAutoReload = useCallback((value: "on" | "off" | "manual") => {
+    if (autoReloadRef.current === value) return;
+    autoReloadRef.current = value;
+    setAutoReload(value);
+    persistSetting("autoReload", value);
+  }, [persistSetting]);
+
+  const updateMermaidMode = useCallback((value: "on" | "off" | "error-code" | "always-code") => {
+    if (mermaidModeRef.current === value) return;
+    mermaidModeRef.current = value;
+    setMermaidMode(value);
+    persistSetting("mermaidMode", value);
+  }, [persistSetting]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -47,27 +114,43 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    void loadSettings().then((settings) => {
-      if (typeof settings.theme === "string") setTheme(settings.theme);
-      if (typeof settings.zoom === "number") setZoom(settings.zoom);
-      if (typeof settings.viewMode === "string") setViewMode(settings.viewMode);
-      if (["on", "off", "manual"].includes(String(settings.autoReload))) setAutoReload(settings.autoReload as "on" | "off" | "manual");
-      else if (typeof settings.autoReload === "boolean") setAutoReload(settings.autoReload ? "on" : "off");
+    void loadSettingsStatus().then(({ settings, recoveredFiles }) => {
+      if (typeof settings.theme === "string") { themeRef.current = settings.theme; setTheme(settings.theme); }
+      if (typeof settings.zoom === "number") { const value = normalizeZoom(settings.zoom); zoomRef.current = value; setZoom(value); }
+      if (typeof settings.viewMode === "string") { viewModeRef.current = settings.viewMode; setViewMode(settings.viewMode); }
+      if (["on", "off", "manual"].includes(String(settings.autoReload))) { const value = settings.autoReload as "on" | "off" | "manual"; autoReloadRef.current = value; setAutoReload(value); }
+      else if (typeof settings.autoReload === "boolean") { const value = settings.autoReload ? "on" : "off"; autoReloadRef.current = value; setAutoReload(value); }
       if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
-      if (["on", "off", "error-code", "always-code"].includes(String(settings.mermaidMode))) setMermaidMode(settings.mermaidMode as typeof mermaidMode);
-    }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" })).finally(() => setSettingsLoaded(true));
+      if (["on", "off", "error-code", "always-code"].includes(String(settings.mermaidMode))) { const value = settings.mermaidMode as typeof mermaidMode; mermaidModeRef.current = value; setMermaidMode(value); }
+      if (recoveredFiles.length > 0) {
+        setToast({
+          id: String(Date.now()),
+          message: `破損した設定ファイルを退避し、初期設定で起動しました（${recoveredFiles.length}件）`,
+          type: "info",
+        });
+      }
+    }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" }));
   }, []);
 
+  useEffect(() => subscribeMermaidStatus(setMermaidStatus), []);
+
   useEffect(() => {
-    if (!settingsLoaded) return;
-    void saveSettings({ theme, zoom, viewMode, autoReload, mermaidMode }).catch((error) => setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" }));
-  }, [settingsLoaded, theme, zoom, viewMode, autoReload, mermaidMode]);
+    const handleMarkdownToast = (event: Event) => {
+      const detail = (event as CustomEvent<{ message?: string; type?: ToastState["type"] }>).detail;
+      if (!detail?.message) return;
+      setToast({ id: String(Date.now()), message: detail.message, type: detail.type ?? "info" });
+    };
+    window.addEventListener("markdown-toast", handleMarkdownToast);
+    return () => window.removeEventListener("markdown-toast", handleMarkdownToast);
+  }, []);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedTabs, setClosedTabs] = useState<ClosedTabState[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
+  const activeImageBackupAvailable = Boolean(activeTab?.document && activeTab.document.image_paths.some((path) => imageBackups[path]));
   const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, setSearchExpandedIds);
+  const { cropTarget, startCrop, cancelCrop } = useCropEditor();
   const restoringSearchFor = useRef<string | null>(null);
 
   useLayoutEffect(() => {
@@ -78,6 +161,10 @@ export function App() {
     search.setCaseSensitive(activeTab.search.caseSensitive);
     search.setActiveIndex(activeTab.search.activeIndex);
   }, [activeTab?.id]);
+
+  useEffect(() => {
+    if (activeTab?.searchOpen) window.requestAnimationFrame(() => searchInputRef.current?.focus());
+  }, [activeTab?.id, activeTab?.searchOpen]);
 
   useEffect(() => {
     if (!activeTab) return;
@@ -93,6 +180,21 @@ export function App() {
     const frame = window.requestAnimationFrame(() => { if (containerRef.current) containerRef.current.scrollTop = activeTab.scrollTop; });
     return () => window.cancelAnimationFrame(frame);
   }, [activeTab?.id, activeTab?.document?.path]);
+
+  useEffect(() => {
+    const paths = activeTab?.document?.image_paths ?? [];
+    if (paths.length === 0) return;
+    let disposed = false;
+    void Promise.all(paths.map(async (path) => [path, await hasImageBackup(path)] as const))
+      .then((entries) => {
+        if (!disposed) setImageBackups((current) => ({ ...current, ...Object.fromEntries(entries) }));
+      })
+      .catch(() => {
+        // Backup status is supplemental; crop/restore errors are surfaced by
+        // their own operations and should not interrupt document viewing.
+      });
+    return () => { disposed = true; };
+  }, [activeTab?.id, activeTab?.document?.image_paths]);
 
   const loadTab = useCallback(async (id: string, path: string, generation: number) => {
     const loadKey = `${id}:${generation}`;
@@ -121,11 +223,15 @@ export function App() {
     }
   }, [tabsState.tabs, loadTab]);
 
+  const watchTargetKey = JSON.stringify(
+    [...new Set(tabsState.tabs.flatMap((tab) => tab.document ? [tab.document.path, ...tab.document.image_paths] : []))].sort(),
+  );
+
   useEffect(() => {
-    const targets = tabsState.tabs.flatMap((tab) => tab.document ? [tab.document.path, ...tab.document.image_paths] : []);
+    const targets: string[] = JSON.parse(watchTargetKey);
     if (autoReload !== "off" && targets.length > 0) void syncWatchTargets(windowLabel, targets);
     if (autoReload === "off") void removeWindowWatchTargets(windowLabel);
-  }, [tabsState.tabs, autoReload, windowLabel]);
+  }, [watchTargetKey, autoReload, windowLabel]);
 
   useEffect(() => () => { void removeWindowWatchTargets(windowLabel); }, [windowLabel]);
 
@@ -141,12 +247,49 @@ export function App() {
   }, [contextTab]);
 
   const reload = useCallback(() => {
-    if (activeTab) { dispatch({ type: "RELOAD", id: activeTab.id }); setHasExternalChange(false); }
+    if (activeTab) dispatch({ type: "RELOAD", id: activeTab.id });
   }, [activeTab]);
 
-  const foldAll = useCallback((command: "collapse" | "expand") => {
-    window.dispatchEvent(new CustomEvent("markdown-fold-command", { detail: command }));
-  }, []);
+  const applyFoldPreset = useCallback((preset: "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset") => {
+    if (!activeTab) return;
+    if (preset === "reset") {
+      const sections = [...(markdownRef.current?.querySelectorAll<HTMLElement>(".fold-section[data-fold-id]") ?? [])];
+      const expanded = Object.fromEntries(sections.flatMap((section) => section.dataset.foldId ? [[section.dataset.foldId, false] as const] : []));
+      setFoldStates((current) => {
+        const next = { ...current, [activeTab.path]: expanded };
+        void saveFoldState(activeTab.path, {}).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
+        return next;
+      });
+      return;
+    }
+    const sections = [...(markdownRef.current?.querySelectorAll<HTMLElement>(".fold-section[data-fold-id]") ?? [])];
+    if (!sections.length) return;
+    const headingLevel = (section: HTMLElement) => Number(section.querySelector(":scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6")?.tagName.slice(1) ?? 6);
+    const currentSection = preset === "current" ? sections.reduce<HTMLElement | null>((nearest, section) => {
+      const top = section.getBoundingClientRect().top;
+      return top <= (containerRef.current?.getBoundingClientRect().top ?? 0) && (!nearest || top > nearest.getBoundingClientRect().top) ? section : nearest;
+    }, null) ?? sections[0] : null;
+    setFoldStates((current) => {
+      const next = { ...current[activeTab.path] };
+      for (const section of sections) {
+        const id = section.dataset.foldId;
+        if (!id) continue;
+        next[id] = preset === "collapse" ? true
+          : preset === "expand" ? false
+          : preset === "current" ? section !== currentSection
+          : headingLevel(section) > Number(preset.slice(1));
+      }
+      void saveFoldState(activeTab.path, next).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
+      return { ...current, [activeTab.path]: next };
+    });
+  }, [activeTab]);
+
+  const toggleFoldAll = useCallback(() => {
+    if (!activeTab) return;
+    const toggles = [...(markdownRef.current?.querySelectorAll<HTMLButtonElement>(".fold-toggle") ?? [])];
+    const allCollapsed = toggles.length > 0 && toggles.every((toggle) => toggle.getAttribute("aria-expanded") === "false");
+    applyFoldPreset(allCollapsed ? "expand" : "collapse");
+  }, [activeTab, applyFoldPreset]);
 
   const handleFoldChange = useCallback((foldId: string, collapsed: boolean) => {
     if (!activeTab || !foldId) return;
@@ -169,9 +312,31 @@ export function App() {
 
   const closeTab = useCallback((id: string) => {
     const tab = tabsState.tabs.find((candidate) => candidate.id === id);
-    if (tab) setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, search: tab.search }, ...previous].slice(0, 50));
+    if (tab) setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
     dispatch({ type: "CLOSE", id });
   }, [tabsState.tabs]);
+
+  const closeActiveTab = useCallback(() => {
+    if (!activeTab) return;
+    if (tabsState.tabs.length === 1) void getCurrentWindow().close();
+    else closeTab(activeTab.id);
+  }, [activeTab, closeTab, tabsState.tabs.length]);
+
+  const activateRelativeTab = useCallback((delta: number) => {
+    const index = tabsState.tabs.findIndex((tab) => tab.id === tabsState.activeId);
+    if (index < 0 || tabsState.tabs.length < 2) return;
+    dispatch({ type: "ACTIVATE", id: tabsState.tabs[(index + delta + tabsState.tabs.length) % tabsState.tabs.length].id });
+  }, [tabsState.activeId, tabsState.tabs]);
+
+  const openSearch = useCallback(() => {
+    if (activeTab) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
+  }, [activeTab]);
+
+  const closeSearch = useCallback(() => {
+    if (!activeTab) return;
+    search.clear();
+    dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: false });
+  }, [activeTab, search]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -194,57 +359,61 @@ export function App() {
 
       if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "t") {
         event.preventDefault();
-        foldAll("collapse");
+        toggleFoldAll();
         return;
       }
 
       if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "f") {
         event.preventDefault();
-        searchInputRef.current?.focus();
+        openSearch();
         return;
       }
-      if (event.key === "Escape" && document.activeElement === searchInputRef.current) {
+      if (event.key === "Escape" && activeTab?.searchOpen && !cropTarget) {
         event.preventDefault();
-        search.clear();
-        searchInputRef.current?.blur();
+        closeSearch();
         return;
       }
 
       if (!event.ctrlKey || event.altKey || event.metaKey) return;
-      if (event.key === "+" || event.key === "=") {
+      if (event.key.toLowerCase() === "w") {
         event.preventDefault();
-        setZoom((current) => Math.min(200, current + 10));
+        closeActiveTab();
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        activateRelativeTab(event.shiftKey ? -1 : 1);
+      } else if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        updateZoom((current) => moveZoomLevel(current, 1));
       } else if (event.key === "-") {
         event.preventDefault();
-        setZoom((current) => Math.max(50, current - 10));
+        updateZoom((current) => moveZoomLevel(current, -1));
       } else if (event.key === "0") {
         event.preventDefault();
-        setZoom(100);
+        updateZoom(100);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closedTabs, foldAll, reload, search]);
+  }, [activeTab?.searchOpen, activateRelativeTab, closeActiveTab, closeSearch, closedTabs, cropTarget, openSearch, reload, search, toggleFoldAll, updateZoom]);
 
   const updateImageVersion = useCallback((imgPath: string) => {
     setImageVersions((previous) => ({ ...previous, [imgPath]: (previous[imgPath] || 0) + 1 }));
   }, []);
 
-  const { cropTarget, startCrop, cancelCrop } = useCropEditor();
-
   const handleMarkdownChanged = useCallback(
-    (path: string) => {
-      const tab = tabsState.tabs.find((candidate) => candidate.path === path);
-      if (!tab) return;
-      if (autoReload === "on") dispatch({ type: "RELOAD", id: tab.id });
-      else setHasExternalChange(true);
+    ({ path, changeKind }: { path: string; changeKind: string }) => {
+      const tabs = tabsState.tabs.filter((candidate) => candidate.path === path);
+      if (!tabs.length) return;
+      const canReload = changeKind !== "deleted" && changeKind !== "renamed";
+      if (autoReload === "on" && canReload) tabs.forEach((tab) => dispatch({ type: "RELOAD", id: tab.id }));
+      else tabs.forEach((tab) => dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true }));
     },
     [tabsState.tabs, autoReload]
   );
 
   const handleImageChanged = useCallback(
-    (imgPath: string) => {
-      updateImageVersion(imgPath);
+    ({ path, changeKind }: { path: string; changeKind: string }) => {
+      if (changeKind !== "deleted" && changeKind !== "renamed") updateImageVersion(path);
     },
     [updateImageVersion]
   );
@@ -255,6 +424,7 @@ export function App() {
     cancelCrop();
     if (cropTarget) {
       updateImageVersion(cropTarget.fullPath);
+      setImageBackups((current) => ({ ...current, [cropTarget.fullPath]: backupAvailable }));
       setToast({
         id: String(Date.now()),
         message: `${filename} を更新しました`,
@@ -269,6 +439,7 @@ export function App() {
       const restored = await restoreImage(path);
       if (restored) {
         updateImageVersion(path);
+        setImageBackups((current) => ({ ...current, [path]: false }));
         setToast({
           id: String(Date.now()),
           message: `元画像を復元しました`,
@@ -296,20 +467,25 @@ export function App() {
   return (
     <div className="app-container">
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
-      <HeaderBar filePath={activeTab?.path ?? null} onReload={reload} />
-      <div className="view-controls">
-        <span className="fold-controls" aria-label="見出しの折りたたみ">
-          <button type="button" onClick={() => foldAll("collapse")}>Fold all</button>
-          <button type="button" onClick={() => foldAll("expand")}>Unfold all</button>
-        </span>
-        <label>Theme: <select value={theme} onChange={(e) => setTheme(e.target.value)}>{["system", "dark", "light", "github", "solarized", "nord"].map((x) => <option key={x}>{x}</option>)}</select></label>
-        <label>View: <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>{["standard", "wide", "compact", "print", "presentation", "images"].map((x) => <option key={x}>{x}</option>)}</select></label>
-        <label>Zoom: <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>{[50, 67, 80, 90, 100, 110, 125, 150, 175, 200].map((x) => <option key={x} value={x}>{x}%</option>)}</select></label>
-        <label>Auto reload: <select value={autoReload} onChange={(event) => setAutoReload(event.target.value as typeof autoReload)}><option value="on">ON</option><option value="manual">手動のみ</option><option value="off">OFF</option></select></label>
-        <label>Mermaid: <select value={mermaidMode} onChange={(event) => setMermaidMode(event.target.value as typeof mermaidMode)}><option value="on">ON</option><option value="off">OFF</option><option value="error-code">エラー時コード</option><option value="always-code">常にコード</option></select></label>
-        <span className="external-actions"><button type="button" disabled={!activeTab} onClick={() => openActiveWith("folder")}>フォルダを開く</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("vscode")}>VS Code</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("notepad")}>メモ帳</button></span>
-        {autoReload === "manual" && hasExternalChange && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
-        <SearchBar search={search} inputRef={searchInputRef} />
+      <HeaderBar filePath={activeTab?.path ?? null} onReload={reload} onSearch={openSearch} />
+      <div className="view-controls" aria-label="表示と文書の操作">
+        <div className="control-group">
+          <span className="control-group__title">表示</span>
+          <label>テーマ<select aria-label="テーマ" value={theme} onChange={(e) => updateTheme(e.target.value)}><option value="system">システム</option><option value="dark">ダーク</option><option value="light">ライト</option><option value="github">GitHub</option><option value="solarized">Solarized</option><option value="nord">Nord</option></select></label>
+          <label>レイアウト<select aria-label="レイアウト" value={viewMode} onChange={(e) => updateViewMode(e.target.value)}><option value="standard">標準</option><option value="wide">ワイド</option><option value="compact">コンパクト</option><option value="print">印刷</option><option value="presentation">プレゼン</option><option value="images">画像中心</option></select></label>
+        </div>
+        <div className="control-group fold-controls">
+          <span className="control-group__title">見出し</span>
+          <label>折りたたみ<select aria-label="見出しの折りたたみ" defaultValue="" onChange={(event) => { const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset"; if (value) applyFoldPreset(value); event.currentTarget.value = ""; }}>
+            <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
+          </select></label>
+        </div>
+        <div className="control-group external-actions">
+          <span className="control-group__title">外部で開く</span>
+          <button type="button" disabled={!activeTab} onClick={() => openActiveWith("folder")}>フォルダー</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("vscode")}>VS Code</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("notepad")}>メモ帳</button>
+        </div>
+        {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
+        {activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
       </div>
 
       <main className={`preview-container view-${viewMode}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: zoom / 100 }}>
@@ -336,6 +512,10 @@ export function App() {
             foldState={foldStates[activeTab.path]}
             onFoldChange={handleFoldChange}
             mermaidMode={mermaidMode}
+            windowId={windowLabel}
+            tabId={activeTab.id}
+            imageDisplaySizes={activeTab.imageDisplaySizes}
+            onImageDisplaySizeChange={(source, size) => dispatch({ type: "IMAGE_DISPLAY_SIZE", id: activeTab.id, source, size })}
             searchExpandedIds={searchExpandedIds}
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
           />
@@ -364,7 +544,19 @@ export function App() {
         onRestore={handleRestore}
         onClose={() => setToast(null)}
       />
-      <StatusBar document={activeTab?.document ?? null} autoReload={autoReload} zoom={zoom} changed={hasExternalChange} />
+      <StatusBar
+        document={activeTab?.document ?? null}
+        autoReload={autoReload}
+        onAutoReloadChange={updateAutoReload}
+        zoom={zoom}
+        onZoomChange={updateZoom}
+        mermaidMode={mermaidMode}
+        onMermaidModeChange={updateMermaidMode}
+        mermaidStatus={mermaidStatus.pending ? `描画中 ${mermaidStatus.pending}` : mermaidStatus.error ? "エラー" : mermaidStatus.rendered ? `描画済み ${mermaidStatus.rendered}` : "対象なし"}
+        mermaidErrorCount={mermaidStatus.errorCount}
+        imageBackupAvailable={activeImageBackupAvailable}
+        changed={activeTab?.externalChanged ?? false}
+      />
       {contextTab && (() => {
         const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);
         if (!tab) return null;

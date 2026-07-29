@@ -1,18 +1,24 @@
-import { parse, stringify } from "yaml";
+const MERMAID_THEMES = new Set(["default", "dark", "base", "neutral"]);
 
-const securedKeys = new Set(["securityLevel", "startOnLoad", "secure"]);
-
-/** Builds a render-only Mermaid source without mutating the user's Markdown. */
+/**
+ * Builds an isolated Mermaid input without mutating the user's Markdown.
+ *
+ * Mermaid accepts configuration from both YAML frontmatter and `%%{…}%%`
+ * directives.  Filtering known-dangerous keys is not sufficient because new
+ * Mermaid options can also alter the SVG/HTML sanitisation path.  Therefore
+ * neither user-controlled configuration channel is forwarded at all.  The
+ * only generated configuration is the application-selected theme.
+ */
 export function mergeMermaidFrontmatter(source: string, theme: string): string {
-  const withoutDirectives = source.replace(/^%%\{[\s\S]*?\}%%\s*(?:\r?\n)?/gm, "");
-  const match = withoutDirectives.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n?/);
-  const body = match ? withoutDirectives.slice(match[0].length) : withoutDirectives;
-  const parsed = match ? (parse(match[1]) as Record<string, unknown> ?? {}) : {};
-  const config = typeof parsed.config === "object" && parsed.config !== null
-    ? { ...(parsed.config as Record<string, unknown>) }
-    : {};
+  // Directives may span multiple lines. Remove every standalone directive,
+  // rather than trying to parse or selectively retain its config object.
+  const withoutDirectives = source.replace(/^[\t ]*%%\{[\s\S]*?\}%%[\t ]*(?:\r?\n|$)/gm, "");
 
-  for (const key of securedKeys) delete config[key];
-  config.theme = theme;
-  return `---\n${stringify({ ...parsed, config }).trimEnd()}\n---\n${body}`;
+  // Drop only a complete leading YAML document. The diagram body remains
+  // byte-for-byte intact, including malformed frontmatter-like text.
+  const frontmatter = withoutDirectives.match(/^---[\t ]*\r?\n[\s\S]*?\r?\n---[\t ]*(?:\r?\n|$)/);
+  const body = frontmatter ? withoutDirectives.slice(frontmatter[0].length) : withoutDirectives;
+  const safeTheme = MERMAID_THEMES.has(theme) ? theme : "default";
+
+  return `---\nconfig:\n  theme: ${safeTheme}\n---\n${body}`;
 }

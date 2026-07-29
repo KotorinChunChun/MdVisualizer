@@ -14,6 +14,8 @@ export interface CropImageRequest {
   y: number;
   width: number;
   height: number;
+  expectedSourceWidth?: number;
+  expectedSourceHeight?: number;
 }
 
 export interface CropImageResult {

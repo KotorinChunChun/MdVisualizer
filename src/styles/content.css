@@ -1,0 +1,35 @@
+/*
+ * Content layout overrides.  This file is intentionally separate so the
+ * final UI integration can import it after the legacy app stylesheet.
+ */
+.markdown-body,
+.view-wide .markdown-body {
+  width: 100%;
+  max-width: none;
+}
+
+.table-scroll {
+  overflow-x: visible;
+  max-width: 100%;
+}
+
+.table-scroll table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.table-scroll th,
+.table-scroll td {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+@media (max-width: 640px) {
+  .table-scroll th,
+  .table-scroll td {
+    padding: 6px 8px;
+  }
+}

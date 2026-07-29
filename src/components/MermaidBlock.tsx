@@ -1,26 +1,103 @@
-import { useEffect, useId, useState } from "react";
-import { renderMermaid } from "../lib/mermaidService";
+import { useEffect, useId, useRef, useState } from "react";
+import { mermaidInputError, mermaidRenderId, renderMermaid } from "../lib/mermaidService";
+import { removeMermaidBlockStatus, setMermaidBlockStatus } from "../lib/mermaidStatus";
 
-interface MermaidBlockProps { source: string; theme: string; mode: "on" | "off" | "error-code" | "always-code"; }
+interface MermaidBlockProps {
+  source: string;
+  theme: string;
+  mode: "on" | "off" | "error-code" | "always-code";
+  /** Optional host identities supplied by a multi-window/tab integration. */
+  windowId?: string;
+  tabId?: string;
+  blockId?: string;
+  diagramIndex?: number;
+  diagramCount?: number;
+}
 
-export function MermaidBlock({ source, theme, mode }: MermaidBlockProps) {
-  const [state, setState] = useState<{ svg: string | null; error: string | null }>({ svg: null, error: null });
+type RenderState = { svg: string | null; error: string | null; pending: boolean };
+
+export function MermaidBlock({
+  source,
+  theme,
+  mode,
+  windowId,
+  tabId,
+  blockId,
+  diagramIndex,
+  diagramCount,
+}: MermaidBlockProps) {
+  const [state, setState] = useState<RenderState>({ svg: null, error: null, pending: false });
   const [showDetails, setShowDetails] = useState(false);
   const [zoomed, setZoomed] = useState(false);
-  const id = useId().replace(/:/g, "-");
+  const [visible, setVisible] = useState(false);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const generationRef = useRef(0);
+  const localId = useId().replace(/:/g, "-");
+  const stableBlockId = blockId ?? localId;
+  const statusId = mermaidRenderId({ windowId, tabId, blockId: stableBlockId });
+
+  useEffect(() => () => removeMermaidBlockStatus(statusId), [statusId]);
+
   useEffect(() => {
-    let cancelled = false;
-    if (mode === "off" || mode === "always-code") return;
-    if (source.length > 500_000 || (source.match(/(?:-->|---|==>|-.->)/g)?.length ?? 0) > 2_000) { setState({ svg: null, error: "Mermaid source is too large to render." }); return; }
-    setState({ svg: null, error: null });
-    void renderMermaid(source, `mermaid-${id}`, theme)
-      .then((svg) => { if (!cancelled) setState({ svg, error: null }); })
-      .catch((error) => { if (!cancelled) setState({ svg: null, error: String(error) }); });
-    return () => { cancelled = true; };
-  }, [source, theme, id, mode]);
+    const element = hostRef.current;
+    if (!element || mode === "off" || mode === "always-code") return;
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+      setVisible(true);
+      return;
+    }
+    setVisible(false);
+    const observer = new window.IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisible(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "320px 0px" });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [mode, source, theme, statusId]);
+
+  useEffect(() => {
+    if (mode === "off" || mode === "always-code") {
+      setState({ svg: null, error: null, pending: false });
+      removeMermaidBlockStatus(statusId);
+      return;
+    }
+    if (!visible) return;
+
+    const generation = ++generationRef.current;
+    const renderId = mermaidRenderId({ windowId, tabId, blockId: stableBlockId, generation }, `mermaid-${localId}`);
+    const inputError = mermaidInputError(source, { diagramIndex, diagramCount });
+    if (inputError) {
+      setState({ svg: null, error: inputError, pending: false });
+      setMermaidBlockStatus(statusId, { state: "error", error: inputError });
+      return;
+    }
+
+    setShowDetails(false);
+    setState({ svg: null, error: null, pending: true });
+    setMermaidBlockStatus(statusId, { state: "pending" });
+    let disposed = false;
+    void renderMermaid(source, renderId, theme, { windowId, tabId, blockId: stableBlockId, generation, diagramIndex, diagramCount })
+      .then((svg) => {
+        if (disposed || generation !== generationRef.current) return;
+        setState({ svg, error: null, pending: false });
+        setMermaidBlockStatus(statusId, { state: "rendered" });
+      })
+      .catch((error: unknown) => {
+        if (disposed || generation !== generationRef.current) return;
+        const message = error instanceof Error ? error.message : String(error);
+        setState({ svg: null, error: message, pending: false });
+        setMermaidBlockStatus(statusId, { state: "error", error: message });
+      });
+    return () => { disposed = true; };
+  }, [diagramCount, diagramIndex, localId, mode, source, stableBlockId, statusId, tabId, theme, visible, windowId]);
 
   if (mode === "off" || mode === "always-code") return <pre className="mermaid-source"><code>{source}</code></pre>;
-  if (state.error) return <div className="mermaid-error"><strong>Mermaid を描画できません。</strong><div><button type="button" onClick={() => setShowDetails((value) => !value)}>エラー詳細</button><button type="button" onClick={() => setShowDetails(true)}>コードを表示</button></div>{showDetails && <><pre>{state.error}</pre><pre className="mermaid-source"><code>{source}</code></pre></>}</div>;
-  if (!state.svg) return <div className="mermaid-loading">Rendering Mermaid…</div>;
-  return <><button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => setZoomed(true)} dangerouslySetInnerHTML={{ __html: state.svg }} />{zoomed && <div className="mermaid-modal" role="dialog" aria-modal="true" onClick={() => setZoomed(false)}><div onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => setZoomed(false)}>閉じる</button><div dangerouslySetInnerHTML={{ __html: state.svg }} /></div></div>}</>;
+  const shouldShowCode = mode === "error-code" && state.error !== null;
+  return <div ref={hostRef} className="mermaid-container">
+    {state.error && <div className="mermaid-error"><strong>Mermaid を描画できません。</strong><div><button type="button" onClick={() => setShowDetails((value) => !value)}>エラー詳細</button>{!shouldShowCode && <button type="button" onClick={() => setShowDetails(true)}>コードを表示</button>}</div>{showDetails && <pre>{state.error}</pre>}{(showDetails || shouldShowCode) && <pre className="mermaid-source"><code>{source}</code></pre>}</div>}
+    {!state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
+    {!state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
+    {state.svg && <><button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => setZoomed(true)} dangerouslySetInnerHTML={{ __html: state.svg }} />{zoomed && <div className="mermaid-modal" role="dialog" aria-modal="true" onClick={() => setZoomed(false)}><div onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => setZoomed(false)}>閉じる</button><div dangerouslySetInnerHTML={{ __html: state.svg }} /></div></div>}</>}
+  </div>;
 }

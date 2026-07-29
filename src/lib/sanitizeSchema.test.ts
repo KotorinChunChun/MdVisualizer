@@ -7,4 +7,13 @@ describe("markdownSanitizeSchema", () => {
     expect(markdownSanitizeSchema.attributes["*"]).not.toContain("onClick");
     expect(markdownSanitizeSchema.attributes["*"]).not.toContain("style");
   });
+
+  it("limits class names to renderer-required patterns", () => {
+    const classRule = markdownSanitizeSchema.attributes["*"]
+      .find((attribute): attribute is [string, RegExp] => Array.isArray(attribute) && attribute[0] === "className");
+    expect(classRule?.[1].test("language-mermaid")).toBe(true);
+    expect(classRule?.[1].test("hljs-keyword")).toBe(true);
+    expect(classRule?.[1].test("fold-section")).toBe(true);
+    expect(classRule?.[1].test("arbitrary-user-class")).toBe(false);
+  });
 });

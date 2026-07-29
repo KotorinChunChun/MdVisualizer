@@ -1,10 +1,12 @@
 use crate::backup::BackupManager;
 use crate::watcher::FileWatcher;
-use std::sync::Mutex;
 use std::collections::HashMap;
+use std::sync::atomic::AtomicU64;
+use std::sync::Mutex;
 pub struct AppState {
     pub initial_files: Mutex<HashMap<String, Vec<String>>>,
     pub watcher: Mutex<Option<FileWatcher>>,
+    pub window_sequence: AtomicU64,
     pub backup_mgr: BackupManager,
 }
 
@@ -13,6 +15,7 @@ impl AppState {
         Ok(Self {
             initial_files: Mutex::new(HashMap::from([("main".to_string(), initial_files)])),
             watcher: Mutex::new(None),
+            window_sequence: AtomicU64::new(1),
             backup_mgr: BackupManager::new()?,
         })
     }

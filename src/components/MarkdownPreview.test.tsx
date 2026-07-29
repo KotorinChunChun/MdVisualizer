@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { MarkdownPreview } from "./MarkdownPreview";
+import { countMermaidFences, MarkdownPreview } from "./MarkdownPreview";
 
 vi.mock("./ImageRenderer", () => ({ ImageRenderer: () => null }));
 
@@ -21,5 +21,41 @@ describe("MarkdownPreview sanitization", () => {
     fireEvent.click(button);
     expect(button.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByText("Body").closest("section")?.querySelector(":scope > .fold-content")?.hasAttribute("hidden")).toBe(true);
+  });
+});
+
+describe("countMermaidFences", () => {
+  it("counts both backtick and tilde Mermaid fences", () => {
+    expect(countMermaidFences("```mermaid\ngraph TD\n```\n\n~~~Mermaid title\ngraph TD\n~~~")).toBe(2);
+  });
+
+  it("does not count Mermaid-looking lines inside another fenced block", () => {
+    expect(countMermaidFences("```text\n~~~mermaid\ngraph TD\n~~~\n```\n\n```mermaid\ngraph TD\n```"))
+      .toBe(1);
+  });
+
+  it("requires a matching closing fence before interpreting later fence-like lines", () => {
+    expect(countMermaidFences("````text\n```mermaid\ngraph TD\n```\n````\n\n~~~mermaid\ngraph TD\n~~~~"))
+      .toBe(1);
+  });
+
+  it("counts Mermaid fences in block quotes", () => {
+    expect(countMermaidFences("> ```mermaid\n> graph TD\n> ```")).toBe(1);
+  });
+
+  it("counts Mermaid fences in list items", () => {
+    expect(countMermaidFences("- Diagram\n\n  ```mermaid\n  graph TD\n  ```")).toBe(1);
+  });
+
+  it("counts nested quote and list Mermaid fences", () => {
+    expect(countMermaidFences("> - Diagram\n>\n>   ~~~mermaid\n>   graph TD\n>   ~~~")).toBe(1);
+  });
+
+  it("does not count Mermaid-looking content in a non-Mermaid fenced block", () => {
+    expect(countMermaidFences("> ```text\n> ```mermaid\n> ```\n> ```")).toBe(0);
+  });
+
+  it("does not count an indented code block that only looks like a Mermaid fence", () => {
+    expect(countMermaidFences("    ```mermaid\n    graph TD\n    ```")).toBe(0);
   });
 });

@@ -118,6 +118,8 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
         y: cropY,
         width: cropW,
         height: cropH,
+        expectedSourceWidth: naturalSize.w,
+        expectedSourceHeight: naturalSize.h,
       });
 
       onApply(target.filename, res.backup_available);

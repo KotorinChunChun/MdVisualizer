@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { getCacheBusterUrl } from "../lib/image";
-import { getFileName, resolveImageSrc } from "../lib/path";
+import { getFileName, isAbsoluteLocalPath, resolveImageSrc } from "../lib/path";
 import { CropTarget } from "../hooks/useCropEditor";
+import { InlineImageResizeOverlay } from "./InlineImageResizeOverlay";
+import { ImageSize, useInlineImageResize } from "../hooks/useInlineImageResize";
+import "../styles/inline-image-resize.css";
 
 interface ImageRendererProps {
   src?: string;
@@ -9,6 +12,9 @@ interface ImageRendererProps {
   baseDir: string;
   imageVersions: Record<string, number>;
   onStartCrop: (target: CropTarget) => void;
+  /** Optional controlled display size; callers can persist this per tab without changing image data. */
+  displaySize?: ImageSize | null;
+  onDisplaySizeChange?: (size: ImageSize) => void;
 }
 
 export const ImageRenderer: React.FC<ImageRendererProps> = ({
@@ -17,8 +23,19 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   baseDir,
   imageVersions,
   onStartCrop,
+  displaySize,
+  onDisplaySizeChange,
 }) => {
   const [loadError, setLoadError] = useState(false);
+  const {
+    imageRef,
+    size,
+    isResizing,
+    setInitialSize,
+    startResize,
+    resizeFromKeyboard,
+    consumeResizeClick,
+  } = useInlineImageResize({ resetKey: src, size: displaySize, onSizeChange: onDisplaySizeChange });
 
   if (!src) return null;
 
@@ -27,9 +44,11 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     src.toLowerCase().startsWith("http://") ||
     src.toLowerCase().startsWith("https://") ||
     src.toLowerCase().startsWith("data:");
+  // Only paths that the crop command can address are display-resizable.
+  const isEditableLocalImage = !isRemote && !src.toLowerCase().startsWith("file:");
 
   let fullPath = src;
-  if (!isRemote && !src.startsWith("/") && !src.includes(":\\")) {
+  if (!isRemote && !isAbsoluteLocalPath(src)) {
     const normalizedBase = baseDir.replace(/\\/g, "/").replace(/\/$/, "");
     const normalizedSrc = src.replace(/\\/g, "/").replace(/^\.\//, "");
     fullPath = `${normalizedBase}/${normalizedSrc}`;
@@ -47,7 +66,12 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   }
 
   const handleClick = (e: React.MouseEvent) => {
-    if (isRemote) return;
+    if (consumeResizeClick()) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (!isEditableLocalImage) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -59,13 +83,26 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   };
 
   return (
-    <img
-      src={displaySrc}
-      alt={alt}
-      className={`markdown-img ${!isRemote ? "croppable" : ""}`}
-      title={!isRemote ? "クリックしてクロップ編集" : alt}
-      onClick={handleClick}
-      onError={() => setLoadError(true)}
-    />
+    <span
+      className={`inline-image-resize ${isResizing ? "is-resizing" : ""}`}
+      style={size ? { width: `${size.width}px`, height: `${size.height}px` } : undefined}
+    >
+      <img
+        ref={imageRef}
+        src={displaySrc}
+        alt={alt}
+        className={`markdown-img inline-image-resize__image ${isEditableLocalImage ? "croppable" : ""}`}
+        title={isEditableLocalImage ? "クリックしてクロップ編集。枠のハンドルをドラッグして表示サイズを縮小" : alt}
+        onLoad={setInitialSize}
+        onClick={handleClick}
+        onError={() => setLoadError(true)}
+      />
+      {isEditableLocalImage && (
+        <InlineImageResizeOverlay
+          onPointerDown={startResize}
+          onKeyDown={resizeFromKeyboard}
+        />
+      )}
+    </span>
   );
 };

@@ -26,7 +26,8 @@ npm run tauri dev -- C:\Project\README.md C:\Project\design.markdown
 - Markdown 内 HTML の許可リストサニタイズ、GFM 表、コピー可能なコードブロック
 - Mermaid の遅延描画、テーマ反映、コード fallback、拡大表示
 - Shift_JIS / UTF-8 BOM / UTF-16 を含む文字コード検出とステータス表示
-- ファイル変更の Auto Reload（ON / 手動のみ / OFF）、F5 再読み込み
+- ステータスバーから変更できる Auto Reload（ON / 手動のみ / OFF）、Mermaid、ズーム
+- 画像ホバー時の8方向ハンドルによる非破壊の表示縮小
 - 画像クロップと起動中のバックアップ復元
 - テーマ、表示モード、ズーム、Mermaid、Auto Reload の安全な永続化
 
@@ -37,8 +38,10 @@ npm run tauri dev -- C:\Project\README.md C:\Project\design.markdown
 | 検索 | `Ctrl+F` |
 | 検索を閉じる | `Esc` |
 | 手動再読み込み | `F5` |
+| 現在のタブを閉じる | `Ctrl+W` |
 | 閉じたタブを復元 | `Ctrl+Shift+T` |
-| 見出しをすべて折りたたむ | `Ctrl+Alt+T` |
+| 次／前のタブへ移動 | `Ctrl+Tab` / `Ctrl+Shift+Tab` |
+| 見出しの全展開／全折りたたみを切り替える | `Ctrl+Alt+T` |
 | ズーム | `Ctrl` + `+` / `-` / `0` |
 | 全画面 | `F11` |
 
@@ -57,6 +60,6 @@ release EXEで10,000行のMarkdownを5回起動した測定では、起動時間
 
 ## セキュリティとデータ
 
-Markdown 内の HTML は許可リストで処理し、イベント属性・任意 style・危険な URL スキームを除去します。外部リンクは HTTP(S) のみを OS ブラウザへ渡します。
+Markdown 内の HTML は許可リストで処理し、イベント属性・任意 style・危険な URL スキームを除去します。外部リンクは HTTP(S) と `mailto:` のみを OS へ渡します。
 
 設定は OS レベルのファイルロックを取り、一時ファイルを flush してから原子的に置換します。壊れた設定 JSON は日時付きで退避して既定値から起動します。

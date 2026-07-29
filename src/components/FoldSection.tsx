@@ -1,4 +1,5 @@
 import { Children, type ReactElement, type ReactNode, useEffect, useState } from "react";
+import { collapsedForFoldCommand, FOLD_COMMAND_EVENT, type FoldCommand, type FoldCommandName } from "../lib/foldSections";
 
 interface FoldSectionProps {
   children?: ReactNode;
@@ -17,16 +18,17 @@ export function FoldSection({ children, foldId = "", collapsed: controlledCollap
   const heading = parts[0] as ReactElement<{ children?: ReactNode; className?: string }> | undefined;
   const content = parts[1];
   const HeadingTag = (heading?.type ?? "h2") as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  const headingLevel = Number(HeadingTag.slice(1));
 
   useEffect(() => {
     const handleCommand = (event: Event) => {
-      const command = (event as CustomEvent<"collapse" | "expand">).detail;
-      if (command === "collapse") setCollapsed(true);
-      if (command === "expand") setCollapsed(false);
+      const detail = (event as CustomEvent<FoldCommand | FoldCommandName>).detail;
+      const next = collapsedForFoldCommand(detail, headingLevel, foldId);
+      if (next !== undefined) setCollapsed(next);
     };
-    window.addEventListener("markdown-fold-command", handleCommand);
-    return () => window.removeEventListener("markdown-fold-command", handleCommand);
-  }, [foldId, onCollapsedChange]);
+    window.addEventListener(FOLD_COMMAND_EVENT, handleCommand);
+    return () => window.removeEventListener(FOLD_COMMAND_EVENT, handleCommand);
+  }, [foldId, headingLevel, onCollapsedChange]);
 
   return (
     <section className="fold-section" data-fold-id={foldId}>

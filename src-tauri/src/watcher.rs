@@ -1,118 +1,149 @@
 use crate::errors::{AppError, AppResult};
+use notify::event::{ModifyKind, RenameMode};
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter};
 
+#[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum FileChangeKind {
+    Modified,
+    Created,
+    Deleted,
+    Renamed,
+    Replaced,
+}
+
 #[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct FileChangedPayload {
+    pub window_label: String,
     pub path: String,
+    pub change_kind: FileChangeKind,
+}
+
+#[derive(Clone, Debug)]
+struct RawChange {
+    paths: Vec<PathBuf>,
+    kind: FileChangeKind,
 }
 
 pub struct FileWatcher {
     _app_handle: AppHandle,
-    _tx: Sender<PathBuf>,
-    watched_paths: Arc<Mutex<HashSet<PathBuf>>>,
+    _tx: Sender<RawChange>,
+    watched_roots: HashSet<PathBuf>,
     window_targets: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
-    _watcher: RecommendedWatcher,
+    watcher: RecommendedWatcher,
 }
 
 impl FileWatcher {
     pub fn new(app_handle: AppHandle) -> AppResult<Self> {
-        let (tx_event, rx_event) = channel::<PathBuf>();
-        let watched_paths = Arc::new(Mutex::new(HashSet::new()));
+        let (tx_event, rx_event) = channel::<RawChange>();
         let window_targets = Arc::new(Mutex::new(HashMap::<String, HashSet<PathBuf>>::new()));
+        let targets_for_worker = Arc::clone(&window_targets);
+        let app_handle_for_worker = app_handle.clone();
 
-        let window_targets_clone = Arc::clone(&window_targets);
-        let app_handle_clone = app_handle.clone();
-
-        // デバウンス処理ワーカースレッド
+        // Watching parent directories keeps a subscription alive when editors
+        // replace a file by renaming a temporary file over it.
         thread::spawn(move || {
-            let mut pending_changes: std::collections::HashMap<PathBuf, Instant> =
-                std::collections::HashMap::new();
-            let debounce_duration = Duration::from_millis(300);
-
+            let mut pending: HashMap<PathBuf, (FileChangeKind, Instant)> = HashMap::new();
+            const DEBOUNCE: Duration = Duration::from_millis(300);
             loop {
-                // チャンネルからの新規変更通知を受信
-                while let Ok(path) = rx_event.recv_timeout(Duration::from_millis(50)) {
-                    pending_changes.insert(path, Instant::now());
-                }
-
-                let now = Instant::now();
-                let mut ready_paths = Vec::new();
-
-                pending_changes.retain(|path, last_time| {
-                    if now.duration_since(*last_time) >= debounce_duration {
-                        ready_paths.push(path.clone());
-                        false
-                    } else {
-                        true
-                    }
-                });
-
-                for path in ready_paths {
-                    let targets = window_targets_clone.lock().unwrap();
-                    let owners: Vec<String> = targets
-                        .iter()
-                        .filter_map(|(label, paths)| paths.contains(&path).then(|| label.clone()))
-                        .collect();
-                    if !owners.is_empty() {
-                        let path_str = path.to_string_lossy().to_string();
-                        let payload = FileChangedPayload {
-                            path: path_str.clone(),
-                        };
-
-                        let ext = path
-                            .extension()
-                            .and_then(|e| e.to_str())
-                            .unwrap_or("")
-                            .to_lowercase();
-
-                        for label in owners {
-                            if ext == "md" || ext == "markdown" {
-                                let _ = app_handle_clone.emit_to(&label, "markdown-changed", payload.clone());
-                            } else {
-                                let _ = app_handle_clone.emit_to(&label, "image-changed", payload.clone());
-                            }
+                while let Ok(change) = rx_event.recv_timeout(Duration::from_millis(50)) {
+                    let tracked: Vec<PathBuf> = targets_for_worker
+                        .lock()
+                        .map(|targets| {
+                            targets
+                                .values()
+                                .flat_map(|paths| paths.iter().cloned())
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    for target in tracked {
+                        if change.paths.iter().any(|path| paths_match(path, &target)) {
+                            pending
+                                .entry(target)
+                                .and_modify(|(existing, updated)| {
+                                    *existing = merge_change_kind(*existing, change.kind);
+                                    *updated = Instant::now();
+                                })
+                                .or_insert((change.kind, Instant::now()));
                         }
                     }
                 }
 
-                thread::sleep(Duration::from_millis(50));
+                let now = Instant::now();
+                let ready: Vec<(PathBuf, FileChangeKind)> = pending
+                    .iter()
+                    .filter_map(|(path, (kind, updated))| {
+                        (now.duration_since(*updated) >= DEBOUNCE).then(|| (path.clone(), *kind))
+                    })
+                    .collect();
+                for (path, kind) in ready {
+                    pending.remove(&path);
+                    let owners: Vec<String> = targets_for_worker
+                        .lock()
+                        .map(|targets| {
+                            targets
+                                .iter()
+                                .filter_map(|(label, paths)| {
+                                    paths.contains(&path).then(|| label.clone())
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    let is_markdown = matches!(
+                        path.extension()
+                            .and_then(|extension| extension.to_str())
+                            .map(str::to_ascii_lowercase)
+                            .as_deref(),
+                        Some("md") | Some("markdown")
+                    );
+                    for label in owners {
+                        let payload = FileChangedPayload {
+                            window_label: label.clone(),
+                            path: path.to_string_lossy().to_string(),
+                            change_kind: kind,
+                        };
+                        let event = if is_markdown {
+                            "markdown-changed"
+                        } else {
+                            "image-changed"
+                        };
+                        let _ = app_handle_for_worker.emit_to(&label, event, payload);
+                    }
+                }
             }
         });
 
         let tx_for_watcher = tx_event.clone();
-
         let watcher = RecommendedWatcher::new(
-            move |res: Result<Event, notify::Error>| {
-                if let Ok(event) = res {
-                    match event.kind {
-                        EventKind::Modify(_) | EventKind::Create(_) | EventKind::Remove(_) => {
-                            for path in event.paths {
-                                let canonical = path.canonicalize().unwrap_or(path);
-                                let _ = tx_for_watcher.send(canonical);
-                            }
-                        }
-                        _ => {}
+            move |result: Result<Event, notify::Error>| {
+                if let Ok(event) = result {
+                    if let Some(kind) = classify_event(&event) {
+                        let _ = tx_for_watcher.send(RawChange {
+                            paths: event.paths,
+                            kind,
+                        });
                     }
                 }
             },
             Config::default(),
         )
-        .map_err(|e| AppError::WatchError(e.to_string()))?;
+        .map_err(|error| AppError::WatchError(error.to_string()))?;
 
         Ok(Self {
             _app_handle: app_handle,
             _tx: tx_event,
-            watched_paths,
+            watched_roots: HashSet::new(),
             window_targets,
-            _watcher: watcher,
+            watcher,
         })
     }
 
@@ -122,57 +153,132 @@ impl FileWatcher {
         self.sync_window_targets("main", &targets)
     }
 
-    /// Replaces only one window's target set, preserving every other window's watches.
+    /// Replaces one window's target set, preserving watches owned by every
+    /// other window (including another window viewing the same file).
     pub fn sync_window_targets(&mut self, window_label: &str, targets: &[String]) -> AppResult<()> {
-        let normalized: HashSet<PathBuf> = targets
+        let normalized = targets
             .iter()
-            .map(|target| {
-                let path = PathBuf::from(target);
-                path.canonicalize().unwrap_or(path)
-            })
+            .map(|target| normalize_path(target))
             .collect();
         self.window_targets
             .lock()
-            .unwrap()
+            .map_err(|_| AppError::WatchError("watch target lock poisoned".into()))?
             .insert(window_label.to_owned(), normalized);
         self.reconcile_watches()
     }
 
     pub fn remove_window_targets(&mut self, window_label: &str) -> AppResult<()> {
-        self.window_targets.lock().unwrap().remove(window_label);
+        self.window_targets
+            .lock()
+            .map_err(|_| AppError::WatchError("watch target lock poisoned".into()))?
+            .remove(window_label);
         self.reconcile_watches()
     }
 
     fn reconcile_watches(&mut self) -> AppResult<()> {
-        let desired = desired_watch_paths(&self.window_targets.lock().unwrap());
-        let mut watched = self.watched_paths.lock().unwrap();
-
-        for path in watched.difference(&desired) {
-            let _ = self._watcher.unwatch(path);
+        let targets = self
+            .window_targets
+            .lock()
+            .map_err(|_| AppError::WatchError("watch target lock poisoned".into()))?
+            .clone();
+        let desired = desired_watch_roots(&targets);
+        let removed: Vec<PathBuf> = self.watched_roots.difference(&desired).cloned().collect();
+        let added: Vec<PathBuf> = desired.difference(&self.watched_roots).cloned().collect();
+        for root in removed {
+            let _ = self.watcher.unwatch(&root);
         }
-        for path in desired.difference(&watched.clone()) {
-            if path.exists() {
-                self._watcher
-                    .watch(path, RecursiveMode::NonRecursive)
-                    .map_err(|e| AppError::WatchError(e.to_string()))?;
+        for root in added {
+            if root.exists() {
+                self.watcher
+                    .watch(&root, RecursiveMode::NonRecursive)
+                    .map_err(|error| AppError::WatchError(error.to_string()))?;
             }
         }
-        *watched = desired;
+        self.watched_roots = desired;
         Ok(())
     }
 
+    /// Legacy all-window stop. Commands should prefer `remove_window_targets`.
     pub fn stop(&mut self) {
-        self.window_targets.lock().unwrap().clear();
-        let mut watched = self.watched_paths.lock().unwrap();
-        for p in watched.iter() {
-            let _ = self._watcher.unwatch(p);
+        if let Ok(mut targets) = self.window_targets.lock() {
+            targets.clear();
         }
-        watched.clear();
+        for root in self.watched_roots.drain() {
+            let _ = self.watcher.unwatch(&root);
+        }
     }
 }
 
-fn desired_watch_paths(window_targets: &HashMap<String, HashSet<PathBuf>>) -> HashSet<PathBuf> {
-    window_targets.values().flat_map(|paths| paths.iter().cloned()).collect()
+fn classify_event(event: &Event) -> Option<FileChangeKind> {
+    match event.kind {
+        EventKind::Remove(_) => Some(FileChangeKind::Deleted),
+        EventKind::Create(_) => Some(FileChangeKind::Created),
+        EventKind::Modify(ModifyKind::Name(rename_mode)) => {
+            let source_is_temp = event
+                .paths
+                .first()
+                .is_some_and(|path| is_temporary_path(path));
+            match rename_mode {
+                // Windows commonly reports only the destination (`To`) for an
+                // editor's temp-file-overwrite save. With no source path it is
+                // safest to treat it as a replacement so auto-reload runs.
+                RenameMode::To => Some(FileChangeKind::Replaced),
+                RenameMode::Both if source_is_temp => Some(FileChangeKind::Replaced),
+                _ => Some(FileChangeKind::Renamed),
+            }
+        }
+        EventKind::Modify(_) => Some(FileChangeKind::Modified),
+        _ => None,
+    }
+}
+
+fn merge_change_kind(previous: FileChangeKind, next: FileChangeKind) -> FileChangeKind {
+    match (previous, next) {
+        (FileChangeKind::Deleted, FileChangeKind::Created | FileChangeKind::Modified)
+        | (FileChangeKind::Created, FileChangeKind::Deleted) => FileChangeKind::Replaced,
+        (_, FileChangeKind::Replaced) | (_, FileChangeKind::Renamed) => next,
+        (FileChangeKind::Replaced, _) => FileChangeKind::Replaced,
+        (_, FileChangeKind::Deleted) => FileChangeKind::Deleted,
+        (_, kind) => kind,
+    }
+}
+
+fn normalize_path(path: &str) -> PathBuf {
+    let path = PathBuf::from(path);
+    path.canonicalize().unwrap_or(path)
+}
+
+fn paths_match(event_path: &Path, target: &Path) -> bool {
+    let event_path = event_path
+        .canonicalize()
+        .unwrap_or_else(|_| event_path.to_path_buf());
+    #[cfg(windows)]
+    {
+        event_path
+            .to_string_lossy()
+            .eq_ignore_ascii_case(&target.to_string_lossy())
+    }
+    #[cfg(not(windows))]
+    {
+        event_path == target
+    }
+}
+
+fn is_temporary_path(path: &Path) -> bool {
+    path.extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("tmp"))
+        || path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.starts_with('.') || name.ends_with('~'))
+}
+
+fn desired_watch_roots(window_targets: &HashMap<String, HashSet<PathBuf>>) -> HashSet<PathBuf> {
+    window_targets
+        .values()
+        .flat_map(|paths| paths.iter())
+        .filter_map(|path| path.parent().map(Path::to_path_buf))
+        .collect()
 }
 
 #[cfg(test)]
@@ -180,19 +286,59 @@ mod tests {
     use super::*;
 
     #[test]
-    fn watch_set_is_the_union_of_all_window_targets() {
-        let mut targets = HashMap::new();
-        targets.insert("main".into(), HashSet::from([PathBuf::from("a.md"), PathBuf::from("shared.png")]));
-        targets.insert("viewer-1".into(), HashSet::from([PathBuf::from("b.md"), PathBuf::from("shared.png")]));
-        assert_eq!(desired_watch_paths(&targets), HashSet::from([PathBuf::from("a.md"), PathBuf::from("b.md"), PathBuf::from("shared.png")]));
+    fn watch_roots_are_the_union_of_all_window_target_directories() {
+        let mut targets: HashMap<String, HashSet<PathBuf>> = HashMap::new();
+        targets.insert(
+            "main".into(),
+            HashSet::from([PathBuf::from("a/a.md"), PathBuf::from("a/shared.png")]),
+        );
+        targets.insert(
+            "viewer-1".into(),
+            HashSet::from([PathBuf::from("b/b.md"), PathBuf::from("a/shared.png")]),
+        );
+        assert_eq!(
+            desired_watch_roots(&targets),
+            HashSet::from([PathBuf::from("a"), PathBuf::from("b")])
+        );
     }
 
     #[test]
-    fn removing_one_window_preserves_paths_owned_by_another() {
-        let mut targets = HashMap::new();
+    fn removing_one_window_preserves_other_window_targets() {
+        let mut targets: HashMap<String, HashSet<PathBuf>> = HashMap::new();
         targets.insert("main".into(), HashSet::from([PathBuf::from("shared.md")]));
-        targets.insert("viewer-1".into(), HashSet::from([PathBuf::from("shared.md"), PathBuf::from("other.md")]));
+        targets.insert(
+            "viewer-1".into(),
+            HashSet::from([PathBuf::from("shared.md"), PathBuf::from("other.md")]),
+        );
         targets.remove("main");
-        assert_eq!(desired_watch_paths(&targets), HashSet::from([PathBuf::from("shared.md"), PathBuf::from("other.md")]));
+        assert_eq!(targets["viewer-1"].len(), 2);
+    }
+
+    #[test]
+    fn atomic_replacement_is_detected_from_delete_then_create() {
+        assert_eq!(
+            merge_change_kind(FileChangeKind::Deleted, FileChangeKind::Created),
+            FileChangeKind::Replaced
+        );
+    }
+
+    #[test]
+    fn temporary_rename_is_reported_as_replacement() {
+        let event = Event {
+            kind: EventKind::Modify(ModifyKind::Name(RenameMode::Both)),
+            paths: vec![PathBuf::from("draft.tmp"), PathBuf::from("readme.md")],
+            attrs: Default::default(),
+        };
+        assert_eq!(classify_event(&event), Some(FileChangeKind::Replaced));
+    }
+
+    #[test]
+    fn destination_only_rename_is_reported_as_replacement() {
+        let event = Event {
+            kind: EventKind::Modify(ModifyKind::Name(RenameMode::To)),
+            paths: vec![PathBuf::from("readme.md")],
+            attrs: Default::default(),
+        };
+        assert_eq!(classify_event(&event), Some(FileChangeKind::Replaced));
     }
 }

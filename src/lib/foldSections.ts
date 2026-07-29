@@ -5,6 +5,81 @@ type HastNode = {
   children?: HastNode[];
 };
 
+/** Commands understood by every rendered fold section. */
+export type FoldCommandName =
+  | "collapse"
+  | "expand"
+  | "toggle"
+  | "h1-only"
+  | "through-h2"
+  | "through-h3"
+  | "except-current"
+  | "reset";
+
+export interface FoldCommand {
+  command: FoldCommandName;
+  /** Required for `except-current`; omitted values are resolved from focus. */
+  currentFoldId?: string;
+}
+
+export const FOLD_COMMAND_EVENT = "markdown-fold-command";
+
+/**
+ * Resolves a whole-document toggle without relying on the currently focused
+ * heading.  `true` means a section is collapsed.
+ */
+export function resolveFoldToggle(collapsedStates: readonly boolean[]): "collapse" | "expand" {
+  return collapsedStates.length > 0 && collapsedStates.every(Boolean) ? "expand" : "collapse";
+}
+
+export function resolveCurrentFoldId(documentRoot: Document = document): string | undefined {
+  const section = documentRoot.activeElement?.closest<HTMLElement>("[data-fold-id]");
+  return section?.dataset.foldId || undefined;
+}
+
+/**
+ * Sends a normalized command to all fold sections.  Existing callers may
+ * continue to dispatch the legacy string detail directly.
+ */
+export function dispatchFoldCommand(command: FoldCommandName, documentRoot: Document = document): FoldCommandName {
+  const toggles = [...documentRoot.querySelectorAll<HTMLButtonElement>(".fold-toggle")];
+  const resolved = command === "toggle"
+    ? resolveFoldToggle(toggles.map((toggle) => toggle.getAttribute("aria-expanded") === "false"))
+    : command;
+  const detail: FoldCommand = {
+    command: resolved,
+    ...(resolved === "except-current" ? { currentFoldId: resolveCurrentFoldId(documentRoot) } : {}),
+  };
+  documentRoot.defaultView?.dispatchEvent(new CustomEvent<FoldCommand>(FOLD_COMMAND_EVENT, { detail }));
+  return resolved;
+}
+
+/** Returns the persisted collapsed value a particular heading should receive. */
+export function collapsedForFoldCommand(
+  detail: FoldCommand | FoldCommandName,
+  level: number,
+  foldId: string,
+): boolean | undefined {
+  const command = typeof detail === "string" ? detail : detail.command;
+  switch (command) {
+    case "collapse":
+      return true;
+    case "expand":
+    case "reset":
+      return false;
+    case "h1-only":
+      return level !== 1;
+    case "through-h2":
+      return level > 2;
+    case "through-h3":
+      return level > 3;
+    case "except-current":
+      return foldId !== (typeof detail === "string" ? undefined : detail.currentFoldId);
+    default:
+      return undefined;
+  }
+}
+
 function textContent(node: HastNode): string {
   if (typeof (node as HastNode & { value?: unknown }).value === "string") return (node as HastNode & { value: string }).value;
   return node.children?.map(textContent).join("") ?? "";

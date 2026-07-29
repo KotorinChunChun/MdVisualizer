@@ -20,7 +20,8 @@ pub fn run() {
         .skip(1)
         .filter(|arg| {
             !arg.starts_with('-')
-                && (arg.to_lowercase().ends_with(".md") || arg.to_lowercase().ends_with(".markdown"))
+                && (arg.to_lowercase().ends_with(".md")
+                    || arg.to_lowercase().ends_with(".markdown"))
         })
         .collect();
 
@@ -40,6 +41,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             load_settings,
+            load_settings_status,
             save_settings,
             save_fold_state,
             get_initial_files,
@@ -51,6 +53,7 @@ pub fn run() {
             remove_window_watch_targets,
             crop_image,
             restore_image,
+            has_image_backup,
             open_external_editor,
             open_containing_folder,
             open_in_editor,

@@ -1,7 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CropImageRequest, CropImageResult, MarkdownLoadResult } from "../types/app";
 
+export interface CorruptFileInfo {
+  sourcePath: string;
+  backupPath: string;
+}
+
+export interface SettingsLoadStatus {
+  settings: Record<string, unknown>;
+  recoveredFiles: CorruptFileInfo[];
+}
+
 export async function loadSettings(): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("load_settings"); }
+export async function loadSettingsStatus(): Promise<SettingsLoadStatus> { return await invoke<SettingsLoadStatus>("load_settings_status"); }
 export async function saveSettings(updates: Record<string, unknown>): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("save_settings", { updates }); }
 export async function saveFoldState(documentPath: string, state: Record<string, boolean>): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("save_fold_state", { documentPath, state }); }
 
@@ -36,6 +47,10 @@ export async function cropImage(request: CropImageRequest): Promise<CropImageRes
 
 export async function restoreImage(path: string): Promise<boolean> {
   return await invoke<boolean>("restore_image", { path });
+}
+
+export async function hasImageBackup(path: string): Promise<boolean> {
+  return await invoke<boolean>("has_image_backup", { path });
 }
 
 export async function openExternalEditor(path: string): Promise<void> {

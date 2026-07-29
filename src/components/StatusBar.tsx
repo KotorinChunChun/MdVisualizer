@@ -1,9 +1,98 @@
 import { MarkdownLoadResult } from "../types/app";
 import { getFileName } from "../lib/path";
+import "../styles/status-bar.css";
 
-export function StatusBar({ document, autoReload, zoom, changed }: { document: MarkdownLoadResult | null; autoReload: "on" | "off" | "manual"; zoom: number; changed: boolean }) {
-  if (!document) return <footer className="status-bar">Markdownファイル未選択</footer>;
-  const size = document.size_bytes < 1024 ? `${document.size_bytes} B` : `${(document.size_bytes / 1024).toFixed(1)} KB`;
-  const reloadStatus = autoReload === "on" ? "Auto Reload ON" : autoReload === "manual" ? "Auto Reload 手動のみ" : "Auto Reload OFF";
-  return <footer className="status-bar">{getFileName(document.path)}　|　{document.encoding}　|　{size}　|　Modified {document.modified_at}　|　{reloadStatus}　|　{zoom}%{changed ? "　|　変更あり" : ""}</footer>;
+export type AutoReloadMode = "on" | "off" | "manual";
+export type MermaidMode = "on" | "off" | "error-code" | "always-code";
+
+export interface StatusBarProps {
+  document: MarkdownLoadResult | null;
+  autoReload?: AutoReloadMode;
+  /** Preferred callback name for a controlled StatusBar. */
+  onAutoReloadChange?: (value: AutoReloadMode) => void;
+  /** Compatibility alias for callers that keep React state setters as props. */
+  setAutoReload?: (value: AutoReloadMode) => void;
+  zoom?: number;
+  onZoomChange?: (value: number) => void;
+  setZoom?: (value: number) => void;
+  mermaidMode?: MermaidMode;
+  onMermaidModeChange?: (value: MermaidMode) => void;
+  setMermaidMode?: (value: MermaidMode) => void;
+  mermaidStatus?: string;
+  mermaidErrorCount?: number;
+  imageBackupAvailable?: boolean;
+  changed?: boolean;
+}
+
+const zoomOptions = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200];
+
+function formatSize(sizeBytes: number) {
+  return sizeBytes < 1024 ? `${sizeBytes} B` : `${(sizeBytes / 1024).toFixed(1)} KB`;
+}
+
+export function StatusBar({
+  document,
+  autoReload = "on",
+  onAutoReloadChange,
+  setAutoReload,
+  zoom = 100,
+  onZoomChange,
+  setZoom,
+  mermaidMode = "on",
+  onMermaidModeChange,
+  setMermaidMode,
+  mermaidStatus,
+  mermaidErrorCount = 0,
+  imageBackupAvailable = false,
+  changed = false,
+}: StatusBarProps) {
+  const updateAutoReload = onAutoReloadChange ?? setAutoReload;
+  const updateZoom = onZoomChange ?? setZoom;
+  const updateMermaidMode = onMermaidModeChange ?? setMermaidMode;
+  const mermaidSummary = mermaidStatus
+    ? `Mermaid: ${mermaidStatus}${mermaidErrorCount > 0 ? ` (${mermaidErrorCount}件のエラー)` : ""}`
+    : mermaidErrorCount > 0
+      ? `Mermaid: ${mermaidErrorCount}件のエラー`
+      : undefined;
+
+  return (
+    <footer className="status-bar" aria-label="ドキュメントの状態と表示設定">
+      <div className="status-bar__details" aria-live="polite">
+        {document ? <>
+          <span title={document.path}>{getFileName(document.path)}</span>
+          <span>{document.encoding}</span>
+          <span>{formatSize(document.size_bytes)}</span>
+          <span>更新 {document.modified_at}</span>
+          {changed && <span className="status-bar__changed">変更あり</span>}
+        </> : <span>Markdownファイル未選択</span>}
+        {mermaidSummary && <span>{mermaidSummary}</span>}
+        {imageBackupAvailable && <span>画像バックアップあり</span>}
+      </div>
+      <div className="status-bar__controls" aria-label="表示設定">
+        <label>
+          <span>Auto Reload</span>
+          <select aria-label="Auto Reload" value={autoReload} onChange={(event) => updateAutoReload?.(event.target.value as AutoReloadMode)} disabled={!updateAutoReload}>
+            <option value="on">ON</option>
+            <option value="manual">手動のみ</option>
+            <option value="off">OFF</option>
+          </select>
+        </label>
+        <label>
+          <span>Mermaid</span>
+          <select aria-label="Mermaid" value={mermaidMode} onChange={(event) => updateMermaidMode?.(event.target.value as MermaidMode)} disabled={!updateMermaidMode}>
+            <option value="on">ON</option>
+            <option value="off">OFF</option>
+            <option value="error-code">エラー時コード</option>
+            <option value="always-code">常にコード</option>
+          </select>
+        </label>
+        <label>
+          <span>Zoom</span>
+          <select aria-label="Zoom" value={zoom} onChange={(event) => updateZoom?.(Number(event.target.value))} disabled={!updateZoom}>
+            {zoomOptions.map((value) => <option key={value} value={value}>{value}%</option>)}
+          </select>
+        </label>
+      </div>
+    </footer>
+  );
 }
