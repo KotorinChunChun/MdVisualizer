@@ -1,0 +1,160 @@
+import { describe, expect, it } from "vitest";
+import {
+  clamp,
+  clampAnnotation,
+  clampRect,
+  createImageAnnotationState,
+  drawImageAnnotations,
+  hitTestAnnotation,
+  imageAnnotationReducer,
+  type FrameAnnotation,
+  type ImageAnnotation,
+  type MaskAnnotation,
+} from "./imageAnnotations";
+
+const bounds = { width: 100, height: 80 };
+const frame = (id = "frame"): FrameAnnotation => ({
+  id, type: "frame", x: 10, y: 20, width: 30, height: 20, color: "#d00", lineWidth: 3,
+});
+const solidMask = (): MaskAnnotation => ({
+  id: "mask", type: "mask", x: 0, y: 0, width: 2, height: 2, style: "solid", color: "#000",
+});
+
+describe("image annotation geometry", () => {
+  it("clamps scalar and drag rectangles to image bounds", () => {
+    expect(clamp(Number.NaN, 2, 4)).toBe(2);
+    expect(clamp(9, 4, 2)).toBe(4);
+    expect(clampRect({ x: 90, y: 70, width: 20, height: 20 }, bounds)).toEqual({ x: 90, y: 70, width: 10, height: 10 });
+    expect(clampRect({ x: 30, y: 20, width: -40, height: -30 }, bounds)).toEqual({ x: 0, y: 0, width: 30, height: 20 });
+  });
+
+  it("clamps type-specific annotation values", () => {
+    expect(clampAnnotation({ ...frame(), x: -5, width: 200, lineWidth: 0 }, bounds)).toMatchObject({ x: 0, width: 100, lineWidth: 1 });
+    expect(clampAnnotation({ id: "l", type: "label", x: 0, y: 0, width: 2, height: 2, text: "x", textColor: "#fff", backgroundColor: "#000", fontSize: 0 }, bounds)).toMatchObject({ fontSize: 1 });
+  });
+
+  it("returns the uppermost annotation hit", () => {
+    const top = { ...frame("top"), color: "#000" };
+    expect(hitTestAnnotation([frame(), top], 20, 25)?.id).toBe("top");
+    expect(hitTestAnnotation([frame()], 99, 25)).toBeUndefined();
+  });
+});
+
+describe("image annotation reducer", () => {
+  it("resets an edit session when an external image is accepted", () => {
+    let state = imageAnnotationReducer(createImageAnnotationState(), {
+      type: "place",
+      annotation: frame(),
+    });
+    state = imageAnnotationReducer(state, { type: "reset" });
+    expect(state).toEqual(createImageAnnotationState());
+  });
+
+  it("keeps a placed annotation selected and records one history entry", () => {
+    const state = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame(), bounds });
+    expect(state.annotations).toHaveLength(1);
+    expect(state.selectedId).toBe("frame");
+    expect(state.undoStack).toHaveLength(1);
+  });
+
+  it("does not put selection or selection commit in history", () => {
+    const initial = createImageAnnotationState([frame(), frame("other")]);
+    const selected = imageAnnotationReducer(initial, { type: "select", id: "other" });
+    const committed = imageAnnotationReducer(selected, { type: "commitSelection" });
+    expect(committed.undoStack).toHaveLength(0);
+    expect(committed.selectedId).toBeNull();
+  });
+
+  it("updates, undoes, and redoes an annotation", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const updated = imageAnnotationReducer(placed, { type: "update", changes: { color: "#000", width: 44 } });
+    expect(updated.annotations[0]).toMatchObject({ color: "#000", width: 44 });
+    const undone = imageAnnotationReducer(updated, { type: "undo" });
+    expect(undone.annotations[0]).toMatchObject({ color: "#d00", width: 30 });
+    expect(imageAnnotationReducer(undone, { type: "redo" }).annotations[0]).toMatchObject({ color: "#000", width: 44 });
+  });
+
+  it("restores a deleted selected annotation through undo", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const deleted = imageAnnotationReducer(placed, { type: "delete" });
+    expect(deleted.annotations).toEqual([]);
+    expect(deleted.selectedId).toBeNull();
+    expect(imageAnnotationReducer(deleted, { type: "undo" }).annotations).toHaveLength(1);
+  });
+
+  it("clears redo history when making a new edit", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const undone = imageAnnotationReducer(placed, { type: "undo" });
+    const replaced = imageAnnotationReducer(undone, { type: "place", annotation: frame("new") });
+    expect(replaced.redoStack).toEqual([]);
+  });
+
+  it("scales the selected annotation around its center and clamps when requested", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const scaled = imageAnnotationReducer(placed, { type: "scaleSelected", scale: 2 });
+    expect(scaled.annotations[0]).toMatchObject({ x: -5, y: 10, width: 60, height: 40 });
+    const clamped = imageAnnotationReducer(scaled, { type: "scaleSelected", scale: 4, bounds });
+    expect(clamped.annotations[0]).toMatchObject({ x: 0, y: 0, width: 100, height: 80 });
+  });
+
+  it("ignores edits without a selected target", () => {
+    const state = createImageAnnotationState([frame()]);
+    expect(imageAnnotationReducer(state, { type: "delete" })).toBe(state);
+    expect(imageAnnotationReducer(state, { type: "scaleSelected", scale: 2 })).toBe(state);
+  });
+});
+
+class FakeContext {
+  canvas = { width: 4, height: 2 };
+  fillStyle = "";
+  strokeStyle = "";
+  lineWidth = 1;
+  font = "";
+  textBaseline: CanvasTextBaseline = "alphabetic";
+  calls: string[] = [];
+  pixels = new Uint8ClampedArray([
+    255, 0, 0, 255, 0, 0, 255, 255, 0, 255, 0, 255, 255, 255, 255, 255,
+    0, 0, 0, 255, 50, 50, 50, 255, 100, 100, 100, 255, 150, 150, 150, 255,
+  ]);
+  save() { this.calls.push("save"); }
+  restore() { this.calls.push("restore"); }
+  fillRect() { this.calls.push("fillRect"); }
+  strokeRect() { this.calls.push("strokeRect"); }
+  fillText() { this.calls.push("fillText"); }
+  getImageData(x: number, y: number, width: number, height: number) {
+    const data = new Uint8ClampedArray(width * height * 4);
+    for (let row = 0; row < height; row += 1) data.set(this.pixels.slice(((y + row) * this.canvas.width + x) * 4, ((y + row) * this.canvas.width + x + width) * 4), row * width * 4);
+    return { data, width, height } as ImageData;
+  }
+  putImageData(imageData: ImageData, x: number, y: number) {
+    for (let row = 0; row < imageData.height; row += 1) this.pixels.set(imageData.data.slice(row * imageData.width * 4, (row + 1) * imageData.width * 4), ((y + row) * this.canvas.width + x) * 4);
+  }
+}
+
+describe("image annotation drawing", () => {
+  it("draws solid masks, frames, and labels in their proper canvas layers", () => {
+    const ctx = new FakeContext();
+    const annotations: ImageAnnotation[] = [
+      solidMask(), frame(), { id: "label", type: "label", x: 0, y: 0, width: 3, height: 2, text: "A", textColor: "#fff", backgroundColor: "#333", fontSize: 12 },
+    ];
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, annotations);
+    expect(ctx.calls).toContain("fillRect");
+    expect(ctx.calls).toContain("strokeRect");
+    expect(ctx.calls).toContain("fillText");
+  });
+
+  it("blurs image pixels inside a mask", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...solidMask(), style: "blur", width: 4, height: 1 }]);
+    expect(ctx.pixels[0]).toBeGreaterThan(0);
+    expect(ctx.pixels[0]).toBeLessThan(255);
+    expect(ctx.pixels[4]).toBeGreaterThan(0);
+  });
+
+  it("mosaics pixels into equal colour blocks", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...solidMask(), style: "mosaic", width: 4, height: 1 }]);
+    expect(Array.from(ctx.pixels.slice(0, 4))).toEqual(Array.from(ctx.pixels.slice(4, 8)));
+    expect(Array.from(ctx.pixels.slice(4, 8))).toEqual(Array.from(ctx.pixels.slice(8, 12)));
+  });
+});

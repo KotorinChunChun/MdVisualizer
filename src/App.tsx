@@ -12,6 +12,7 @@ import { ExternalActions } from "./components/ExternalActions";
 import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget } from "./components/MediaPreviewModal";
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
+import { ImageAnnotationEditor } from "./components/ImageAnnotationEditor";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -76,6 +77,7 @@ export function App() {
   const [imageA4TargetWidth, setImageA4TargetWidth] = useState(DEFAULT_IMAGE_A4_TARGET_WIDTH);
   const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
+  const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
   const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
@@ -699,6 +701,7 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (annotationTarget) return;
       if (event.altKey && !event.ctrlKey && !event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
         event.preventDefault();
         if (event.key === "ArrowLeft") goBack();
@@ -760,7 +763,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab?.searchOpen, activateRelativeTab, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, reload, search, toggleFoldAll, updateZoom]);
+  }, [activeTab?.searchOpen, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, reload, search, toggleFoldAll, updateZoom]);
 
   useEffect(() => {
     const onMouseUp = (event: MouseEvent) => {
@@ -963,6 +966,23 @@ export function App() {
           equalPadding={imageEqualPadding}
         />
       )}
+      {annotationTarget && <ImageAnnotationEditor
+        target={annotationTarget}
+        imageVersion={imageVersions[annotationTarget.fullPath] ?? 0}
+        onApply={(filename, backupAvailable) => {
+          updateImageVersion(annotationTarget.fullPath);
+          setImageBackups((current) => ({ ...current, [annotationTarget.fullPath]: backupAvailable }));
+          setAnnotationTarget(null);
+          setToast({
+            id: String(Date.now()),
+            message: `${filename} の注釈を保存しました`,
+            type: "success",
+            restorePath: backupAvailable ? annotationTarget.fullPath : undefined,
+          });
+        }}
+        onCancel={() => setAnnotationTarget(null)}
+        onError={handleCropError}
+      />}
 
       <Toast
         toast={toast}
@@ -979,6 +999,10 @@ export function App() {
         onOpenImageApp={executeImageApp}
         onClose={closeMediaPreview}
         onActivate={mediaPreview.cropTarget ? () => {
+          setMediaPreview(null);
+          setAnnotationTarget(mediaPreview.cropTarget!);
+        } : undefined}
+        onCrop={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);
           startCrop(mediaPreview.cropTarget!);
         } : undefined}

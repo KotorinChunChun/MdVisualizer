@@ -44,6 +44,7 @@ export function MediaPreviewModal({
   content,
   onClose,
   onActivate,
+  onCrop,
   mermaidSource,
   imageContext,
   onSaveCaption,
@@ -54,6 +55,7 @@ export function MediaPreviewModal({
   content: MediaPreviewContent;
   onClose: () => void;
   onActivate?: () => void;
+  onCrop?: () => void;
   mermaidSource?: string;
   imageContext?: ImageEditContext;
   onSaveCaption?: (context: ImageEditContext, caption: string) => Promise<void>;
@@ -105,6 +107,8 @@ export function MediaPreviewModal({
         compact
         onExecute={(app) => onOpenImageApp(app, imageContext)}
       />}
+      {onCrop && <button type="button" onClick={onCrop}>クロップ</button>}
+      {onActivate && <button type="button" onClick={onActivate}>注釈</button>}
       {imageContext && onSaveCaption && onRenameImage && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
       <button type="button" className="media-preview__mode" onClick={toggleMode}>
         {mode === "fit" ? "1:1表示" : "全体表示"}

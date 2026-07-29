@@ -1,6 +1,9 @@
 use crate::app_state::AppState;
 use crate::errors::AppError;
-use crate::image_ops::{crop_image as do_crop_image, CropImageRequest, CropImageResult};
+use crate::image_ops::{
+    crop_image as do_crop_image, save_rendered_image as do_save_rendered_image, CropImageRequest,
+    CropImageResult, SaveRenderedImageRequest,
+};
 use crate::image_references::{
     rename_image_and_references as do_rename_image_and_references,
     update_image_caption as do_update_image_caption, RenameImageResult,
@@ -222,6 +225,14 @@ pub fn crop_image(
     request: CropImageRequest,
 ) -> Result<CropImageResult, String> {
     do_crop_image(request, &state.backup_mgr).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn save_rendered_image(
+    state: State<'_, AppState>,
+    request: SaveRenderedImageRequest,
+) -> Result<CropImageResult, String> {
+    do_save_rendered_image(request, &state.backup_mgr).map_err(|error| error.to_string())
 }
 
 #[tauri::command]

@@ -1,0 +1,13 @@
+.annotation-editor { position: fixed; inset: 0; z-index: 1200; display: grid; grid-template: auto 1fr / 250px 1fr; color: var(--text-primary); background: var(--bg-color); }
+.annotation-editor__header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); }
+.annotation-editor__header > div { display: flex; gap: 6px; }
+.annotation-editor button { padding: 6px 10px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 7px; }
+.annotation-editor__tools { display: grid; align-content: start; gap: 10px; padding: 14px; overflow: auto; background: var(--panel-bg); border-right: 1px solid var(--border-color); }
+.annotation-editor__tools label { display: grid; gap: 4px; color: var(--text-secondary); font-size: 12px; }
+.annotation-editor__tools input, .annotation-editor__tools select { min-width: 0; padding: 6px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 5px; }
+.annotation-editor__stage { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; padding: 24px; overflow: auto; background-color: #20242a; background-image: linear-gradient(45deg,#2b3038 25%,transparent 25%),linear-gradient(-45deg,#2b3038 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#2b3038 75%),linear-gradient(-45deg,transparent 75%,#2b3038 75%); background-size: 20px 20px; background-position: 0 0,0 10px,10px -10px,-10px 0; }
+.annotation-editor__stage canvas { display: block; max-width: 100%; max-height: 100%; cursor: crosshair; box-shadow: 0 12px 34px #0008; }
+.annotation-editor__conflict { position: fixed; inset: auto 24px 24px auto; z-index: 2; max-width: 360px; padding: 14px; background: var(--panel-bg); border: 1px solid #f59e0b; border-radius: 10px; box-shadow: 0 12px 36px #0008; }
+.annotation-editor__conflict p { margin-top: 0; }
+.annotation-editor__conflict button + button { margin-left: 8px; }
+@media (max-width: 720px) { .annotation-editor { grid-template: auto auto 1fr / 1fr; } .annotation-editor__tools { grid-template-columns: repeat(3,minmax(0,1fr)); border-right: 0; border-bottom: 1px solid var(--border-color); } }

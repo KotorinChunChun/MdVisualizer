@@ -41,6 +41,76 @@ pub struct CropImageResult {
     pub height: u32,
 }
 
+#[derive(Clone, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveRenderedImageRequest {
+    pub path: String,
+    pub png_bytes: Vec<u8>,
+    pub expected_source_width: u32,
+    pub expected_source_height: u32,
+}
+
+pub fn save_rendered_image(
+    req: SaveRenderedImageRequest,
+    backup_mgr: &BackupManager,
+) -> AppResult<CropImageResult> {
+    let original_path = PathBuf::from(&req.path);
+    if !original_path.exists() {
+        return Err(AppError::FileNotFound(req.path.clone()));
+    }
+    with_lock_timeout(&original_path, Duration::from_secs(10), || {
+        let original = image::open(&original_path)
+            .map_err(|error| AppError::ImageError(format!("Failed to open image: {error}")))?;
+        let (original_width, original_height) = original.dimensions();
+        if (original_width, original_height)
+            != (req.expected_source_width, req.expected_source_height)
+        {
+            return Err(AppError::ImageError(
+                "Image changed while it was being edited; reload it before applying changes."
+                    .into(),
+            ));
+        }
+        let rendered = image::load_from_memory_with_format(&req.png_bytes, ImageFormat::Png)
+            .map_err(|error| {
+                AppError::ImageError(format!("Failed to decode rendered image: {error}"))
+            })?;
+        let (width, height) = rendered.dimensions();
+        if (width, height) != (original_width, original_height) {
+            return Err(AppError::ImageError(
+                "Rendered image dimensions do not match the source image.".into(),
+            ));
+        }
+        let format = ImageFormat::from_path(&original_path).unwrap_or(ImageFormat::Png);
+        backup_mgr.ensure_backup(&original_path)?;
+        let temp_path = unique_crop_temp_path(&original_path)?;
+        if let Err(error) = rendered
+            .save_with_format(&temp_path, format)
+            .map_err(|error| AppError::ImageError(format!("Failed to save image: {error}")))
+        {
+            let _ = fs::remove_file(&temp_path);
+            return Err(error);
+        }
+        if let Err(error) = OpenOptions::new()
+            .write(true)
+            .open(&temp_path)
+            .and_then(|file| file.sync_all())
+        {
+            let _ = fs::remove_file(&temp_path);
+            return Err(AppError::ImageError(format!(
+                "Failed to sync rendered image: {error}"
+            )));
+        }
+        atomic_replace(&temp_path, &original_path)
+            .map_err(|error| AppError::ImageError(format!("Failed to replace image: {error}")))?;
+        Ok(CropImageResult {
+            path: req.path.clone(),
+            backup_available: backup_mgr.has_backup(&original_path),
+            width,
+            height,
+        })
+    })
+}
+
 pub fn crop_image(req: CropImageRequest, backup_mgr: &BackupManager) -> AppResult<CropImageResult> {
     let original_path = PathBuf::from(&req.path);
     if !original_path.exists() {
@@ -305,6 +375,51 @@ mod tests {
         let output = image::open(path).unwrap().to_rgba8();
         assert_eq!(output.get_pixel(0, 0), &Rgba([128, 128, 128, 255]));
         assert_eq!(output.get_pixel(2, 0), &Rgba([20, 40, 60, 255]));
+    }
+
+    #[test]
+    fn saves_a_rendered_annotation_with_backup_and_stale_guard() {
+        use std::io::Cursor;
+
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("annotated.png");
+        RgbaImage::from_pixel(4, 3, Rgba([20, 40, 60, 255]))
+            .save(&path)
+            .unwrap();
+        let mut bytes = Vec::new();
+        image::DynamicImage::ImageRgba8(RgbaImage::from_pixel(
+            4,
+            3,
+            Rgba([200, 10, 20, 255]),
+        ))
+        .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
+        .unwrap();
+        let manager = BackupManager::new().unwrap();
+        let result = save_rendered_image(
+            SaveRenderedImageRequest {
+                path: path.to_string_lossy().into_owned(),
+                png_bytes: bytes.clone(),
+                expected_source_width: 4,
+                expected_source_height: 3,
+            },
+            &manager,
+        )
+        .unwrap();
+        assert!(result.backup_available);
+        assert_eq!(
+            image::open(&path).unwrap().to_rgba8().get_pixel(0, 0),
+            &Rgba([200, 10, 20, 255])
+        );
+        assert!(save_rendered_image(
+            SaveRenderedImageRequest {
+                path: path.to_string_lossy().into_owned(),
+                png_bytes: bytes,
+                expected_source_width: 99,
+                expected_source_height: 3,
+            },
+            &manager,
+        )
+        .is_err());
     }
 
     #[test]

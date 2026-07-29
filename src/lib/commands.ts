@@ -60,6 +60,15 @@ export async function cropImage(request: CropImageRequest): Promise<CropImageRes
   return await invoke<CropImageResult>("crop_image", { request });
 }
 
+export async function saveRenderedImage(request: {
+  path: string;
+  pngBytes: number[];
+  expectedSourceWidth: number;
+  expectedSourceHeight: number;
+}): Promise<CropImageResult> {
+  return await invoke<CropImageResult>("save_rendered_image", { request });
+}
+
 export async function restoreImage(path: string): Promise<boolean> {
   return await invoke<boolean>("restore_image", { path });
 }
