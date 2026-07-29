@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { HeaderBar } from "./components/HeaderBar";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
 import { StatusBar } from "./components/StatusBar";
@@ -9,6 +8,7 @@ import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
 import { SearchBar } from "./components/SearchBar";
 import { useCropEditor } from "./hooks/useCropEditor";
+import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets } from "./lib/commands";
@@ -49,6 +49,7 @@ export function App() {
   const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
+  const [foldPreset, setFoldPreset] = useState<"expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset">("expand");
   const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
   const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
@@ -149,7 +150,11 @@ export function App() {
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
   const activeImageBackupAvailable = Boolean(activeTab?.document && activeTab.document.image_paths.some((path) => imageBackups[path]));
-  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, setSearchExpandedIds);
+  const updateSearchExpandedIds = useCallback((ids: string[]) => {
+    setSearchExpandedIds((current) => current.length === ids.length && current.every((id, index) => id === ids[index]) ? current : ids);
+  }, []);
+  const searchRefreshKey = `${tabsState.activeId ?? "empty"}:${activeTab?.generation ?? 0}:${searchExpandedIds.join("|")}`;
+  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey);
   const { cropTarget, startCrop, cancelCrop } = useCropEditor();
   const restoringSearchFor = useRef<string | null>(null);
 
@@ -176,10 +181,10 @@ export function App() {
   }, [activeTab?.id, search.query, search.regex, search.caseSensitive, search.activeIndex]);
 
   useEffect(() => {
-    if (!containerRef.current || !activeTab) return;
+    if (!containerRef.current || !activeTab || activeTab.loading) return;
     const frame = window.requestAnimationFrame(() => { if (containerRef.current) containerRef.current.scrollTop = activeTab.scrollTop; });
     return () => window.cancelAnimationFrame(frame);
-  }, [activeTab?.id, activeTab?.document?.path]);
+  }, [activeTab?.id, activeTab?.generation, activeTab?.loading]);
 
   useEffect(() => {
     const paths = activeTab?.document?.image_paths ?? [];
@@ -292,17 +297,30 @@ export function App() {
   }, [activeTab, applyFoldPreset]);
 
   const handleFoldChange = useCallback((foldId: string, collapsed: boolean) => {
-    if (!activeTab || !foldId) return;
+    const documentPath = activeTab?.path;
+    if (!documentPath || !foldId) return;
     setFoldStates((current) => {
-      const next = { ...current[activeTab.path], [foldId]: collapsed };
-      void saveFoldState(activeTab.path, next).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
-      return { ...current, [activeTab.path]: next };
+      const next = { ...current[documentPath], [foldId]: collapsed };
+      void saveFoldState(documentPath, next).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
+      return { ...current, [documentPath]: next };
     });
-  }, [activeTab]);
+  }, [activeTab?.path]);
 
   const handleSearchFoldManualOverride = useCallback((foldId: string) => {
     setSearchExpandedIds((ids) => ids.filter((id) => id !== foldId));
   }, []);
+
+  const handlePreviewError = useCallback((message: string) => {
+    setToast({ id: String(Date.now()), message, type: "error" });
+  }, []);
+
+  const handleOpenDocument = useCallback((path: string) => {
+    dispatch({ type: "OPEN", path });
+  }, []);
+
+  const handleImageDisplaySizeChange = useCallback((source: string, size: ImageSize) => {
+    if (activeTab) dispatch({ type: "IMAGE_DISPLAY_SIZE", id: activeTab.id, source, size });
+  }, [activeTab?.id]);
 
   const openActiveWith = useCallback((kind: "folder" | "vscode" | "notepad") => {
     if (!activeTab) return;
@@ -467,18 +485,16 @@ export function App() {
   return (
     <div className="app-container">
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
-      <HeaderBar filePath={activeTab?.path ?? null} onReload={reload} onSearch={openSearch} />
       <div className="view-controls" aria-label="表示と文書の操作">
-        <div className="control-group">
-          <span className="control-group__title">表示</span>
-          <label>テーマ<select aria-label="テーマ" value={theme} onChange={(e) => updateTheme(e.target.value)}><option value="system">システム</option><option value="dark">ダーク</option><option value="light">ライト</option><option value="github">GitHub</option><option value="solarized">Solarized</option><option value="nord">Nord</option></select></label>
-          <label>レイアウト<select aria-label="レイアウト" value={viewMode} onChange={(e) => updateViewMode(e.target.value)}><option value="standard">標準</option><option value="wide">ワイド</option><option value="compact">コンパクト</option><option value="print">印刷</option><option value="presentation">プレゼン</option><option value="images">画像中心</option></select></label>
+        <div className="control-group document-actions">
+          <button type="button" disabled={!activeTab} onClick={openSearch}>検索</button>
+          <button type="button" disabled={!activeTab} onClick={reload}>再読み込み</button>
         </div>
         <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>
-          <label>折りたたみ<select aria-label="見出しの折りたたみ" defaultValue="" onChange={(event) => { const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset"; if (value) applyFoldPreset(value); event.currentTarget.value = ""; }}>
-            <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
-          </select></label>
+          <select aria-label="見出しの表示" value={foldPreset} onChange={(event) => { const value = event.target.value as typeof foldPreset; setFoldPreset(value); applyFoldPreset(value); }}>
+            <option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
+          </select>
         </div>
         <div className="control-group external-actions">
           <span className="control-group__title">外部で開く</span>
@@ -508,16 +524,17 @@ export function App() {
             onStartCrop={startCrop}
             contentRef={markdownRef}
             theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
-            onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })}
+            onError={handlePreviewError}
             foldState={foldStates[activeTab.path]}
             onFoldChange={handleFoldChange}
             mermaidMode={mermaidMode}
             windowId={windowLabel}
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
-            onImageDisplaySizeChange={(source, size) => dispatch({ type: "IMAGE_DISPLAY_SIZE", id: activeTab.id, source, size })}
+            onImageDisplaySizeChange={handleImageDisplaySizeChange}
             searchExpandedIds={searchExpandedIds}
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
+            onOpenDocument={handleOpenDocument}
           />
         ) : (
           <div className="empty-state">
@@ -556,6 +573,10 @@ export function App() {
         mermaidErrorCount={mermaidStatus.errorCount}
         imageBackupAvailable={activeImageBackupAvailable}
         changed={activeTab?.externalChanged ?? false}
+        theme={theme}
+        onThemeChange={updateTheme}
+        viewMode={viewMode}
+        onViewModeChange={updateViewMode}
       />
       {contextTab && (() => {
         const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);

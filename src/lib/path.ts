@@ -37,3 +37,76 @@ export function getFileName(pathStr: string): string {
   const parts = normalized.split("/");
   return parts[parts.length - 1] || pathStr;
 }
+
+function decodePath(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function normalizeLocalPath(value: string): string {
+  const normalized = value
+    .replace(/\\/g, "/")
+    // WebView2's app-local URL can survive URL decoding as /?/C:/...
+    .replace(/^\/\?\/(?=[a-zA-Z]:\/)/, "");
+  const drive = normalized.match(/^[a-zA-Z]:/)?.[0] ?? "";
+  const absolute = normalized.startsWith("/") || Boolean(drive);
+  const body = drive ? normalized.slice(drive.length) : normalized;
+  const parts: string[] = [];
+  for (const part of body.split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") {
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  const prefix = drive ? `${drive}/` : absolute ? "/" : "";
+  return `${prefix}${parts.join("/")}`;
+}
+
+export function isMarkdownDocumentPath(value: string): boolean {
+  return /\.(?:md|markdown)$/i.test(value.split(/[?#]/, 1)[0]);
+}
+
+/**
+ * Resolves a Markdown link without asking the browser to turn it into a
+ * tauri.localhost HTTP URL. Returns null for external or non-Markdown links.
+ */
+export function resolveLocalMarkdownPath(href: string, baseDir: string): string | null {
+  if (!href || href.startsWith("#")) return null;
+  const lower = href.toLowerCase();
+  if (lower.startsWith("https://") || lower.startsWith("mailto:")) return null;
+
+  let candidate = href;
+  if (/^\/\?\/[a-zA-Z]:\//.test(href)) {
+    candidate = href.slice(3);
+  } else if (lower.startsWith("http://") || lower.startsWith("https://")) {
+    try {
+      const url = new URL(href);
+      if (url.hostname !== "tauri.localhost") return null;
+      // WebView2 may expose an app-local absolute Windows path as
+      // http://tauri.localhost/?/C:/path/to/file.md.
+      const queryPath = url.search.startsWith("?/") && /^[a-zA-Z]:\//.test(url.search.slice(2))
+        ? url.search.slice(2)
+        : "";
+      candidate = queryPath || url.pathname.replace(/^\/+/, "");
+    } catch {
+      return null;
+    }
+  } else if (lower.startsWith("file://")) {
+    try {
+      candidate = new URL(href).pathname.replace(/^\/(?=[a-zA-Z]:)/, "");
+    } catch {
+      return null;
+    }
+  }
+
+  candidate = decodePath(candidate.split(/[?#]/, 1)[0])
+    .replace(/^\/\?\/(?=[a-zA-Z]:\/)/, "");
+  if (!isMarkdownDocumentPath(candidate)) return null;
+  if (isAbsoluteLocalPath(candidate)) return normalizeLocalPath(candidate);
+  return normalizeLocalPath(`${baseDir.replace(/[\\/]$/, "")}/${candidate}`);
+}

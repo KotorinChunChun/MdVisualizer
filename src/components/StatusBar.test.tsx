@@ -18,7 +18,7 @@ describe("StatusBar", () => {
   it("shows document state and the supplied status summaries", () => {
     render(<StatusBar document={document} changed mermaidStatus="描画済み" mermaidErrorCount={2} imageBackupAvailable />);
 
-    expect(screen.getByText("sample.md")).toBeTruthy();
+    expect(screen.queryByText("sample.md")).toBeNull();
     expect(screen.getByText("1.5 KB")).toBeTruthy();
     expect(screen.getByText("変更あり")).toBeTruthy();
     expect(screen.getByText("Mermaid: 描画済み (2件のエラー)")).toBeTruthy();
@@ -29,8 +29,12 @@ describe("StatusBar", () => {
     const onAutoReloadChange = vi.fn();
     const onMermaidModeChange = vi.fn();
     const onZoomChange = vi.fn();
-    render(<StatusBar document={document} onAutoReloadChange={onAutoReloadChange} onMermaidModeChange={onMermaidModeChange} onZoomChange={onZoomChange} />);
+    const onThemeChange = vi.fn();
+    const onViewModeChange = vi.fn();
+    render(<StatusBar document={document} onAutoReloadChange={onAutoReloadChange} onMermaidModeChange={onMermaidModeChange} onZoomChange={onZoomChange} onThemeChange={onThemeChange} onViewModeChange={onViewModeChange} />);
 
+    fireEvent.change(screen.getByLabelText("テーマ"), { target: { value: "light" } });
+    fireEvent.change(screen.getByLabelText("レイアウト"), { target: { value: "wide" } });
     fireEvent.change(screen.getByLabelText("Auto Reload"), { target: { value: "manual" } });
     fireEvent.change(screen.getByLabelText("Mermaid"), { target: { value: "error-code" } });
     fireEvent.change(screen.getByLabelText("Zoom"), { target: { value: "125" } });
@@ -38,6 +42,8 @@ describe("StatusBar", () => {
     expect(onAutoReloadChange).toHaveBeenCalledWith("manual");
     expect(onMermaidModeChange).toHaveBeenCalledWith("error-code");
     expect(onZoomChange).toHaveBeenCalledWith(125);
+    expect(onThemeChange).toHaveBeenCalledWith("light");
+    expect(onViewModeChange).toHaveBeenCalledWith("wide");
   });
 
   it("keeps legacy callers working while disabling unbound controls", () => {
@@ -47,5 +53,7 @@ describe("StatusBar", () => {
     expect((screen.getByLabelText("Auto Reload") as HTMLSelectElement).disabled).toBe(true);
     expect((screen.getByLabelText("Mermaid") as HTMLSelectElement).disabled).toBe(true);
     expect((screen.getByLabelText("Zoom") as HTMLSelectElement).disabled).toBe(true);
+    expect((screen.getByLabelText("テーマ") as HTMLSelectElement).disabled).toBe(true);
+    expect((screen.getByLabelText("レイアウト") as HTMLSelectElement).disabled).toBe(true);
   });
 });

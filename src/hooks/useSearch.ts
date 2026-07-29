@@ -27,7 +27,12 @@ function removeOwnedMarks(root: HTMLElement) {
   root.normalize();
 }
 
-export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "main", onMatchedFoldIds?: (ids: string[]) => void): SearchState {
+export function useSearch(
+  rootRef: RefObject<HTMLElement | null>,
+  scopeId = "main",
+  onMatchedFoldIds?: (ids: string[]) => void,
+  refreshKey = "",
+): SearchState {
   const onMatchedFoldIdsRef = useRef(onMatchedFoldIds);
   useEffect(() => { onMatchedFoldIdsRef.current = onMatchedFoldIds; }, [onMatchedFoldIds]);
   const [query, setQuery] = useState("");
@@ -136,13 +141,13 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
       nativeHighlightNamesRef.current = null;
       highlightStyle?.remove();
     };
-  }, [rootRef, pattern, caseSensitive, scopeId]);
+  }, [rootRef, pattern, caseSensitive, scopeId, refreshKey]);
 
   useEffect(() => {
     const marks = rootRef.current?.querySelectorAll<HTMLElement>("mark[data-markdown-search]") ?? [];
     marks.forEach((mark, index) => mark.dataset.active = index === activeIndex ? "true" : "false");
     if (activeIndex >= 0 && typeof marks[activeIndex]?.scrollIntoView === "function") {
-      marks[activeIndex].scrollIntoView({ block: "center", behavior: "smooth" });
+      marks[activeIndex].scrollIntoView({ block: "center", behavior: "auto" });
     }
     const highlights = nativeHighlightsRef.current;
     const names = nativeHighlightNamesRef.current;
@@ -152,9 +157,9 @@ export function useSearch(rootRef: RefObject<HTMLElement | null>, scopeId = "mai
       if (range) highlights.set(names.active, new HighlightConstructor(range));
       else highlights.delete(names.active);
       const target = range?.startContainer.parentElement;
-      if (target instanceof HTMLElement && typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "center", behavior: "smooth" });
+      if (target instanceof HTMLElement && typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "center", behavior: "auto" });
     }
-  }, [rootRef, activeIndex, resultCount]);
+  }, [rootRef, activeIndex, resultCount, refreshKey]);
 
   const move = (delta: number) => {
     if (!resultCount) return;

@@ -1,5 +1,4 @@
 import { MarkdownLoadResult } from "../types/app";
-import { getFileName } from "../lib/path";
 import "../styles/status-bar.css";
 
 export type AutoReloadMode = "on" | "off" | "manual";
@@ -22,6 +21,10 @@ export interface StatusBarProps {
   mermaidErrorCount?: number;
   imageBackupAvailable?: boolean;
   changed?: boolean;
+  theme?: string;
+  onThemeChange?: (value: string) => void;
+  viewMode?: string;
+  onViewModeChange?: (value: string) => void;
 }
 
 const zoomOptions = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200];
@@ -45,6 +48,10 @@ export function StatusBar({
   mermaidErrorCount = 0,
   imageBackupAvailable = false,
   changed = false,
+  theme = "system",
+  onThemeChange,
+  viewMode = "standard",
+  onViewModeChange,
 }: StatusBarProps) {
   const updateAutoReload = onAutoReloadChange ?? setAutoReload;
   const updateZoom = onZoomChange ?? setZoom;
@@ -59,7 +66,6 @@ export function StatusBar({
     <footer className="status-bar" aria-label="ドキュメントの状態と表示設定">
       <div className="status-bar__details" aria-live="polite">
         {document ? <>
-          <span title={document.path}>{getFileName(document.path)}</span>
           <span>{document.encoding}</span>
           <span>{formatSize(document.size_bytes)}</span>
           <span>更新 {document.modified_at}</span>
@@ -69,6 +75,28 @@ export function StatusBar({
         {imageBackupAvailable && <span>画像バックアップあり</span>}
       </div>
       <div className="status-bar__controls" aria-label="表示設定">
+        <label>
+          <span>テーマ</span>
+          <select aria-label="テーマ" value={theme} onChange={(event) => onThemeChange?.(event.target.value)} disabled={!onThemeChange}>
+            <option value="system">システム</option>
+            <option value="dark">ダーク</option>
+            <option value="light">ライト</option>
+            <option value="github">GitHub</option>
+            <option value="solarized">Solarized</option>
+            <option value="nord">Nord</option>
+          </select>
+        </label>
+        <label>
+          <span>レイアウト</span>
+          <select aria-label="レイアウト" value={viewMode} onChange={(event) => onViewModeChange?.(event.target.value)} disabled={!onViewModeChange}>
+            <option value="standard">標準</option>
+            <option value="wide">ワイド</option>
+            <option value="compact">コンパクト</option>
+            <option value="print">印刷</option>
+            <option value="presentation">プレゼン</option>
+            <option value="images">画像中心</option>
+          </select>
+        </label>
         <label>
           <span>Auto Reload</span>
           <select aria-label="Auto Reload" value={autoReload} onChange={(event) => updateAutoReload?.(event.target.value as AutoReloadMode)} disabled={!updateAutoReload}>

@@ -44,8 +44,9 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     src.toLowerCase().startsWith("http://") ||
     src.toLowerCase().startsWith("https://") ||
     src.toLowerCase().startsWith("data:");
-  // Only paths that the crop command can address are display-resizable.
-  const isEditableLocalImage = !isRemote && !src.toLowerCase().startsWith("file:");
+  const isSvg = /\.svg(?:[?#]|$)/i.test(src);
+  // SVG is display-only until a dedicated vector editing design is approved.
+  const isEditableLocalImage = !isRemote && !src.toLowerCase().startsWith("file:") && !isSvg;
 
   let fullPath = src;
   if (!isRemote && !isAbsoluteLocalPath(src)) {

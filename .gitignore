@@ -4,7 +4,6 @@
 
 dev/
 release/
-samples/
 
 # ビルド成果物・中間生成物
 target/

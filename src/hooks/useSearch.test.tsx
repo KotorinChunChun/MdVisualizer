@@ -1,12 +1,23 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import { useRef } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { useRef, useState } from "react";
 import { useSearch } from "./useSearch";
 
 function Harness() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const search = useSearch(rootRef);
-  return <><button onClick={() => search.setQuery("alpha")}>search</button><button onClick={search.clear}>clear</button><output>{search.resultCount}</output><div ref={rootRef}>Alpha beta alpha</div></>;
+  const [refresh, setRefresh] = useState(0);
+  const search = useSearch(rootRef, "main", undefined, String(refresh));
+  return (
+    <>
+      <button onClick={() => search.setQuery("alpha")}>search</button>
+      <button onClick={search.previous}>previous</button>
+      <button onClick={search.next}>next</button>
+      <button onClick={() => setRefresh((value) => value + 1)}>refresh</button>
+      <button onClick={search.clear}>clear</button>
+      <output>{search.resultCount}</output>
+      <div ref={rootRef}>Alpha beta alpha</div>
+    </>
+  );
 }
 
 describe("useSearch", () => {
@@ -20,6 +31,24 @@ describe("useSearch", () => {
     expect(document.querySelector("mark[data-active='true']")?.textContent?.toLowerCase()).toBe("alpha");
     act(() => screen.getByRole("button", { name: "clear" }).click());
     expect(document.querySelectorAll("mark[data-markdown-search]")).toHaveLength(0);
+  });
+
+  it("moves between results and reapplies highlights after content refresh", () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    render(<Harness />);
+    act(() => screen.getByRole("button", { name: "search" }).click());
+    const marks = screen.getAllByText(/alpha/i, { selector: "mark" });
+    expect(marks[0].dataset.active).toBe("true");
+    act(() => screen.getByRole("button", { name: "next" }).click());
+    expect(marks[1].dataset.active).toBe("true");
+    expect(scrollIntoView).toHaveBeenCalled();
+    act(() => screen.getByRole("button", { name: "refresh" }).click());
+    expect(screen.getAllByText(/alpha/i, { selector: "mark" })).toHaveLength(2);
+    expect(document.querySelector("mark[data-active='true']")?.textContent?.toLowerCase()).toBe("alpha");
   });
 
   it("uses and cleans a namespaced native highlight registry when available", () => {

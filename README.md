@@ -21,15 +21,23 @@ npm run tauri dev -- C:\Project\README.md C:\Project\design.markdown
 ## 主な機能
 
 - Chrome ライクな複数タブ、ドラッグ並び替え、右クリック操作、閉じたタブの復元
+- Markdown 内のローカル Markdown リンクをアプリ内の新しいタブで開く
 - H1〜H6 のネスト折りたたみと、ファイル単位の状態保存
 - 検索（正規表現・大小文字・前後移動）。対応環境では Native Highlight、非対応環境では管理下の `mark` を使用
 - Markdown 内 HTML の許可リストサニタイズ、GFM 表、コピー可能なコードブロック
 - Mermaid の遅延描画、テーマ反映、コード fallback、拡大表示
+- PNG・JPEG・GIF・WebP・SVG の表示（SVG は表示のみで編集対象外）
 - Shift_JIS / UTF-8 BOM / UTF-16 を含む文字コード検出とステータス表示
-- ステータスバーから変更できる Auto Reload（ON / 手動のみ / OFF）、Mermaid、ズーム
+- ステータスバーから変更できるテーマ、レイアウト、Auto Reload（ON / 手動のみ / OFF）、Mermaid、ズーム
 - 画像ホバー時の8方向ハンドルによる非破壊の表示縮小
 - 画像クロップと起動中のバックアップ復元
 - テーマ、表示モード、ズーム、Mermaid、Auto Reload の安全な永続化
+
+## 表示確認用サンプル
+
+`samples/` に機能別の Markdown を収録しています。主要記法をまとめて確認する場合は
+`samples/all-markdown.md`、ローカル文書リンクは `samples/local-links.md`、Mermaid
+各種は `samples/mermaid-gallery.md` を開いてください。
 
 ## ショートカット
 

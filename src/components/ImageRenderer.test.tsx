@@ -127,6 +127,17 @@ describe("ImageRenderer inline resize", () => {
     expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 
+  it("displays local SVG files without exposing raster editing controls", () => {
+    const onStartCrop = vi.fn();
+    renderImage(onStartCrop, imageRect, "diagrams/architecture.svg");
+    const image = screen.getByAltText("テスト画像");
+    fireEvent.load(image);
+    expect(image.getAttribute("src")).toContain("architecture.svg");
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    fireEvent.click(image);
+    expect(onStartCrop).not.toHaveBeenCalled();
+  });
+
   it("converts a 150% display-space pointer delta back to CSS pixels and never grows past load size", () => {
     const zoomedRect = { ...imageRect, right: 480, bottom: 300, width: 480, height: 300 };
     const { container } = renderImage(vi.fn(), zoomedRect);

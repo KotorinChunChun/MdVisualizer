@@ -13,6 +13,7 @@ import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
 import { CodeBlock } from "./CodeBlock";
 import { MermaidBlock } from "./MermaidBlock";
 import { openExternalUrl } from "../lib/commands";
+import { resolveLocalMarkdownPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 
 type MarkdownNode = {
@@ -54,9 +55,10 @@ interface MarkdownPreviewProps {
   onImageDisplaySizeChange?: (source: string, size: ImageSize) => void;
   searchExpandedIds?: string[];
   onSearchFoldManualOverride?: (foldId: string) => void;
+  onOpenDocument?: (path: string) => void;
 }
 
-export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
+const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   content,
   baseDir,
   imageVersions,
@@ -73,6 +75,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   onImageDisplaySizeChange,
   searchExpandedIds = [],
   onSearchFoldManualOverride,
+  onOpenDocument,
 }) => {
   const mermaidCount = countMermaidFences(content);
   let mermaidIndex = 0;
@@ -106,7 +109,21 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
               : <code className={className} {...props}>{children}</code>;
           },
           table: ({ children }) => <div className="table-scroll"><table>{children}</table></div>,
-          a: ({ href, children, ...props }) => <a {...props} href={href} onClick={(event) => { event.preventDefault(); if (!href) return; void openExternalUrl(href).catch((error) => onError?.(String(error))); }}>{children}</a>,
+          a: ({ href, children, ...props }) => <a {...props} href={href} onClick={(event) => {
+            event.preventDefault();
+            if (!href) return;
+            const localPath = resolveLocalMarkdownPath(href, baseDir);
+            if (localPath) {
+              onOpenDocument?.(localPath);
+              return;
+            }
+            if (href.startsWith("#")) {
+              const target = document.getElementById(decodeURIComponent(href.slice(1)));
+              target?.scrollIntoView({ block: "start" });
+              return;
+            }
+            void openExternalUrl(href).catch((error) => onError?.(String(error)));
+          }}>{children}</a>,
           img: ({ src, alt }) => (
             <ImageRenderer
               src={src}
@@ -125,3 +142,5 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
     </div>
   );
 };
+
+export const MarkdownPreview = React.memo(MarkdownPreviewComponent);

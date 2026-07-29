@@ -1,8 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { countMermaidFences, MarkdownPreview } from "./MarkdownPreview";
+import { openExternalUrl } from "../lib/commands";
 
 vi.mock("./ImageRenderer", () => ({ ImageRenderer: () => null }));
+vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn() }));
 
 describe("MarkdownPreview sanitization", () => {
   it("renders safe HTML and removes scripts, event handlers, and unsafe URLs", () => {
@@ -21,6 +23,14 @@ describe("MarkdownPreview sanitization", () => {
     fireEvent.click(button);
     expect(button.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByText("Body").closest("section")?.querySelector(":scope > .fold-content")?.hasAttribute("hidden")).toBe(true);
+  });
+
+  it("opens a relative Markdown link in the app instead of the external URL handler", () => {
+    const onOpenDocument = vi.fn();
+    render(<MarkdownPreview content="[next](../guide/next.md)" baseDir="C:\\docs\\current" imageVersions={{}} onStartCrop={() => {}} onOpenDocument={onOpenDocument} />);
+    fireEvent.click(screen.getByRole("link", { name: "next" }));
+    expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/guide/next.md");
+    expect(openExternalUrl).not.toHaveBeenCalled();
   });
 });
 

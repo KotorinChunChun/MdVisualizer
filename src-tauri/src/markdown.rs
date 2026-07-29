@@ -18,10 +18,23 @@ pub struct MarkdownLoadResult {
     pub modified_at: String,
 }
 
+fn normalize_webview_path(path: &str) -> &str {
+    path.strip_prefix("/?/")
+        .filter(|rest| {
+            let bytes = rest.as_bytes();
+            bytes.len() >= 3
+                && bytes[0].is_ascii_alphabetic()
+                && bytes[1] == b':'
+                && bytes[2] == b'/'
+        })
+        .unwrap_or(path)
+}
+
 pub fn load_markdown(path_str: &str) -> AppResult<MarkdownLoadResult> {
-    let path = PathBuf::from(path_str);
+    let normalized_path = normalize_webview_path(path_str);
+    let path = PathBuf::from(normalized_path);
     if !path.exists() {
-        return Err(AppError::FileNotFound(path_str.to_string()));
+        return Err(AppError::FileNotFound(normalized_path.to_string()));
     }
 
     let bytes = fs::read(&path)
@@ -158,6 +171,15 @@ mod tests {
         assert!(!is_local_image_path("http://example.com/img.png"));
         assert!(!is_local_image_path("https://example.com/img.png"));
         assert!(!is_local_image_path("data:image/png;base64,12345"));
+    }
+
+    #[test]
+    fn normalizes_webview_windows_drive_path() {
+        assert_eq!(
+            normalize_webview_path("/?/C:/docs/readme.md"),
+            "C:/docs/readme.md"
+        );
+        assert_eq!(normalize_webview_path("/var/docs/readme.md"), "/var/docs/readme.md");
     }
 
     #[test]

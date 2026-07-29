@@ -1,4 +1,28 @@
-:root[data-theme="light"], :root[data-theme="github"] { --bg-color:#fff; --panel-bg:#f6f8fa; --header-bg:#fff; --border-color:#d0d7de; --text-primary:#1f2328; --text-secondary:#57606a; --text-muted:#656d76; --btn-bg:#f6f8fa; --btn-hover:#eaeef2; --toast-bg:#fff; }
-:root[data-theme="solarized"] { --bg-color:#002b36; --panel-bg:#073642; --header-bg:#073642; --border-color:#586e75; --text-primary:#eee8d5; --text-secondary:#93a1a1; --text-muted:#839496; --btn-bg:#073642; --btn-hover:#586e75; --toast-bg:#073642; }
-:root[data-theme="nord"] { --bg-color:#2e3440; --panel-bg:#3b4252; --header-bg:#3b4252; --border-color:#4c566a; --text-primary:#eceff4; --text-secondary:#d8dee9; --text-muted:#81a1c1; --btn-bg:#434c5e; --btn-hover:#4c566a; --toast-bg:#3b4252; }
-:root[data-theme="dark"] { --bg-color:#121418; --panel-bg:#1e222b; --header-bg:#1a1d24; --border-color:#2e3440; --text-primary:#eceff4; --text-secondary:#d8dee9; --text-muted:#8892b0; --btn-bg:#2e3440; --btn-hover:#3b4252; --toast-bg:#2b303c; }
+:root[data-theme="light"], :root[data-theme="github"] {
+  --bg-color:#fff; --panel-bg:#f6f8fa; --header-bg:#fff; --border-color:#d0d7de;
+  --text-primary:#1f2328; --text-secondary:#57606a; --text-muted:#656d76;
+  --btn-bg:#f6f8fa; --btn-hover:#eaeef2; --toast-bg:#fff;
+  --link-color:#0969da; --link-hover:#0550ae;
+  --inline-code-bg:rgba(175,184,193,.22); --code-block-bg:#f6f8fa; --table-header-bg:#f6f8fa;
+}
+:root[data-theme="solarized"] {
+  --bg-color:#002b36; --panel-bg:#073642; --header-bg:#073642; --border-color:#586e75;
+  --text-primary:#eee8d5; --text-secondary:#93a1a1; --text-muted:#839496;
+  --btn-bg:#073642; --btn-hover:#586e75; --toast-bg:#073642;
+  --link-color:#2aa198; --link-hover:#6cddcf; --inline-code-bg:#073642;
+  --code-block-bg:#00252e; --table-header-bg:#073642;
+}
+:root[data-theme="nord"] {
+  --bg-color:#2e3440; --panel-bg:#3b4252; --header-bg:#3b4252; --border-color:#4c566a;
+  --text-primary:#eceff4; --text-secondary:#d8dee9; --text-muted:#81a1c1;
+  --btn-bg:#434c5e; --btn-hover:#4c566a; --toast-bg:#3b4252;
+  --link-color:#88c0d0; --link-hover:#8fbcbb; --inline-code-bg:#3b4252;
+  --code-block-bg:#272c36; --table-header-bg:#3b4252;
+}
+:root[data-theme="dark"] {
+  --bg-color:#121418; --panel-bg:#1e222b; --header-bg:#1a1d24; --border-color:#2e3440;
+  --text-primary:#eceff4; --text-secondary:#d8dee9; --text-muted:#8892b0;
+  --btn-bg:#2e3440; --btn-hover:#3b4252; --toast-bg:#2b303c;
+  --link-color:#60a5fa; --link-hover:#93c5fd; --inline-code-bg:#242933;
+  --code-block-bg:#1a1c23; --table-header-bg:#242933;
+}

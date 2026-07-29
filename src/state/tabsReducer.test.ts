@@ -54,9 +54,10 @@ describe("tabsReducer", () => {
     const second = state.activeId!;
     state = tabsReducer(state, { type: "EXTERNAL_CHANGED", id: first, changed: true });
     state = tabsReducer(state, { type: "EXTERNAL_CHANGED", id: second, changed: true });
+    state = tabsReducer(state, { type: "SCROLL", id: first, scrollTop: 640 });
     state = tabsReducer(state, { type: "RELOAD", id: first });
 
-    expect(state.tabs.find((tab) => tab.id === first)?.externalChanged).toBe(false);
+    expect(state.tabs.find((tab) => tab.id === first)).toMatchObject({ externalChanged: false, scrollTop: 640, loading: true });
     expect(state.tabs.find((tab) => tab.id === second)?.externalChanged).toBe(true);
   });
 

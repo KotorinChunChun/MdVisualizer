@@ -248,8 +248,17 @@ pub fn open_in_editor(path: String, editor: String) -> Result<(), String> {
         "notepad" => PathBuf::from("notepad"),
         _ => return Err("Unsupported editor.".into()),
     };
-    std::process::Command::new(&program)
-        .arg(path)
+    let mut command = std::process::Command::new(&program);
+    command.arg(path);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        // Prevent command shims such as code.cmd from flashing a console
+        // window while the GUI editor starts.
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    command
         .spawn()
         .map_err(|error| format!("Could not start {}: {error}", program.display()))?;
     Ok(())
@@ -267,9 +276,9 @@ fn resolve_vscode_executable() -> Result<PathBuf, String> {
         .into_iter()
         .flat_map(|directory| vscode_path_candidates(&directory))
         .collect();
-    path_candidates
+    install_candidates
         .into_iter()
-        .chain(install_candidates)
+        .chain(path_candidates)
         .find(|candidate| candidate.is_file())
         .ok_or_else(|| {
             "VS Code が見つかりません。PATH または標準のインストール先を確認してください。".into()
@@ -280,9 +289,9 @@ fn vscode_path_candidates(directory: &Path) -> Vec<PathBuf> {
     #[cfg(target_os = "windows")]
     {
         vec![
-            directory.join("code.cmd"),
-            directory.join("code.exe"),
             directory.join("Code.exe"),
+            directory.join("code.exe"),
+            directory.join("code.cmd"),
         ]
     }
     #[cfg(not(target_os = "windows"))]
@@ -333,9 +342,9 @@ mod tests {
         #[cfg(target_os = "windows")]
         {
             assert!(candidates.ends_with(&[
-                PathBuf::from("C:/tools/vscode/bin/code.cmd"),
-                PathBuf::from("C:/tools/vscode/bin/code.exe"),
                 PathBuf::from("C:/tools/vscode/bin/Code.exe"),
+                PathBuf::from("C:/tools/vscode/bin/code.exe"),
+                PathBuf::from("C:/tools/vscode/bin/code.cmd"),
             ]));
         }
         #[cfg(not(target_os = "windows"))]
