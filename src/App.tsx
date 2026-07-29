@@ -49,7 +49,6 @@ export function App() {
   const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
-  const [foldPreset, setFoldPreset] = useState<"expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset">("expand");
   const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
   const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
@@ -492,8 +491,12 @@ export function App() {
         </div>
         <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>
-          <select aria-label="見出しの表示" value={foldPreset} onChange={(event) => { const value = event.target.value as typeof foldPreset; setFoldPreset(value); applyFoldPreset(value); }}>
-            <option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
+          <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
+            const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset";
+            if (value) applyFoldPreset(value);
+            event.currentTarget.value = "";
+          }}>
+            <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
           </select>
         </div>
         <div className="control-group external-actions">
