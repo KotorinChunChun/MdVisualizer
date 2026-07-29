@@ -95,4 +95,14 @@ describe("tabsReducer", () => {
       document: { path: "C:\\develop\\MarkdownViewer\\README.md" },
     });
   });
+
+  it("opens at most one settings tab and activates the existing one", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    state = tabsReducer(state, { type: "OPEN_SETTINGS" });
+    const settingsId = state.activeId;
+    state = tabsReducer(state, { type: "ACTIVATE", id: state.tabs[0].id });
+    state = tabsReducer(state, { type: "OPEN_SETTINGS" });
+    expect(state.tabs.filter((tab) => tab.kind === "settings")).toHaveLength(1);
+    expect(state.activeId).toBe(settingsId);
+  });
 });

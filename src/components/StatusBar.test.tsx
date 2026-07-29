@@ -56,4 +56,13 @@ describe("StatusBar", () => {
     expect((screen.getByLabelText("テーマ") as HTMLSelectElement).disabled).toBe(true);
     expect((screen.getByLabelText("レイアウト") as HTMLSelectElement).disabled).toBe(true);
   });
+
+  it("opens the settings tab from the rightmost gear button", () => {
+    const onOpenSettings = vi.fn();
+    render(<StatusBar document={null} statusText="設定" onOpenSettings={onOpenSettings} />);
+
+    expect(screen.getByText("設定")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "設定を開く" }));
+    expect(onOpenSettings).toHaveBeenCalledOnce();
+  });
 });

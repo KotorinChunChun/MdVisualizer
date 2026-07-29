@@ -3,6 +3,7 @@ import type { ImageSize } from "../hooks/useInlineImageResize";
 
 export interface TabState {
   id: string;
+  kind?: "document" | "settings";
   path: string;
   document: MarkdownLoadResult | null;
   error: string | null;
@@ -31,6 +32,7 @@ export interface ClosedTabState {
 
 export type TabsAction =
   | { type: "OPEN"; path: string }
+  | { type: "OPEN_SETTINGS" }
   | { type: "RESTORE"; tab: ClosedTabState }
   | { type: "ACTIVATE"; id: string }
   | { type: "RELOAD"; id: string }
@@ -50,6 +52,29 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
   switch (action.type) {
     case "OPEN": {
       return openTab(state, { path: action.path, scrollTop: 0, searchOpen: false, imageDisplaySizes: {}, search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 } });
+    }
+    case "OPEN_SETTINGS": {
+      const existing = state.tabs.find((tab) => tab.kind === "settings");
+      if (existing) return { ...state, activeId: existing.id };
+      const id = `tab-${state.nextId}`;
+      return {
+        tabs: [...state.tabs, {
+          id,
+          kind: "settings",
+          path: "__settings__",
+          document: null,
+          error: null,
+          loading: false,
+          scrollTop: 0,
+          generation: 1,
+          externalChanged: false,
+          searchOpen: false,
+          imageDisplaySizes: {},
+          search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 },
+        }],
+        activeId: id,
+        nextId: state.nextId + 1,
+      };
     }
     case "RESTORE":
       return openTab(state, action.tab);
@@ -108,7 +133,7 @@ function updateTab(state: TabsState, id: string, update: (tab: TabState) => TabS
 function openTab(state: TabsState, tab: ClosedTabState): TabsState {
   const id = `tab-${state.nextId}`;
   return {
-    tabs: [...state.tabs, { id, path: tab.path, document: null, error: null, loading: true, scrollTop: tab.scrollTop, generation: 1, externalChanged: false, searchOpen: tab.searchOpen ?? false, imageDisplaySizes: tab.imageDisplaySizes ?? {}, search: tab.search }],
+    tabs: [...state.tabs, { id, kind: "document", path: tab.path, document: null, error: null, loading: true, scrollTop: tab.scrollTop, generation: 1, externalChanged: false, searchOpen: tab.searchOpen ?? false, imageDisplaySizes: tab.imageDisplaySizes ?? {}, search: tab.search }],
     activeId: id,
     nextId: state.nextId + 1,
   };

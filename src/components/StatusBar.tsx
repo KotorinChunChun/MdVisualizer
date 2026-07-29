@@ -25,6 +25,8 @@ export interface StatusBarProps {
   onThemeChange?: (value: string) => void;
   viewMode?: string;
   onViewModeChange?: (value: string) => void;
+  onOpenSettings?: () => void;
+  statusText?: string;
 }
 
 const zoomOptions = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200];
@@ -52,6 +54,8 @@ export function StatusBar({
   onThemeChange,
   viewMode = "standard",
   onViewModeChange,
+  onOpenSettings,
+  statusText,
 }: StatusBarProps) {
   const updateAutoReload = onAutoReloadChange ?? setAutoReload;
   const updateZoom = onZoomChange ?? setZoom;
@@ -70,7 +74,7 @@ export function StatusBar({
           <span>{formatSize(document.size_bytes)}</span>
           <span>更新 {document.modified_at}</span>
           {changed && <span className="status-bar__changed">変更あり</span>}
-        </> : <span>Markdownファイル未選択</span>}
+        </> : <span>{statusText ?? "Markdownファイル未選択"}</span>}
         {mermaidSummary && <span>{mermaidSummary}</span>}
         {imageBackupAvailable && <span>画像バックアップあり</span>}
       </div>
@@ -120,6 +124,7 @@ export function StatusBar({
             {zoomOptions.map((value) => <option key={value} value={value}>{value}%</option>)}
           </select>
         </label>
+        <button type="button" className="status-bar__settings" aria-label="設定を開く" onClick={onOpenSettings} disabled={!onOpenSettings}>⚙</button>
       </div>
     </footer>
   );

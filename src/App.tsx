@@ -7,15 +7,18 @@ import { MarkdownPreview } from "./components/MarkdownPreview";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
 import { SearchBar } from "./components/SearchBar";
+import { SettingsPanel } from "./components/SettingsPanel";
+import { ExternalActions } from "./components/ExternalActions";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
-import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets } from "./lib/commands";
+import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
+import { DEFAULT_EXTERNAL_APPS, normalizeExternalApps, type ExternalAppConfig } from "./types/settings";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -54,6 +57,7 @@ export function App() {
   const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
   const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
+  const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
   const themeRef = useRef(theme);
   const zoomRef = useRef(zoom);
   const viewModeRef = useRef(viewMode);
@@ -124,6 +128,13 @@ export function App() {
       else if (typeof settings.autoReload === "boolean") { const value = settings.autoReload ? "on" : "off"; autoReloadRef.current = value; setAutoReload(value); }
       if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
       if (["on", "off", "error-code", "always-code"].includes(String(settings.mermaidMode))) { const value = settings.mermaidMode as typeof mermaidMode; mermaidModeRef.current = value; setMermaidMode(value); }
+      const apps = normalizeExternalApps(settings.externalApps);
+      setExternalApps(apps);
+      if (!Array.isArray(settings.externalApps)) {
+        void saveSettings({ schemaVersion: 3, externalApps: apps }).catch((error) => {
+          setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
+        });
+      }
       if (recoveredFiles.length > 0) {
         setToast({
           id: String(Date.now()),
@@ -279,11 +290,11 @@ export function App() {
   }, [activeTab?.id]);
 
   const reload = useCallback(() => {
-    if (activeTab) reloadTab(activeTab.id);
+    if (activeTab?.document) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
 
   const applyFoldPreset = useCallback((preset: "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset") => {
-    if (!activeTab) return;
+    if (!activeTab?.document) return;
     if (preset === "reset") {
       const sections = [...(markdownRef.current?.querySelectorAll<HTMLElement>(".fold-section[data-fold-id]") ?? [])];
       const expanded = Object.fromEntries(sections.flatMap((section) => section.dataset.foldId ? [[section.dataset.foldId, false] as const] : []));
@@ -349,15 +360,33 @@ export function App() {
     if (activeTab) dispatch({ type: "IMAGE_DISPLAY_SIZE", id: activeTab.id, source, size });
   }, [activeTab?.id]);
 
-  const openActiveWith = useCallback((kind: "folder" | "vscode" | "notepad") => {
-    if (!activeTab) return;
-    const operation = kind === "folder" ? openContainingFolder(activeTab.path) : openInEditor(activeTab.path, kind);
+  const executeExternalApp = useCallback((app: ExternalAppConfig) => {
+    if (!activeTab?.document) return;
+    const operation = app.builtinKind === "folder"
+      ? openContainingFolder(activeTab.path)
+      : app.builtinKind === "vscode" || app.builtinKind === "notepad"
+        ? openInEditor(activeTab.path, app.builtinKind)
+        : openExternalApp({
+          executable: app.executable,
+          args: app.args,
+          workingDirectory: app.workingDirectory || undefined,
+          file: activeTab.path,
+          line: 1,
+        });
     void operation.catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
-  }, [activeTab]);
+  }, [activeTab?.document, activeTab?.path]);
+
+  const openSettings = useCallback(() => dispatch({ type: "OPEN_SETTINGS" }), []);
+
+  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[]) => {
+    await saveSettings({ schemaVersion: 3, externalApps: apps });
+    setExternalApps(apps);
+    setToast({ id: String(Date.now()), message: "外部アプリ設定を保存しました", type: "success" });
+  }, []);
 
   const closeTab = useCallback((id: string) => {
     const tab = tabsState.tabs.find((candidate) => candidate.id === id);
-    if (tab) setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
+    if (tab && tab.kind !== "settings") setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
     dispatch({ type: "CLOSE", id });
   }, [tabsState.tabs]);
 
@@ -374,7 +403,7 @@ export function App() {
   }, [tabsState.activeId, tabsState.tabs]);
 
   const openSearch = useCallback(() => {
-    if (activeTab) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
+    if (activeTab?.document) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
   }, [activeTab]);
 
   const closeSearch = useCallback(() => {
@@ -512,10 +541,10 @@ export function App() {
   return (
     <div className="app-container">
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
-      <div className="view-controls" aria-label="表示と文書の操作">
+      {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
-          <button type="button" disabled={!activeTab} onClick={openSearch}>検索</button>
-          <button type="button" disabled={!activeTab} onClick={reload}>再読み込み</button>
+          <button type="button" disabled={!activeTab?.document} onClick={openSearch}>検索</button>
+          <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
         </div>
         <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>
@@ -527,16 +556,15 @@ export function App() {
             <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
           </select>
         </div>
-        <div className="control-group external-actions">
-          <span className="control-group__title">外部で開く</span>
-          <button type="button" disabled={!activeTab} onClick={() => openActiveWith("folder")}>フォルダー</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("vscode")}>VS Code</button><button type="button" disabled={!activeTab} onClick={() => openActiveWith("notepad")}>メモ帳</button>
-        </div>
+        <ExternalActions apps={externalApps} disabled={!activeTab?.document} onExecute={executeExternalApp} />
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
         {activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
-      </div>
+      </div>}
 
       <main className={`preview-container view-${viewMode}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: zoom / 100 }}>
-        {activeTab?.loading ? (
+        {activeTab?.kind === "settings" ? (
+          <SettingsPanel apps={externalApps} onSave={saveExternalAppSettings} />
+        ) : activeTab?.loading ? (
           <div className="empty-state">
             <div className="empty-icon">⏳</div>
             <div className="empty-title">読み込み中...</div>
@@ -608,6 +636,8 @@ export function App() {
         onThemeChange={updateTheme}
         viewMode={viewMode}
         onViewModeChange={updateViewMode}
+        onOpenSettings={openSettings}
+        statusText={activeTab?.kind === "settings" ? "アプリケーション設定" : undefined}
       />
       {contextTab && (() => {
         const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);
