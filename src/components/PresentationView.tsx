@@ -71,9 +71,10 @@ export function PresentationView({
   onPageChange?: (headingId: string, sourceLine: number) => void;
 }) {
   const model = useMemo(() => buildPresentationModel(content, lineThreshold), [content, lineThreshold]);
-  const initialIndex = () => Math.max(0, model.pages.findIndex((candidate) => candidate.id === initialHeadingId || candidate.mergedChildId === initialHeadingId));
+  const initialIndex = () => Math.max(0, model.pages.findIndex((candidate) => candidate.id === initialHeadingId || candidate.mergedHeadingIds.includes(initialHeadingId ?? "")));
   const [pageIndex, setPageIndex] = useState(initialIndex);
   const [imageTarget, setImageTarget] = useState<PresentationImageTarget | null>(null);
+  const [tocOpen, setTocOpen] = useState(false);
   const currentCrumbRef = useRef<HTMLButtonElement | null>(null);
   const page = model.pages[Math.min(pageIndex, model.pages.length - 1)];
 
@@ -98,41 +99,78 @@ export function PresentationView({
   }, [imageTarget, model.pages.length]);
 
   const jumpToHeading = (headingId: string) => {
-    const index = model.pages.findIndex((candidate) => candidate.id === headingId || candidate.mergedChildId === headingId);
+    const index = model.pages.findIndex((candidate) => candidate.id === headingId || candidate.mergedHeadingIds.includes(headingId));
     if (index >= 0) setPageIndex(index);
   };
+  const currentHeadingId = page.mergedHeadingIds[page.mergedHeadingIds.length - 1] ?? page.id;
+  const renderTocItems = (ids: string[]): React.ReactNode => <ul>
+    {ids.map((id) => {
+      const heading = model.headings[id];
+      if (!heading) return null;
+      return <li key={id}>
+        <button
+          type="button"
+          aria-current={id === currentHeadingId ? "location" : undefined}
+          onClick={() => {
+            jumpToHeading(id);
+            if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 1500px)").matches) setTocOpen(false);
+          }}
+        >
+          {heading.title}
+        </button>
+        {heading.childIds.length > 0 && renderTocItems(heading.childIds)}
+      </li>;
+    })}
+  </ul>;
 
   return <section className="presentation-view" aria-label="階層型プレゼンテーション">
-    <nav className="presentation-breadcrumbs" aria-label="見出し階層">
-      {page.breadcrumbs.map((crumb, index) => <span key={crumb.id}>
-        {index > 0 && <span aria-hidden="true">›</span>}
-        <button type="button" ref={index === page.breadcrumbs.length - 1 ? currentCrumbRef : undefined} onClick={() => jumpToHeading(crumb.id)} title={crumb.title}>
-          {crumb.title} ({crumb.index}/{crumb.total})
-        </button>
-      </span>)}
-    </nav>
-    <div className="presentation-stage">
-      <MarkdownPreview
-        content={page.markdown}
-        baseDir={baseDir}
-        imageVersions={imageVersions}
-        onStartCrop={onStartCrop}
-        theme={theme}
-        onError={onError}
-        mermaidMode={mermaidMode}
-        windowId={windowId}
-        tabId={`${tabId}:${page.id}`}
-        imageDisplaySizes={imageDisplaySizes}
-        onOpenDocument={onOpenDocument}
-        presentationMode
-        onPresentationImageOpen={setImageTarget}
-      />
-      {page.childIds.length > 0 && <nav className="presentation-children" aria-label="下位見出し">
-        {page.childIds.map((childId) => <button type="button" key={childId} onClick={() => jumpToHeading(childId)}>
-          <span>{model.headings[childId].title}</span>
-          <span aria-hidden="true">→</span>
-        </button>)}
-      </nav>}
+    <div className="presentation-topbar">
+      <button type="button" className="presentation-toc-toggle" aria-expanded={tocOpen} aria-controls="presentation-toc" onClick={() => setTocOpen((open) => !open)}>
+        ☰ 目次
+      </button>
+      <nav className="presentation-breadcrumbs" aria-label="見出し階層">
+        {page.breadcrumbs.map((crumb, index) => <span key={crumb.id}>
+          {index > 0 && <span aria-hidden="true">›</span>}
+          <button type="button" ref={index === page.breadcrumbs.length - 1 ? currentCrumbRef : undefined} onClick={() => jumpToHeading(crumb.id)} title={crumb.title}>
+            {crumb.title} ({crumb.index}/{crumb.total})
+          </button>
+        </span>)}
+      </nav>
+    </div>
+    <div className={`presentation-main${tocOpen ? " has-toc" : ""}`}>
+      {tocOpen && <>
+        <button type="button" className="presentation-toc-backdrop" aria-label="目次を閉じる" onClick={() => setTocOpen(false)} />
+        <aside id="presentation-toc" className="presentation-toc">
+          <div className="presentation-toc__header">
+            <strong>目次</strong>
+            <button type="button" aria-label="目次を閉じる" onClick={() => setTocOpen(false)}>×</button>
+          </div>
+          <nav aria-label="文書全体の目次">{renderTocItems(model.rootIds)}</nav>
+        </aside>
+      </>}
+      <div className="presentation-stage">
+        <MarkdownPreview
+          content={page.markdown}
+          baseDir={baseDir}
+          imageVersions={imageVersions}
+          onStartCrop={onStartCrop}
+          theme={theme}
+          onError={onError}
+          mermaidMode={mermaidMode}
+          windowId={windowId}
+          tabId={`${tabId}:${page.id}`}
+          imageDisplaySizes={imageDisplaySizes}
+          onOpenDocument={onOpenDocument}
+          presentationMode
+          onPresentationImageOpen={setImageTarget}
+        />
+        {page.childIds.length > 0 && <nav className="presentation-children" aria-label="下位見出し">
+          {page.childIds.map((childId) => <button type="button" key={childId} onClick={() => jumpToHeading(childId)}>
+            <span>{model.headings[childId].title}</span>
+            <span aria-hidden="true">→</span>
+          </button>)}
+        </nav>}
+      </div>
     </div>
     <footer className="presentation-navigation">
       <button type="button" disabled={pageIndex === 0} onClick={() => setPageIndex((current) => current - 1)}>← 前へ</button>

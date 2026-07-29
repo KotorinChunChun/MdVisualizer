@@ -8,6 +8,35 @@ describe("buildPresentationModel", () => {
     expect(model.pages.map((page) => page.title)).toEqual(["Parent"]);
     expect(model.pages[0].markdown).toContain("## Only child");
     expect(model.pages[0].mergedChildId).toBe("only-child");
+    expect(model.pages[0].mergedHeadingIds).toEqual(["only-child"]);
+  });
+
+  it("recursively merges a single-child chain while the combined body stays within the threshold", () => {
+    const model = buildPresentationModel([
+      "# Parent", "parent one", "parent two",
+      "## Child", "child one", "child two",
+      "### Grandchild", "grandchild one", "grandchild two",
+      "#### Great-grandchild", "great one", "great two",
+    ].join("\n"), 10);
+
+    expect(model.pages).toHaveLength(1);
+    expect(model.pages[0].mergedHeadingIds).toEqual(["child", "grandchild", "great-grandchild"]);
+    expect(model.pages[0].markdown).toContain("#### Great-grandchild");
+    expect(model.pages[0].breadcrumbs.map((crumb) => crumb.title))
+      .toEqual(["Parent", "Child", "Grandchild", "Great-grandchild"]);
+  });
+
+  it("stops recursive merging before the combined body exceeds the threshold", () => {
+    const model = buildPresentationModel([
+      "# Parent", "1", "2", "3", "4",
+      "## Child", "5", "6", "7", "8",
+      "### Grandchild", "9", "10", "11",
+    ].join("\n"), 10);
+
+    expect(model.pages.map((page) => page.id)).toEqual(["parent", "grandchild"]);
+    expect(model.pages[0].mergedHeadingIds).toEqual(["child"]);
+    expect(model.pages[0].childIds).toEqual(["grandchild"]);
+    expect(model.pages[0].markdown).not.toContain("### Grandchild");
   });
 
   it("keeps an only child with more than the source-line threshold as a page", () => {

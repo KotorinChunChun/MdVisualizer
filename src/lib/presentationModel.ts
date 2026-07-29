@@ -40,6 +40,7 @@ export interface PresentationPage {
   markdown: string;
   childIds: string[];
   mergedChildId: string | null;
+  mergedHeadingIds: string[];
   breadcrumbs: PresentationCrumb[];
   sourceLine: number;
   /** Parent pages with child navigation intentionally omit their own body. */
@@ -80,6 +81,7 @@ export function buildPresentationModel(
         markdown,
         childIds: [],
         mergedChildId: null,
+        mergedHeadingIds: [],
         breadcrumbs: [],
         sourceLine: 1,
         isNavigationPage: false,
@@ -132,11 +134,21 @@ export function buildPresentationModel(
     return [fragment, ...missingDefinitions].filter(Boolean).join("\n\n");
   };
   const mergedIds = new Set<string>();
+  const pageChains = new Map<string, PresentationHeading[]>();
   for (const heading of list) {
     if (mergedIds.has(heading.id)) continue;
-    if (heading.childIds.length !== 1) continue;
-    const child = headings[heading.childIds[0]];
-    if (child.bodyLineCount <= inlineChildLineLimit) mergedIds.add(child.id);
+    const chain = [heading];
+    let current = heading;
+    let cumulativeBodyLines = heading.bodyLineCount;
+    while (current.childIds.length === 1) {
+      const child = headings[current.childIds[0]];
+      if (cumulativeBodyLines + child.bodyLineCount > inlineChildLineLimit) break;
+      chain.push(child);
+      mergedIds.add(child.id);
+      cumulativeBodyLines += child.bodyLineCount;
+      current = child;
+    }
+    pageChains.set(heading.id, chain);
   }
 
   const siblingsOf = (heading: PresentationHeading) =>
@@ -153,26 +165,28 @@ export function buildPresentationModel(
   };
 
   const pages = list.filter((heading) => !mergedIds.has(heading.id)).map((heading): PresentationPage => {
-    const mergedChild = heading.childIds.length === 1 && mergedIds.has(heading.childIds[0])
-      ? headings[heading.childIds[0]]
-      : null;
-    const isNavigationPage = !mergedChild && heading.childIds.length > 0;
+    const chain = pageChains.get(heading.id) ?? [heading];
+    const mergedHeadings = chain.slice(1);
+    const terminalHeading = chain[chain.length - 1];
+    const isNavigationPage = mergedHeadings.length === 0 && heading.childIds.length > 0;
     // A parent with selectable children is deliberately a navigation page:
     // long/multiple child sections must not mix its body into the slide.
     const ownMarkdown = markdown.slice(
       heading.headingStart,
       isNavigationPage ? heading.bodyStart : heading.bodyEnd,
     ).trim();
-    const mergedMarkdown = mergedChild
-      ? markdown.slice(mergedChild.headingStart, mergedChild.bodyEnd).trim()
-      : "";
+    const mergedMarkdown = mergedHeadings
+      .map((mergedHeading) => markdown.slice(mergedHeading.headingStart, mergedHeading.bodyEnd).trim())
+      .filter(Boolean)
+      .join("\n\n");
     return {
       id: heading.id,
       title: heading.title,
       markdown: withDefinitions([ownMarkdown, mergedMarkdown].filter(Boolean).join("\n\n")),
-      childIds: mergedChild ? mergedChild.childIds : heading.childIds,
-      mergedChildId: mergedChild?.id ?? null,
-      breadcrumbs: breadcrumbsFor(heading),
+      childIds: terminalHeading.childIds,
+      mergedChildId: mergedHeadings[0]?.id ?? null,
+      mergedHeadingIds: mergedHeadings.map((item) => item.id),
+      breadcrumbs: breadcrumbsFor(terminalHeading),
       sourceLine: astHeadings[list.indexOf(heading)].position?.start.line ?? 1,
       isNavigationPage,
     };
