@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { __test__ } from "./foldSections";
-import { collapsedForFoldCommand, resolveFoldToggle } from "./foldSections";
+import { ancestorFoldIds, collapsedForFoldCommand, resolveFoldToggle } from "./foldSections";
 
 const heading = (level: number, text: string) => ({ type: "element", tagName: `h${level}`, children: [{ type: "text", value: text }] });
 
@@ -17,6 +17,25 @@ describe("fold sections", () => {
   it("makes repeated headings distinct while keeping their stable slug", () => {
     const result = __test__.foldRange([heading(2, "Same"), heading(2, "Same")]);
     expect(result.map((section) => section.properties?.["data-fold-id"])).toEqual(["same", "same-2"]);
+  });
+
+  it("uses the same NFKC heading IDs as presentation pages", () => {
+    const result = __test__.foldRange([heading(1, "① Overview"), heading(1, "1 Overview")]);
+    expect(result.map((section) => section.properties?.["data-fold-id"])).toEqual(["1-overview", "1-overview-2"]);
+  });
+
+  it("finds every collapsed ancestor before restoring a nested heading", () => {
+    const root = document.createElement("section");
+    root.dataset.foldId = "root";
+    const content = document.createElement("div");
+    const child = document.createElement("section");
+    child.dataset.foldId = "child";
+    const target = document.createElement("section");
+    target.dataset.foldId = "target";
+    child.append(target);
+    content.append(child);
+    root.append(content);
+    expect(ancestorFoldIds(target)).toEqual(["child", "root"]);
   });
 
   it("resolves whole-document toggle and level commands deterministically", () => {

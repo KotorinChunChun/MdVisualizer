@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
+import { nextHeadingId } from "./headingIds";
 
 type MarkdownAstNode = {
   type?: string;
@@ -41,6 +42,8 @@ export interface PresentationPage {
   mergedChildId: string | null;
   breadcrumbs: PresentationCrumb[];
   sourceLine: number;
+  /** Parent pages with child navigation intentionally omit their own body. */
+  isNavigationPage: boolean;
 }
 
 export interface PresentationModel {
@@ -54,14 +57,6 @@ const parser = unified().use(remarkParse).use(remarkGfm);
 function nodeText(node: MarkdownAstNode): string {
   if (typeof node.value === "string") return node.value;
   return (node.children ?? []).map(nodeText).join("");
-}
-
-function slug(value: string) {
-  return value
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
-    .replace(/^-+|-+$/g, "") || "heading";
 }
 
 function trimmedLogicalLineCount(markdown: string) {
@@ -87,16 +82,14 @@ export function buildPresentationModel(
         mergedChildId: null,
         breadcrumbs: [],
         sourceLine: 1,
+        isNavigationPage: false,
       }],
     };
   }
 
   const counts = new Map<string, number>();
   const list: PresentationHeading[] = astHeadings.map((node, index) => {
-    const base = slug(nodeText(node));
-    const occurrence = (counts.get(base) ?? 0) + 1;
-    counts.set(base, occurrence);
-    const id = occurrence === 1 ? base : `${base}-${occurrence}`;
+    const id = nextHeadingId(counts, nodeText(node));
     const headingStart = node.position!.start.offset ?? 0;
     const bodyStart = node.position!.end.offset ?? headingStart;
     const nextHeading = astHeadings[index + 1];
@@ -131,6 +124,13 @@ export function buildPresentationModel(
   }
 
   const headings = Object.fromEntries(list.map((heading) => [heading.id, heading]));
+  const definitions = (root.children ?? [])
+    .filter((node) => node.type === "definition" && node.position?.start.offset !== undefined && node.position.end.offset !== undefined)
+    .map((node) => markdown.slice(node.position!.start.offset!, node.position!.end.offset!));
+  const withDefinitions = (fragment: string) => {
+    const missingDefinitions = definitions.filter((definition) => !fragment.includes(definition));
+    return [fragment, ...missingDefinitions].filter(Boolean).join("\n\n");
+  };
   const mergedIds = new Set<string>();
   for (const heading of list) {
     if (mergedIds.has(heading.id)) continue;
@@ -156,18 +156,25 @@ export function buildPresentationModel(
     const mergedChild = heading.childIds.length === 1 && mergedIds.has(heading.childIds[0])
       ? headings[heading.childIds[0]]
       : null;
-    const ownMarkdown = markdown.slice(heading.headingStart, heading.bodyEnd).trim();
+    const isNavigationPage = !mergedChild && heading.childIds.length > 0;
+    // A parent with selectable children is deliberately a navigation page:
+    // long/multiple child sections must not mix its body into the slide.
+    const ownMarkdown = markdown.slice(
+      heading.headingStart,
+      isNavigationPage ? heading.bodyStart : heading.bodyEnd,
+    ).trim();
     const mergedMarkdown = mergedChild
       ? markdown.slice(mergedChild.headingStart, mergedChild.bodyEnd).trim()
       : "";
     return {
       id: heading.id,
       title: heading.title,
-      markdown: [ownMarkdown, mergedMarkdown].filter(Boolean).join("\n\n"),
+      markdown: withDefinitions([ownMarkdown, mergedMarkdown].filter(Boolean).join("\n\n")),
       childIds: mergedChild ? mergedChild.childIds : heading.childIds,
       mergedChildId: mergedChild?.id ?? null,
       breadcrumbs: breadcrumbsFor(heading),
       sourceLine: astHeadings[list.indexOf(heading)].position?.start.line ?? 1,
+      isNavigationPage,
     };
   });
 

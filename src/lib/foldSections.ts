@@ -5,6 +5,8 @@ type HastNode = {
   children?: HastNode[];
 };
 
+import { nextHeadingId } from "./headingIds";
+
 /** Commands understood by every rendered fold section. */
 export type FoldCommandName =
   | "collapse"
@@ -85,10 +87,6 @@ function textContent(node: HastNode): string {
   return node.children?.map(textContent).join("") ?? "";
 }
 
-function slugify(text: string): string {
-  return text.toLowerCase().trim().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/(^-|-$)/g, "") || "section";
-}
-
 const headingLevel = (node: HastNode): number | null => {
   const match = node.type === "element" && node.tagName?.match(/^h([1-6])$/);
   return match ? Number(match[1]) : null;
@@ -114,10 +112,7 @@ function foldRange(nodes: HastNode[], ids = new Map<string, number>()): HastNode
       end += 1;
     }
 
-    const baseId = slugify(textContent(heading));
-    const occurrence = (ids.get(baseId) ?? 0) + 1;
-    ids.set(baseId, occurrence);
-    const foldId = occurrence === 1 ? baseId : `${baseId}-${occurrence}`;
+    const foldId = nextHeadingId(ids, textContent(heading));
     result.push({
       type: "element",
       tagName: "section",
@@ -143,6 +138,17 @@ export function rehypeFoldSections() {
   return (tree: HastNode) => {
     if (tree.children) tree.children = foldRange(tree.children);
   };
+}
+
+/** Returns parent fold IDs from nearest to farthest for a folded section. */
+export function ancestorFoldIds(section: Element): string[] {
+  const ids: string[] = [];
+  let ancestor = section.parentElement?.closest<HTMLElement>("[data-fold-id]") ?? null;
+  while (ancestor) {
+    if (ancestor.dataset.foldId) ids.push(ancestor.dataset.foldId);
+    ancestor = ancestor.parentElement?.closest<HTMLElement>("[data-fold-id]") ?? null;
+  }
+  return ids;
 }
 
 export const __test__ = { foldRange };

@@ -12,7 +12,9 @@ export function isAbsoluteLocalPath(value: string): boolean {
 export function resolveImageSrc(src: string, baseDir: string): string {
   if (!src) return "";
   const lower = src.toLowerCase();
-  if (lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("data:")) {
+  // A file URL is already a browser-resolvable viewing source.  It remains
+  // display-only in ImageRenderer and must not be sent through convertFileSrc.
+  if (lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("data:") || lower.startsWith("file://")) {
     return src;
   }
 

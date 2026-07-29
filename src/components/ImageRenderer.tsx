@@ -53,10 +53,12 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   const isRemote =
     src.toLowerCase().startsWith("http://") ||
     src.toLowerCase().startsWith("https://") ||
-    src.toLowerCase().startsWith("data:");
-  const isSvg = /\.svg(?:[?#]|$)/i.test(src);
+    src.toLowerCase().startsWith("data:") ||
+    src.toLowerCase().startsWith("file:") ||
+    src.startsWith("//");
+  const isSupportedRaster = /\.(?:png|jpe?g|gif|webp|bmp)(?:[?#]|$)/i.test(src);
   // SVG is display-only until a dedicated vector editing design is approved.
-  const isEditableLocalImage = !isRemote && !src.toLowerCase().startsWith("file:") && !isSvg;
+  const isEditableLocalImage = !isRemote && isSupportedRaster;
 
   let fullPath = src;
   if (!isRemote && !isAbsoluteLocalPath(src)) {

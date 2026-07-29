@@ -7,6 +7,38 @@ import { PresentationImageModal } from "./PresentationImageModal";
 import type { PresentationImageTarget } from "./ImageRenderer";
 import "../styles/presentation.css";
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  if (target instanceof HTMLElement && target.isContentEditable) return true;
+  return Boolean(target.closest("input, select, textarea, button, a, [contenteditable=''], [contenteditable='true']"));
+}
+
+function isModalOpen(documentRoot: Document): boolean {
+  return [...documentRoot.querySelectorAll<HTMLElement>("dialog[open], [role='dialog'][aria-modal='true'], [aria-modal='true'], .modal, .mermaid-modal")]
+    .some((element) => !element.hidden && element.style.display !== "none" && element.style.visibility !== "hidden");
+}
+
+function isWithinHorizontalScroller(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  for (let element: Element | null = target; element; element = element.parentElement) {
+    const htmlElement = element as HTMLElement;
+    const style = window.getComputedStyle(htmlElement);
+    const overflowX = style.overflowX || style.overflow;
+    if (htmlElement.scrollWidth > htmlElement.clientWidth && (overflowX === "auto" || overflowX === "scroll" || htmlElement.classList.contains("table-scroll") || htmlElement.classList.contains("mermaid-source"))) return true;
+  }
+  return false;
+}
+
+/** Kept exported so presentation keyboard exclusions stay regression-tested. */
+export function shouldHandlePresentationArrowKey(event: KeyboardEvent, documentRoot: Document = document): boolean {
+  return !event.ctrlKey
+    && !event.altKey
+    && !event.metaKey
+    && !isEditableTarget(event.target)
+    && !isModalOpen(documentRoot)
+    && !isWithinHorizontalScroller(event.target);
+}
+
 export function PresentationView({
   content,
   baseDir,
@@ -52,7 +84,7 @@ export function PresentationView({
   }, [pageIndex]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (imageTarget || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (imageTarget || !shouldHandlePresentationArrowKey(event)) return;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         setPageIndex((current) => Math.max(0, current - 1));

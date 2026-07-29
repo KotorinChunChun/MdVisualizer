@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { PresentationView } from "./PresentationView";
+import { PresentationView, shouldHandlePresentationArrowKey } from "./PresentationView";
 
 const props = {
   baseDir: "C:\\docs",
@@ -30,5 +30,35 @@ describe("PresentationView", () => {
     render(<PresentationView {...props} content={"# Parent\n\n## A\nlong\nline\n\n## B\nlong\nline"} />);
     fireEvent.keyDown(window, { key: "ArrowRight" });
     expect(screen.getByText("2 / 3")).toBeTruthy();
+  });
+
+  it("does not steal arrows from controls, horizontal content, or modal dialogs", () => {
+    render(<PresentationView {...props} content={"# Parent\n\n## A\nbody\n\n## B\nbody"} />);
+    const input = document.createElement("input");
+    document.body.append(input);
+    fireEvent.keyDown(input, { key: "ArrowRight" });
+    expect(screen.getByText("1 / 3")).toBeTruthy();
+
+    const scroller = document.createElement("div");
+    scroller.className = "table-scroll";
+    Object.defineProperties(scroller, { clientWidth: { value: 100 }, scrollWidth: { value: 200 } });
+    document.body.append(scroller);
+    fireEvent.keyDown(scroller, { key: "ArrowRight" });
+    expect(screen.getByText("1 / 3")).toBeTruthy();
+
+    const modal = document.createElement("div");
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    document.body.append(modal);
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(screen.getByText("1 / 3")).toBeTruthy();
+    modal.remove();
+    scroller.remove();
+    input.remove();
+  });
+
+  it("identifies a normal presentation arrow key as navigable", () => {
+    const event = new KeyboardEvent("keydown", { key: "ArrowRight" });
+    expect(shouldHandlePresentationArrowKey(event)).toBe(true);
   });
 });

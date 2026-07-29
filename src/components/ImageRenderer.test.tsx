@@ -138,6 +138,36 @@ describe("ImageRenderer inline resize", () => {
     expect(onStartCrop).not.toHaveBeenCalled();
   });
 
+  it.each(["photo.png", "photo.jpeg", "photo.jpg", "photo.gif", "photo.webp", "photo.bmp"])("permits supported local raster editing for %s", (src) => {
+    const onStartCrop = vi.fn();
+    renderImage(onStartCrop, imageRect, src);
+    const image = screen.getByAltText("テスト画像");
+    fireEvent.load(image);
+    expect(screen.getAllByRole("button")).toHaveLength(8);
+    fireEvent.click(image);
+    expect(onStartCrop).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["vector.svg", "https://example.test/photo.png", "data:image/png;base64,AAAA", "file:///C:/docs/photo.png", "photo.tiff"])("keeps non-local-raster source view-only: %s", (src) => {
+    const onStartCrop = vi.fn();
+    renderImage(onStartCrop, imageRect, src);
+    const image = screen.getByAltText("テスト画像");
+    fireEvent.load(image);
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    fireEvent.click(image);
+    expect(onStartCrop).not.toHaveBeenCalled();
+  });
+
+  it("keeps file URLs viewable while refusing crop editing", () => {
+    const onStartCrop = vi.fn();
+    renderImage(onStartCrop, imageRect, "file:///C:/docs/photo.png");
+    const image = screen.getByAltText("テスト画像");
+    fireEvent.load(image);
+    expect(image.getAttribute("src")).toContain("file:///C:/docs/photo.png");
+    fireEvent.click(image);
+    expect(onStartCrop).not.toHaveBeenCalled();
+  });
+
   it("converts a 150% display-space pointer delta back to CSS pixels and never grows past load size", () => {
     const zoomedRect = { ...imageRect, right: 480, bottom: 300, width: 480, height: 300 };
     const { container } = renderImage(vi.fn(), zoomedRect);

@@ -16,6 +16,10 @@ describe("Windows image paths", () => {
     expect(resolveImageSrc("C:/images/a.png", "C:\\docs")).toBe("asset://C:/images/a.png");
   });
 
+  it("keeps file URLs directly viewable without treating them as local paths", () => {
+    expect(resolveImageSrc("file:///C:/images/a.png", "C:\\docs")).toBe("file:///C:/images/a.png");
+  });
+
   it("resolves relative and tauri.localhost Markdown links inside the document directory", () => {
     expect(resolveLocalMarkdownPath("../guide/next.md", "C:\\docs\\current")).toBe("C:/docs/guide/next.md");
     expect(resolveLocalMarkdownPath("http://tauri.localhost/v0.1.0-imp.md", "C:\\docs")).toBe("C:/docs/v0.1.0-imp.md");

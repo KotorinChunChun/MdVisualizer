@@ -19,6 +19,7 @@ import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
+import { ancestorFoldIds } from "./lib/foldSections";
 import { DEFAULT_EXTERNAL_APPS, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
 import "./styles/app.css";
 import "./styles/content.css";
@@ -49,6 +50,8 @@ export function App() {
   const inFlightLoads = useRef(new Set<string>());
   const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
   const presentationPositions = useRef<Record<string, string>>({});
+  const wasPresentationMode = useRef(false);
+  const presentationRestorePending = useRef(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [theme, setTheme] = useState("system");
   const [zoom, setZoom] = useState(100);
@@ -168,15 +171,45 @@ export function App() {
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
 
   useEffect(() => {
-    if (viewMode === "presentation" || !activeTab?.document) return;
+    if (viewMode === "presentation") {
+      wasPresentationMode.current = true;
+      return;
+    }
+    if (wasPresentationMode.current) {
+      wasPresentationMode.current = false;
+      presentationRestorePending.current = true;
+    }
+    if (!presentationRestorePending.current || !activeTab?.document) return;
     const headingId = presentationPositions.current[activeTab.id];
-    if (!headingId) return;
+    if (!headingId) {
+      presentationRestorePending.current = false;
+      return;
+    }
+    presentationRestorePending.current = false;
     let secondFrame = 0;
     const firstFrame = requestAnimationFrame(() => {
       secondFrame = requestAnimationFrame(() => {
         const section = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-fold-id]") ?? [])]
           .find((candidate) => candidate.dataset.foldId === headingId);
-        section?.scrollIntoView({ block: "start" });
+        if (!section) return;
+        const parentIds = ancestorFoldIds(section);
+        if (parentIds.length > 0) {
+          setFoldStates((current) => {
+            const currentForPath = current[activeTab.path] ?? {};
+            const nextForPath = { ...currentForPath };
+            let changed = false;
+            for (const parentId of parentIds) {
+              if (nextForPath[parentId]) {
+                nextForPath[parentId] = false;
+                changed = true;
+              }
+            }
+            if (!changed) return current;
+            void saveFoldState(activeTab.path, nextForPath).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
+            return { ...current, [activeTab.path]: nextForPath };
+          });
+        }
+        requestAnimationFrame(() => section.scrollIntoView({ block: "start" }));
       });
     });
     return () => {
@@ -436,7 +469,7 @@ export function App() {
   }, [tabsState.activeId, tabsState.tabs]);
 
   const openSearch = useCallback(() => {
-    if (activeTab?.document) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
+    if (viewModeRef.current !== "presentation" && activeTab?.document) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
   }, [activeTab]);
 
   const closeSearch = useCallback(() => {
@@ -576,7 +609,7 @@ export function App() {
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
-          <button type="button" disabled={!activeTab?.document} onClick={openSearch}>検索</button>
+          {viewMode !== "presentation" && <button type="button" disabled={!activeTab?.document} onClick={openSearch}>検索</button>}
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
         </div>
         {viewMode !== "presentation" && <div className="control-group fold-controls">
@@ -591,10 +624,10 @@ export function App() {
         </div>}
         <ExternalActions apps={externalApps} disabled={!activeTab?.document} onExecute={executeExternalApp} />
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
-        {activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
+        {viewMode !== "presentation" && activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
       </div>}
 
-      <main className={`preview-container view-${viewMode}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: zoom / 100 }}>
+      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: zoom / 100 }}>
         {activeTab?.kind === "settings" ? (
           <SettingsPanel apps={externalApps} presentationLineThreshold={presentationLineThreshold} onSave={saveExternalAppSettings} />
         ) : activeTab?.loading ? (
