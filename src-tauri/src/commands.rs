@@ -7,6 +7,7 @@ use crate::settings::{
 };
 use crate::watcher::FileWatcher;
 use serde_json::{Map, Value};
+use serde::Deserialize;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
@@ -264,6 +265,58 @@ pub fn open_in_editor(path: String, editor: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenExternalAppRequest {
+    executable: String,
+    args: Vec<String>,
+    working_directory: Option<String>,
+    file: String,
+    line: Option<u32>,
+}
+
+fn expand_external_app_value(value: &str, file: &Path, line: u32) -> Result<String, String> {
+    let directory = file.parent().unwrap_or_else(|| Path::new(""));
+    let expanded = value
+        .replace("${file}", &file.to_string_lossy())
+        .replace("${dir}", &directory.to_string_lossy())
+        .replace("${line}", &line.to_string());
+    if expanded.contains("${") {
+        return Err(format!("Unsupported placeholder in external application value: {value}"));
+    }
+    Ok(expanded)
+}
+
+#[tauri::command]
+pub fn open_external_app(request: OpenExternalAppRequest) -> Result<(), String> {
+    let file = PathBuf::from(&request.file);
+    if !file.exists() {
+        return Err(AppError::FileNotFound(request.file).to_string());
+    }
+    if request.executable.trim().is_empty() {
+        return Err("External application executable is required.".into());
+    }
+    let line = request.line.unwrap_or(1);
+    let executable = expand_external_app_value(&request.executable, &file, line)?;
+    let mut command = std::process::Command::new(&executable);
+    for argument in request.args {
+        command.arg(expand_external_app_value(&argument, &file, line)?);
+    }
+    if let Some(working_directory) = request.working_directory.filter(|value| !value.trim().is_empty()) {
+        command.current_dir(expand_external_app_value(&working_directory, &file, line)?);
+    }
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    command
+        .spawn()
+        .map_err(|error| format!("Could not start {executable}: {error}"))?;
+    Ok(())
+}
+
 fn resolve_vscode_executable() -> Result<PathBuf, String> {
     let path_candidates: Vec<PathBuf> = std::env::var_os("PATH")
         .map(|path| {
@@ -360,5 +413,20 @@ mod tests {
         assert!(is_allowed_external_url("mailto:test@example.com"));
         assert!(!is_allowed_external_url("file:///C:/secret.txt"));
         assert!(!is_allowed_external_url("javascript:alert(1)"));
+    }
+
+    #[test]
+    fn external_app_expands_only_allowed_placeholders_without_shell_parsing() {
+        let file = Path::new("C:/日本語 & docs/read me.md");
+        assert_eq!(
+            expand_external_app_value("--file=${file}", file, 42).unwrap(),
+            "--file=C:/日本語 & docs/read me.md"
+        );
+        assert_eq!(
+            expand_external_app_value("${dir}", file, 42).unwrap(),
+            "C:/日本語 & docs"
+        );
+        assert_eq!(expand_external_app_value("${line}", file, 42).unwrap(), "42");
+        assert!(expand_external_app_value("${unknown}", file, 1).is_err());
     }
 }

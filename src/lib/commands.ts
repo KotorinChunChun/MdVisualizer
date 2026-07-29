@@ -59,3 +59,12 @@ export async function openExternalEditor(path: string): Promise<void> {
 export async function openContainingFolder(path: string): Promise<void> { await invoke<void>("open_containing_folder", { path }); }
 export async function openInEditor(path: string, editor: "vscode" | "notepad"): Promise<void> { await invoke<void>("open_in_editor", { path, editor }); }
 export async function openExternalUrl(url: string): Promise<void> { await invoke<void>("open_external_url", { url }); }
+export async function openExternalApp(request: {
+  executable: string;
+  args: string[];
+  workingDirectory?: string;
+  file: string;
+  line?: number;
+}): Promise<void> {
+  await invoke<void>("open_external_app", { request });
+}
