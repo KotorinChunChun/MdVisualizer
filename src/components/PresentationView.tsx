@@ -68,7 +68,7 @@ export function PresentationView({
   onOpenDocument?: (path: string) => void;
   lineThreshold?: number;
   initialHeadingId?: string;
-  onPageChange?: (headingId: string) => void;
+  onPageChange?: (headingId: string, sourceLine: number) => void;
 }) {
   const model = useMemo(() => buildPresentationModel(content, lineThreshold), [content, lineThreshold]);
   const initialIndex = () => Math.max(0, model.pages.findIndex((candidate) => candidate.id === initialHeadingId || candidate.mergedChildId === initialHeadingId));
@@ -78,7 +78,7 @@ export function PresentationView({
   const page = model.pages[Math.min(pageIndex, model.pages.length - 1)];
 
   useEffect(() => setPageIndex(initialIndex()), [content, tabId, initialHeadingId, model]);
-  useEffect(() => onPageChange?.(page.id), [onPageChange, page.id]);
+  useEffect(() => onPageChange?.(page.id, page.sourceLine), [onPageChange, page.id, page.sourceLine]);
   useEffect(() => {
     currentCrumbRef.current?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
   }, [pageIndex]);

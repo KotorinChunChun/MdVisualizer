@@ -52,4 +52,63 @@ describe("semantic scroll anchor", () => {
     expect(mode).toBe("ratio");
     expect(container.scrollTop).toBe(400);
   });
+
+  it("chooses the first matching duplicate inside the saved fold deterministically", () => {
+    const container = document.createElement("main");
+    const root = document.createElement("div");
+    const outside = document.createElement("p");
+    const first = document.createElement("p");
+    const second = document.createElement("p");
+    for (const [element, fold, top] of [[outside, "other", 20], [first, "saved", 100], [second, "saved", 180]] as const) {
+      element.dataset.blockId = `new-${top}`;
+      element.dataset.blockFoldId = fold;
+      element.textContent = "Repeated text";
+      element.getBoundingClientRect = () => rect(top);
+      element.getClientRects = () => [rect(top)] as unknown as DOMRectList;
+      root.append(element);
+    }
+    container.append(root);
+    document.body.append(container);
+    Object.defineProperties(container, {
+      clientHeight: { value: 200 },
+      scrollHeight: { value: 1000 },
+    });
+    container.getBoundingClientRect = () => rect(0, 200);
+    container.scrollTop = 50;
+    restoreScrollAnchor(container, root, {
+      blockId: "removed",
+      foldId: "saved",
+      text: "repeated text",
+      sourceLine: 20,
+      viewportOffset: 10,
+      scrollRatio: 0.5,
+    });
+    expect(container.scrollTop).toBe(140);
+    container.remove();
+  });
+
+  it("falls back to the closest preceding source line before using ratio", () => {
+    const container = document.createElement("main");
+    const root = document.createElement("div");
+    const line20 = document.createElement("p");
+    const line40 = document.createElement("p");
+    for (const [element, line, top] of [[line20, 20, 80], [line40, 40, 160]] as const) {
+      element.dataset.blockId = `line-${line}`;
+      element.dataset.sourceLine = String(line);
+      element.getBoundingClientRect = () => rect(top);
+      element.getClientRects = () => [rect(top)] as unknown as DOMRectList;
+      root.append(element);
+    }
+    container.append(root);
+    container.getBoundingClientRect = () => rect(20, 220);
+    expect(restoreScrollAnchor(container, root, {
+      blockId: "removed",
+      foldId: "",
+      text: "",
+      sourceLine: 35,
+      viewportOffset: 0,
+      scrollRatio: 0.9,
+    })).toBe("line");
+    expect(container.scrollTop).toBe(60);
+  });
 });

@@ -29,6 +29,9 @@ npm run tauri dev -- C:\Project\README.md C:\Project\design.markdown
 - PNG・JPEG・GIF・WebP・SVG の表示（SVG は表示のみで編集対象外）
 - Shift_JIS / UTF-8 BOM / UTF-16 を含む文字コード検出とステータス表示
 - ステータスバーから変更できるテーマ、レイアウト、Auto Reload（ON / 手動のみ / OFF）、Mermaid、ズーム
+- 見出し階層をページ化するプレゼンモード（パンくず、前後移動、子見出し一覧、画像拡大）
+- ステータスバー右端の歯車から開く設定タブと、外部アプリの追加・並び替え・表示場所変更
+- 既定の「フォルダー」「VS Code」ボタンと、メモ帳を含む「その他」サブメニュー
 - 画像ホバー時の8方向ハンドルによる非破壊の表示縮小
 - 画像クロップと起動中のバックアップ復元
 - テーマ、表示モード、ズーム、Mermaid、Auto Reload の安全な永続化
@@ -37,7 +40,8 @@ npm run tauri dev -- C:\Project\README.md C:\Project\design.markdown
 
 `samples/` に機能別の Markdown を収録しています。主要記法をまとめて確認する場合は
 `samples/all-markdown.md`、ローカル文書リンクは `samples/local-links.md`、Mermaid
-各種は `samples/mermaid-gallery.md` を開いてください。
+各種は `samples/mermaid-gallery.md`、階層プレゼンは
+`samples/presentation-hierarchy.md` を開いてください。
 
 ## ショートカット
 
@@ -52,6 +56,7 @@ npm run tauri dev -- C:\Project\README.md C:\Project\design.markdown
 | 見出しの全展開／全折りたたみを切り替える | `Ctrl+Alt+T` |
 | ズーム | `Ctrl` + `+` / `-` / `0` |
 | 全画面 | `F11` |
+| プレゼンの前／次ページ | `←` / `→` |
 
 ## 検証
 

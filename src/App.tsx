@@ -50,6 +50,7 @@ export function App() {
   const inFlightLoads = useRef(new Set<string>());
   const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
   const presentationPositions = useRef<Record<string, string>>({});
+  const presentationSourceLines = useRef<Record<string, number>>({});
   const wasPresentationMode = useRef(false);
   const presentationRestorePending = useRef(false);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -418,6 +419,19 @@ export function App() {
 
   const executeExternalApp = useCallback((app: ExternalAppConfig) => {
     if (!activeTab?.document) return;
+    const visibleSourceLine = () => {
+      const rootTop = containerRef.current?.getBoundingClientRect().top ?? 0;
+      const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])];
+      const nearest = blocks.reduce<HTMLElement | null>((best, block) => {
+        const top = block.getBoundingClientRect().top;
+        if (top > rootTop + 1) return best;
+        return !best || top > best.getBoundingClientRect().top ? block : best;
+      }, null) ?? blocks[0];
+      return Math.max(1, Number(nearest?.dataset.sourceLine) || 1);
+    };
+    const line = viewModeRef.current === "presentation"
+      ? presentationSourceLines.current[activeTab.id] ?? 1
+      : visibleSourceLine();
     const operation = app.builtinKind === "folder"
       ? openContainingFolder(activeTab.path)
       : app.builtinKind === "vscode" || app.builtinKind === "notepad"
@@ -427,7 +441,7 @@ export function App() {
           args: app.args,
           workingDirectory: app.workingDirectory || undefined,
           file: activeTab.path,
-          line: 1,
+          line,
         });
     void operation.catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
   }, [activeTab?.document, activeTab?.path]);
@@ -627,7 +641,7 @@ export function App() {
         {viewMode !== "presentation" && activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
       </div>}
 
-      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: zoom / 100 }}>
+      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: viewMode === "presentation" && activeTab?.kind !== "settings" ? 1 : zoom / 100 }}>
         {activeTab?.kind === "settings" ? (
           <SettingsPanel apps={externalApps} presentationLineThreshold={presentationLineThreshold} onSave={saveExternalAppSettings} />
         ) : activeTab?.loading ? (
@@ -656,7 +670,10 @@ export function App() {
             onOpenDocument={handleOpenDocument}
             lineThreshold={presentationLineThreshold}
             initialHeadingId={presentationPositions.current[activeTab.id]}
-            onPageChange={(headingId) => { presentationPositions.current[activeTab.id] = headingId; }}
+            onPageChange={(headingId, sourceLine) => {
+              presentationPositions.current[activeTab.id] = headingId;
+              presentationSourceLines.current[activeTab.id] = sourceLine;
+            }}
           />
         ) : activeTab?.document ? (
           <MarkdownPreview
@@ -707,8 +724,8 @@ export function App() {
         document={activeTab?.document ?? null}
         autoReload={autoReload}
         onAutoReloadChange={updateAutoReload}
-        zoom={zoom}
-        onZoomChange={updateZoom}
+        zoom={viewMode === "presentation" && activeTab?.kind !== "settings" ? 100 : zoom}
+        onZoomChange={viewMode === "presentation" && activeTab?.kind !== "settings" ? undefined : updateZoom}
         mermaidMode={mermaidMode}
         onMermaidModeChange={updateMermaidMode}
         mermaidStatus={mermaidStatus.pending ? `描画中 ${mermaidStatus.pending}` : mermaidStatus.error ? "エラー" : mermaidStatus.rendered ? `描画済み ${mermaidStatus.rendered}` : "対象なし"}
