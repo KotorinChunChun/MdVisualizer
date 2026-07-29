@@ -1,0 +1,39 @@
+import type { MouseEvent } from "react";
+import { copyMermaid, type MermaidCopyKind } from "../lib/mermaidClipboard";
+
+function emitToast(type: "success" | "error", message: string): void {
+  window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message } }));
+}
+
+export function MermaidToolbar({
+  source,
+  svg,
+  display,
+  onDisplayChange,
+}: {
+  source: string;
+  svg: string;
+  display: "diagram" | "code";
+  onDisplayChange: (display: "diagram" | "code") => void;
+}) {
+  const copy = async (event: MouseEvent<HTMLButtonElement>, kind: MermaidCopyKind) => {
+    try {
+      await copyMermaid(kind, source, svg);
+      emitToast("success", kind === "code" ? "コードをコピーしました" : `${kind.toUpperCase()}で図をコピーしました`);
+    } catch {
+      emitToast("error", kind === "code" ? "コードをコピーできませんでした" : "図をコピーできませんでした");
+    } finally {
+      event.currentTarget.blur();
+    }
+  };
+
+  return <div className="mermaid-toolbar" role="toolbar" aria-label="Mermaid操作">
+    <div className="mermaid-toolbar__view" role="group" aria-label="表示内容">
+      <button type="button" aria-pressed={display === "diagram"} onClick={() => onDisplayChange("diagram")}>図</button>
+      <button type="button" aria-pressed={display === "code"} onClick={() => onDisplayChange("code")}>コード</button>
+    </div>
+    <button type="button" onClick={(event) => void copy(event, "code")}>コードをコピー</button>
+    <button type="button" onClick={(event) => void copy(event, "png")}>PNGをコピー</button>
+    <button type="button" onClick={(event) => void copy(event, "svg")}>SVGをコピー</button>
+  </div>;
+}

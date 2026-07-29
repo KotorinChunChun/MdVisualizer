@@ -49,7 +49,7 @@ describe("MermaidBlock", () => {
   it("sends the rendered SVG to the shared fit preview", async () => {
     mocks.renderMermaid.mockResolvedValueOnce('<svg viewBox="0 0 800 400"><text>diagram</text></svg>');
     const onMediaOpen = vi.fn();
-    render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" onMediaOpen={onMediaOpen} />);
+    render(<MermaidBlock source={"flowchart LR\nA --> B"} theme="dark" mode="on" onMediaOpen={onMediaOpen} />);
     await waitFor(() => expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy());
 
     fireEvent.click(screen.getByRole("button", { name: "図を拡大" }));
@@ -59,6 +59,20 @@ describe("MermaidBlock", () => {
         svg: '<svg viewBox="0 0 800 400"><text>diagram</text></svg>',
         alt: "Mermaid図",
       },
+      mermaidSource: "flowchart LR\nA --> B",
     });
+  });
+
+  it("switches a rendered block between diagram and source", async () => {
+    mocks.renderMermaid.mockResolvedValueOnce('<svg><text>diagram</text></svg>');
+    render(<MermaidBlock source={"flowchart LR\nA --> B"} theme="dark" mode="on" />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("button", { name: "コード" }));
+    expect(screen.getByText(/flowchart LR/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "図を拡大" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "図" }));
+    expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy();
   });
 });

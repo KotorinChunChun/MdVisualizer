@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { MermaidToolbar } from "./MermaidToolbar";
 
 export type MediaPreviewContent =
   | { kind: "image"; src: string; alt: string }
@@ -8,6 +9,7 @@ export type MediaPreviewContent =
 export interface MediaPreviewTarget {
   content: MediaPreviewContent;
   cropTarget?: import("../hooks/useCropEditor").CropTarget | null;
+  mermaidSource?: string;
 }
 
 function svgIntrinsicSize(svg: string): { width: number; height: number } {
@@ -30,10 +32,12 @@ export function MediaPreviewModal({
   content,
   onClose,
   onActivate,
+  mermaidSource,
 }: {
   content: MediaPreviewContent;
   onClose: () => void;
   onActivate?: () => void;
+  mermaidSource?: string;
 }) {
   const svgSize = useMemo(
     () => content.kind === "svg" ? svgIntrinsicSize(content.svg) : null,
@@ -43,6 +47,7 @@ export function MediaPreviewModal({
   const [scale, setScale] = useState(1);
   const [origin, setOrigin] = useState("50% 50%");
   const [imageSize, setImageSize] = useState({ width: 1000, height: 600 });
+  const [display, setDisplay] = useState<"diagram" | "code">("diagram");
   const intrinsic = content.kind === "svg" ? svgSize! : imageSize;
 
   useEffect(() => {
@@ -70,13 +75,14 @@ export function MediaPreviewModal({
     onClick={onClose}
   >
     <div className="media-preview__toolbar" onClick={(event) => event.stopPropagation()}>
+      {mermaidSource && content.kind === "svg" && <MermaidToolbar source={mermaidSource} svg={content.svg} display={display} onDisplayChange={setDisplay} />}
       <button type="button" className="media-preview__mode" onClick={toggleMode}>
         {mode === "fit" ? "1:1表示" : "全体表示"}
       </button>
       <button type="button" className="media-preview__close" aria-label="拡大表示を閉じる" onClick={onClose}>×</button>
     </div>
     <div
-      className="media-preview__viewport"
+      className={`media-preview__viewport${display === "code" ? " is-code" : ""}`}
       onClick={(event) => event.stopPropagation()}
       onWheel={(event) => {
         event.preventDefault();
@@ -87,7 +93,9 @@ export function MediaPreviewModal({
         setScale((current) => Math.min(8, Math.max(0.1, current * (event.deltaY < 0 ? 1.2 : 1 / 1.2))));
       }}
     >
-      <div
+      {display === "code" && mermaidSource
+        ? <pre className="mermaid-source media-preview__source"><code>{mermaidSource}</code></pre>
+        : <div
         className={`media-preview__transform is-${mode}`}
         style={{
           ...(mode === "actual" ? { width: `${intrinsic.width}px`, height: `${intrinsic.height}px` } : {}),
@@ -111,7 +119,7 @@ export function MediaPreviewModal({
             }}
           />
           : <div className="media-preview__svg" dangerouslySetInnerHTML={{ __html: content.svg }} />}
-      </div>
+      </div>}
     </div>
     <output className="media-preview__scale">
       {mode === "fit" ? "全体表示" : "1:1"} · {Math.round(scale * 100)}%

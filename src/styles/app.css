@@ -290,6 +290,13 @@ body {
 .mermaid-error button { margin: 8px 6px 0 0; }
 .mermaid-error > pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
 .mermaid-source { overflow-x: auto; padding: 12px; background: var(--panel-bg); }
+.mermaid-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; }
+.mermaid-toolbar button { padding: 5px 9px; color: inherit; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 7px; cursor: pointer; }
+.mermaid-toolbar button[aria-pressed="true"] { color: var(--accent-contrast, #fff); background: var(--accent-color); border-color: var(--accent-color); }
+.mermaid-toolbar__view { display: flex; }
+.mermaid-toolbar__view button { border-radius: 0; }
+.mermaid-toolbar__view button:first-child { border-radius: 7px 0 0 7px; }
+.mermaid-toolbar__view button:last-child { margin-left: -1px; border-radius: 0 7px 7px 0; }
 .media-preview {
   position: fixed;
   inset: 0;
@@ -306,6 +313,7 @@ body {
   justify-content: flex-end;
   gap: 0.55rem;
 }
+.media-preview__toolbar .mermaid-toolbar { flex: 1; padding: 0; }
 .media-preview__toolbar button {
   min-height: 2.5rem;
   padding: 0.45rem 0.9rem;
@@ -331,6 +339,8 @@ body {
   overflow: auto;
   overscroll-behavior: contain;
 }
+.media-preview__viewport.is-code { align-items: stretch; justify-content: stretch; }
+.media-preview__source { width: min(72rem, calc(100vw - 4rem)); max-height: calc(100vh - 10rem); margin: auto; white-space: pre; }
 .media-preview__transform {
   flex: 0 0 auto;
   display: grid;

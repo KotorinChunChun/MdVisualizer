@@ -831,6 +831,7 @@ export function App() {
       />
       {mediaPreview && <MediaPreviewModal
         content={mediaPreview.content}
+        mermaidSource={mediaPreview.mermaidSource}
         onClose={closeMediaPreview}
         onActivate={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);
