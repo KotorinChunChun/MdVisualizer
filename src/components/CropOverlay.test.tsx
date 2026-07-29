@@ -41,6 +41,7 @@ describe("CropOverlay", () => {
     expect(box?.style.top).toBe("0%");
     expect(box?.style.width).toBe("100%");
     expect(box?.style.height).toBe("100%");
+    expect(screen.getAllByRole("button", { name: /クロップ境界/ })).toHaveLength(8);
 
     fireEvent.click(screen.getByRole("button", { name: /適用/ }));
     await waitFor(() => expect(cropImage).toHaveBeenCalledWith({

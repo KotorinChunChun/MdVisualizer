@@ -180,14 +180,14 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
               onMouseDown={(e) => handleMouseDown(e, "move")}
             >
               <div className="crop-box-border" />
-              <div className="handle handle-nw" onMouseDown={(e) => handleMouseDown(e, "nw")} />
-              <div className="handle handle-n" onMouseDown={(e) => handleMouseDown(e, "n")} />
-              <div className="handle handle-ne" onMouseDown={(e) => handleMouseDown(e, "ne")} />
-              <div className="handle handle-e" onMouseDown={(e) => handleMouseDown(e, "e")} />
-              <div className="handle handle-se" onMouseDown={(e) => handleMouseDown(e, "se")} />
-              <div className="handle handle-s" onMouseDown={(e) => handleMouseDown(e, "s")} />
-              <div className="handle handle-sw" onMouseDown={(e) => handleMouseDown(e, "sw")} />
-              <div className="handle handle-w" onMouseDown={(e) => handleMouseDown(e, "w")} />
+              <button type="button" tabIndex={-1} aria-label="左上のクロップ境界" className="handle handle-nw" onMouseDown={(e) => handleMouseDown(e, "nw")} />
+              <button type="button" tabIndex={-1} aria-label="上のクロップ境界" className="handle handle-n" onMouseDown={(e) => handleMouseDown(e, "n")} />
+              <button type="button" tabIndex={-1} aria-label="右上のクロップ境界" className="handle handle-ne" onMouseDown={(e) => handleMouseDown(e, "ne")} />
+              <button type="button" tabIndex={-1} aria-label="右のクロップ境界" className="handle handle-e" onMouseDown={(e) => handleMouseDown(e, "e")} />
+              <button type="button" tabIndex={-1} aria-label="右下のクロップ境界" className="handle handle-se" onMouseDown={(e) => handleMouseDown(e, "se")} />
+              <button type="button" tabIndex={-1} aria-label="下のクロップ境界" className="handle handle-s" onMouseDown={(e) => handleMouseDown(e, "s")} />
+              <button type="button" tabIndex={-1} aria-label="左下のクロップ境界" className="handle handle-sw" onMouseDown={(e) => handleMouseDown(e, "sw")} />
+              <button type="button" tabIndex={-1} aria-label="左のクロップ境界" className="handle handle-w" onMouseDown={(e) => handleMouseDown(e, "w")} />
             </div>
           )}
         </div>
