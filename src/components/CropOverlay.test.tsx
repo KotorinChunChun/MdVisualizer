@@ -50,9 +50,49 @@ describe("CropOverlay", () => {
       y: 0,
       width: 640,
       height: 480,
+      paddingMode: "auto",
       expectedSourceWidth: 640,
       expectedSourceHeight: 480,
     }));
     expect(onApply).toHaveBeenCalledWith("image.png", true);
+  });
+
+  it("lets a boundary extend beyond the source image", () => {
+    const { container } = render(
+      <CropOverlay
+        target={{ rawSrc: "asset://image.png", fullPath: "C:\\docs\\image.png", filename: "image.png" }}
+        onApply={() => {}}
+        onCancel={() => {}}
+        onError={() => {}}
+      />,
+    );
+    const image = screen.getByAltText("image.png");
+    Object.defineProperties(image, {
+      naturalWidth: { configurable: true, value: 640 },
+      naturalHeight: { configurable: true, value: 480 },
+      clientWidth: { configurable: true, value: 640 },
+      clientHeight: { configurable: true, value: 480 },
+      getBoundingClientRect: { configurable: true, value: () => ({ width: 640, height: 480 }) },
+    });
+    fireEvent.load(image);
+
+    fireEvent.mouseDown(screen.getByRole("button", { name: "左のクロップ境界" }), { clientX: 0, clientY: 0 });
+    fireEvent.mouseMove(window, { clientX: -64, clientY: 0 });
+
+    const box = container.querySelector<HTMLElement>(".crop-box");
+    expect(box?.style.left).toBe("-10%");
+    expect(box?.style.width).toBe("110%");
+  });
+
+  it("disables transparent padding for JPEG", () => {
+    render(
+      <CropOverlay
+        target={{ rawSrc: "asset://image.jpg", fullPath: "C:\\docs\\image.jpg", filename: "image.jpg" }}
+        onApply={() => {}}
+        onCancel={() => {}}
+        onError={() => {}}
+      />,
+    );
+    expect((screen.getByRole("option", { name: "透明" }) as HTMLOptionElement).disabled).toBe(true);
   });
 });

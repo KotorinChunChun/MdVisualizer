@@ -11,6 +11,7 @@ interface CropOverlayProps {
 }
 
 type HandleType = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "move";
+type PaddingMode = "auto" | "transparent" | "white" | "black";
 
 interface Box {
   x: number;
@@ -31,6 +32,8 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [displayedSize, setDisplayedSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [isSaving, setIsSaving] = useState(false);
+  const supportsTransparency = /\.(?:png|webp|gif|tiff?|tga|avif)$/i.test(target.fullPath);
+  const [paddingMode, setPaddingMode] = useState<PaddingMode>("auto");
 
   const activeHandle = useRef<{
     type: HandleType;
@@ -75,24 +78,24 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
     const minH = (20 / imgRect.height) * 100;
 
     if (type === "move") {
-      x = Math.max(0, Math.min(100 - w, startBox.x + dxPercent));
-      y = Math.max(0, Math.min(100 - h, startBox.y + dyPercent));
+      x = Math.max(-100, Math.min(200 - w, startBox.x + dxPercent));
+      y = Math.max(-100, Math.min(200 - h, startBox.y + dyPercent));
     } else {
       if (type.includes("w")) {
-        const newX = Math.max(0, Math.min(startBox.x + startBox.w - minW, startBox.x + dxPercent));
+        const newX = Math.max(-100, Math.min(startBox.x + startBox.w - minW, startBox.x + dxPercent));
         w = startBox.w + (startBox.x - newX);
         x = newX;
       }
       if (type.includes("e")) {
-        w = Math.max(minW, Math.min(100 - startBox.x, startBox.w + dxPercent));
+        w = Math.max(minW, Math.min(200 - startBox.x, startBox.w + dxPercent));
       }
       if (type.includes("n")) {
-        const newY = Math.max(0, Math.min(startBox.y + startBox.h - minH, startBox.y + dyPercent));
+        const newY = Math.max(-100, Math.min(startBox.y + startBox.h - minH, startBox.y + dyPercent));
         h = startBox.h + (startBox.y - newY);
         y = newY;
       }
       if (type.includes("s")) {
-        h = Math.max(minH, Math.min(100 - startBox.y, startBox.h + dyPercent));
+        h = Math.max(minH, Math.min(200 - startBox.y, startBox.h + dyPercent));
       }
     }
 
@@ -118,6 +121,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
         y: cropY,
         width: cropW,
         height: cropH,
+        paddingMode,
         expectedSourceWidth: naturalSize.w,
         expectedSourceHeight: naturalSize.h,
       });
@@ -129,7 +133,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, naturalSize, box, target, onApply, onError]);
+  }, [isSaving, naturalSize, box, paddingMode, target, onApply, onError]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -150,6 +154,15 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
       <div className="crop-header">
         <span className="crop-title">📷 画像クロップ: {target.filename}</span>
         <div className="crop-header-actions">
+          <label className="crop-padding-mode">
+            余白色
+            <select value={paddingMode} onChange={(event) => setPaddingMode(event.target.value as PaddingMode)} disabled={isSaving}>
+              <option value="auto">自動</option>
+              <option value="white">白</option>
+              <option value="black">黒</option>
+              <option value="transparent" disabled={!supportsTransparency}>透明</option>
+            </select>
+          </label>
           <button className="btn btn-primary" onClick={handleApply} disabled={isSaving}>
             {isSaving ? "保存中..." : "✅ 適用 (Enter)"}
           </button>

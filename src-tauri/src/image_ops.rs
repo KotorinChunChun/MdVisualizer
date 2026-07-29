@@ -1,7 +1,7 @@
 use crate::backup::BackupManager;
 use crate::errors::{AppError, AppResult};
 use crate::file_lock::{atomic_replace, with_lock_timeout};
-use image::{GenericImageView, ImageFormat};
+use image::{imageops, GenericImageView, ImageFormat, Rgba, RgbaImage};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, OpenOptions};
 use std::path::{Path, PathBuf};
@@ -11,15 +11,25 @@ use std::time::Duration;
 #[serde(rename_all = "camelCase")]
 pub struct CropImageRequest {
     pub path: String,
-    pub x: u32,
-    pub y: u32,
+    pub x: i32,
+    pub y: i32,
     pub width: u32,
     pub height: u32,
+    pub padding_mode: Option<PaddingMode>,
     /// Dimensions recorded when the crop overlay opened. They are optional for
     /// backwards compatibility, but when supplied they prevent a stale crop
     /// from overwriting an image changed by another process.
     pub expected_source_width: Option<u32>,
     pub expected_source_height: Option<u32>,
+}
+
+#[derive(Clone, Copy, Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum PaddingMode {
+    Auto,
+    Transparent,
+    White,
+    Black,
 }
 
 #[derive(Serialize, Debug)]
@@ -55,19 +65,54 @@ pub fn crop_image(req: CropImageRequest, backup_mgr: &BackupManager) -> AppResul
             ));
         }
 
-        let crop_x = req.x.min(orig_w.saturating_sub(1));
-        let crop_y = req.y.min(orig_h.saturating_sub(1));
-        let crop_w = req.width.min(orig_w - crop_x).max(1);
-        let crop_h = req.height.min(orig_h - crop_y).max(1);
-        let cropped = img.crop_imm(crop_x, crop_y, crop_w, crop_h);
+        let output_w = req.width.max(1);
+        let output_h = req.height.max(1);
+        let request_right = i64::from(req.x) + i64::from(output_w);
+        let request_bottom = i64::from(req.y) + i64::from(output_h);
+        let source_x = req.x.max(0) as u32;
+        let source_y = req.y.max(0) as u32;
+        let source_right = request_right.min(i64::from(orig_w)).max(i64::from(source_x)) as u32;
+        let source_bottom = request_bottom.min(i64::from(orig_h)).max(i64::from(source_y)) as u32;
+        if source_right <= source_x || source_bottom <= source_y {
+            return Err(AppError::ImageError(
+                "The crop selection must overlap the source image.".into(),
+            ));
+        }
+
+        let format = ImageFormat::from_path(&original_path).unwrap_or(ImageFormat::Png);
+        let padding_mode = req.padding_mode.unwrap_or(PaddingMode::Auto);
+        if matches!(padding_mode, PaddingMode::Transparent) && !format_supports_alpha(format) {
+            return Err(AppError::ImageError(
+                "Transparent padding is not available for this image format.".into(),
+            ));
+        }
+        let source_rgba = img.to_rgba8();
+        let background = match padding_mode {
+            PaddingMode::Auto => average_perimeter_color(&source_rgba),
+            PaddingMode::Transparent => Rgba([0, 0, 0, 0]),
+            PaddingMode::White => Rgba([255, 255, 255, 255]),
+            PaddingMode::Black => Rgba([0, 0, 0, 255]),
+        };
+        let mut output = RgbaImage::from_pixel(output_w, output_h, background);
+        let copied = imageops::crop_imm(
+            &source_rgba,
+            source_x,
+            source_y,
+            source_right - source_x,
+            source_bottom - source_y,
+        ).to_image();
+        imageops::overlay(
+            &mut output,
+            &copied,
+            i64::from(source_x) - i64::from(req.x),
+            i64::from(source_y) - i64::from(req.y),
+        );
 
         // The source is now validated. A backup is created only immediately
         // before a possible write, and never after another process changed it.
         backup_mgr.ensure_backup(&original_path)?;
         let tmp_path = unique_crop_temp_path(&original_path)?;
-        let format = ImageFormat::from_path(&original_path).unwrap_or(ImageFormat::Png);
-
-        let write_result = cropped
+        let write_result = output
             .save_with_format(&tmp_path, format)
             .map_err(|e| AppError::ImageError(format!("Failed to save cropped image: {e}")));
         if let Err(error) = write_result {
@@ -89,10 +134,51 @@ pub fn crop_image(req: CropImageRequest, backup_mgr: &BackupManager) -> AppResul
         Ok(CropImageResult {
             path: req.path.clone(),
             backup_available: backup_mgr.has_backup(&original_path),
-            width: crop_w,
-            height: crop_h,
+            width: output_w,
+            height: output_h,
         })
     })
+}
+
+fn format_supports_alpha(format: ImageFormat) -> bool {
+    matches!(
+        format,
+        ImageFormat::Png
+            | ImageFormat::WebP
+            | ImageFormat::Gif
+            | ImageFormat::Tiff
+            | ImageFormat::Tga
+            | ImageFormat::Avif
+    )
+}
+
+fn average_perimeter_color(image: &RgbaImage) -> Rgba<u8> {
+    let (width, height) = image.dimensions();
+    let mut buckets = vec![[0_u64; 4]; 16 * 16 * 16];
+    let mut sample = |pixel: &Rgba<u8>| {
+        let index = (usize::from(pixel[0] >> 4) << 8)
+            | (usize::from(pixel[1] >> 4) << 4)
+            | usize::from(pixel[2] >> 4);
+        buckets[index][0] += 1;
+        buckets[index][1] += u64::from(pixel[0]);
+        buckets[index][2] += u64::from(pixel[1]);
+        buckets[index][3] += u64::from(pixel[2]);
+    };
+    for x in 0..width {
+        sample(image.get_pixel(x, 0));
+        if height > 1 {
+            sample(image.get_pixel(x, height - 1));
+        }
+    }
+    for y in 1..height.saturating_sub(1) {
+        sample(image.get_pixel(0, y));
+        if width > 1 {
+            sample(image.get_pixel(width - 1, y));
+        }
+    }
+    let dominant = buckets.into_iter().max_by_key(|bucket| bucket[0]).unwrap_or([1, 0, 0, 0]);
+    let count = dominant[0].max(1);
+    Rgba([(dominant[1] / count) as u8, (dominant[2] / count) as u8, (dominant[3] / count) as u8, 255])
 }
 
 fn unique_crop_temp_path(original_path: &Path) -> AppResult<PathBuf> {
@@ -148,6 +234,7 @@ mod tests {
                 y: 20,
                 width: 50,
                 height: 30,
+                padding_mode: None,
                 expected_source_width: Some(100),
                 expected_source_height: Some(80),
             },
@@ -159,6 +246,43 @@ mod tests {
         assert_eq!(image::image_dimensions(&path).unwrap(), (50, 30));
         assert!(manager.restore(&path).unwrap());
         assert_eq!(image::image_dimensions(&path).unwrap(), (100, 80));
+    }
+
+    #[test]
+    fn adds_transparent_padding_outside_a_png() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("padded.png");
+        RgbaImage::from_pixel(4, 3, Rgba([20, 40, 60, 255]))
+            .save(&path)
+            .unwrap();
+        let manager = BackupManager::new().unwrap();
+        let result = crop_image(
+            CropImageRequest {
+                path: path.to_string_lossy().into_owned(),
+                x: -1,
+                y: -2,
+                width: 7,
+                height: 6,
+                padding_mode: Some(PaddingMode::Transparent),
+                expected_source_width: Some(4),
+                expected_source_height: Some(3),
+            },
+            &manager,
+        )
+        .unwrap();
+
+        assert_eq!((result.width, result.height), (7, 6));
+        let output = image::open(path).unwrap().to_rgba8();
+        assert_eq!(output.get_pixel(0, 0), &Rgba([0, 0, 0, 0]));
+        assert_eq!(output.get_pixel(1, 2), &Rgba([20, 40, 60, 255]));
+    }
+
+    #[test]
+    fn auto_padding_uses_the_average_perimeter_color() {
+        let mut source = RgbaImage::from_pixel(3, 3, Rgba([10, 20, 30, 255]));
+        source.put_pixel(1, 1, Rgba([250, 240, 230, 255]));
+        source.put_pixel(0, 0, Rgba([240, 230, 220, 255]));
+        assert_eq!(average_perimeter_color(&source), Rgba([10, 20, 30, 255]));
     }
 
     #[test]
@@ -175,6 +299,7 @@ mod tests {
                 y: 0,
                 width: 1,
                 height: 1,
+                padding_mode: None,
                 expected_source_width: None,
                 expected_source_height: None
             },
@@ -200,6 +325,7 @@ mod tests {
                 y: 0,
                 width: 20,
                 height: 20,
+                padding_mode: None,
                 expected_source_width: Some(100),
                 expected_source_height: Some(80),
             },
@@ -238,6 +364,7 @@ mod tests {
                             y: 0,
                             width: 50,
                             height: 30,
+                            padding_mode: None,
                             expected_source_width: Some(100),
                             expected_source_height: Some(80),
                         },

@@ -33,16 +33,20 @@
 
 .crop-header-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
 }
+
+.crop-padding-mode { display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
+.crop-padding-mode select { padding: 5px 8px; color: var(--text-primary); background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 6px; }
 
 .crop-stage {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  overflow: hidden;
+  padding: max(120px, 12vh) max(120px, 12vw);
+  overflow: auto;
 }
 
 .crop-container {
