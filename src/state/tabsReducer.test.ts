@@ -38,7 +38,7 @@ describe("tabsReducer", () => {
   it("tracks search visibility and pending changes per tab", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;
-    state = tabsReducer(state, { type: "OPEN", path: "a.md" });
+    state = tabsReducer(state, { type: "OPEN", path: "b.md" });
     const second = state.activeId!;
     state = tabsReducer(state, { type: "SEARCH_VISIBILITY", id: first, open: true });
     state = tabsReducer(state, { type: "EXTERNAL_CHANGED", id: first, changed: true });
@@ -50,7 +50,7 @@ describe("tabsReducer", () => {
   it("clears only the reloaded tab's pending change", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;
-    state = tabsReducer(state, { type: "OPEN", path: "a.md" });
+    state = tabsReducer(state, { type: "OPEN", path: "b.md" });
     const second = state.activeId!;
     state = tabsReducer(state, { type: "EXTERNAL_CHANGED", id: first, changed: true });
     state = tabsReducer(state, { type: "EXTERNAL_CHANGED", id: second, changed: true });
@@ -94,6 +94,37 @@ describe("tabsReducer", () => {
       path: "C:\\develop\\MarkdownViewer\\README.md",
       document: { path: "C:\\develop\\MarkdownViewer\\README.md" },
     });
+  });
+
+  it("activates an already open path instead of creating a duplicate tab", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\Docs\\Guide.md" });
+    const first = state.activeId!;
+    state = tabsReducer(state, { type: "OPEN", path: "c:/docs/./GUIDE.md" });
+
+    expect(state.tabs).toHaveLength(1);
+    expect(state.activeId).toBe(first);
+  });
+
+  it("collapses tabs that resolve to the same canonical loaded path", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: ".\\Guide.md" });
+    const first = state.activeId!;
+    state = tabsReducer(state, { type: "OPEN", path: "C:\\Docs\\Guide.md" });
+    const second = state.activeId!;
+    state = tabsReducer(state, {
+      type: "LOADED",
+      id: second,
+      generation: 1,
+      document: loadedDocument("C:\\Docs\\Guide.md"),
+    });
+    state = tabsReducer(state, {
+      type: "LOADED",
+      id: first,
+      generation: 1,
+      document: loadedDocument("C:\\Docs\\Guide.md"),
+    });
+
+    expect(state.tabs).toHaveLength(1);
+    expect(state.activeId).toBe(second);
   });
 
   it("opens at most one settings tab and activates the existing one", () => {

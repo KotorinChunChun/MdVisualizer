@@ -14,6 +14,7 @@ import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
+import { useFileDrop } from "./hooks/useFileDrop";
 import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateExternalAppSettings } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
@@ -412,6 +413,7 @@ export function App() {
   const handleOpenDocument = useCallback((path: string) => {
     dispatch({ type: "OPEN", path });
   }, []);
+  useFileDrop((paths) => paths.forEach(handleOpenDocument));
 
   const handleImageDisplaySizeChange = useCallback((source: string, size: ImageSize) => {
     if (activeTab) dispatch({ type: "IMAGE_DISPLAY_SIZE", id: activeTab.id, source, size });

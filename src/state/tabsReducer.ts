@@ -1,5 +1,6 @@
 import { MarkdownLoadResult } from "../types/app";
 import type { ImageSize } from "../hooks/useInlineImageResize";
+import { localPathIdentity } from "../lib/pathIdentity";
 
 export interface TabState {
   id: string;
@@ -93,13 +94,28 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       // `load_markdown` returns the canonical absolute path.  Keep it on the
       // tab as well so file-watcher events use the same representation even
       // when the application was launched with a relative path.
-      return updateTab(state, action.id, (tab) => tab.generation === action.generation ? {
+      {
+        const current = state.tabs.find((tab) => tab.id === action.id);
+        if (!current || current.generation !== action.generation) return state;
+        const duplicate = state.tabs.find((tab) =>
+          tab.id !== action.id
+          && tab.kind !== "settings"
+          && localPathIdentity(tab.document?.path ?? tab.path) === localPathIdentity(action.document.path));
+        if (duplicate) {
+          return {
+            ...state,
+            tabs: state.tabs.filter((tab) => tab.id !== action.id),
+            activeId: state.activeId === action.id ? duplicate.id : state.activeId,
+          };
+        }
+        return updateTab(state, action.id, (tab) => ({
         ...tab,
         path: action.document.path,
         document: action.document,
         loading: false,
         error: null,
-      } : tab);
+        }));
+      }
     case "FAILED":
       return updateTab(state, action.id, (tab) => tab.generation === action.generation ? { ...tab, loading: false, error: action.error } : tab);
     case "SCROLL":
@@ -131,6 +147,11 @@ function updateTab(state: TabsState, id: string, update: (tab: TabState) => TabS
 }
 
 function openTab(state: TabsState, tab: ClosedTabState): TabsState {
+  const identity = localPathIdentity(tab.path);
+  const existing = state.tabs.find((candidate) =>
+    candidate.kind !== "settings"
+    && localPathIdentity(candidate.document?.path ?? candidate.path) === identity);
+  if (existing) return { ...state, activeId: existing.id };
   const id = `tab-${state.nextId}`;
   return {
     tabs: [...state.tabs, { id, kind: "document", path: tab.path, document: null, error: null, loading: true, scrollTop: tab.scrollTop, generation: 1, externalChanged: false, searchOpen: tab.searchOpen ?? false, imageDisplaySizes: tab.imageDisplaySizes ?? {}, search: tab.search }],
