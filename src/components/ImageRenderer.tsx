@@ -4,6 +4,7 @@ import { getFileName, isAbsoluteLocalPath, resolveImageSrc } from "../lib/path";
 import { CropTarget } from "../hooks/useCropEditor";
 import { InlineImageResizeOverlay } from "./InlineImageResizeOverlay";
 import { ImageSize, useInlineImageResize } from "../hooks/useInlineImageResize";
+import { MediaPreviewModal } from "./MediaPreviewModal";
 import "../styles/inline-image-resize.css";
 
 interface ImageRendererProps {
@@ -37,6 +38,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   onPresentationOpen,
 }) => {
   const [loadError, setLoadError] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const {
     imageRef,
     size,
@@ -96,7 +98,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       onPresentationOpen?.({ src: displaySrc, alt, cropTarget });
       return;
     }
-    if (cropTarget) onStartCrop(cropTarget);
+    setPreviewOpen(true);
   };
 
   return (
@@ -109,7 +111,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         src={displaySrc}
         alt={alt}
         className={`markdown-img inline-image-resize__image ${isEditableLocalImage ? "croppable" : ""}`}
-        title={presentationMode ? "クリックして拡大表示" : isEditableLocalImage ? "クリックしてクロップ編集。枠のハンドルをドラッグして表示サイズを縮小" : alt}
+        title={isEditableLocalImage ? "クリックして拡大表示。プレビューでもう一度クリックするとクロップ編集" : "クリックして拡大表示"}
         onLoad={setInitialSize}
         onClick={handleClick}
         onError={() => setLoadError(true)}
@@ -120,6 +122,14 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
           onKeyDown={resizeFromKeyboard}
         />
       )}
+      {previewOpen && !presentationMode && <MediaPreviewModal
+        content={{ kind: "image", src: displaySrc, alt }}
+        onClose={() => setPreviewOpen(false)}
+        onActivate={isEditableLocalImage ? () => {
+          setPreviewOpen(false);
+          onStartCrop({ rawSrc: displaySrc, fullPath, filename: getFileName(fullPath) });
+        } : undefined}
+      />}
     </span>
   );
 };

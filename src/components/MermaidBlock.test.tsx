@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -44,5 +44,17 @@ describe("MermaidBlock", () => {
 
     await waitFor(() => expect(screen.getByText("Mermaid を描画できません。")).toBeTruthy());
     expect(screen.getByText(/sequenceDiagram/)).toBeTruthy();
+  });
+
+  it("opens the shared fit preview and closes it with Escape", async () => {
+    mocks.renderMermaid.mockResolvedValueOnce('<svg viewBox="0 0 800 400"><text>diagram</text></svg>');
+    render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("button", { name: "図を拡大" }));
+    expect(screen.getByRole("dialog", { name: "Mermaid図の拡大表示" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "1:1表示" })).toBeTruthy();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

@@ -10,7 +10,7 @@ describe("PresentationImageModal", () => {
     render(<PresentationImageModal target={{ src: "test.png", alt: "test", cropTarget: null }} onClose={onClose} onEdit={() => {}} />);
 
     fireEvent.wheel(screen.getByRole("img"), { deltaY: -100 });
-    expect(screen.getByText("120%")).toBeTruthy();
+    expect(screen.getByText(/120%/)).toBeTruthy();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -22,5 +22,13 @@ describe("PresentationImageModal", () => {
 
     fireEvent.click(screen.getByRole("img"));
     expect(onEdit).toHaveBeenCalledWith(cropTarget);
+  });
+
+  it("switches between maximum fit and dot-by-dot display", () => {
+    render(<PresentationImageModal target={{ src: "test.png", alt: "test", cropTarget: null }} onClose={() => {}} onEdit={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "1:1表示" }));
+    expect(screen.getByText(/1:1 · 100%/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "全体表示" })).toBeTruthy();
   });
 });

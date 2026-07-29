@@ -71,7 +71,9 @@ describe("ImageRenderer inline resize", () => {
     const image = screen.getByAltText("テスト画像");
     fireEvent.load(image);
     fireEvent.click(image);
-    expect(onStartCrop).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "拡大表示を閉じる" }));
+    expect(onStartCrop).not.toHaveBeenCalled();
 
     const eastHandle = screen.getByRole("button", { name: "右辺を調整" });
     fireEvent.pointerDown(eastHandle, { button: 0, pointerId: 9, clientX: 100, clientY: 80 });
@@ -82,7 +84,8 @@ describe("ImageRenderer inline resize", () => {
     expect(frame.style.width).toBe("270px");
     expect(frame.style.height).toBe("200px");
     fireEvent.click(image);
-    expect(onStartCrop).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(onStartCrop).not.toHaveBeenCalled();
   });
 
   it("continues shrinking across pointer moves when every update is controlled", () => {
@@ -135,6 +138,7 @@ describe("ImageRenderer inline resize", () => {
     expect(image.getAttribute("src")).toContain("architecture.svg");
     expect(screen.queryAllByRole("button")).toHaveLength(0);
     fireEvent.click(image);
+    expect(screen.getByRole("dialog")).toBeTruthy();
     expect(onStartCrop).not.toHaveBeenCalled();
   });
 
@@ -145,6 +149,8 @@ describe("ImageRenderer inline resize", () => {
     fireEvent.load(image);
     expect(screen.getAllByRole("button")).toHaveLength(8);
     fireEvent.click(image);
+    const previewImage = screen.getByRole("dialog").querySelector("img")!;
+    fireEvent.click(previewImage);
     expect(onStartCrop).toHaveBeenCalledTimes(1);
   });
 

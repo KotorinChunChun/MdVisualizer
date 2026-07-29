@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { mermaidInputError, mermaidRenderId, renderMermaid } from "../lib/mermaidService";
 import { removeMermaidBlockStatus, setMermaidBlockStatus } from "../lib/mermaidStatus";
+import { MediaPreviewModal } from "./MediaPreviewModal";
 
 interface MermaidBlockProps {
   source: string;
@@ -98,6 +99,6 @@ export function MermaidBlock({
     {state.error && <div className="mermaid-error"><strong>Mermaid を描画できません。</strong><div><button type="button" onClick={() => setShowDetails((value) => !value)}>エラー詳細</button>{!shouldShowCode && <button type="button" onClick={() => setShowDetails(true)}>コードを表示</button>}</div>{showDetails && <pre>{state.error}</pre>}{(showDetails || shouldShowCode) && <pre className="mermaid-source"><code>{source}</code></pre>}</div>}
     {!state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
     {!state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
-    {state.svg && <><button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => setZoomed(true)} dangerouslySetInnerHTML={{ __html: state.svg }} />{zoomed && <div className="mermaid-modal" role="dialog" aria-modal="true" onClick={() => setZoomed(false)}><div onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => setZoomed(false)}>閉じる</button><div dangerouslySetInnerHTML={{ __html: state.svg }} /></div></div>}</>}
+    {state.svg && <><button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => setZoomed(true)} dangerouslySetInnerHTML={{ __html: state.svg }} />{zoomed && <MediaPreviewModal content={{ kind: "svg", svg: state.svg, alt: "Mermaid図" }} onClose={() => setZoomed(false)} />}</>}
   </div>;
 }

@@ -284,9 +284,90 @@ body {
 .mermaid-error { padding: 12px; color: #f87171; white-space: pre-wrap; border: 1px solid currentColor; border-radius: 6px; }
 .mermaid-error button { margin: 8px 6px 0 0; }
 .mermaid-source { overflow-x: auto; padding: 12px; background: var(--panel-bg); }
-.mermaid-modal { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 5vh 5vw; background: #000b; }
-.mermaid-modal > div { max-width: 100%; max-height: 100%; overflow: auto; padding: 18px; background: var(--bg-color); border: 1px solid var(--border-color); }
-.mermaid-modal svg { min-width: min(1000px, 90vw); max-width: none; }
+.media-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  padding: 1rem;
+  color: #f8fafc;
+  background: rgba(0, 0, 0, 0.92);
+}
+.media-preview__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+.media-preview__toolbar button {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.9rem;
+  color: #f8fafc;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 0.7rem;
+  box-shadow: 0 0.3rem 1rem rgba(0, 0, 0, 0.3);
+}
+.media-preview__toolbar button:hover { background: rgba(51, 65, 85, 0.98); }
+.media-preview__close {
+  width: 2.5rem;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.media-preview__viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.media-preview__transform {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  transition: transform 80ms ease-out;
+}
+.media-preview__transform.is-fit {
+  width: 100%;
+  height: 100%;
+}
+.media-preview__transform img,
+.media-preview__svg,
+.media-preview__svg svg {
+  display: block;
+}
+.media-preview__transform.is-fit img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.media-preview__transform.is-actual img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+}
+.media-preview__svg {
+  width: 100%;
+  height: 100%;
+}
+.media-preview__svg svg {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+}
+.media-preview__scale {
+  justify-self: center;
+  padding: 0.25rem 0.65rem;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 999px;
+}
 
 .markdown-body pre code {
   background: none;
@@ -317,6 +398,7 @@ body {
   margin: 1em 0;
   display: block;
   transition: transform 0.2s, box-shadow 0.2s;
+  cursor: zoom-in;
 }
 
 .markdown-img.croppable {

@@ -96,39 +96,3 @@
 
 .presentation-navigation button:first-child { justify-self: start; }
 .presentation-navigation button:last-child { justify-self: end; }
-
-.presentation-image-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
-  display: grid;
-  place-items: center;
-  overflow: auto;
-  padding: 3rem;
-  background: rgba(0, 0, 0, 0.92);
-}
-
-.presentation-image-modal img {
-  display: block;
-  max-width: 90vw;
-  max-height: 86vh;
-  object-fit: contain;
-  cursor: zoom-in;
-  transform-origin: center;
-}
-
-.presentation-image-modal__close {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  font-size: 1.5rem;
-}
-
-.presentation-image-modal output {
-  position: fixed;
-  left: 1rem;
-  bottom: 2.5rem;
-  color: white;
-}
