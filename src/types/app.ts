@@ -14,7 +14,7 @@ export interface CropImageRequest {
   y: number;
   width: number;
   height: number;
-  paddingMode?: "auto" | "transparent" | "white" | "black";
+  paddingMode?: "auto" | "transparent" | "white" | "gray" | "black";
   expectedSourceWidth?: number;
   expectedSourceHeight?: number;
 }

@@ -5,10 +5,14 @@ export function ExternalActions({
   apps,
   disabled,
   onExecute,
+  title = "外部で開く",
+  compact = false,
 }: {
   apps: ExternalAppConfig[];
   disabled?: boolean;
   onExecute: (app: ExternalAppConfig) => void;
+  title?: string;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -36,8 +40,8 @@ export function ExternalActions({
     setOpen(false);
     onExecute(app);
   };
-  return <div className="control-group external-actions" ref={rootRef}>
-    <span className="control-group__title">外部で開く</span>
+  return <div className={`${compact ? "" : "control-group " }external-actions`} ref={rootRef}>
+    {title && <span className="control-group__title">{title}</span>}
     {primary.map((app) => <button type="button" key={app.id} disabled={disabled} onClick={() => execute(app)}>{app.label}</button>)}
     {menu.length > 0 && <div className="external-more">
       <button type="button" aria-haspopup="menu" aria-expanded={open} disabled={disabled} onClick={() => setOpen((value) => !value)}>その他 ▾</button>

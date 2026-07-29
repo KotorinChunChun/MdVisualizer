@@ -105,6 +105,8 @@ pub fn merge_external_app_settings(
     upserts: Vec<Value>,
     removed_ids: Vec<String>,
     presentation_line_threshold: u64,
+    image_a4_target_width: u64,
+    image_equal_padding: u64,
 ) -> AppResult<Value> {
     with_lock(path, || {
         let mut current = load_json_unlocked(path)?.value;
@@ -146,6 +148,14 @@ pub fn merge_external_app_settings(
         object.insert(
             "presentationLineThreshold".into(),
             Value::from(presentation_line_threshold.clamp(1, 100)),
+        );
+        object.insert(
+            "imageA4TargetWidth".into(),
+            Value::from(image_a4_target_width.max(1)),
+        );
+        object.insert(
+            "imageEqualPadding".into(),
+            Value::from(image_equal_padding),
         );
         write_json(path, &current)?;
         Ok(current)
@@ -351,6 +361,8 @@ mod tests {
                         vec![serde_json::json!({"id": id, "label": id, "order": order})],
                         vec![],
                         10,
+                        3508,
+                        32,
                     )
                     .unwrap();
                 })

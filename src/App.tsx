@@ -23,7 +23,7 @@ import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReduc
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds } from "./lib/foldSections";
-import { DEFAULT_EXTERNAL_APPS, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
+import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
@@ -73,6 +73,8 @@ export function App() {
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
   const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
   const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
+  const [imageA4TargetWidth, setImageA4TargetWidth] = useState(DEFAULT_IMAGE_A4_TARGET_WIDTH);
+  const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
@@ -152,8 +154,16 @@ export function App() {
       setExternalApps(apps);
       const lineThreshold = normalizePresentationLineThreshold(settings.presentationLineThreshold);
       setPresentationLineThreshold(lineThreshold);
-      if (!Array.isArray(settings.externalApps)) {
-        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold }).catch((error) => {
+      const a4TargetWidth = normalizeImageA4TargetWidth(settings.imageA4TargetWidth);
+      const equalPadding = normalizeImageEqualPadding(settings.imageEqualPadding);
+      setImageA4TargetWidth(a4TargetWidth);
+      setImageEqualPadding(equalPadding);
+      const needsSettingsMigration = !Array.isArray(settings.externalApps)
+        || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
+        || settings.imageA4TargetWidth === undefined
+        || settings.imageEqualPadding === undefined;
+      if (needsSettingsMigration) {
+        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding }).catch((error) => {
           setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
         });
       }
@@ -613,20 +623,32 @@ export function App() {
     void operation.catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
   }, [activeTab?.document, activeTab?.path]);
 
+  const executeImageApp = useCallback((app: ExternalAppConfig, context: ImageEditContext) => {
+    const operation = openExternalApp({
+      executable: app.executable,
+      args: app.args,
+      workingDirectory: app.workingDirectory || undefined,
+      file: context.imagePath,
+    });
+    void operation.catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
+  }, []);
+
   const openSettings = useCallback(() => {
     recordNavigationPoint();
     dispatch({ type: "OPEN_SETTINGS" });
   }, [recordNavigationPoint]);
 
-  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number) => {
+  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number) => {
     try {
       const previousById = new Map(externalApps.map((app) => [app.id, app]));
       const upserts = apps.filter((app) => JSON.stringify(previousById.get(app.id)) !== JSON.stringify(app));
       const nextIds = new Set(apps.map((app) => app.id));
       const removedIds = externalApps.filter((app) => !nextIds.has(app.id)).map((app) => app.id);
-      const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold);
+      const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold, a4TargetWidth, equalPadding);
       setExternalApps(normalizeExternalApps(saved.externalApps));
       setPresentationLineThreshold(lineThreshold);
+      setImageA4TargetWidth(a4TargetWidth);
+      setImageEqualPadding(equalPadding);
       setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
     } catch (error) {
       setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
@@ -843,7 +865,7 @@ export function App() {
             <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
           </select>
         </div>}
-        <ExternalActions apps={externalApps} disabled={!activeTab?.document} onExecute={executeExternalApp} />
+        <ExternalActions apps={externalApps.filter((app) => app.target === "document")} disabled={!activeTab?.document} onExecute={executeExternalApp} />
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
         {viewMode !== "presentation" && activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
       </div>}
@@ -858,7 +880,13 @@ export function App() {
       />}
       <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: viewMode === "presentation" && activeTab?.kind !== "settings" ? 1 : zoom / 100 }}>
         {activeTab?.kind === "settings" ? (
-          <SettingsPanel apps={externalApps} presentationLineThreshold={presentationLineThreshold} onSave={saveExternalAppSettings} />
+          <SettingsPanel
+            apps={externalApps}
+            presentationLineThreshold={presentationLineThreshold}
+            imageA4TargetWidth={imageA4TargetWidth}
+            imageEqualPadding={imageEqualPadding}
+            onSave={saveExternalAppSettings}
+          />
         ) : activeTab?.loading ? (
           <div className="empty-state">
             <div className="empty-icon">⏳</div>
@@ -931,6 +959,8 @@ export function App() {
           onApply={handleCropApply}
           onCancel={cancelCrop}
           onError={handleCropError}
+          a4TargetWidth={imageA4TargetWidth}
+          equalPadding={imageEqualPadding}
         />
       )}
 
@@ -945,6 +975,8 @@ export function App() {
         imageContext={mediaPreview.imageContext}
         onSaveCaption={saveImageCaption}
         onRenameImage={renamePreviewImage}
+        imageApps={externalApps.filter((app) => app.target === "image")}
+        onOpenImageApp={executeImageApp}
         onClose={closeMediaPreview}
         onActivate={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);

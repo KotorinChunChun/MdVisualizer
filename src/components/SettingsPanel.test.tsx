@@ -14,21 +14,47 @@ describe("SettingsPanel", () => {
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][0][2].placement).toBe("primary");
     expect(onSave.mock.calls[0][1]).toBe(10);
+    expect(onSave.mock.calls[0][2]).toBe(3508);
+    expect(onSave.mock.calls[0][3]).toBe(32);
   });
 
-  it("keeps built-ins undeletable and validates custom executable", async () => {
+  it("keeps required built-ins undeletable and validates a new document app", async () => {
     render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={vi.fn()} />);
     expect((screen.getAllByRole("button", { name: "削除" })[0] as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "アプリを追加" }));
+    fireEvent.click(screen.getByRole("button", { name: "文書用アプリを追加" }));
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     expect((await screen.findByRole("alert")).textContent).toContain("実行ファイル");
   });
 
-  it("allows optional presets to be removed but keeps Folder", () => {
+  it("separates document and image apps, with the Paint direct action editable", () => {
     render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={vi.fn()} />);
+    expect(screen.getByRole("heading", { name: "文書用アプリ" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "画像用アプリ" })).toBeTruthy();
     const buttons = screen.getAllByRole("button", { name: "削除" }) as HTMLButtonElement[];
     expect(buttons[0].disabled).toBe(true);
     expect(buttons[1].disabled).toBe(false);
     expect(buttons[2].disabled).toBe(false);
+    expect(buttons[3].disabled).toBe(false);
+  });
+
+  it("adds image apps to the image section and orders them independently", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.click(screen.getByRole("button", { name: "画像用アプリを追加" }));
+    const executableInputs = screen.getAllByLabelText("実行ファイル");
+    fireEvent.change(executableInputs[executableInputs.length - 1], { target: { value: "image-tool.exe" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0].find((app: typeof DEFAULT_EXTERNAL_APPS[number]) => app.executable === "image-tool.exe")?.target).toBe("image");
+  });
+
+  it("edits image padding preferences and includes them when saving", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} imageA4TargetWidth={4000} imageEqualPadding={24} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText("A4横の想定横幅"), { target: { value: "4200" } });
+    fireEvent.change(screen.getByLabelText("四辺の等間隔余白"), { target: { value: "40" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0].slice(2)).toEqual([4200, 40]);
   });
 });

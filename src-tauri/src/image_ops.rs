@@ -29,6 +29,7 @@ pub enum PaddingMode {
     Auto,
     Transparent,
     White,
+    Gray,
     Black,
 }
 
@@ -91,6 +92,7 @@ pub fn crop_image(req: CropImageRequest, backup_mgr: &BackupManager) -> AppResul
             PaddingMode::Auto => average_perimeter_color(&source_rgba),
             PaddingMode::Transparent => Rgba([0, 0, 0, 0]),
             PaddingMode::White => Rgba([255, 255, 255, 255]),
+            PaddingMode::Gray => Rgba([128, 128, 128, 255]),
             PaddingMode::Black => Rgba([0, 0, 0, 255]),
         };
         let mut output = RgbaImage::from_pixel(output_w, output_h, background);
@@ -275,6 +277,34 @@ mod tests {
         let output = image::open(path).unwrap().to_rgba8();
         assert_eq!(output.get_pixel(0, 0), &Rgba([0, 0, 0, 0]));
         assert_eq!(output.get_pixel(1, 2), &Rgba([20, 40, 60, 255]));
+    }
+
+    #[test]
+    fn adds_gray_padding_for_the_a4_preset() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("a4.png");
+        RgbaImage::from_pixel(4, 3, Rgba([20, 40, 60, 255]))
+            .save(&path)
+            .unwrap();
+        let manager = BackupManager::new().unwrap();
+        crop_image(
+            CropImageRequest {
+                path: path.to_string_lossy().into_owned(),
+                x: -2,
+                y: 0,
+                width: 8,
+                height: 3,
+                padding_mode: Some(PaddingMode::Gray),
+                expected_source_width: Some(4),
+                expected_source_height: Some(3),
+            },
+            &manager,
+        )
+        .unwrap();
+
+        let output = image::open(path).unwrap().to_rgba8();
+        assert_eq!(output.get_pixel(0, 0), &Rgba([128, 128, 128, 255]));
+        assert_eq!(output.get_pixel(2, 0), &Rgba([20, 40, 60, 255]));
     }
 
     #[test]

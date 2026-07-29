@@ -8,10 +8,12 @@ interface CropOverlayProps {
   onApply: (filename: string, backupAvailable: boolean) => void;
   onCancel: () => void;
   onError: (message: string) => void;
+  a4TargetWidth?: number;
+  equalPadding?: number;
 }
 
 type HandleType = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "move";
-type PaddingMode = "auto" | "transparent" | "white" | "black";
+type PaddingMode = "auto" | "transparent" | "white" | "gray" | "black";
 
 interface Box {
   x: number;
@@ -25,6 +27,8 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
   onApply,
   onCancel,
   onError,
+  a4TargetWidth = 3508,
+  equalPadding = 32,
 }) => {
   const imgRef = useRef<HTMLImageElement | null>(null);
 
@@ -34,6 +38,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const supportsTransparency = /\.(?:png|webp|gif|tiff?|tga|avif)$/i.test(target.fullPath);
   const [paddingMode, setPaddingMode] = useState<PaddingMode>("auto");
+  const [paddingPixels, setPaddingPixels] = useState(equalPadding);
 
   const activeHandle = useRef<{
     type: HandleType;
@@ -135,6 +140,33 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
     }
   }, [isSaving, naturalSize, box, paddingMode, target, onApply, onError]);
 
+  const applyA4WidthPreset = () => {
+    if (naturalSize.w === 0) return;
+    if (naturalSize.w >= a4TargetWidth) {
+      onError(`画像幅が設定値の${a4TargetWidth}px以上のため、A4横プリセットは適用できません。`);
+      return;
+    }
+    const side = (a4TargetWidth - naturalSize.w) / 2;
+    setPaddingMode(supportsTransparency ? "transparent" : "white");
+    setBox({
+      x: -(side / naturalSize.w) * 100,
+      y: 0,
+      w: (a4TargetWidth / naturalSize.w) * 100,
+      h: 100,
+    });
+  };
+
+  const applyEqualPaddingPreset = () => {
+    if (naturalSize.w === 0 || naturalSize.h === 0) return;
+    const pixels = Math.max(0, Math.round(paddingPixels));
+    setBox({
+      x: -(pixels / naturalSize.w) * 100,
+      y: -(pixels / naturalSize.h) * 100,
+      w: ((naturalSize.w + pixels * 2) / naturalSize.w) * 100,
+      h: ((naturalSize.h + pixels * 2) / naturalSize.h) * 100,
+    });
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
@@ -159,10 +191,29 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
             <select value={paddingMode} onChange={(event) => setPaddingMode(event.target.value as PaddingMode)} disabled={isSaving}>
               <option value="auto">自動</option>
               <option value="white">白</option>
+              <option value="gray">灰</option>
               <option value="black">黒</option>
               <option value="transparent" disabled={!supportsTransparency}>透明</option>
             </select>
           </label>
+          <button type="button" className="btn btn-secondary" onClick={applyA4WidthPreset} disabled={isSaving || naturalSize.w === 0}>
+            A4横幅（{a4TargetWidth}px）
+          </button>
+          <label className="crop-padding-mode">
+            四辺
+            <input
+              aria-label="四辺の余白"
+              type="number"
+              min="0"
+              value={paddingPixels}
+              onChange={(event) => setPaddingPixels(Math.max(0, Number(event.target.value) || 0))}
+              disabled={isSaving}
+            />
+            px
+          </label>
+          <button type="button" className="btn btn-secondary" onClick={applyEqualPaddingPreset} disabled={isSaving || naturalSize.w === 0}>
+            四辺へ追加
+          </button>
           <button className="btn btn-primary" onClick={handleApply} disabled={isSaving}>
             {isSaving ? "保存中..." : "✅ 適用 (Enter)"}
           </button>

@@ -95,4 +95,37 @@ describe("CropOverlay", () => {
     );
     expect((screen.getByRole("option", { name: "透明" }) as HTMLOptionElement).disabled).toBe(true);
   });
+
+  it("applies A4-width and equal four-side padding presets in source pixels", () => {
+    const { container } = render(
+      <CropOverlay
+        target={{ rawSrc: "asset://image.png", fullPath: "C:\\docs\\image.png", filename: "image.png" }}
+        a4TargetWidth={1000}
+        equalPadding={20}
+        onApply={() => {}}
+        onCancel={() => {}}
+        onError={() => {}}
+      />,
+    );
+    const image = screen.getByAltText("image.png");
+    Object.defineProperties(image, {
+      naturalWidth: { configurable: true, value: 800 },
+      naturalHeight: { configurable: true, value: 400 },
+      clientWidth: { configurable: true, value: 800 },
+      clientHeight: { configurable: true, value: 400 },
+    });
+    fireEvent.load(image);
+
+    fireEvent.click(screen.getByRole("button", { name: "A4横幅（1000px）" }));
+    let box = container.querySelector<HTMLElement>(".crop-box");
+    expect(box?.style.left).toBe("-12.5%");
+    expect(box?.style.width).toBe("125%");
+
+    fireEvent.click(screen.getByRole("button", { name: "四辺へ追加" }));
+    box = container.querySelector<HTMLElement>(".crop-box");
+    expect(box?.style.left).toBe("-2.5%");
+    expect(box?.style.top).toBe("-5%");
+    expect(box?.style.width).toBe("105%");
+    expect(Number.parseFloat(box?.style.height ?? "")).toBeCloseTo(110);
+  });
 });

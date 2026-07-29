@@ -1,43 +1,64 @@
 import { useEffect, useState } from "react";
-import type { ExternalAppConfig } from "../types/settings";
-import { validateExternalApp } from "../types/settings";
+import type { ExternalAppConfig, ExternalAppTarget } from "../types/settings";
+import { DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, validateExternalApp } from "../types/settings";
 import "../styles/settings.css";
 
 export function SettingsPanel({
   apps,
   presentationLineThreshold,
+  imageA4TargetWidth = DEFAULT_IMAGE_A4_TARGET_WIDTH,
+  imageEqualPadding = DEFAULT_IMAGE_EQUAL_PADDING,
   onSave,
 }: {
   apps: ExternalAppConfig[];
   presentationLineThreshold: number;
-  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number) => Promise<void>;
+  imageA4TargetWidth?: number;
+  imageEqualPadding?: number;
+  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => apps.map((app) => ({ ...app, args: [...app.args] })));
   const [lineThreshold, setLineThreshold] = useState(presentationLineThreshold);
+  const [a4TargetWidth, setA4TargetWidth] = useState(imageA4TargetWidth);
+  const [equalPadding, setEqualPadding] = useState(imageEqualPadding);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   useEffect(() => setDraft(apps.map((app) => ({ ...app, args: [...app.args] }))), [apps]);
   useEffect(() => setLineThreshold(presentationLineThreshold), [presentationLineThreshold]);
+  useEffect(() => setA4TargetWidth(imageA4TargetWidth), [imageA4TargetWidth]);
+  useEffect(() => setEqualPadding(imageEqualPadding), [imageEqualPadding]);
 
   const update = (id: string, patch: Partial<ExternalAppConfig>) => {
     setDraft((current) => current.map((app) => app.id === id ? { ...app, ...patch } : app));
   };
-  const move = (index: number, delta: number) => {
+  const move = (target: ExternalAppTarget, index: number, delta: number) => {
     setDraft((current) => {
-      const target = index + delta;
-      if (target < 0 || target >= current.length) return current;
-      const next = [...current];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next.map((app, order) => ({ ...app, order }));
+      const targetIndex = index + delta;
+      const group = current.filter((app) => app.target === target);
+      if (targetIndex < 0 || targetIndex >= group.length) return current;
+      [group[index], group[targetIndex]] = [group[targetIndex], group[index]];
+      let groupIndex = 0;
+      return current.map((app) => app.target === target ? group[groupIndex++] : app)
+        .map((app, order) => ({ ...app, order }));
     });
   };
+  const addApp = (target: ExternalAppTarget) => setDraft((current) => [...current, {
+    id: `custom-${Date.now()}`,
+    label: "新しいアプリ",
+    executable: "",
+    args: ["${file}"],
+    workingDirectory: "${dir}",
+    enabled: true,
+    placement: "menu",
+    order: current.length,
+    target,
+  }]);
   const save = async () => {
     const validation = draft.map(validateExternalApp).find(Boolean);
     if (validation) { setError(validation); return; }
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold);
+      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding);
     } catch (reason) {
       setError(String(reason));
     } finally {
@@ -57,8 +78,23 @@ export function SettingsPanel({
         <input aria-label="プレゼン統合行数" type="number" min="1" max="100" value={lineThreshold} onChange={(event) => setLineThreshold(Math.min(100, Math.max(1, Number(event.target.value) || 1)))} />
       </label>
     </fieldset>
-    <div className="settings-list">
-      {draft.map((app, index) => <article className="settings-app" key={app.id}>
+    <fieldset className="settings-section">
+      <legend>画像編集</legend>
+      <label>A4横の想定横幅（px）
+        <input aria-label="A4横の想定横幅" type="number" min="1" value={a4TargetWidth} onChange={(event) => setA4TargetWidth(Math.max(1, Number(event.target.value) || 1))} />
+      </label>
+      <label>四辺の等間隔余白（px）
+        <input aria-label="四辺の等間隔余白" type="number" min="0" value={equalPadding} onChange={(event) => setEqualPadding(Math.max(0, Number(event.target.value) || 0))} />
+      </label>
+    </fieldset>
+    <div className="settings-app-groups">
+      {(["document", "image"] as const).map((target) => {
+        const group = draft.filter((app) => app.target === target);
+        const sectionName = target === "document" ? "文書用アプリ" : "画像用アプリ";
+        return <section className="settings-app-group" key={target} aria-labelledby={`settings-${target}-apps`}>
+          <header><h2 id={`settings-${target}-apps`}>{sectionName}</h2><p>{target === "document" ? "Markdown文書を開くアプリです。" : "画像プレビューから開くアプリです。"}</p></header>
+          <div className="settings-list">
+      {group.map((app, index) => <article className="settings-app" key={app.id}>
         <div className="settings-app__heading">
           <strong>{app.label || "名称未設定"}</strong>
           <label><input type="checkbox" checked={app.enabled} onChange={(event) => update(app.id, { enabled: event.target.checked })} /> 有効</label>
@@ -71,21 +107,14 @@ export function SettingsPanel({
           <label>作業フォルダー<input value={app.workingDirectory} onChange={(event) => update(app.id, { workingDirectory: event.target.value })} placeholder="${dir}" /></label>
         </>}
         <div className="settings-app__actions">
-          <button type="button" disabled={index === 0} onClick={() => move(index, -1)}>上へ</button>
-          <button type="button" disabled={index === draft.length - 1} onClick={() => move(index, 1)}>下へ</button>
+          <button type="button" disabled={index === 0} onClick={() => move(target, index, -1)}>上へ</button>
+          <button type="button" disabled={index === group.length - 1} onClick={() => move(target, index, 1)}>下へ</button>
           <button type="button" disabled={app.builtinKind === "folder"} onClick={() => setDraft((current) => current.filter((candidate) => candidate.id !== app.id))}>削除</button>
         </div>
-      </article>)}
+      </article>)}</div>
+          <button type="button" className="settings-add-app" onClick={() => addApp(target)}>{sectionName}を追加</button>
+        </section>;
+      })}
     </div>
-    <button type="button" onClick={() => setDraft((current) => [...current, {
-      id: `custom-${Date.now()}`,
-      label: "新しいアプリ",
-      executable: "",
-      args: ["${file}"],
-      workingDirectory: "${dir}",
-      enabled: true,
-      placement: "menu",
-      order: current.length,
-    }])}>アプリを追加</button>
   </section>;
 }

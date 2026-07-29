@@ -66,12 +66,16 @@ pub fn update_external_app_settings(
     upserts: Vec<Value>,
     removed_ids: Vec<String>,
     presentation_line_threshold: u64,
+    image_a4_target_width: u64,
+    image_equal_padding: u64,
 ) -> Result<Value, String> {
     merge_external_app_settings(
         &settings_path(&app_handle)?,
         upserts,
         removed_ids,
         presentation_line_threshold,
+        image_a4_target_width,
+        image_equal_padding,
     )
     .map_err(|error| error.to_string())
 }

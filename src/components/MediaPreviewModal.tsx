@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { MermaidToolbar } from "./MermaidToolbar";
 import { ImageMetadataEditor } from "./ImageMetadataEditor";
+import { ExternalActions } from "./ExternalActions";
+import type { ExternalAppConfig } from "../types/settings";
 
 export type MediaPreviewContent =
   | { kind: "image"; src: string; alt: string }
@@ -46,6 +48,8 @@ export function MediaPreviewModal({
   imageContext,
   onSaveCaption,
   onRenameImage,
+  imageApps = [],
+  onOpenImageApp,
 }: {
   content: MediaPreviewContent;
   onClose: () => void;
@@ -54,6 +58,8 @@ export function MediaPreviewModal({
   imageContext?: ImageEditContext;
   onSaveCaption?: (context: ImageEditContext, caption: string) => Promise<void>;
   onRenameImage?: (context: ImageEditContext, filename: string) => Promise<void>;
+  imageApps?: ExternalAppConfig[];
+  onOpenImageApp?: (app: ExternalAppConfig, context: ImageEditContext) => void;
 }) {
   const svgSize = useMemo(
     () => content.kind === "svg" ? svgIntrinsicSize(content.svg) : null,
@@ -93,6 +99,12 @@ export function MediaPreviewModal({
   >
     <div className="media-preview__toolbar" onClick={(event) => event.stopPropagation()}>
       {mermaidSource && content.kind === "svg" && <MermaidToolbar source={mermaidSource} svg={content.svg} display={display} onDisplayChange={setDisplay} />}
+      {imageContext && onOpenImageApp && imageApps.length > 0 && <ExternalActions
+        apps={imageApps}
+        title=""
+        compact
+        onExecute={(app) => onOpenImageApp(app, imageContext)}
+      />}
       {imageContext && onSaveCaption && onRenameImage && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
       <button type="button" className="media-preview__mode" onClick={toggleMode}>
         {mode === "fit" ? "1:1表示" : "全体表示"}
