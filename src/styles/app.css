@@ -331,6 +331,26 @@ body {
   gap: 0.55rem;
 }
 .media-preview__toolbar .mermaid-toolbar { flex: 1; padding: 0; }
+.image-metadata-editor {
+  position: fixed;
+  z-index: 2;
+  top: 4.25rem;
+  right: 1rem;
+  display: grid;
+  grid-template-columns: minmax(12rem, 24rem) auto;
+  gap: 0.55rem;
+  width: min(36rem, calc(100vw - 2rem));
+  padding: 0.8rem;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.45);
+}
+.image-metadata-editor label { display: grid; gap: 0.2rem; font-size: 0.78rem; }
+.image-metadata-editor input { min-width: 0; padding: 0.4rem 0.55rem; color: #f8fafc; background: #111827; border: 1px solid #475569; border-radius: 0.4rem; }
+.image-metadata-editor button { align-self: end; min-height: 2.1rem; }
+.image-metadata-editor p { grid-column: 1 / -1; color: #fca5a5; }
 .media-preview__toolbar button {
   min-height: 2.5rem;
   padding: 0.45rem 0.9rem;

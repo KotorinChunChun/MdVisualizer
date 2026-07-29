@@ -1,15 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { MermaidToolbar } from "./MermaidToolbar";
+import { ImageMetadataEditor } from "./ImageMetadataEditor";
 
 export type MediaPreviewContent =
   | { kind: "image"; src: string; alt: string }
   | { kind: "svg"; svg: string; alt: string };
 
+export interface ImageEditContext {
+  markdownPath: string;
+  imagePath: string;
+  source: string;
+  sourceOffset: number;
+  caption: string;
+}
+
 export interface MediaPreviewTarget {
   content: MediaPreviewContent;
   cropTarget?: import("../hooks/useCropEditor").CropTarget | null;
   mermaidSource?: string;
+  imageContext?: ImageEditContext;
 }
 
 function svgIntrinsicSize(svg: string): { width: number; height: number } {
@@ -33,11 +43,17 @@ export function MediaPreviewModal({
   onClose,
   onActivate,
   mermaidSource,
+  imageContext,
+  onSaveCaption,
+  onRenameImage,
 }: {
   content: MediaPreviewContent;
   onClose: () => void;
   onActivate?: () => void;
   mermaidSource?: string;
+  imageContext?: ImageEditContext;
+  onSaveCaption?: (context: ImageEditContext, caption: string) => Promise<void>;
+  onRenameImage?: (context: ImageEditContext, filename: string) => Promise<void>;
 }) {
   const svgSize = useMemo(
     () => content.kind === "svg" ? svgIntrinsicSize(content.svg) : null,
@@ -48,6 +64,7 @@ export function MediaPreviewModal({
   const [origin, setOrigin] = useState("50% 50%");
   const [imageSize, setImageSize] = useState({ width: 1000, height: 600 });
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
+  const [metadataOpen, setMetadataOpen] = useState(false);
   const intrinsic = content.kind === "svg" ? svgSize! : imageSize;
 
   useEffect(() => {
@@ -76,11 +93,15 @@ export function MediaPreviewModal({
   >
     <div className="media-preview__toolbar" onClick={(event) => event.stopPropagation()}>
       {mermaidSource && content.kind === "svg" && <MermaidToolbar source={mermaidSource} svg={content.svg} display={display} onDisplayChange={setDisplay} />}
+      {imageContext && onSaveCaption && onRenameImage && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
       <button type="button" className="media-preview__mode" onClick={toggleMode}>
         {mode === "fit" ? "1:1表示" : "全体表示"}
       </button>
       <button type="button" className="media-preview__close" aria-label="拡大表示を閉じる" onClick={onClose}>×</button>
     </div>
+    {metadataOpen && imageContext && onSaveCaption && onRenameImage && <div onClick={(event) => event.stopPropagation()}>
+      <ImageMetadataEditor context={imageContext} onSaveCaption={onSaveCaption} onRename={onRenameImage} />
+    </div>}
     <div
       className={`media-preview__viewport${display === "code" ? " is-code" : ""}`}
       onClick={(event) => event.stopPropagation()}

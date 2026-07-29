@@ -4,6 +4,7 @@ pub mod commands;
 pub mod errors;
 pub mod file_lock;
 pub mod image_ops;
+pub mod image_references;
 pub mod markdown;
 pub mod settings;
 pub mod watcher;
@@ -55,6 +56,8 @@ pub fn run() {
             crop_image,
             restore_image,
             has_image_backup,
+            update_image_caption,
+            rename_image_and_references,
             open_external_editor,
             open_containing_folder,
             open_in_editor,

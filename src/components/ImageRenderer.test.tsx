@@ -63,6 +63,30 @@ describe("ImageRenderer inline resize", () => {
     const anchor = document.getElementById("markdown-image-42");
     expect(anchor?.dataset.imageOccurrenceId).toBe("markdown-image-42");
     expect(anchor?.dataset.sourceLine).toBe("7");
+    expect(screen.getByText("画像").className).toContain("caption");
+  });
+
+  it("passes editable Markdown occurrence metadata to the preview", () => {
+    const onMediaOpen = vi.fn();
+    render(<ImageRenderer
+      src="images/photo.png"
+      alt="写真"
+      baseDir={"C:\\docs"}
+      imageVersions={{}}
+      markdownPath={"C:\\docs\\readme.md"}
+      sourceOffset={24}
+      onMediaOpen={onMediaOpen}
+    />);
+    fireEvent.click(screen.getByAltText("写真"));
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({
+      imageContext: {
+        markdownPath: "C:\\docs\\readme.md",
+        imagePath: "C:/docs/images/photo.png",
+        source: "images/photo.png",
+        sourceOffset: 24,
+        caption: "写真",
+      },
+    }));
   });
 
   it("shows eight accessible resize handles after an image is loaded", () => {

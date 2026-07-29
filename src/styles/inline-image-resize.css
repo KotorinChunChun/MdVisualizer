@@ -6,6 +6,16 @@
   line-height: 0;
 }
 
+.inline-image-resize__caption {
+  display: block;
+  max-width: 100%;
+  margin-top: 0.3rem;
+  color: var(--text-secondary);
+  font-size: 0.88em;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .markdown-body .inline-image-resize > img.markdown-img.inline-image-resize__image {
   display: block;
   width: 100%;

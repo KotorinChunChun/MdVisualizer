@@ -1,6 +1,10 @@
 use crate::app_state::AppState;
 use crate::errors::AppError;
 use crate::image_ops::{crop_image as do_crop_image, CropImageRequest, CropImageResult};
+use crate::image_references::{
+    rename_image_and_references as do_rename_image_and_references,
+    update_image_caption as do_update_image_caption, RenameImageResult,
+};
 use crate::markdown::{load_markdown as do_load_markdown, MarkdownLoadResult};
 use crate::settings::{
     load_application_settings, merge_external_app_settings, merge_fold_state, merge_settings,
@@ -225,6 +229,46 @@ pub fn restore_image(state: State<'_, AppState>, path: String) -> Result<bool, S
 #[tauri::command]
 pub fn has_image_backup(state: State<'_, AppState>, path: String) -> Result<bool, String> {
     Ok(state.backup_mgr.has_backup(Path::new(&path)))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateImageCaptionRequest {
+    markdown_path: String,
+    source_offset: usize,
+    expected_source: String,
+    caption: String,
+}
+
+#[tauri::command]
+pub fn update_image_caption(request: UpdateImageCaptionRequest) -> Result<(), String> {
+    do_update_image_caption(
+        Path::new(&request.markdown_path),
+        request.source_offset,
+        &request.expected_source,
+        &request.caption,
+    )
+    .map_err(|error| error.to_string())
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RenameImageReferencesRequest {
+    markdown_path: String,
+    image_path: String,
+    new_filename: String,
+}
+
+#[tauri::command]
+pub fn rename_image_and_references(
+    request: RenameImageReferencesRequest,
+) -> Result<RenameImageResult, String> {
+    do_rename_image_and_references(
+        Path::new(&request.markdown_path),
+        Path::new(&request.image_path),
+        &request.new_filename,
+    )
+    .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

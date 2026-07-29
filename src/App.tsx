@@ -10,14 +10,14 @@ import { SearchBar } from "./components/SearchBar";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ExternalActions } from "./components/ExternalActions";
 import { PresentationView } from "./components/PresentationView";
-import { MediaPreviewModal, type MediaPreviewTarget } from "./components/MediaPreviewModal";
+import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget } from "./components/MediaPreviewModal";
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
-import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateExternalAppSettings } from "./lib/commands";
+import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateExternalAppSettings, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -545,6 +545,41 @@ export function App() {
     setMediaPreview(null);
   }, [recordNavigationPoint]);
 
+  const saveImageCaption = useCallback(async (context: ImageEditContext, caption: string) => {
+    await updateImageCaption({
+      markdownPath: context.markdownPath,
+      sourceOffset: context.sourceOffset,
+      expectedSource: context.source,
+      caption,
+    });
+    const matchingTabs = tabsStateRef.current.tabs.filter((tab) => localPathIdentity(tab.path) === localPathIdentity(context.markdownPath));
+    matchingTabs.forEach((tab) => dispatch({ type: "RELOAD", id: tab.id }));
+    setMediaPreview((current) => current?.imageContext ? {
+      ...current,
+      content: { ...current.content, alt: caption },
+      imageContext: { ...current.imageContext, caption },
+    } : current);
+    setToast({ id: String(Date.now()), message: "キャプションを保存しました", type: "success" });
+  }, []);
+
+  const renamePreviewImage = useCallback(async (context: ImageEditContext, filename: string) => {
+    const result = await renameImageAndReferences({
+      markdownPath: context.markdownPath,
+      imagePath: context.imagePath,
+      newFilename: filename,
+    });
+    const changed = new Set(result.updatedDocuments.map(localPathIdentity));
+    tabsStateRef.current.tabs
+      .filter((tab) => changed.has(localPathIdentity(tab.path)))
+      .forEach((tab) => dispatch({ type: "RELOAD", id: tab.id }));
+    setMediaPreview(null);
+    setToast({
+      id: String(Date.now()),
+      message: `${result.updatedDocuments.length}文書・${result.updatedReferences}箇所の画像参照とファイル名を更新しました`,
+      type: "success",
+    });
+  }, []);
+
   const handleImageDisplaySizeChange = useCallback((source: string, size: ImageSize) => {
     if (activeTab) dispatch({ type: "IMAGE_DISPLAY_SIZE", id: activeTab.id, source, size });
   }, [activeTab?.id]);
@@ -876,6 +911,7 @@ export function App() {
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
             onOpenDocument={handleOpenDocument}
             onMediaOpen={openMediaPreview}
+            documentPath={activeTab.path}
           />
         ) : (
           <div className="empty-state">
@@ -906,6 +942,9 @@ export function App() {
       {mediaPreview && <MediaPreviewModal
         content={mediaPreview.content}
         mermaidSource={mediaPreview.mermaidSource}
+        imageContext={mediaPreview.imageContext}
+        onSaveCaption={saveImageCaption}
+        onRenameImage={renamePreviewImage}
         onClose={closeMediaPreview}
         onActivate={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);

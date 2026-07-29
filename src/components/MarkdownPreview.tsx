@@ -59,6 +59,7 @@ interface MarkdownPreviewProps {
   onOpenDocument?: (path: string) => void;
   presentationMode?: boolean;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
+  documentPath?: string;
 }
 
 const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
@@ -80,6 +81,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onOpenDocument,
   presentationMode = false,
   onMediaOpen,
+  documentPath,
 }) => {
   const mermaidCount = countMermaidFences(content);
   let mermaidIndex = 0;
@@ -142,6 +144,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
               onMediaOpen={onMediaOpen}
               occurrenceId={imageOccurrenceId(node?.position?.start.offset ?? 0)}
               sourceLine={node?.position?.start.line}
+              markdownPath={documentPath}
+              sourceOffset={node?.position?.start.offset}
             />
           ),
         }}

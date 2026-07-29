@@ -19,6 +19,8 @@ interface ImageRendererProps {
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   occurrenceId?: string;
   sourceLine?: number;
+  markdownPath?: string;
+  sourceOffset?: number;
 }
 
 export interface PresentationImageTarget {
@@ -38,6 +40,8 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   onMediaOpen,
   occurrenceId,
   sourceLine,
+  markdownPath,
+  sourceOffset,
 }) => {
   const [loadError, setLoadError] = useState(false);
   const {
@@ -98,6 +102,13 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     onMediaOpen?.({
       content: { kind: "image", src: displaySrc, alt },
       cropTarget,
+      imageContext: cropTarget && markdownPath && sourceOffset !== undefined ? {
+        markdownPath,
+        imagePath: fullPath,
+        source: src,
+        sourceOffset,
+        caption: alt,
+      } : undefined,
     });
   };
 
@@ -119,6 +130,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         onClick={handleClick}
         onError={() => setLoadError(true)}
       />
+      {alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
       {isEditableLocalImage && !presentationMode && (
         <InlineImageResizeOverlay
           onPointerDown={startResize}

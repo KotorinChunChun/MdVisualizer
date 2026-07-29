@@ -56,6 +56,30 @@ export async function hasImageBackup(path: string): Promise<boolean> {
   return await invoke<boolean>("has_image_backup", { path });
 }
 
+export async function updateImageCaption(request: {
+  markdownPath: string;
+  sourceOffset: number;
+  expectedSource: string;
+  caption: string;
+}): Promise<void> {
+  await invoke<void>("update_image_caption", { request });
+}
+
+export interface RenameImageReferencesResult {
+  oldPath: string;
+  newPath: string;
+  updatedDocuments: string[];
+  updatedReferences: number;
+}
+
+export async function renameImageAndReferences(request: {
+  markdownPath: string;
+  imagePath: string;
+  newFilename: string;
+}): Promise<RenameImageReferencesResult> {
+  return await invoke<RenameImageReferencesResult>("rename_image_and_references", { request });
+}
+
 export async function openExternalEditor(path: string): Promise<void> {
   return await invoke<void>("open_external_editor", { path });
 }
