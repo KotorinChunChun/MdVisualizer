@@ -59,7 +59,9 @@ fn main() {
 }
 ```
 
-    4文字インデントのコードブロック
+    function indentedCodeBlock() {
+      return "先頭を4文字分インデントしたコード";
+    }
 
 ## HTML許可リスト
 

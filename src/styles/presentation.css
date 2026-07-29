@@ -96,3 +96,30 @@
 
 .presentation-navigation button:first-child { justify-self: start; }
 .presentation-navigation button:last-child { justify-self: end; }
+
+.presentation-navigation button {
+  min-width: 6.5rem;
+  padding: 0.55rem 1rem;
+  color: var(--text-primary);
+  font-weight: 650;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--btn-bg) 82%, white), var(--btn-bg));
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, var(--accent-color));
+  border-radius: 0.75rem;
+  box-shadow: 0 0.2rem 0.65rem rgba(0, 0, 0, 0.2);
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.presentation-navigation button:hover:not(:disabled) {
+  background: var(--btn-hover);
+  box-shadow: 0 0.35rem 0.9rem rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+}
+
+.presentation-navigation button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.presentation-navigation button:disabled {
+  opacity: 0.42;
+  box-shadow: none;
+}

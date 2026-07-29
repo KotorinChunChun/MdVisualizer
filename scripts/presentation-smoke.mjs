@@ -77,14 +77,14 @@ await capture("02-image-page");
 
 await evaluate(`document.querySelectorAll(".presentation-stage .markdown-img")[0].click()`);
 await wait();
-if (!await evaluate(`Boolean(document.querySelector(".presentation-image-modal"))`)) throw new Error("Raster popup did not open");
-await evaluate(`document.querySelector(".presentation-image-modal img").dispatchEvent(new WheelEvent("wheel", { deltaY: -100, bubbles: true }))`);
+if (!await evaluate(`Boolean(document.querySelector(".media-preview"))`)) throw new Error("Raster popup did not open");
+await evaluate(`document.querySelector(".media-preview img").dispatchEvent(new WheelEvent("wheel", { deltaY: -100, bubbles: true }))`);
 await wait();
-const zoom = await evaluate(`document.querySelector(".presentation-image-modal output")?.textContent`);
-if (zoom !== "120%") throw new Error(`Unexpected popup zoom: ${zoom}`);
+const zoom = await evaluate(`document.querySelector(".media-preview output")?.textContent`);
+if (!zoom?.includes("120%")) throw new Error(`Unexpected popup zoom: ${zoom}`);
 await capture("03-raster-popup");
 
-await evaluate(`document.querySelector(".presentation-image-modal img").click()`);
+await evaluate(`document.querySelector(".media-preview img").click()`);
 await wait();
 if (!await evaluate(`Boolean(document.querySelector(".crop-overlay"))`)) throw new Error("Local raster did not enter crop editor");
 await capture("04-raster-crop");
@@ -93,10 +93,10 @@ await wait();
 
 await evaluate(`document.querySelectorAll(".presentation-stage .markdown-img")[1].click()`);
 await wait();
-await evaluate(`document.querySelector(".presentation-image-modal img").click()`);
+await evaluate(`document.querySelector(".media-preview img").click()`);
 await wait();
 if (await evaluate(`Boolean(document.querySelector(".crop-overlay"))`)) throw new Error("SVG incorrectly entered crop editor");
-if (!await evaluate(`Boolean(document.querySelector(".presentation-image-modal"))`)) throw new Error("SVG popup closed on second click");
+if (!await evaluate(`Boolean(document.querySelector(".media-preview"))`)) throw new Error("SVG popup closed on second click");
 await capture("05-svg-popup");
 await evaluate(`window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))`);
 await wait();
