@@ -14,6 +14,9 @@ export interface SettingsLoadStatus {
 export async function loadSettings(): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("load_settings"); }
 export async function loadSettingsStatus(): Promise<SettingsLoadStatus> { return await invoke<SettingsLoadStatus>("load_settings_status"); }
 export async function saveSettings(updates: Record<string, unknown>): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("save_settings", { updates }); }
+export async function updateExternalAppSettings(upserts: unknown[], removedIds: string[], presentationLineThreshold: number): Promise<Record<string, unknown>> {
+  return await invoke<Record<string, unknown>>("update_external_app_settings", { upserts, removedIds, presentationLineThreshold });
+}
 export async function saveFoldState(documentPath: string, state: Record<string, boolean>): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("save_fold_state", { documentPath, state }); }
 
 export async function getInitialFiles(): Promise<string[]> {

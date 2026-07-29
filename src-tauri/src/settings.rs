@@ -80,7 +80,12 @@ pub fn merge_settings(path: &Path, updates: Map<String, Value>) -> AppResult<Val
         let object = current
             .as_object_mut()
             .ok_or_else(|| AppError::IoError("settings root must be an object".into()))?;
-        object.insert("schemaVersion".into(), Value::from(2));
+        let schema_version = object
+            .get("schemaVersion")
+            .and_then(Value::as_u64)
+            .unwrap_or(2)
+            .max(2);
+        object.insert("schemaVersion".into(), Value::from(schema_version));
         // `foldStates` has its own lock and file from v0.2 onward.
         updates
             .into_iter()
@@ -88,6 +93,60 @@ pub fn merge_settings(path: &Path, updates: Map<String, Value>) -> AppResult<Val
             .for_each(|(key, value)| {
                 object.insert(key, value);
             });
+        write_json(path, &current)?;
+        Ok(current)
+    })
+}
+
+/// Applies external-app edits by stable ID so a stale settings window cannot
+/// replace applications concurrently added by another window.
+pub fn merge_external_app_settings(
+    path: &Path,
+    upserts: Vec<Value>,
+    removed_ids: Vec<String>,
+    presentation_line_threshold: u64,
+) -> AppResult<Value> {
+    with_lock(path, || {
+        let mut current = load_json_unlocked(path)?.value;
+        let object = current
+            .as_object_mut()
+            .ok_or_else(|| AppError::IoError("settings root must be an object".into()))?;
+        let mut apps = object
+            .get("externalApps")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        apps.retain(|app| {
+            app.get("id")
+                .and_then(Value::as_str)
+                .is_none_or(|id| !removed_ids.iter().any(|removed| removed == id))
+        });
+        for replacement in upserts {
+            let id = replacement
+                .get("id")
+                .and_then(Value::as_str)
+                .ok_or_else(|| AppError::IoError("external app requires an id".into()))?;
+            if let Some(index) = apps
+                .iter()
+                .position(|app| app.get("id").and_then(Value::as_str) == Some(id))
+            {
+                apps[index] = replacement;
+            } else {
+                apps.push(replacement);
+            }
+        }
+        apps.sort_by_key(|app| app.get("order").and_then(Value::as_i64).unwrap_or(i64::MAX));
+        for (order, app) in apps.iter_mut().enumerate() {
+            if let Some(app_object) = app.as_object_mut() {
+                app_object.insert("order".into(), Value::from(order as u64));
+            }
+        }
+        object.insert("schemaVersion".into(), Value::from(3));
+        object.insert("externalApps".into(), Value::Array(apps));
+        object.insert(
+            "presentationLineThreshold".into(),
+            Value::from(presentation_line_threshold.clamp(1, 100)),
+        );
         write_json(path, &current)?;
         Ok(current)
     })
@@ -272,6 +331,55 @@ mod tests {
         let result = load_settings(&path).unwrap();
         assert_eq!(result["theme"], "dark");
         assert_eq!(result["viewMode"], "compact");
+    }
+
+    #[test]
+    fn concurrent_external_app_updates_preserve_disjoint_applications() {
+        let dir = tempdir().unwrap();
+        let path = Arc::new(dir.path().join("settings.json"));
+        let gate = Arc::new(Barrier::new(2));
+        let workers: Vec<_> = ["app-a", "app-b"]
+            .into_iter()
+            .enumerate()
+            .map(|(order, id)| {
+                let path = Arc::clone(&path);
+                let gate = Arc::clone(&gate);
+                thread::spawn(move || {
+                    gate.wait();
+                    merge_external_app_settings(
+                        &path,
+                        vec![serde_json::json!({"id": id, "label": id, "order": order})],
+                        vec![],
+                        10,
+                    )
+                    .unwrap();
+                })
+            })
+            .collect();
+        for worker in workers {
+            worker.join().unwrap();
+        }
+        let result = load_settings(&path).unwrap();
+        let ids: Vec<_> = result["externalApps"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|app| app["id"].as_str())
+            .collect();
+        assert!(ids.contains(&"app-a"));
+        assert!(ids.contains(&"app-b"));
+        assert_eq!(result["schemaVersion"], 3);
+    }
+
+    #[test]
+    fn schema_version_never_downgrades_during_partial_updates() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        fs::write(&path, r#"{"schemaVersion":3,"externalApps":[]}"#).unwrap();
+        let mut update = Map::new();
+        update.insert("theme".into(), Value::from("light"));
+        let result = merge_settings(&path, update).unwrap();
+        assert_eq!(result["schemaVersion"], 3);
     }
 
     #[test]

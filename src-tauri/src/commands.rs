@@ -3,11 +3,12 @@ use crate::errors::AppError;
 use crate::image_ops::{crop_image as do_crop_image, CropImageRequest, CropImageResult};
 use crate::markdown::{load_markdown as do_load_markdown, MarkdownLoadResult};
 use crate::settings::{
-    load_application_settings, merge_fold_state, merge_settings, SettingsLoadResult,
+    load_application_settings, merge_external_app_settings, merge_fold_state, merge_settings,
+    SettingsLoadResult,
 };
 use crate::watcher::FileWatcher;
-use serde_json::{Map, Value};
 use serde::Deserialize;
+use serde_json::{Map, Value};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
@@ -53,6 +54,22 @@ pub fn save_settings(app_handle: AppHandle, updates: Value) -> Result<Value, Str
         .cloned()
         .ok_or_else(|| "Settings update must be an object.".to_string())?;
     merge_settings(&settings_path(&app_handle)?, updates).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn update_external_app_settings(
+    app_handle: AppHandle,
+    upserts: Vec<Value>,
+    removed_ids: Vec<String>,
+    presentation_line_threshold: u64,
+) -> Result<Value, String> {
+    merge_external_app_settings(
+        &settings_path(&app_handle)?,
+        upserts,
+        removed_ids,
+        presentation_line_threshold,
+    )
+    .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -282,7 +299,9 @@ fn expand_external_app_value(value: &str, file: &Path, line: u32) -> Result<Stri
         .replace("${dir}", &directory.to_string_lossy())
         .replace("${line}", &line.to_string());
     if expanded.contains("${") {
-        return Err(format!("Unsupported placeholder in external application value: {value}"));
+        return Err(format!(
+            "Unsupported placeholder in external application value: {value}"
+        ));
     }
     Ok(expanded)
 }
@@ -302,7 +321,10 @@ pub fn open_external_app(request: OpenExternalAppRequest) -> Result<(), String> 
     for argument in request.args {
         command.arg(expand_external_app_value(&argument, &file, line)?);
     }
-    if let Some(working_directory) = request.working_directory.filter(|value| !value.trim().is_empty()) {
+    if let Some(working_directory) = request
+        .working_directory
+        .filter(|value| !value.trim().is_empty())
+    {
         command.current_dir(expand_external_app_value(&working_directory, &file, line)?);
     }
     #[cfg(target_os = "windows")]
@@ -426,7 +448,10 @@ mod tests {
             expand_external_app_value("${dir}", file, 42).unwrap(),
             "C:/日本語 & docs"
         );
-        assert_eq!(expand_external_app_value("${line}", file, 42).unwrap(), "42");
+        assert_eq!(
+            expand_external_app_value("${line}", file, 42).unwrap(),
+            "42"
+        );
         assert!(expand_external_app_value("${unknown}", file, 1).is_err());
     }
 }

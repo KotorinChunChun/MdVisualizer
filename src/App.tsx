@@ -14,7 +14,7 @@ import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
-import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets } from "./lib/commands";
+import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateExternalAppSettings } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -403,15 +403,19 @@ export function App() {
 
   const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number) => {
     try {
-      await saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold });
-      setExternalApps(apps);
+      const previousById = new Map(externalApps.map((app) => [app.id, app]));
+      const upserts = apps.filter((app) => JSON.stringify(previousById.get(app.id)) !== JSON.stringify(app));
+      const nextIds = new Set(apps.map((app) => app.id));
+      const removedIds = externalApps.filter((app) => !nextIds.has(app.id)).map((app) => app.id);
+      const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold);
+      setExternalApps(normalizeExternalApps(saved.externalApps));
       setPresentationLineThreshold(lineThreshold);
       setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
     } catch (error) {
       setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
       throw error;
     }
-  }, []);
+  }, [externalApps]);
 
   const closeTab = useCallback((id: string) => {
     const tab = tabsState.tabs.find((candidate) => candidate.id === id);
