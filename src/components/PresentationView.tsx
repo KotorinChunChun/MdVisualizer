@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CropTarget } from "../hooks/useCropEditor";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import { buildPresentationModel } from "../lib/presentationModel";
 import { MarkdownPreview } from "./MarkdownPreview";
-import { PresentationImageModal } from "./PresentationImageModal";
-import type { PresentationImageTarget } from "./ImageRenderer";
+import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import "../styles/presentation.css";
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -43,7 +41,6 @@ export function PresentationView({
   content,
   baseDir,
   imageVersions,
-  onStartCrop,
   theme,
   onError,
   mermaidMode,
@@ -54,11 +51,12 @@ export function PresentationView({
   lineThreshold = 10,
   initialHeadingId,
   onPageChange,
+  onMediaOpen,
+  onBeforeNavigate,
 }: {
   content: string;
   baseDir: string;
   imageVersions: Record<string, number>;
-  onStartCrop: (target: CropTarget) => void;
   theme: string;
   onError?: (message: string) => void;
   mermaidMode: "on" | "off" | "error-code" | "always-code";
@@ -69,11 +67,12 @@ export function PresentationView({
   lineThreshold?: number;
   initialHeadingId?: string;
   onPageChange?: (headingId: string, sourceLine: number) => void;
+  onMediaOpen?: (target: MediaPreviewTarget) => void;
+  onBeforeNavigate?: () => void;
 }) {
   const model = useMemo(() => buildPresentationModel(content, lineThreshold), [content, lineThreshold]);
   const initialIndex = () => Math.max(0, model.pages.findIndex((candidate) => candidate.id === initialHeadingId || candidate.mergedHeadingIds.includes(initialHeadingId ?? "")));
   const [pageIndex, setPageIndex] = useState(initialIndex);
-  const [imageTarget, setImageTarget] = useState<PresentationImageTarget | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
   const currentCrumbRef = useRef<HTMLButtonElement | null>(null);
   const page = model.pages[Math.min(pageIndex, model.pages.length - 1)];
@@ -85,22 +84,27 @@ export function PresentationView({
   }, [pageIndex]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (imageTarget || !shouldHandlePresentationArrowKey(event)) return;
-      if (event.key === "ArrowLeft") {
+      if (!shouldHandlePresentationArrowKey(event)) return;
+      if (event.key === "ArrowLeft" && pageIndex > 0) {
         event.preventDefault();
-        setPageIndex((current) => Math.max(0, current - 1));
-      } else if (event.key === "ArrowRight") {
+        onBeforeNavigate?.();
+        setPageIndex((current) => current - 1);
+      } else if (event.key === "ArrowRight" && pageIndex < model.pages.length - 1) {
         event.preventDefault();
-        setPageIndex((current) => Math.min(model.pages.length - 1, current + 1));
+        onBeforeNavigate?.();
+        setPageIndex((current) => current + 1);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [imageTarget, model.pages.length]);
+  }, [model.pages.length, onBeforeNavigate, pageIndex]);
 
   const jumpToHeading = (headingId: string) => {
     const index = model.pages.findIndex((candidate) => candidate.id === headingId || candidate.mergedHeadingIds.includes(headingId));
-    if (index >= 0) setPageIndex(index);
+    if (index >= 0 && index !== pageIndex) {
+      onBeforeNavigate?.();
+      setPageIndex(index);
+    }
   };
   const currentHeadingId = page.mergedHeadingIds[page.mergedHeadingIds.length - 1] ?? page.id;
   const renderTocItems = (ids: string[]): React.ReactNode => <ul>
@@ -153,7 +157,6 @@ export function PresentationView({
           content={page.markdown}
           baseDir={baseDir}
           imageVersions={imageVersions}
-          onStartCrop={onStartCrop}
           theme={theme}
           onError={onError}
           mermaidMode={mermaidMode}
@@ -162,7 +165,7 @@ export function PresentationView({
           imageDisplaySizes={imageDisplaySizes}
           onOpenDocument={onOpenDocument}
           presentationMode
-          onPresentationImageOpen={setImageTarget}
+          onMediaOpen={onMediaOpen}
         />
         {page.childIds.length > 0 && <nav className="presentation-children" aria-label="下位見出し">
           {page.childIds.map((childId) => <button type="button" key={childId} onClick={() => jumpToHeading(childId)}>
@@ -173,10 +176,9 @@ export function PresentationView({
       </div>
     </div>
     <footer className="presentation-navigation">
-      <button type="button" disabled={pageIndex === 0} onClick={() => setPageIndex((current) => current - 1)}>← 前へ</button>
+      <button type="button" disabled={pageIndex === 0} onClick={() => { onBeforeNavigate?.(); setPageIndex((current) => current - 1); }}>← 前へ</button>
       <span>{pageIndex + 1} / {model.pages.length}</span>
-      <button type="button" disabled={pageIndex >= model.pages.length - 1} onClick={() => setPageIndex((current) => current + 1)}>次へ →</button>
+      <button type="button" disabled={pageIndex >= model.pages.length - 1} onClick={() => { onBeforeNavigate?.(); setPageIndex((current) => current + 1); }}>次へ →</button>
     </footer>
-    {imageTarget && <PresentationImageModal target={imageTarget} onClose={() => setImageTarget(null)} onEdit={(target) => { setImageTarget(null); onStartCrop(target); }} />}
   </section>;
 }

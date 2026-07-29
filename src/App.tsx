@@ -10,6 +10,7 @@ import { SearchBar } from "./components/SearchBar";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ExternalActions } from "./components/ExternalActions";
 import { PresentationView } from "./components/PresentationView";
+import { MediaPreviewModal, type MediaPreviewTarget } from "./components/MediaPreviewModal";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -22,6 +23,8 @@ import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds } from "./lib/foldSections";
 import { DEFAULT_EXTERNAL_APPS, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
+import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
+import { localPathIdentity } from "./lib/pathIdentity";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -50,7 +53,8 @@ export function App() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
   const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
-  const presentationPositions = useRef<Record<string, string>>({});
+  const [presentationPositions, setPresentationPositions] = useState<Record<string, string>>({});
+  const presentationPositionsRef = useRef<Record<string, string>>({});
   const presentationSourceLines = useRef<Record<string, number>>({});
   const wasPresentationMode = useRef(false);
   const presentationRestorePending = useRef(false);
@@ -66,6 +70,9 @@ export function App() {
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
   const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
   const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
+  const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
+  const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
+  const navigationHistoryRef = useRef(emptyNavigationHistory());
   const themeRef = useRef(theme);
   const zoomRef = useRef(zoom);
   const viewModeRef = useRef(viewMode);
@@ -169,6 +176,9 @@ export function App() {
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedTabs, setClosedTabs] = useState<ClosedTabState[]>([]);
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
+  const tabsStateRef = useRef(tabsState);
+  tabsStateRef.current = tabsState;
+  mediaPreviewRef.current = mediaPreview;
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
 
@@ -182,7 +192,7 @@ export function App() {
       presentationRestorePending.current = true;
     }
     if (!presentationRestorePending.current || !activeTab?.document) return;
-    const headingId = presentationPositions.current[activeTab.id];
+    const headingId = presentationPositionsRef.current[activeTab.id];
     if (!headingId) {
       presentationRestorePending.current = false;
       return;
@@ -410,10 +420,71 @@ export function App() {
     setToast({ id: String(Date.now()), message, type: "error" });
   }, []);
 
-  const handleOpenDocument = useCallback((path: string) => {
-    dispatch({ type: "OPEN", path });
+  const captureNavigationSnapshot = useCallback((): NavigationSnapshot => {
+    const state = tabsStateRef.current;
+    const activeId = state.activeId;
+    const tab = state.tabs.find((candidate) => candidate.id === activeId);
+    return {
+      activeTabId: activeId,
+      scrollTop: activeId && containerRef.current ? containerRef.current.scrollTop : tab?.scrollTop ?? 0,
+      viewMode: viewModeRef.current,
+      presentationHeadingId: activeId ? presentationPositionsRef.current[activeId] ?? null : null,
+      mediaPreview: mediaPreviewRef.current,
+    };
   }, []);
+
+  const recordNavigationPoint = useCallback(() => {
+    navigationHistoryRef.current = recordNavigation(navigationHistoryRef.current, captureNavigationSnapshot());
+  }, [captureNavigationSnapshot]);
+
+  const restoreNavigationSnapshot = useCallback((snapshot: NavigationSnapshot) => {
+    if (snapshot.activeTabId && tabsStateRef.current.tabs.some((tab) => tab.id === snapshot.activeTabId)) {
+      dispatch({ type: "SCROLL", id: snapshot.activeTabId, scrollTop: snapshot.scrollTop });
+      dispatch({ type: "ACTIVATE", id: snapshot.activeTabId });
+      if (snapshot.presentationHeadingId) {
+        presentationPositionsRef.current[snapshot.activeTabId] = snapshot.presentationHeadingId;
+        setPresentationPositions((current) => ({ ...current, [snapshot.activeTabId!]: snapshot.presentationHeadingId! }));
+      }
+    }
+    if (viewModeRef.current !== snapshot.viewMode) {
+      viewModeRef.current = snapshot.viewMode;
+      setViewMode(snapshot.viewMode);
+      persistSetting("viewMode", snapshot.viewMode);
+    }
+    setMediaPreview((snapshot.mediaPreview as MediaPreviewTarget | null) ?? null);
+  }, [persistSetting]);
+
+  const goBack = useCallback(() => {
+    const result = navigateBack(navigationHistoryRef.current, captureNavigationSnapshot());
+    navigationHistoryRef.current = result.history;
+    if (result.target) restoreNavigationSnapshot(result.target);
+  }, [captureNavigationSnapshot, restoreNavigationSnapshot]);
+
+  const goForward = useCallback(() => {
+    const result = navigateForward(navigationHistoryRef.current, captureNavigationSnapshot());
+    navigationHistoryRef.current = result.history;
+    if (result.target) restoreNavigationSnapshot(result.target);
+  }, [captureNavigationSnapshot, restoreNavigationSnapshot]);
+
+  const handleOpenDocument = useCallback((path: string) => {
+    const identity = localPathIdentity(path);
+    const existing = tabsStateRef.current.tabs.find((tab) => tab.kind !== "settings" && localPathIdentity(tab.path) === identity);
+    if (existing?.id === tabsStateRef.current.activeId) return;
+    recordNavigationPoint();
+    dispatch({ type: "OPEN", path });
+  }, [recordNavigationPoint]);
   useFileDrop((paths) => paths.forEach(handleOpenDocument));
+
+  const openMediaPreview = useCallback((target: MediaPreviewTarget) => {
+    recordNavigationPoint();
+    setMediaPreview(target);
+  }, [recordNavigationPoint]);
+
+  const closeMediaPreview = useCallback(() => {
+    if (!mediaPreviewRef.current) return;
+    recordNavigationPoint();
+    setMediaPreview(null);
+  }, [recordNavigationPoint]);
 
   const handleImageDisplaySizeChange = useCallback((source: string, size: ImageSize) => {
     if (activeTab) dispatch({ type: "IMAGE_DISPLAY_SIZE", id: activeTab.id, source, size });
@@ -448,7 +519,10 @@ export function App() {
     void operation.catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
   }, [activeTab?.document, activeTab?.path]);
 
-  const openSettings = useCallback(() => dispatch({ type: "OPEN_SETTINGS" }), []);
+  const openSettings = useCallback(() => {
+    recordNavigationPoint();
+    dispatch({ type: "OPEN_SETTINGS" });
+  }, [recordNavigationPoint]);
 
   const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number) => {
     try {
@@ -481,8 +555,21 @@ export function App() {
   const activateRelativeTab = useCallback((delta: number) => {
     const index = tabsState.tabs.findIndex((tab) => tab.id === tabsState.activeId);
     if (index < 0 || tabsState.tabs.length < 2) return;
+    recordNavigationPoint();
     dispatch({ type: "ACTIVATE", id: tabsState.tabs[(index + delta + tabsState.tabs.length) % tabsState.tabs.length].id });
-  }, [tabsState.activeId, tabsState.tabs]);
+  }, [recordNavigationPoint, tabsState.activeId, tabsState.tabs]);
+
+  const activateTab = useCallback((id: string) => {
+    if (id === tabsStateRef.current.activeId) return;
+    recordNavigationPoint();
+    dispatch({ type: "ACTIVATE", id });
+  }, [recordNavigationPoint]);
+
+  const changeViewMode = useCallback((value: string) => {
+    if (viewModeRef.current === value) return;
+    recordNavigationPoint();
+    updateViewMode(value);
+  }, [recordNavigationPoint, updateViewMode]);
 
   const openSearch = useCallback(() => {
     if (viewModeRef.current !== "presentation" && activeTab?.document) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
@@ -496,6 +583,13 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey && !event.ctrlKey && !event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        if (event.key === "ArrowLeft") goBack();
+        else goForward();
+        return;
+      }
+
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "t") {
         const [tab, ...remaining] = closedTabs;
         if (tab) { event.preventDefault(); setClosedTabs(remaining); dispatch({ type: "RESTORE", tab }); }
@@ -550,7 +644,18 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab?.searchOpen, activateRelativeTab, closeActiveTab, closeSearch, closedTabs, cropTarget, openSearch, reload, search, toggleFoldAll, updateZoom]);
+  }, [activeTab?.searchOpen, activateRelativeTab, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, reload, search, toggleFoldAll, updateZoom]);
+
+  useEffect(() => {
+    const onMouseUp = (event: MouseEvent) => {
+      if (event.button !== 3 && event.button !== 4) return;
+      event.preventDefault();
+      if (event.button === 3) goBack();
+      else goForward();
+    };
+    window.addEventListener("mouseup", onMouseUp);
+    return () => window.removeEventListener("mouseup", onMouseUp);
+  }, [goBack, goForward]);
 
   const updateImageVersion = useCallback((imgPath: string) => {
     setImageVersions((previous) => ({ ...previous, [imgPath]: (previous[imgPath] || 0) + 1 }));
@@ -622,7 +727,7 @@ export function App() {
 
   return (
     <div className="app-container">
-      <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={(id) => dispatch({ type: "ACTIVATE", id })} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
+      <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
           {viewMode !== "presentation" && <button type="button" disabled={!activeTab?.document} onClick={openSearch}>検索</button>}
@@ -662,7 +767,6 @@ export function App() {
             content={activeTab.document.content}
             baseDir={activeTab.document.base_dir}
             imageVersions={imageVersions}
-            onStartCrop={startCrop}
             theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             onError={handlePreviewError}
             mermaidMode={mermaidMode}
@@ -671,18 +775,20 @@ export function App() {
             imageDisplaySizes={activeTab.imageDisplaySizes}
             onOpenDocument={handleOpenDocument}
             lineThreshold={presentationLineThreshold}
-            initialHeadingId={presentationPositions.current[activeTab.id]}
+            initialHeadingId={presentationPositions[activeTab.id]}
             onPageChange={(headingId, sourceLine) => {
-              presentationPositions.current[activeTab.id] = headingId;
+              presentationPositionsRef.current[activeTab.id] = headingId;
+              setPresentationPositions((current) => current[activeTab.id] === headingId ? current : { ...current, [activeTab.id]: headingId });
               presentationSourceLines.current[activeTab.id] = sourceLine;
             }}
+            onBeforeNavigate={recordNavigationPoint}
+            onMediaOpen={openMediaPreview}
           />
         ) : activeTab?.document ? (
           <MarkdownPreview
             content={activeTab.document.content}
             baseDir={activeTab.document.base_dir}
             imageVersions={imageVersions}
-            onStartCrop={startCrop}
             contentRef={markdownRef}
             theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             onError={handlePreviewError}
@@ -696,6 +802,7 @@ export function App() {
             searchExpandedIds={searchExpandedIds}
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
             onOpenDocument={handleOpenDocument}
+            onMediaOpen={openMediaPreview}
           />
         ) : (
           <div className="empty-state">
@@ -722,6 +829,14 @@ export function App() {
         onRestore={handleRestore}
         onClose={() => setToast(null)}
       />
+      {mediaPreview && <MediaPreviewModal
+        content={mediaPreview.content}
+        onClose={closeMediaPreview}
+        onActivate={mediaPreview.cropTarget ? () => {
+          setMediaPreview(null);
+          startCrop(mediaPreview.cropTarget!);
+        } : undefined}
+      />}
       <StatusBar
         document={activeTab?.document ?? null}
         autoReload={autoReload}
@@ -737,7 +852,7 @@ export function App() {
         theme={theme}
         onThemeChange={updateTheme}
         viewMode={viewMode}
-        onViewModeChange={updateViewMode}
+        onViewModeChange={changeViewMode}
         onOpenSettings={openSettings}
         statusText={activeTab?.kind === "settings" ? "アプリケーション設定" : undefined}
       />

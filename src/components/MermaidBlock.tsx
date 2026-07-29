@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { mermaidInputError, mermaidRenderId, renderMermaid } from "../lib/mermaidService";
 import { removeMermaidBlockStatus, setMermaidBlockStatus } from "../lib/mermaidStatus";
-import { MediaPreviewModal } from "./MediaPreviewModal";
+import type { MediaPreviewTarget } from "./MediaPreviewModal";
 
 interface MermaidBlockProps {
   source: string;
@@ -13,6 +13,7 @@ interface MermaidBlockProps {
   blockId?: string;
   diagramIndex?: number;
   diagramCount?: number;
+  onMediaOpen?: (target: MediaPreviewTarget) => void;
 }
 
 type RenderState = { svg: string | null; error: string | null; pending: boolean };
@@ -26,10 +27,10 @@ export function MermaidBlock({
   blockId,
   diagramIndex,
   diagramCount,
+  onMediaOpen,
 }: MermaidBlockProps) {
   const [state, setState] = useState<RenderState>({ svg: null, error: null, pending: false });
   const [showDetails, setShowDetails] = useState(false);
-  const [zoomed, setZoomed] = useState(false);
   const [visible, setVisible] = useState(false);
   const hostRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
@@ -99,6 +100,6 @@ export function MermaidBlock({
     {state.error && <div className="mermaid-error"><strong>Mermaid を描画できません。</strong><div><button type="button" onClick={() => setShowDetails((value) => !value)}>エラー詳細</button>{!shouldShowCode && <button type="button" onClick={() => setShowDetails(true)}>コードを表示</button>}</div>{showDetails && <pre>{state.error}</pre>}{(showDetails || shouldShowCode) && <pre className="mermaid-source"><code>{source}</code></pre>}</div>}
     {!state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
     {!state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
-    {state.svg && <><button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => setZoomed(true)} dangerouslySetInnerHTML={{ __html: state.svg }} />{zoomed && <MediaPreviewModal content={{ kind: "svg", svg: state.svg, alt: "Mermaid図" }} onClose={() => setZoomed(false)} />}</>}
+    {state.svg && <button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: "Mermaid図" } })} dangerouslySetInnerHTML={{ __html: state.svg }} />}
   </div>;
 }

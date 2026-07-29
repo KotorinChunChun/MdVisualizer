@@ -20,12 +20,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderImage(onStartCrop = vi.fn(), rect = imageRect, src = "photo.png") {
+function renderImage(onMediaOpen = vi.fn(), rect = imageRect, src = "photo.png") {
   vi.spyOn(HTMLImageElement.prototype, "getBoundingClientRect").mockReturnValue(rect);
   vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(320);
   vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(200);
   return {
-    onStartCrop,
+    onMediaOpen,
     ...render(
       <div className="markdown-body">
         <ImageRenderer
@@ -33,7 +33,7 @@ function renderImage(onStartCrop = vi.fn(), rect = imageRect, src = "photo.png")
           alt="テスト画像"
           baseDir="C:\\docs"
           imageVersions={{}}
-          onStartCrop={onStartCrop}
+          onMediaOpen={onMediaOpen}
         />
       </div>,
     ),
@@ -49,7 +49,7 @@ function ControlledImage() {
         alt="制御されたテスト画像"
         baseDir="C:\\docs"
         imageVersions={{}}
-        onStartCrop={vi.fn()}
+        onMediaOpen={() => {}}
         displaySize={displaySize}
         onDisplaySizeChange={setDisplaySize}
       />
@@ -67,13 +67,11 @@ describe("ImageRenderer inline resize", () => {
   });
 
   it("resizes only the rendered frame and suppresses crop after a drag", () => {
-    const { onStartCrop, container } = renderImage();
+    const { onMediaOpen, container } = renderImage();
     const image = screen.getByAltText("テスト画像");
     fireEvent.load(image);
     fireEvent.click(image);
-    expect(screen.getByRole("dialog")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "拡大表示を閉じる" }));
-    expect(onStartCrop).not.toHaveBeenCalled();
+    expect(onMediaOpen).toHaveBeenCalledTimes(1);
 
     const eastHandle = screen.getByRole("button", { name: "右辺を調整" });
     fireEvent.pointerDown(eastHandle, { button: 0, pointerId: 9, clientX: 100, clientY: 80 });
@@ -84,8 +82,7 @@ describe("ImageRenderer inline resize", () => {
     expect(frame.style.width).toBe("270px");
     expect(frame.style.height).toBe("200px");
     fireEvent.click(image);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(onStartCrop).not.toHaveBeenCalled();
+    expect(onMediaOpen).toHaveBeenCalledTimes(1);
   });
 
   it("continues shrinking across pointer moves when every update is controlled", () => {
@@ -125,53 +122,52 @@ describe("ImageRenderer inline resize", () => {
     fireEvent.load(screen.getByAltText("テスト画像"));
     expect(screen.queryAllByRole("button")).toHaveLength(0);
 
-    rerender(<div className="markdown-body"><ImageRenderer src="data:image/png;base64,AAAA" alt="データ画像" baseDir="C:\\docs" imageVersions={{}} onStartCrop={vi.fn()} /></div>);
+    rerender(<div className="markdown-body"><ImageRenderer src="data:image/png;base64,AAAA" alt="データ画像" baseDir="C:\\docs" imageVersions={{}} onMediaOpen={() => {}} /></div>);
     fireEvent.load(screen.getByAltText("データ画像"));
     expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 
   it("displays local SVG files without exposing raster editing controls", () => {
-    const onStartCrop = vi.fn();
-    renderImage(onStartCrop, imageRect, "diagrams/architecture.svg");
+    const onMediaOpen = vi.fn();
+    renderImage(onMediaOpen, imageRect, "diagrams/architecture.svg");
     const image = screen.getByAltText("テスト画像");
     fireEvent.load(image);
     expect(image.getAttribute("src")).toContain("architecture.svg");
     expect(screen.queryAllByRole("button")).toHaveLength(0);
     fireEvent.click(image);
-    expect(screen.getByRole("dialog")).toBeTruthy();
-    expect(onStartCrop).not.toHaveBeenCalled();
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({ cropTarget: null }));
   });
 
   it.each(["photo.png", "photo.jpeg", "photo.jpg", "photo.gif", "photo.webp", "photo.bmp"])("permits supported local raster editing for %s", (src) => {
-    const onStartCrop = vi.fn();
-    renderImage(onStartCrop, imageRect, src);
+    const onMediaOpen = vi.fn();
+    renderImage(onMediaOpen, imageRect, src);
     const image = screen.getByAltText("テスト画像");
     fireEvent.load(image);
     expect(screen.getAllByRole("button")).toHaveLength(8);
     fireEvent.click(image);
-    const previewImage = screen.getByRole("dialog").querySelector("img")!;
-    fireEvent.click(previewImage);
-    expect(onStartCrop).toHaveBeenCalledTimes(1);
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({
+      cropTarget: expect.objectContaining({ filename: expect.stringMatching(/^photo\./) }),
+    }));
   });
 
   it.each(["vector.svg", "https://example.test/photo.png", "data:image/png;base64,AAAA", "file:///C:/docs/photo.png", "photo.tiff"])("keeps non-local-raster source view-only: %s", (src) => {
-    const onStartCrop = vi.fn();
-    renderImage(onStartCrop, imageRect, src);
+    const onMediaOpen = vi.fn();
+    renderImage(onMediaOpen, imageRect, src);
     const image = screen.getByAltText("テスト画像");
     fireEvent.load(image);
     expect(screen.queryAllByRole("button")).toHaveLength(0);
     fireEvent.click(image);
-    expect(onStartCrop).not.toHaveBeenCalled();
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({ cropTarget: null }));
   });
 
   it("keeps file URLs viewable while refusing crop editing", () => {
-    const onStartCrop = vi.fn();
-    renderImage(onStartCrop, imageRect, "file:///C:/docs/photo.png");
+    const onMediaOpen = vi.fn();
+    renderImage(onMediaOpen, imageRect, "file:///C:/docs/photo.png");
     const image = screen.getByAltText("テスト画像");
     fireEvent.load(image);
     expect(image.getAttribute("src")).toContain("file:///C:/docs/photo.png");
     fireEvent.click(image);
-    expect(onStartCrop).not.toHaveBeenCalled();
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({ cropTarget: null }));
   });
 
   it("converts a 150% display-space pointer delta back to CSS pixels and never grows past load size", () => {

@@ -8,7 +8,7 @@ vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn() }));
 
 describe("MarkdownPreview sanitization", () => {
   it("renders safe HTML and removes scripts, event handlers, and unsafe URLs", () => {
-    const { container } = render(<MarkdownPreview content={'<strong>safe</strong><script>window.bad=true</script><a href="javascript:alert(1)" onclick="bad()">bad</a><a href="https://example.com">good</a>'} baseDir="" imageVersions={{}} onStartCrop={() => {}} />);
+    const { container } = render(<MarkdownPreview content={'<strong>safe</strong><script>window.bad=true</script><a href="javascript:alert(1)" onclick="bad()">bad</a><a href="https://example.com">good</a>'} baseDir="" imageVersions={{}} />);
     expect(screen.getByText("safe").tagName).toBe("STRONG");
     expect(container.querySelector("script")).toBeNull();
     expect(container.querySelector("[onclick]")).toBeNull();
@@ -17,7 +17,7 @@ describe("MarkdownPreview sanitization", () => {
   });
 
   it("makes rendered headings collapsible with their preserved fold id", () => {
-    render(<MarkdownPreview content={"# Heading\n\nBody"} baseDir="" imageVersions={{}} onStartCrop={() => {}} />);
+    render(<MarkdownPreview content={"# Heading\n\nBody"} baseDir="" imageVersions={{}} />);
     const button = screen.getByRole("button", { name: /Heading/ });
     expect(button.closest("section")?.dataset.foldId).toBe("heading");
     fireEvent.click(button);
@@ -27,7 +27,7 @@ describe("MarkdownPreview sanitization", () => {
 
   it("opens a relative Markdown link in the app instead of the external URL handler", () => {
     const onOpenDocument = vi.fn();
-    render(<MarkdownPreview content="[next](../guide/next.md)" baseDir="C:\\docs\\current" imageVersions={{}} onStartCrop={() => {}} onOpenDocument={onOpenDocument} />);
+    render(<MarkdownPreview content="[next](../guide/next.md)" baseDir="C:\\docs\\current" imageVersions={{}} onOpenDocument={onOpenDocument} />);
     fireEvent.click(screen.getByRole("link", { name: "next" }));
     expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/guide/next.md");
     expect(openExternalUrl).not.toHaveBeenCalled();

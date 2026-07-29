@@ -46,15 +46,19 @@ describe("MermaidBlock", () => {
     expect(screen.getByText(/sequenceDiagram/)).toBeTruthy();
   });
 
-  it("opens the shared fit preview and closes it with Escape", async () => {
+  it("sends the rendered SVG to the shared fit preview", async () => {
     mocks.renderMermaid.mockResolvedValueOnce('<svg viewBox="0 0 800 400"><text>diagram</text></svg>');
-    render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" />);
+    const onMediaOpen = vi.fn();
+    render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" onMediaOpen={onMediaOpen} />);
     await waitFor(() => expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy());
 
     fireEvent.click(screen.getByRole("button", { name: "図を拡大" }));
-    expect(screen.getByRole("dialog", { name: "Mermaid図の拡大表示" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "1:1表示" })).toBeTruthy();
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(onMediaOpen).toHaveBeenCalledWith({
+      content: {
+        kind: "svg",
+        svg: '<svg viewBox="0 0 800 400"><text>diagram</text></svg>',
+        alt: "Mermaid図",
+      },
+    });
   });
 });

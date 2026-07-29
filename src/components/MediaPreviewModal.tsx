@@ -5,6 +5,11 @@ export type MediaPreviewContent =
   | { kind: "image"; src: string; alt: string }
   | { kind: "svg"; svg: string; alt: string };
 
+export interface MediaPreviewTarget {
+  content: MediaPreviewContent;
+  cropTarget?: import("../hooks/useCropEditor").CropTarget | null;
+}
+
 function svgIntrinsicSize(svg: string): { width: number; height: number } {
   try {
     const element = new DOMParser().parseFromString(svg, "image/svg+xml").documentElement;

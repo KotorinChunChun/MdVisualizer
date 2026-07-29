@@ -5,7 +5,6 @@ import { PresentationView, shouldHandlePresentationArrowKey } from "./Presentati
 const props = {
   baseDir: "C:\\docs",
   imageVersions: {},
-  onStartCrop: () => {},
   theme: "dark",
   mermaidMode: "off" as const,
   windowId: "main",

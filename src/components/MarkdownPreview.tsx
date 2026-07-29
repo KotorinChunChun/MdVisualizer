@@ -7,7 +7,6 @@ import rehypeSanitize from "rehype-sanitize";
 import rehypeRaw from "rehype-raw";
 import { ImageRenderer } from "./ImageRenderer";
 import { FoldSection } from "./FoldSection";
-import { CropTarget } from "../hooks/useCropEditor";
 import { rehypeFoldSections } from "../lib/foldSections";
 import { rehypeBlockAnchors } from "../lib/blockAnchors";
 import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
@@ -16,7 +15,7 @@ import { MermaidBlock } from "./MermaidBlock";
 import { openExternalUrl } from "../lib/commands";
 import { resolveLocalMarkdownPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
-import type { PresentationImageTarget } from "./ImageRenderer";
+import type { MediaPreviewTarget } from "./MediaPreviewModal";
 
 type MarkdownNode = {
   type?: string;
@@ -44,7 +43,6 @@ interface MarkdownPreviewProps {
   content: string;
   baseDir: string;
   imageVersions: Record<string, number>;
-  onStartCrop: (target: CropTarget) => void;
   contentRef?: React.Ref<HTMLDivElement>;
   theme?: string;
   onError?: (message: string) => void;
@@ -59,14 +57,13 @@ interface MarkdownPreviewProps {
   onSearchFoldManualOverride?: (foldId: string) => void;
   onOpenDocument?: (path: string) => void;
   presentationMode?: boolean;
-  onPresentationImageOpen?: (target: PresentationImageTarget) => void;
+  onMediaOpen?: (target: MediaPreviewTarget) => void;
 }
 
 const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   content,
   baseDir,
   imageVersions,
-  onStartCrop,
   contentRef,
   theme = "dark",
   onError,
@@ -81,7 +78,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onSearchFoldManualOverride,
   onOpenDocument,
   presentationMode = false,
-  onPresentationImageOpen,
+  onMediaOpen,
 }) => {
   const mermaidCount = countMermaidFences(content);
   let mermaidIndex = 0;
@@ -109,6 +106,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
                 blockId={`offset-${node?.position?.start.offset ?? diagramIndex}`}
                 diagramIndex={diagramIndex}
                 diagramCount={mermaidCount}
+                onMediaOpen={onMediaOpen}
               />;
             }
             return className?.includes("language-")
@@ -137,11 +135,10 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
               alt={alt}
               baseDir={baseDir}
               imageVersions={imageVersions}
-              onStartCrop={onStartCrop}
               displaySize={src ? imageDisplaySizes[src] : undefined}
               onDisplaySizeChange={src ? (size) => onImageDisplaySizeChange?.(src, size) : undefined}
               presentationMode={presentationMode}
-              onPresentationOpen={onPresentationImageOpen}
+              onMediaOpen={onMediaOpen}
             />
           ),
         }}

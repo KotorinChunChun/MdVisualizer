@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { getCacheBusterUrl } from "../lib/image";
 import { getFileName, isAbsoluteLocalPath, resolveImageSrc } from "../lib/path";
-import { CropTarget } from "../hooks/useCropEditor";
+import type { CropTarget } from "../hooks/useCropEditor";
 import { InlineImageResizeOverlay } from "./InlineImageResizeOverlay";
 import { ImageSize, useInlineImageResize } from "../hooks/useInlineImageResize";
-import { MediaPreviewModal } from "./MediaPreviewModal";
+import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import "../styles/inline-image-resize.css";
 
 interface ImageRendererProps {
@@ -12,12 +12,11 @@ interface ImageRendererProps {
   alt?: string;
   baseDir: string;
   imageVersions: Record<string, number>;
-  onStartCrop: (target: CropTarget) => void;
   /** Optional controlled display size; callers can persist this per tab without changing image data. */
   displaySize?: ImageSize | null;
   onDisplaySizeChange?: (size: ImageSize) => void;
   presentationMode?: boolean;
-  onPresentationOpen?: (target: PresentationImageTarget) => void;
+  onMediaOpen?: (target: MediaPreviewTarget) => void;
 }
 
 export interface PresentationImageTarget {
@@ -31,14 +30,12 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   alt = "",
   baseDir,
   imageVersions,
-  onStartCrop,
   displaySize,
   onDisplaySizeChange,
   presentationMode = false,
-  onPresentationOpen,
+  onMediaOpen,
 }) => {
   const [loadError, setLoadError] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const {
     imageRef,
     size,
@@ -94,11 +91,10 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       fullPath,
       filename: getFileName(fullPath),
     } : null;
-    if (presentationMode) {
-      onPresentationOpen?.({ src: displaySrc, alt, cropTarget });
-      return;
-    }
-    setPreviewOpen(true);
+    onMediaOpen?.({
+      content: { kind: "image", src: displaySrc, alt },
+      cropTarget,
+    });
   };
 
   return (
@@ -122,14 +118,6 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
           onKeyDown={resizeFromKeyboard}
         />
       )}
-      {previewOpen && !presentationMode && <MediaPreviewModal
-        content={{ kind: "image", src: displaySrc, alt }}
-        onClose={() => setPreviewOpen(false)}
-        onActivate={isEditableLocalImage ? () => {
-          setPreviewOpen(false);
-          onStartCrop({ rawSrc: displaySrc, fullPath, filename: getFileName(fullPath) });
-        } : undefined}
-      />}
     </span>
   );
 };
