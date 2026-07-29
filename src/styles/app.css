@@ -16,8 +16,11 @@
   --link-color: #60a5fa;
   --link-hover: #93c5fd;
   --inline-code-bg: #242933;
+  --inline-code-color: #eceff4;
   --code-block-bg: #1a1c23;
+  --code-block-color: #eceff4;
   --table-header-bg: #242933;
+  --table-header-color: #eceff4;
 }
 
 * {
@@ -177,7 +180,21 @@ body {
 .view-wide .markdown-body { max-width: 1320px; }
 .view-compact { padding: 16px 5%; }
 .view-compact .markdown-body { max-width: 760px; font-size: 0.92em; }
-.view-print { background: #fff; color: #1f2328; padding: 24px 8%; }
+.view-print {
+  --bg-color: #fff;
+  --border-color: #d0d7de;
+  --text-primary: #1f2328;
+  --text-secondary: #57606a;
+  --inline-code-bg: #eef2f6;
+  --inline-code-color: #24292f;
+  --code-block-bg: #f6f8fa;
+  --code-block-color: #24292f;
+  --table-header-bg: #e8edf3;
+  --table-header-color: #1f2328;
+  background: #fff;
+  color: #1f2328;
+  padding: 24px 8%;
+}
 .view-print .markdown-body { color: #1f2328; max-width: 960px; }
 .view-print .markdown-body h1,
 .view-print .markdown-body h2,
@@ -185,8 +202,9 @@ body {
 .view-print .markdown-body h4,
 .view-print .markdown-body h5,
 .view-print .markdown-body h6 { color: #1f2328; border-color: #d0d7de; }
-.view-print .markdown-body pre,
-.view-print .markdown-body code { background: #f6f8fa; color: #1f2328; }
+.view-print .markdown-body pre { background: var(--code-block-bg); color: var(--code-block-color); }
+.view-print .markdown-body code { background: var(--inline-code-bg); color: var(--inline-code-color); }
+.view-print .markdown-body pre code { background: none; color: inherit; }
 .view-presentation { padding: 7vh 12%; }
 .view-presentation .markdown-body { max-width: 1100px; font-size: 1.25em; }
 .view-presentation .markdown-body h1 { font-size: 2.4em; margin-top: 1em; }
@@ -238,6 +256,7 @@ body {
 
 .markdown-body code {
   background-color: var(--inline-code-bg);
+  color: var(--inline-code-color);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
@@ -246,6 +265,7 @@ body {
 
 .markdown-body pre {
   background-color: var(--code-block-bg);
+  color: var(--code-block-color);
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
@@ -287,7 +307,7 @@ body {
 
 .markdown-body th {
   background-color: var(--table-header-bg);
-  color: var(--text-primary);
+  color: var(--table-header-color);
 }
 
 .markdown-img {
