@@ -15,6 +15,7 @@ import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, open
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
+import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -42,6 +43,7 @@ export function App() {
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
+  const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
   const [toast, setToast] = useState<ToastState | null>(null);
   const [theme, setTheme] = useState("system");
   const [zoom, setZoom] = useState(100);
@@ -181,8 +183,26 @@ export function App() {
 
   useEffect(() => {
     if (!containerRef.current || !activeTab || activeTab.loading) return;
-    const frame = window.requestAnimationFrame(() => { if (containerRef.current) containerRef.current.scrollTop = activeTab.scrollTop; });
-    return () => window.cancelAnimationFrame(frame);
+    const tabId = activeTab.id;
+    const reloadRestoreFrame = { current: 0 };
+    const firstFrame = window.requestAnimationFrame(() => {
+      const secondFrame = window.requestAnimationFrame(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        const anchor = reloadAnchors.current[tabId];
+        if (anchor && markdownRef.current) {
+          restoreScrollAnchor(container, markdownRef.current, anchor);
+          delete reloadAnchors.current[tabId];
+        } else {
+          container.scrollTop = activeTab.scrollTop;
+        }
+      });
+      reloadRestoreFrame.current = secondFrame;
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (reloadRestoreFrame.current) window.cancelAnimationFrame(reloadRestoreFrame.current);
+    };
   }, [activeTab?.id, activeTab?.generation, activeTab?.loading]);
 
   useEffect(() => {
@@ -250,9 +270,17 @@ export function App() {
     return () => { document.removeEventListener("pointerdown", dismissOnOutsidePointer, true); window.removeEventListener("keydown", dismissOnEscape); };
   }, [contextTab]);
 
+  const reloadTab = useCallback((id: string) => {
+    if (id === activeTab?.id && containerRef.current && markdownRef.current) {
+      const anchor = captureScrollAnchor(containerRef.current, markdownRef.current);
+      if (anchor) reloadAnchors.current[id] = anchor;
+    }
+    dispatch({ type: "RELOAD", id });
+  }, [activeTab?.id]);
+
   const reload = useCallback(() => {
-    if (activeTab) dispatch({ type: "RELOAD", id: activeTab.id });
-  }, [activeTab]);
+    if (activeTab) reloadTab(activeTab.id);
+  }, [activeTab, reloadTab]);
 
   const applyFoldPreset = useCallback((preset: "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset") => {
     if (!activeTab) return;
@@ -422,10 +450,10 @@ export function App() {
       const tabs = tabsState.tabs.filter((candidate) => candidate.path === path);
       if (!tabs.length) return;
       const canReload = changeKind !== "deleted" && changeKind !== "renamed";
-      if (autoReload === "on" && canReload) tabs.forEach((tab) => dispatch({ type: "RELOAD", id: tab.id }));
+      if (autoReload === "on" && canReload) tabs.forEach((tab) => reloadTab(tab.id));
       else tabs.forEach((tab) => dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true }));
     },
-    [tabsState.tabs, autoReload]
+    [tabsState.tabs, autoReload, reloadTab]
   );
 
   const handleImageChanged = useCallback(

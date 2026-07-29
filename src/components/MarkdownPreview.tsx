@@ -9,6 +9,7 @@ import { ImageRenderer } from "./ImageRenderer";
 import { FoldSection } from "./FoldSection";
 import { CropTarget } from "../hooks/useCropEditor";
 import { rehypeFoldSections } from "../lib/foldSections";
+import { rehypeBlockAnchors } from "../lib/blockAnchors";
 import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
 import { CodeBlock } from "./CodeBlock";
 import { MermaidBlock } from "./MermaidBlock";
@@ -84,7 +85,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     <div className="markdown-body" ref={contentRef}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeFoldSections, [rehypeSanitize, markdownSanitizeSchema]]}
+        rehypePlugins={[rehypeRaw, rehypeFoldSections, rehypeBlockAnchors, [rehypeSanitize, markdownSanitizeSchema]]}
         components={{
           section: ({ node, children }) => {
             const foldId = String(node?.properties?.["data-fold-id"] ?? "");
