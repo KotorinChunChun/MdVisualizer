@@ -54,7 +54,7 @@ export function CodeBlock({ className, children }: CodeBlockProps) {
     }).catch(() => { if (!cancelled) setHtml(""); });
     return () => { cancelled = true; };
   }, [language, source]);
-  const copy = async () => {
+  const copy = async (button: HTMLButtonElement) => {
     try {
       await navigator.clipboard.writeText(source);
       setCopied(true);
@@ -62,8 +62,10 @@ export function CodeBlock({ className, children }: CodeBlockProps) {
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
       emitCopyToast("error", "コードをコピーできませんでした");
+    } finally {
+      button.blur();
     }
   };
 
-  return <div className="code-block"><button type="button" className="code-copy" onClick={() => void copy()}>{copied ? "Copied" : "Copy"}</button><pre><code className={className} {...(html ? { dangerouslySetInnerHTML: { __html: html } } : {})}>{html ? undefined : source}</code></pre></div>;
+  return <div className="code-block"><button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button><pre><code className={className} {...(html ? { dangerouslySetInnerHTML: { __html: html } } : {})}>{html ? undefined : source}</code></pre></div>;
 }

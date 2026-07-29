@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ToastState } from "../types/app";
 
 interface ToastProps {
@@ -8,10 +8,25 @@ interface ToastProps {
 }
 
 export const Toast: React.FC<ToastProps> = ({ toast, onRestore, onClose }) => {
+  const [fading, setFading] = useState(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!toast) return;
+    setFading(false);
+    const fadeTimer = window.setTimeout(() => setFading(true), 1000);
+    const closeTimer = window.setTimeout(() => onCloseRef.current?.(), 2000);
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(closeTimer);
+    };
+  }, [toast?.id]);
+
   if (!toast) return null;
 
   return (
-    <div className={`toast toast-${toast.type}`}>
+    <div className={`toast toast-${toast.type}${fading ? " is-fading" : ""}`}>
       <span className="toast-message">{toast.message}</span>
       {toast.restorePath && onRestore && (
         <button

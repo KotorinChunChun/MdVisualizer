@@ -11,9 +11,12 @@ describe("CodeBlock", () => {
     const listener = vi.fn();
     window.addEventListener("markdown-toast", listener);
     render(<CodeBlock className="language-typescript">{"const answer = 42;\n"}</CodeBlock>);
-    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    const button = screen.getByRole("button", { name: "Copy" });
+    button.focus();
+    fireEvent.click(button);
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("const answer = 42;"));
     expect(listener).toHaveBeenCalledWith(expect.objectContaining({ detail: { type: "success", message: "コードをコピーしました" } }));
+    expect(document.activeElement).not.toBe(button);
     window.removeEventListener("markdown-toast", listener);
   });
 
