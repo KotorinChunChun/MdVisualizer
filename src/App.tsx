@@ -13,6 +13,8 @@ import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget } from "./components/MediaPreviewModal";
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { ImageAnnotationEditor } from "./components/ImageAnnotationEditor";
+import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
+import { DocumentToc } from "./components/DocumentToc";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -29,6 +31,7 @@ import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation
 import { localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
 import { resolveImageSrc } from "./lib/path";
+import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -78,10 +81,14 @@ export function App() {
   const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
+  const [documentTocOpen, setDocumentTocOpen] = useState(false);
+  const [activeTocHeadingId, setActiveTocHeadingId] = useState<string | null>(null);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
   const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
   const navigationHistoryRef = useRef(emptyNavigationHistory());
+  const auxiliaryNavigationRef = useRef<AuxiliaryNavigationStamp>({ button: -1, timestamp: 0 });
   const themeRef = useRef(theme);
   const zoomRef = useRef(zoom);
   const viewModeRef = useRef(viewMode);
@@ -216,7 +223,17 @@ export function App() {
   useEffect(() => {
     setImageGalleryOpen(false);
     setActiveImageOccurrenceId(null);
+    setActiveTocHeadingId(null);
   }, [activeTab?.id]);
+
+  useEffect(() => {
+    if (!activeTab?.document || viewMode === "presentation") return;
+    const frame = requestAnimationFrame(() => {
+      const first = markdownRef.current?.querySelector<HTMLElement>("[data-fold-id]");
+      setActiveTocHeadingId(first?.dataset.foldId ?? null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [activeTab?.document, viewMode]);
 
   useEffect(() => {
     if (viewMode === "presentation") {
@@ -508,6 +525,50 @@ export function App() {
     requestAnimationFrame(() => requestAnimationFrame(() => target.scrollIntoView({ block: "center" })));
   }, [activeTab?.document, activeTab?.path, recordNavigationPoint]);
 
+  const jumpToDocumentHeading = useCallback((headingId: string) => {
+    const section = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-fold-id]") ?? [])]
+      .find((candidate) => candidate.dataset.foldId === headingId);
+    if (!section || !activeTab?.document) return;
+    recordNavigationPoint();
+    setActiveTocHeadingId(headingId);
+    const parentIds = ancestorFoldIds(section);
+    if (parentIds.length > 0) {
+      setFoldStates((current) => {
+        const currentForPath = current[activeTab.path] ?? {};
+        const nextForPath = { ...currentForPath };
+        let changed = false;
+        for (const parentId of parentIds) {
+          if (nextForPath[parentId]) {
+            nextForPath[parentId] = false;
+            changed = true;
+          }
+        }
+        if (!changed) return current;
+        void saveFoldState(activeTab.path, nextForPath).catch((error) => setToast({
+          id: String(Date.now()),
+          message: `折りたたみ状態の保存に失敗しました: ${String(error)}`,
+          type: "error",
+        }));
+        return { ...current, [activeTab.path]: nextForPath };
+      });
+    }
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 1500px)").matches) setDocumentTocOpen(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => section.scrollIntoView({ block: "start" })));
+  }, [activeTab?.document, activeTab?.path, recordNavigationPoint]);
+
+  const handlePreviewScroll = useCallback((element: HTMLElement) => {
+    if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: element.scrollTop });
+    if (viewModeRef.current === "presentation") return;
+    const top = element.getBoundingClientRect().top + 4;
+    const sections = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-fold-id]") ?? [])];
+    const current = sections.reduce<HTMLElement | null>((nearest, section) => {
+      if (section.getBoundingClientRect().top > top) return nearest;
+      return section;
+    }, null) ?? sections[0];
+    const headingId = current?.dataset.foldId ?? null;
+    setActiveTocHeadingId((previous) => previous === headingId ? previous : headingId);
+  }, [activeTab?.id]);
+
   const restoreNavigationSnapshot = useCallback((snapshot: NavigationSnapshot) => {
     if (snapshot.activeTabId && tabsStateRef.current.tabs.some((tab) => tab.id === snapshot.activeTabId)) {
       dispatch({ type: "SCROLL", id: snapshot.activeTabId, scrollTop: snapshot.scrollTop });
@@ -701,6 +762,12 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (isShortcutHelpShortcut(event)) {
+        event.preventDefault();
+        setShortcutHelpOpen(true);
+        return;
+      }
+      if (shortcutHelpOpen) return;
       if (annotationTarget) return;
       if (event.altKey && !event.ctrlKey && !event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
         event.preventDefault();
@@ -750,7 +817,7 @@ export function App() {
       } else if (event.key === "Tab") {
         event.preventDefault();
         activateRelativeTab(event.shiftKey ? -1 : 1);
-      } else if (event.key === "+" || event.key === "=") {
+      } else if (isZoomInShortcut(event)) {
         event.preventDefault();
         updateZoom((current) => moveZoomLevel(current, 1));
       } else if (event.key === "-") {
@@ -763,12 +830,15 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab?.searchOpen, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, reload, search, toggleFoldAll, updateZoom]);
+  }, [activeTab?.searchOpen, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, reload, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
 
   useEffect(() => {
     const onMouseUp = (event: MouseEvent) => {
       if (event.button !== 3 && event.button !== 4) return;
       event.preventDefault();
+      const result = acceptAuxiliaryNavigation(auxiliaryNavigationRef.current, event.button, Date.now());
+      auxiliaryNavigationRef.current = result.next;
+      if (!result.accepted) return;
       if (event.button === 3) goBack();
       else goForward();
     };
@@ -874,6 +944,13 @@ export function App() {
       </div>}
 
       <div className={`document-workspace${imageGalleryOpen && viewMode !== "presentation" ? " has-image-gallery" : ""}`}>
+      {activeTab?.document && viewMode !== "presentation" && <DocumentToc
+        markdown={activeTab.document.content}
+        isOpen={documentTocOpen}
+        activeHeadingId={activeTocHeadingId ?? undefined}
+        onOpenChange={setDocumentTocOpen}
+        onJump={jumpToDocumentHeading}
+      />}
       {activeTab?.document && viewMode !== "presentation" && <ImageGallery
         items={imageGalleryItems}
         activeOccurrenceId={activeImageOccurrenceId ?? undefined}
@@ -881,7 +958,7 @@ export function App() {
         isOpen={imageGalleryOpen}
         onOpenChange={setImageGalleryOpen}
       />}
-      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => { if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: event.currentTarget.scrollTop }); }} style={{ zoom: viewMode === "presentation" && activeTab?.kind !== "settings" ? 1 : zoom / 100 }}>
+      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => handlePreviewScroll(event.currentTarget)} style={{ zoom: viewMode === "presentation" && activeTab?.kind !== "settings" ? 1 : zoom / 100 }}>
         {activeTab?.kind === "settings" ? (
           <SettingsPanel
             apps={externalApps}
@@ -1007,6 +1084,7 @@ export function App() {
           startCrop(mediaPreview.cropTarget!);
         } : undefined}
       />}
+      {shortcutHelpOpen && <ShortcutHelpModal onClose={() => setShortcutHelpOpen(false)} />}
       <StatusBar
         document={activeTab?.document ?? null}
         autoReload={autoReload}
@@ -1024,6 +1102,7 @@ export function App() {
         viewMode={viewMode}
         onViewModeChange={changeViewMode}
         onOpenSettings={openSettings}
+        onOpenShortcutHelp={() => setShortcutHelpOpen(true)}
         statusText={activeTab?.kind === "settings" ? "アプリケーション設定" : undefined}
       />
       {contextTab && (() => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import { buildPresentationModel } from "../lib/presentationModel";
 import { MarkdownPreview } from "./MarkdownPreview";
@@ -75,10 +75,31 @@ export function PresentationView({
   const [pageIndex, setPageIndex] = useState(initialIndex);
   const [tocOpen, setTocOpen] = useState(false);
   const currentCrumbRef = useRef<HTMLButtonElement | null>(null);
+  const synchronizedHeadingRef = useRef(initialHeadingId);
+  const synchronizedModelRef = useRef(model);
+  const pendingExternalPageRef = useRef<number | null>(null);
   const page = model.pages[Math.min(pageIndex, model.pages.length - 1)];
 
-  useEffect(() => setPageIndex(initialIndex()), [content, tabId, initialHeadingId, model]);
-  useEffect(() => onPageChange?.(page.id, page.sourceLine), [onPageChange, page.id, page.sourceLine]);
+  if (synchronizedHeadingRef.current !== initialHeadingId || synchronizedModelRef.current !== model) {
+    synchronizedHeadingRef.current = initialHeadingId;
+    synchronizedModelRef.current = model;
+    const requestedIndex = initialIndex();
+    pendingExternalPageRef.current = requestedIndex === pageIndex ? null : requestedIndex;
+  }
+
+  useLayoutEffect(() => {
+    const requestedIndex = pendingExternalPageRef.current;
+    if (requestedIndex === null) return;
+    if (pageIndex !== requestedIndex) {
+      setPageIndex(requestedIndex);
+      return;
+    }
+    pendingExternalPageRef.current = null;
+  }, [content, initialHeadingId, model, pageIndex, tabId]);
+  useEffect(() => {
+    if (pendingExternalPageRef.current !== null) return;
+    onPageChange?.(page.id, page.sourceLine);
+  }, [onPageChange, page.id, page.sourceLine]);
   useEffect(() => {
     currentCrumbRef.current?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
   }, [pageIndex]);

@@ -65,4 +65,16 @@ describe("StatusBar", () => {
     fireEvent.click(screen.getByRole("button", { name: "設定を開く" }));
     expect(onOpenSettings).toHaveBeenCalledOnce();
   });
+
+  it("opens shortcut help from a question button immediately left of settings", () => {
+    const onOpenShortcutHelp = vi.fn();
+    const onOpenSettings = vi.fn();
+    render(<StatusBar document={null} onOpenShortcutHelp={onOpenShortcutHelp} onOpenSettings={onOpenSettings} />);
+
+    const help = screen.getByRole("button", { name: "ショートカット一覧を開く" });
+    const settings = screen.getByRole("button", { name: "設定を開く" });
+    expect(help.nextElementSibling).toBe(settings);
+    fireEvent.click(help);
+    expect(onOpenShortcutHelp).toHaveBeenCalledOnce();
+  });
 });

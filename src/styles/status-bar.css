@@ -59,7 +59,9 @@
   border-radius: 3px;
   font: inherit;
 }
-.status-bar__settings { min-width: 28px; min-height: 24px; padding: 1px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
+.status-bar__icon-button { width: 28px; min-width: 28px; height: 24px; padding: 1px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font: inherit; font-weight: 700; }
+.status-bar__icon-button:disabled { cursor: not-allowed; opacity: .6; }
+.status-bar__icon-button:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 1px; }
 
 .status-bar__controls select:disabled {
   cursor: not-allowed;

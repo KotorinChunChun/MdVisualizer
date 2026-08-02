@@ -1,0 +1,132 @@
+.document-toc-root {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.document-toc-toggle,
+.document-toc__header button,
+.document-toc li > button {
+  color: var(--text-primary);
+  background: var(--btn-bg);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.document-toc-toggle {
+  width: 100%;
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.55rem;
+}
+
+.document-toc-backdrop { display: none; }
+
+.document-toc {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 10;
+  box-sizing: border-box;
+  width: min(18rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 1.5rem);
+  overflow: auto;
+  margin-top: 0.6rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.18);
+}
+
+.document-toc__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.8rem;
+  padding: 0 0.7rem 0 0.9rem;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.document-toc__header button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.document-toc__empty {
+  padding: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.document-toc nav > ul,
+.document-toc ul {
+  margin: 0;
+  padding-left: 0.8rem;
+  list-style: none;
+}
+
+.document-toc nav > ul { padding: 0.55rem; }
+.document-toc li { margin: 0.12rem 0; }
+
+.document-toc li > button {
+  width: 100%;
+  padding: 0.3rem 0.45rem;
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  border-color: transparent;
+  border-radius: 0.35rem;
+}
+
+.document-toc li > button:hover { background: var(--btn-hover); }
+.document-toc li > button[aria-current="location"] {
+  color: var(--text-primary);
+  font-weight: 750;
+  background: color-mix(in srgb, var(--accent-color) 20%, var(--btn-bg));
+  border-color: color-mix(in srgb, var(--accent-color) 65%, var(--border-color));
+}
+
+.document-toc-toggle:focus-visible,
+.document-toc__header button:focus-visible,
+.document-toc li > button:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* The parent layout can reserve this sidecar in unused horizontal space. */
+@media (min-width: 1500px) {
+  .document-toc-root.is-open { width: 18rem; }
+}
+
+/* At narrower widths the TOC overlays the document rather than shrinking it. */
+@media (max-width: 1499px) {
+  .document-toc {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 40;
+    width: min(86vw, 22rem);
+    max-height: none;
+    margin: 0;
+    border-width: 0 1px 0 0;
+    border-radius: 0;
+    box-shadow: 0.8rem 0 2rem rgba(0, 0, 0, 0.35);
+  }
+
+  .document-toc-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.35);
+    border: 0;
+  }
+}

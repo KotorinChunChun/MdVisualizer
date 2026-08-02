@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PresentationView, shouldHandlePresentationArrowKey } from "./PresentationView";
 
 const props = {
@@ -70,5 +70,20 @@ describe("PresentationView", () => {
     expect(toc.querySelector('button[aria-current="location"]')?.textContent).toBe("Parent");
     fireEvent.click(Array.from(toc.querySelectorAll("button")).find((button) => button.textContent === "Two")!);
     expect(screen.getByText("3 / 3")).toBeTruthy();
+  });
+
+  it("does not report the stale page while an external history position is restored", () => {
+    const onPageChange = vi.fn();
+    const content = "# Parent\nintro\n\n## One\nbody\n\n## Two\nbody";
+    const { rerender } = render(<PresentationView {...props} content={content} initialHeadingId="parent" onPageChange={onPageChange} />);
+    fireEvent.click(screen.getByRole("button", { name: /Two/ }));
+    expect(screen.getByText("3 / 3")).toBeTruthy();
+    onPageChange.mockClear();
+
+    rerender(<PresentationView {...props} content={content} initialHeadingId="one" onPageChange={onPageChange} />);
+
+    expect(screen.getByText("2 / 3")).toBeTruthy();
+    expect(onPageChange.mock.calls.some(([headingId]) => headingId === "two")).toBe(false);
+    expect(onPageChange).toHaveBeenLastCalledWith("one", expect.any(Number));
   });
 });

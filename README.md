@@ -4,17 +4,43 @@ Windows 向けの閲覧専用 Markdown ビューアです。複数の Markdown �
 
 ## 起動
 
+### Windows の初回セットアップ
+
+開発モードで起動するには、次の開発環境が必要です。
+
+- Node.js LTS（`node` と `npm`）
+- Rustup（`cargo` と `rustc`）
+- Visual Studio Build Tools の「Desktop development with C++」（Rust の Windows 向けビルドで必要になる場合があります）
+
+Node.js と Rustup の導入後は PowerShell を開き直し、次のコマンドで確認してください。
+
+```powershell
+node --version
+cargo --version
+```
+
+PowerShell の実行ポリシーによって `npm.ps1` がブロックされる環境では、`npm` の代わりに `npm.cmd` を使用します。
+
+```powershell
+Set-Location C:\develop\MarkdownViewer
+npm.cmd install
+```
+
+`npm.cmd` は Windows のコマンド版ランチャーであり、実行ポリシーを変更せずに使用できます。
+
 開発時は次でサンプルを開きます。
 
 ```powershell
-pwsh .\dev\scripts\run-test.ps1
+npm.cmd run tauri dev -- C:\develop\MarkdownViewer\samples\sample.md
 ```
 
 または、Markdown ファイルを引数に渡します。
 
 ```powershell
-npm run tauri dev -- C:\Project\README.md C:\Project\design.markdown
+npm.cmd run tauri dev -- C:\Project\README.md C:\Project\design.markdown
 ```
+
+開発中のアプリは `http://localhost:1420` のViteサーバーを表示します。起動したPowerShellを終了するとサーバーも停止するため、アプリには接続拒否画面が表示されます。`src-tauri\target\debug\markdown-viewer.exe` を単独で起動するのではなく、上記コマンドから起動してください。
 
 リリース版は `.md` と `.markdown` の関連付けを登録します。ファイルをダブルクリックすると、新しいプロセスで開きます。
 

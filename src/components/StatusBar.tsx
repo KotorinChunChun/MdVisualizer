@@ -26,6 +26,7 @@ export interface StatusBarProps {
   viewMode?: string;
   onViewModeChange?: (value: string) => void;
   onOpenSettings?: () => void;
+  onOpenShortcutHelp?: () => void;
   statusText?: string;
 }
 
@@ -55,6 +56,7 @@ export function StatusBar({
   viewMode = "standard",
   onViewModeChange,
   onOpenSettings,
+  onOpenShortcutHelp,
   statusText,
 }: StatusBarProps) {
   const updateAutoReload = onAutoReloadChange ?? setAutoReload;
@@ -124,7 +126,8 @@ export function StatusBar({
             {zoomOptions.map((value) => <option key={value} value={value}>{value}%</option>)}
           </select>
         </label>
-        <button type="button" className="status-bar__settings" aria-label="設定を開く" onClick={onOpenSettings} disabled={!onOpenSettings}>⚙</button>
+        <button type="button" className="status-bar__icon-button" aria-label="ショートカット一覧を開く" onClick={onOpenShortcutHelp} disabled={!onOpenShortcutHelp}>?</button>
+        <button type="button" className="status-bar__icon-button" aria-label="設定を開く" onClick={onOpenSettings} disabled={!onOpenSettings}>⚙</button>
       </div>
     </footer>
   );

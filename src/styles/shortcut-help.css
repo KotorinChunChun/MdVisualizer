@@ -1,0 +1,10 @@
+.shortcut-help { position: fixed; inset: 0; z-index: 1100; display: grid; place-items: center; padding: 1rem; background: rgba(0,0,0,.55); }
+.shortcut-help__window { width: min(42rem, calc(100vw - 2rem)); max-height: min(44rem, calc(100vh - 2rem)); overflow: auto; color: var(--text-primary); background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: .85rem; box-shadow: 0 1.25rem 4rem #0009; }
+.shortcut-help__window header { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: .8rem 1rem; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); }
+.shortcut-help__window h2 { font-size: 1.15rem; }
+.shortcut-help__window header button { width: 2rem; height: 2rem; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: .5rem; font-size: 1.25rem; cursor: pointer; }
+.shortcut-help__window dl { padding: .5rem 1rem 1rem; }
+.shortcut-help__window dl > div { display: grid; grid-template-columns: minmax(11rem, 15rem) 1fr; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent); }
+.shortcut-help__window dt, .shortcut-help__window dd { margin: 0; }
+.shortcut-help__window kbd { display: inline-block; padding: .15rem .45rem; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: .35rem; box-shadow: 0 1px 0 var(--border-color); font: inherit; font-weight: 650; }
+@media (max-width: 560px) { .shortcut-help__window dl > div { grid-template-columns: 1fr; gap: .25rem; } }
