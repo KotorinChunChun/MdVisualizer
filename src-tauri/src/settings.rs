@@ -45,7 +45,7 @@ pub fn load_application_settings(
         recovered_files.push(info);
     }
 
-    // v0.1 stored fold state in settings.json. Copy it first, then remove the
+    // v0.0.1 stored fold state in settings.json. Copy it first, then remove the
     // legacy field; this ordering keeps the old state intact if the process is
     // interrupted between the two writes.
     if let Some(legacy_states) = settings
@@ -86,7 +86,7 @@ pub fn merge_settings(path: &Path, updates: Map<String, Value>) -> AppResult<Val
             .unwrap_or(2)
             .max(2);
         object.insert("schemaVersion".into(), Value::from(schema_version));
-        // `foldStates` has its own lock and file from v0.2 onward.
+        // `foldStates` has its own lock and file from v0.0.2 onward.
         updates
             .into_iter()
             .filter(|(key, _)| key != "foldStates")
