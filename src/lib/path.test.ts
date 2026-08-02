@@ -22,7 +22,7 @@ describe("Windows image paths", () => {
 
   it("resolves relative and tauri.localhost Markdown links inside the document directory", () => {
     expect(resolveLocalMarkdownPath("../guide/next.md", "C:\\docs\\current")).toBe("C:/docs/guide/next.md");
-    expect(resolveLocalMarkdownPath("http://tauri.localhost/v0.1.0-imp.md", "C:\\docs")).toBe("C:/docs/v0.1.0-imp.md");
+    expect(resolveLocalMarkdownPath("http://tauri.localhost/v0.0.1-imp.md", "C:\\docs")).toBe("C:/docs/v0.0.1-imp.md");
     expect(resolveLocalMarkdownPath("http://tauri.localhost/?/C:/docs/local-links.md", "C:\\ignored")).toBe("C:/docs/local-links.md");
     expect(resolveLocalMarkdownPath("/?/C:/docs/local-links.md", "C:\\ignored")).toBe("C:/docs/local-links.md");
     expect(resolveLocalMarkdownPath("/%3F/C:/docs/local-links.md", "C:\\ignored")).toBe("C:/docs/local-links.md");

@@ -49,8 +49,8 @@ export function useMarkdownFile(containerRef: React.RefObject<HTMLDivElement | n
     async function init() {
       try {
         const initialPaths = await getInitialFiles();
-        // v0.1.x は単一文書ビューのため、複数の起動引数を受け取った場合は先頭を表示する。
-        // v0.2.0 のタブ状態機械で全パスを個別タブとして開く。
+        // v0.0.1 系は単一文書ビューのため、複数の起動引数を受け取った場合は先頭を表示する。
+        // v0.0.2 のタブ状態機械で全パスを個別タブとして開く。
         if (initialPaths.length > 0) {
           await loadFile(initialPaths[0]);
         } else {

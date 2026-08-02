@@ -11,7 +11,7 @@ export interface ExternalAppConfig {
   enabled: boolean;
   placement: ExternalAppPlacement;
   order: number;
-  /** Omitted in pre-v0.4 settings; those entries are migrated to document apps. */
+  /** Omitted in pre-v0.0.4 settings; those entries are migrated to document apps. */
   target: ExternalAppTarget;
   builtinKind?: BuiltinExternalKind;
 }
