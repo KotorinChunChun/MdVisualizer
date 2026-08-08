@@ -26,8 +26,8 @@ describe("ShortcutHelpModal", () => {
     render(<ShortcutHelpModal onClose={() => {}} />);
 
     expect(screen.getByRole("heading", { name: "バージョン情報" })).toBeTruthy();
-    expect(screen.getByText("2026-08-08")).toBeTruthy();
-    expect(screen.getByText("0.0.5")).toBeTruthy();
+    expect(screen.getByText("2026-08-09")).toBeTruthy();
+    expect(screen.getByText("0.0.6")).toBeTruthy();
     expect(screen.getByText("KotorinChunChun")).toBeTruthy();
 
     const readme = screen.getByRole("link", { name: "READMEを開く" });
