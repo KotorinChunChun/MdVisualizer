@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:msix": "pwsh -NoProfile -File ./scripts/build-msix.ps1",
     "test": "vitest run",
     "preview": "vite preview",
     "tauri": "tauri"

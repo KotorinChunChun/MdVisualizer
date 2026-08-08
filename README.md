@@ -44,6 +44,24 @@ npm.cmd run tauri -- dev -- -- C:\Project\README.md C:\Project\design.markdown
 
 リリース版は `.md` と `.markdown` の関連付けを登録します。ファイルをダブルクリックすると、新しいプロセスで開きます。
 
+### MSIXインストーラー
+
+Windows SDKが導入済みのx64 Windows環境では、次のコマンドで署名済みMSIXを生成できます。
+
+```powershell
+npm.cmd run build:msix
+```
+
+成果物は`release\msix`へ出力されます。既定では自己署名の開発用証明書を使用するため、証明書の内容を
+確認し、検証端末の現在ユーザーだけで信頼してから導入します。
+
+```powershell
+pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
+```
+
+本番配布では信頼されたコード署名PFXとタイムスタンプURLを指定してください。詳しい生成・署名・導入手順と
+制約は`packaging/msix/README.md`に記載しています。対象はWindows 10 2004以降のx64環境で、WebView2 Runtimeが必要です。
+
 ## 主な機能
 
 - Chrome ライクな複数タブ、ドラッグ並び替え、右クリック操作、閉じたタブの復元
