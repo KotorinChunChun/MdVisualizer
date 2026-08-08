@@ -30,3 +30,4 @@ chardetng = "1.0.0"
 chrono = "0.4.45"
 fs4 = "1.1.0"
 windows-sys = { version = "0.59", features = ["Win32_Storage_FileSystem"] }
+url = "2"

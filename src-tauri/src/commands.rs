@@ -19,7 +19,10 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{
+    AppHandle, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder,
+};
 use tauri_plugin_opener::OpenerExt;
 
 fn settings_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
@@ -61,13 +64,23 @@ struct WorkArea {
 fn geometry_from_window(window: &WebviewWindow) -> Result<WindowGeometry, String> {
     let position = window.outer_position().map_err(|error| error.to_string())?;
     let size = window.inner_size().map_err(|error| error.to_string())?;
-    Ok(WindowGeometry { x: position.x, y: position.y, width: size.width, height: size.height })
+    Ok(WindowGeometry {
+        x: position.x,
+        y: position.y,
+        width: size.width,
+        height: size.height,
+    })
 }
 
 fn geometry_from_native_window(window: &tauri::Window) -> Result<WindowGeometry, String> {
     let position = window.outer_position().map_err(|error| error.to_string())?;
     let size = window.inner_size().map_err(|error| error.to_string())?;
-    Ok(WindowGeometry { x: position.x, y: position.y, width: size.width, height: size.height })
+    Ok(WindowGeometry {
+        x: position.x,
+        y: position.y,
+        width: size.width,
+        height: size.height,
+    })
 }
 
 fn work_areas(window: &WebviewWindow) -> Result<Vec<WorkArea>, String> {
@@ -99,14 +112,22 @@ fn geometry_is_visible(geometry: WindowGeometry, area: WorkArea) -> bool {
 fn clamp_geometry_to_area(mut geometry: WindowGeometry, area: WorkArea) -> WindowGeometry {
     geometry.width = geometry.width.min(area.width.max(1));
     geometry.height = geometry.height.min(area.height.max(1));
-    let max_x = area.x.saturating_add(area.width.saturating_sub(geometry.width) as i32);
-    let max_y = area.y.saturating_add(area.height.saturating_sub(geometry.height) as i32);
+    let max_x = area
+        .x
+        .saturating_add(area.width.saturating_sub(geometry.width) as i32);
+    let max_y = area
+        .y
+        .saturating_add(area.height.saturating_sub(geometry.height) as i32);
     geometry.x = geometry.x.clamp(area.x, max_x);
     geometry.y = geometry.y.clamp(area.y, max_y);
     geometry
 }
 
-fn adjacent_geometry(source: WindowGeometry, source_outer_width: u32, area: WorkArea) -> WindowGeometry {
+fn adjacent_geometry(
+    source: WindowGeometry,
+    source_outer_width: u32,
+    area: WorkArea,
+) -> WindowGeometry {
     let right_x = source.x.saturating_add(source_outer_width as i32);
     let area_right = area.x.saturating_add(area.width as i32);
     let x = if right_x.saturating_add(source.width as i32) <= area_right {
@@ -114,11 +135,20 @@ fn adjacent_geometry(source: WindowGeometry, source_outer_width: u32, area: Work
     } else {
         source.x.saturating_sub(source.width as i32)
     };
-    clamp_geometry_to_area(WindowGeometry { x, y: source.y, width: source.width, height: source.height }, area)
+    clamp_geometry_to_area(
+        WindowGeometry {
+            x,
+            y: source.y,
+            width: source.width,
+            height: source.height,
+        },
+        area,
+    )
 }
 
 fn saved_window_geometry(app_handle: &AppHandle) -> Result<Option<WindowGeometry>, String> {
-    let settings = load_settings_file(&settings_path(app_handle)?).map_err(|error| error.to_string())?;
+    let settings =
+        load_settings_file(&settings_path(app_handle)?).map_err(|error| error.to_string())?;
     match settings.get("windowGeometry") {
         Some(value) => serde_json::from_value(value.clone())
             .map(Some)
@@ -127,14 +157,24 @@ fn saved_window_geometry(app_handle: &AppHandle) -> Result<Option<WindowGeometry
     }
 }
 
-pub fn restore_saved_window_geometry(app_handle: &AppHandle, window: &WebviewWindow) -> Result<(), String> {
-    let Some(saved) = saved_window_geometry(app_handle)? else { return Ok(()); };
-    if saved.width == 0 || saved.height == 0 { return Ok(()); }
+pub fn restore_saved_window_geometry(
+    app_handle: &AppHandle,
+    window: &WebviewWindow,
+) -> Result<(), String> {
+    let Some(saved) = saved_window_geometry(app_handle)? else {
+        return Ok(());
+    };
+    if saved.width == 0 || saved.height == 0 {
+        return Ok(());
+    }
     let areas = work_areas(window)?;
     let geometry = if areas.iter().any(|area| geometry_is_visible(saved, *area)) {
         saved
     } else {
-        let fallback = areas.first().copied().ok_or_else(|| "No display is available.".to_string())?;
+        let fallback = areas
+            .first()
+            .copied()
+            .ok_or_else(|| "No display is available.".to_string())?;
         clamp_geometry_to_area(saved, fallback)
     };
     window
@@ -248,7 +288,10 @@ pub async fn open_in_new_window(
         initial_files.insert(label.clone(), vec![path]);
     }
     let source = geometry_from_window(&window)?;
-    let source_outer_width = window.outer_size().map_err(|error| error.to_string())?.width;
+    let source_outer_width = window
+        .outer_size()
+        .map_err(|error| error.to_string())?
+        .width;
     let scale_factor = window.scale_factor().map_err(|error| error.to_string())?;
     let area = window
         .current_monitor()
@@ -256,7 +299,12 @@ pub async fn open_in_new_window(
         .or_else(|| window.primary_monitor().ok().flatten())
         .map(|monitor| {
             let area = monitor.work_area();
-            WorkArea { x: area.position.x, y: area.position.y, width: area.size.width, height: area.size.height }
+            WorkArea {
+                x: area.position.x,
+                y: area.position.y,
+                width: area.size.width,
+                height: area.size.height,
+            }
         })
         .ok_or_else(|| "No display is available.".to_string())?;
     let geometry = adjacent_geometry(source, source_outer_width, area);
@@ -266,8 +314,14 @@ pub async fn open_in_new_window(
     if let Err(error) =
         WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
             .title("MarkdownViewer")
-            .inner_size(geometry.width as f64 / scale_factor, geometry.height as f64 / scale_factor)
-            .position(geometry.x as f64 / scale_factor, geometry.y as f64 / scale_factor)
+            .inner_size(
+                geometry.width as f64 / scale_factor,
+                geometry.height as f64 / scale_factor,
+            )
+            .position(
+                geometry.x as f64 / scale_factor,
+                geometry.y as f64 / scale_factor,
+            )
             .prevent_overflow()
             .build()
     {
@@ -307,9 +361,20 @@ fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>
         }
     }
     let slug = slug.trim_matches('-').to_string();
-    let base = if slug.is_empty() { "section".to_string() } else { slug };
-    let count = counts.entry(base.clone()).and_modify(|value| *value += 1).or_insert(1);
-    if *count == 1 { base } else { format!("{}-{}", base, count) }
+    let base = if slug.is_empty() {
+        "section".to_string()
+    } else {
+        slug
+    };
+    let count = counts
+        .entry(base.clone())
+        .and_modify(|value| *value += 1)
+        .or_insert(1);
+    if *count == 1 {
+        base
+    } else {
+        format!("{}-{}", base, count)
+    }
 }
 
 #[tauri::command]
@@ -321,31 +386,94 @@ pub fn diagnose_document(path: String) -> Result<Vec<DiagnosticItem>, String> {
     let mut ids = std::collections::HashMap::new();
     let mut heading_ids = std::collections::HashSet::new();
     for (index, line) in source.lines().enumerate() {
-        if let Some(captures) = regex::Regex::new(r"^(#{1,6})\s+(.+?)\s*#*\s*$").unwrap().captures(line) {
-            let id = heading_id(captures.get(2).map(|value| value.as_str()).unwrap_or_default(), &mut ids);
+        if let Some(captures) = regex::Regex::new(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+            .unwrap()
+            .captures(line)
+        {
+            let id = heading_id(
+                captures
+                    .get(2)
+                    .map(|value| value.as_str())
+                    .unwrap_or_default(),
+                &mut ids,
+            );
             if !heading_ids.insert(id.clone()) {
-                diagnostics.push(DiagnosticItem { severity: "warning".into(), kind: "見出しID".into(), line: index + 1, reference: id, message: "見出しIDが重複しています。".into() });
+                diagnostics.push(DiagnosticItem {
+                    severity: "warning".into(),
+                    kind: "見出しID".into(),
+                    line: index + 1,
+                    reference: id,
+                    message: "見出しIDが重複しています。".into(),
+                });
             }
         }
     }
     let link = regex::Regex::new(r"!?\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)").unwrap();
     for (index, line) in source.lines().enumerate() {
         for captures in link.captures_iter(line) {
-            let reference = captures.get(1).map(|value| value.as_str()).unwrap_or_default();
-            if reference.starts_with("http://") || reference.starts_with("https://") || reference.starts_with("mailto:") { continue; }
-            let (file_part, anchor) = reference.split_once('#').map_or((reference, None), |(file, anchor)| (file, Some(anchor)));
-            let target = if file_part.is_empty() { PathBuf::from(&loaded.path) } else { let candidate = PathBuf::from(file_part); if candidate.is_absolute() { candidate } else { base.join(candidate) } };
+            let reference = captures
+                .get(1)
+                .map(|value| value.as_str())
+                .unwrap_or_default();
+            if reference.starts_with("http://")
+                || reference.starts_with("https://")
+                || reference.starts_with("mailto:")
+            {
+                continue;
+            }
+            let (file_part, anchor) = reference
+                .split_once('#')
+                .map_or((reference, None), |(file, anchor)| (file, Some(anchor)));
+            let target = if file_part.is_empty() {
+                PathBuf::from(&loaded.path)
+            } else {
+                let candidate = PathBuf::from(file_part);
+                if candidate.is_absolute() {
+                    candidate
+                } else {
+                    base.join(candidate)
+                }
+            };
             if !target.exists() {
-                diagnostics.push(DiagnosticItem { severity: "error".into(), kind: if line.trim_start().starts_with("!") { "画像".into() } else { "Markdownリンク".into() }, line: index + 1, reference: reference.into(), message: "参照先ファイルが存在しません。".into() });
+                diagnostics.push(DiagnosticItem {
+                    severity: "error".into(),
+                    kind: if line.trim_start().starts_with("!") {
+                        "画像".into()
+                    } else {
+                        "Markdownリンク".into()
+                    },
+                    line: index + 1,
+                    reference: reference.into(),
+                    message: "参照先ファイルが存在しません。".into(),
+                });
             } else if let Some(anchor) = anchor {
                 if target == PathBuf::from(&loaded.path) && !heading_ids.contains(anchor) {
-                    diagnostics.push(DiagnosticItem { severity: "error".into(), kind: "見出しアンカー".into(), line: index + 1, reference: reference.into(), message: "参照先見出しが存在しません。".into() });
+                    diagnostics.push(DiagnosticItem {
+                        severity: "error".into(),
+                        kind: "見出しアンカー".into(),
+                        line: index + 1,
+                        reference: reference.into(),
+                        message: "参照先見出しが存在しません。".into(),
+                    });
                 }
             }
         }
-        if let Some(captures) = regex::Regex::new(r"!\[([^\]]*)\]\(").unwrap().captures(line) {
-            if captures.get(1).map(|value| value.as_str().trim().is_empty()).unwrap_or(false) {
-                diagnostics.push(DiagnosticItem { severity: "warning".into(), kind: "画像alt".into(), line: index + 1, reference: line.trim().into(), message: "画像のaltテキストが空です。".into() });
+        if let Some(captures) = regex::Regex::new(r"!\[([^\]]*)\]\(")
+            .unwrap()
+            .captures(line)
+        {
+            if captures
+                .get(1)
+                .map(|value| value.as_str().trim().is_empty())
+                .unwrap_or(false)
+            {
+                diagnostics.push(DiagnosticItem {
+                    severity: "warning".into(),
+                    kind: "画像alt".into(),
+                    line: index + 1,
+                    reference: line.trim().into(),
+                    message: "画像のaltテキストが空です。".into(),
+                });
             }
         }
     }
@@ -529,8 +657,17 @@ pub fn open_in_editor(path: String, editor: String) -> Result<(), String> {
         "notepad" => PathBuf::from("notepad"),
         _ => return Err("Unsupported editor.".into()),
     };
+    let reuse_vscode_workspace = editor == "vscode"
+        && Path::new(&path)
+            .parent()
+            .map(|directory| vscode_workspace_is_running(&program, directory))
+            .unwrap_or(false);
     let mut command = std::process::Command::new(&program);
-    command.args(editor_arguments(&editor, Path::new(&path))?);
+    command.args(editor_arguments(
+        &editor,
+        Path::new(&path),
+        reuse_vscode_workspace,
+    )?);
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
@@ -545,18 +682,129 @@ pub fn open_in_editor(path: String, editor: String) -> Result<(), String> {
     Ok(())
 }
 
-fn editor_arguments(editor: &str, file: &Path) -> Result<Vec<std::ffi::OsString>, String> {
+fn editor_arguments(
+    editor: &str,
+    file: &Path,
+    reuse_vscode_workspace: bool,
+) -> Result<Vec<std::ffi::OsString>, String> {
     match editor {
-        // Passing the folder before the file makes the containing directory a
-        // VS Code workspace.  VS Code itself reuses an already-open matching
-        // workspace; no unstable process/window introspection is required.
         "vscode" => {
-            let directory = file.parent().ok_or_else(|| "The file has no containing directory.".to_string())?;
-            Ok(vec![directory.as_os_str().to_owned(), file.as_os_str().to_owned()])
+            let directory = file
+                .parent()
+                .ok_or_else(|| "The file has no containing directory.".to_string())?;
+            let mut arguments = Vec::with_capacity(3);
+            if !reuse_vscode_workspace {
+                arguments.push(std::ffi::OsString::from("--new-window"));
+            }
+            arguments.push(directory.as_os_str().to_owned());
+            arguments.push(file.as_os_str().to_owned());
+            Ok(arguments)
         }
         "notepad" => Ok(vec![file.as_os_str().to_owned()]),
         _ => Err("Unsupported editor.".into()),
     }
+}
+
+#[derive(Debug, Deserialize)]
+struct VscodeWorkspaceDescriptor {
+    folder: Option<String>,
+}
+
+fn vscode_workspace_is_running(program: &Path, target_directory: &Path) -> bool {
+    let mut status_command = std::process::Command::new(program);
+    status_command.arg("--status");
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        status_command.creation_flags(CREATE_NO_WINDOW);
+    }
+    let Ok(output) = status_command.output() else {
+        return false;
+    };
+    if !output.status.success() {
+        return false;
+    }
+
+    let mut status = String::from_utf8_lossy(&output.stdout).into_owned();
+    status.push_str(&String::from_utf8_lossy(&output.stderr));
+    let active_names = parse_vscode_status_workspace_names(&status);
+    if active_names.is_empty() {
+        return false;
+    }
+    let Some(storage_root) = vscode_workspace_storage_root() else {
+        return false;
+    };
+    let candidates = load_vscode_workspace_candidates(&storage_root);
+    let active_paths = resolve_unambiguous_active_workspaces(&active_names, &candidates);
+    active_paths.contains(&path_identity(target_directory))
+}
+
+fn parse_vscode_status_workspace_names(status: &str) -> std::collections::HashSet<String> {
+    let pattern = regex::Regex::new(r"(?m)^\|\s+(?:Folder|Workspace) \((.+)\):\s*.*$")
+        .expect("VS Code status pattern must compile");
+    pattern
+        .captures_iter(status)
+        .filter_map(|capture| capture.get(1))
+        .map(|name| name.as_str().trim().to_lowercase())
+        .filter(|name| !name.is_empty())
+        .collect()
+}
+
+fn vscode_workspace_storage_root() -> Option<PathBuf> {
+    std::env::var_os("APPDATA")
+        .map(PathBuf::from)
+        .map(|path| path.join("Code").join("User").join("workspaceStorage"))
+        .filter(|path| path.is_dir())
+}
+
+fn load_vscode_workspace_candidates(storage_root: &Path) -> Vec<(String, PathBuf)> {
+    let Ok(entries) = std::fs::read_dir(storage_root) else {
+        return Vec::new();
+    };
+    entries
+        .filter_map(Result::ok)
+        .filter_map(|entry| std::fs::read(entry.path().join("workspace.json")).ok())
+        .filter_map(|contents| serde_json::from_slice::<VscodeWorkspaceDescriptor>(&contents).ok())
+        .filter_map(|descriptor| descriptor.folder)
+        .filter_map(|folder_uri| url::Url::parse(&folder_uri).ok()?.to_file_path().ok())
+        .filter_map(|folder| {
+            let name = folder.file_name()?.to_string_lossy().trim().to_lowercase();
+            if name.is_empty() {
+                None
+            } else {
+                Some((name, folder))
+            }
+        })
+        .collect()
+}
+
+fn resolve_unambiguous_active_workspaces(
+    active_names: &std::collections::HashSet<String>,
+    candidates: &[(String, PathBuf)],
+) -> std::collections::HashSet<String> {
+    let mut grouped = std::collections::HashMap::<String, std::collections::HashSet<String>>::new();
+    for (name, path) in candidates {
+        if active_names.contains(name) {
+            grouped
+                .entry(name.clone())
+                .or_default()
+                .insert(path_identity(path));
+        }
+    }
+    grouped
+        .into_values()
+        .filter(|paths| paths.len() == 1)
+        .flat_map(|paths| paths.into_iter())
+        .collect()
+}
+
+fn path_identity(path: &Path) -> String {
+    let normalized = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    let value = normalized.to_string_lossy().replace('/', "\\");
+    #[cfg(target_os = "windows")]
+    let value = value.to_lowercase();
+    value.trim_end_matches('\\').to_string()
 }
 
 #[derive(Debug, Deserialize)]
@@ -733,43 +981,164 @@ mod tests {
     }
 
     #[test]
-    fn vscode_opens_the_containing_folder_before_the_markdown_file() {
+    fn vscode_reuses_only_a_confirmed_matching_workspace() {
         let file = Path::new("C:/docs/readme.md");
-        let arguments = editor_arguments("vscode", file).unwrap();
+        let arguments = editor_arguments("vscode", file, true).unwrap();
 
-        assert_eq!(arguments, vec![std::ffi::OsString::from("C:/docs"), std::ffi::OsString::from("C:/docs/readme.md")]);
+        assert_eq!(
+            arguments,
+            vec![
+                std::ffi::OsString::from("C:/docs"),
+                std::ffi::OsString::from("C:/docs/readme.md")
+            ]
+        );
+    }
+
+    #[test]
+    fn vscode_forces_a_new_window_without_a_confirmed_match() {
+        let file = Path::new("C:/docs/readme.md");
+        let arguments = editor_arguments("vscode", file, false).unwrap();
+
+        assert_eq!(
+            arguments,
+            vec![
+                std::ffi::OsString::from("--new-window"),
+                std::ffi::OsString::from("C:/docs"),
+                std::ffi::OsString::from("C:/docs/readme.md"),
+            ],
+        );
+    }
+
+    #[test]
+    fn parses_every_workspace_name_from_vscode_status() {
+        let status = r#"Workspace Stats:
+|  Window (readme.md - first - Visual Studio Code)
+|    Folder (first): 10 files
+|  Window (notes.md - second - Visual Studio Code)
+|    Folder (Second): 20 files
+"#;
+
+        assert_eq!(
+            parse_vscode_status_workspace_names(status),
+            std::collections::HashSet::from(["first".into(), "second".into()]),
+        );
+    }
+
+    #[test]
+    fn resolves_only_unique_active_workspace_paths() {
+        let active = std::collections::HashSet::from(["docs".into(), "project".into()]);
+        let candidates = vec![
+            ("docs".into(), PathBuf::from("C:/one/docs")),
+            ("docs".into(), PathBuf::from("D:/two/docs")),
+            ("project".into(), PathBuf::from("C:/work/project")),
+            ("closed".into(), PathBuf::from("C:/old/closed")),
+        ];
+
+        let resolved = resolve_unambiguous_active_workspaces(&active, &candidates);
+        assert_eq!(
+            resolved,
+            std::collections::HashSet::from([path_identity(Path::new("C:/work/project"))]),
+        );
+    }
+
+    #[test]
+    fn loads_folder_paths_from_vscode_workspace_storage() {
+        let root = tempfile::tempdir().unwrap();
+        let folder = root.path().join("ExampleWorkspace");
+        let entry = root.path().join("workspace-id");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::create_dir_all(&entry).unwrap();
+        let folder_uri = url::Url::from_directory_path(&folder).unwrap();
+        std::fs::write(
+            entry.join("workspace.json"),
+            serde_json::json!({ "folder": folder_uri.as_str() }).to_string(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            load_vscode_workspace_candidates(root.path()),
+            vec![("exampleworkspace".into(), folder)],
+        );
     }
 
     #[test]
     fn adjacent_window_prefers_the_right_of_its_source() {
-        let area = WorkArea { x: 0, y: 0, width: 1920, height: 1080 };
-        let source = WindowGeometry { x: 100, y: 120, width: 800, height: 600 };
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: 100,
+            y: 120,
+            width: 800,
+            height: 600,
+        };
 
         assert_eq!(
             adjacent_geometry(source, 820, area),
-            WindowGeometry { x: 920, y: 120, width: 800, height: 600 },
+            WindowGeometry {
+                x: 920,
+                y: 120,
+                width: 800,
+                height: 600
+            },
         );
     }
 
     #[test]
     fn adjacent_window_uses_the_left_when_right_would_overflow() {
-        let area = WorkArea { x: 0, y: 0, width: 1920, height: 1080 };
-        let source = WindowGeometry { x: 1100, y: 120, width: 800, height: 600 };
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: 1100,
+            y: 120,
+            width: 800,
+            height: 600,
+        };
 
         assert_eq!(
             adjacent_geometry(source, 820, area),
-            WindowGeometry { x: 300, y: 120, width: 800, height: 600 },
+            WindowGeometry {
+                x: 300,
+                y: 120,
+                width: 800,
+                height: 600
+            },
         );
     }
 
     #[test]
     fn saved_geometry_outside_all_displays_is_clamped_to_a_work_area() {
-        let area = WorkArea { x: 0, y: 0, width: 1200, height: 800 };
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1200,
+            height: 800,
+        };
         let restored = clamp_geometry_to_area(
-            WindowGeometry { x: 5000, y: -200, width: 1600, height: 900 },
+            WindowGeometry {
+                x: 5000,
+                y: -200,
+                width: 1600,
+                height: 900,
+            },
             area,
         );
 
-        assert_eq!(restored, WindowGeometry { x: 0, y: 0, width: 1200, height: 800 });
+        assert_eq!(
+            restored,
+            WindowGeometry {
+                x: 0,
+                y: 0,
+                width: 1200,
+                height: 800
+            }
+        );
     }
 }
