@@ -34,6 +34,19 @@ export function resolveFoldToggle(collapsedStates: readonly boolean[]): "collaps
   return collapsedStates.length > 0 && collapsedStates.every(Boolean) ? "expand" : "collapse";
 }
 
+export interface HeadingFoldState {
+  level: number;
+  collapsed: boolean;
+}
+
+/**
+ * Resolves the Ctrl+Alt+T document toggle. H1 sections remain structural roots
+ * and are therefore excluded from the collapsed-state decision.
+ */
+export function resolveNestedFoldToggle(states: readonly HeadingFoldState[]): "collapse" | "expand" {
+  return resolveFoldToggle(states.filter((state) => state.level >= 2).map((state) => state.collapsed));
+}
+
 export function resolveCurrentFoldId(documentRoot: Document = document): string | undefined {
   const section = documentRoot.activeElement?.closest<HTMLElement>("[data-fold-id]");
   return section?.dataset.foldId || undefined;

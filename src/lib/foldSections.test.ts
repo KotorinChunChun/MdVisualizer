@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { __test__ } from "./foldSections";
-import { ancestorFoldIds, collapsedForFoldCommand, resolveFoldToggle } from "./foldSections";
+import { ancestorFoldIds, collapsedForFoldCommand, resolveFoldToggle, resolveNestedFoldToggle } from "./foldSections";
 
 const heading = (level: number, text: string) => ({ type: "element", tagName: `h${level}`, children: [{ type: "text", value: text }] });
 
@@ -45,5 +45,19 @@ describe("fold sections", () => {
     expect(collapsedForFoldCommand("through-h2", 3, "deep")).toBe(true);
     expect(collapsedForFoldCommand({ command: "except-current", currentFoldId: "here" }, 2, "here")).toBe(false);
     expect(collapsedForFoldCommand({ command: "except-current", currentFoldId: "here" }, 2, "there")).toBe(true);
+  });
+
+  it("resolves Ctrl+Alt+T from H2-H6 while ignoring H1 state", () => {
+    expect(resolveNestedFoldToggle([
+      { level: 1, collapsed: false },
+      { level: 2, collapsed: true },
+      { level: 3, collapsed: true },
+    ])).toBe("expand");
+    expect(resolveNestedFoldToggle([
+      { level: 1, collapsed: true },
+      { level: 2, collapsed: false },
+      { level: 3, collapsed: true },
+    ])).toBe("collapse");
+    expect(resolveNestedFoldToggle([{ level: 1, collapsed: true }])).toBe("collapse");
   });
 });

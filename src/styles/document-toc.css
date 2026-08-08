@@ -100,12 +100,12 @@
 }
 
 /* The parent layout can reserve this sidecar in unused horizontal space. */
-@media (min-width: 1500px) {
+@media (min-width: 860px) {
   .document-toc-root.is-open { width: 18rem; }
 }
 
 /* At narrower widths the TOC overlays the document rather than shrinking it. */
-@media (max-width: 1499px) {
+@media (max-width: 859px) {
   .document-toc {
     position: fixed;
     inset: 0 auto 0 0;

@@ -28,7 +28,7 @@ import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
-import { ancestorFoldIds } from "./lib/foldSections";
+import { ancestorFoldIds, resolveNestedFoldToggle } from "./lib/foldSections";
 import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { localPathIdentity } from "./lib/pathIdentity";
@@ -61,6 +61,11 @@ export function moveZoomLevel(current: number, direction: 1 | -1): number {
 export function focusAndSelectSearchInput(input: HTMLInputElement | null): void {
   input?.focus();
   input?.select();
+}
+
+export function resolveDocumentSidePanel(searchResultsOpen: boolean, tocRequestedOpen: boolean): "search" | "toc" | null {
+  if (searchResultsOpen) return "search";
+  return tocRequestedOpen ? "toc" : null;
 }
 
 export function App() {
@@ -507,11 +512,26 @@ export function App() {
   }, [activeTab]);
 
   const toggleFoldAll = useCallback(() => {
-    if (!activeTab) return;
-    const toggles = [...(markdownRef.current?.querySelectorAll<HTMLButtonElement>(".fold-toggle") ?? [])];
-    const allCollapsed = toggles.length > 0 && toggles.every((toggle) => toggle.getAttribute("aria-expanded") === "false");
-    applyFoldPreset(allCollapsed ? "expand" : "collapse");
-  }, [activeTab, applyFoldPreset]);
+    if (!activeTab?.document) return;
+    const sections = [...(markdownRef.current?.querySelectorAll<HTMLElement>(".fold-section[data-fold-id][data-fold-level]") ?? [])];
+    if (!sections.length) return;
+    setFoldStates((current) => {
+      const currentForPath = current[activeTab.path] ?? {};
+      const command = resolveNestedFoldToggle(sections.map((section) => ({
+        level: Number(section.dataset.foldLevel ?? 6),
+        collapsed: currentForPath[section.dataset.foldId ?? ""] ?? false,
+      })));
+      const nextForPath = { ...currentForPath };
+      for (const section of sections) {
+        const id = section.dataset.foldId;
+        if (!id) continue;
+        const level = Number(section.dataset.foldLevel ?? 6);
+        nextForPath[id] = level === 1 ? false : command === "collapse";
+      }
+      void saveFoldState(activeTab.path, nextForPath).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
+      return { ...current, [activeTab.path]: nextForPath };
+    });
+  }, [activeTab]);
 
   const handleFoldChange = useCallback((foldId: string, collapsed: boolean) => {
     const documentPath = activeTab?.path;
@@ -610,7 +630,7 @@ export function App() {
         return { ...current, [activeTab.path]: nextForPath };
       });
     }
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 1500px)").matches) setDocumentTocOpen(false);
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) setDocumentTocOpen(false);
     requestAnimationFrame(() => requestAnimationFrame(() => section.scrollIntoView({ block: "start" })));
   }, [activeTab?.document, activeTab?.path, recordNavigationPoint]);
 
@@ -1027,6 +1047,9 @@ export function App() {
     });
   };
 
+  const searchResultsPanelOpen = Boolean(activeTab?.document && activeTab.searchOpen && search.results.length > 1);
+  const documentSidePanel = resolveDocumentSidePanel(searchResultsPanelOpen, documentTocOpen);
+
   return (
     <div className={`app-container${printing ? " is-printing" : ""}`}>
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
@@ -1067,13 +1090,16 @@ export function App() {
       </div>}
 
       <div className={`document-workspace${imageGalleryOpen && viewMode !== "presentation" ? " has-image-gallery" : ""}`}>
-      {activeTab?.document && activeTab.searchOpen && search.results.length > 1 && <aside className="search-results-panel" aria-label="検索結果パネル">
-        <header><strong>検索結果</strong><span>{search.results.length}件</span></header>
-        <SearchResults results={search.results} activeIndex={search.activeIndex} truncated={search.truncated} onSelect={search.setActiveIndex} onActivate={(result) => jumpToSearchResult(result.index)} />
-      </aside>}
-      {activeTab?.document && viewMode !== "presentation" && <DocumentToc
+      {documentSidePanel === "search" && <>
+        <button type="button" className="search-results-backdrop" aria-label="検索を閉じる" onClick={closeSearch} />
+        <aside className="search-results-panel" aria-label="検索結果パネル">
+          <header><strong>検索結果</strong><span>{search.results.length}件</span></header>
+          <SearchResults results={search.results} activeIndex={search.activeIndex} truncated={search.truncated} onSelect={search.setActiveIndex} onActivate={(result) => jumpToSearchResult(result.index)} />
+        </aside>
+      </>}
+      {activeTab?.document && viewMode !== "presentation" && documentSidePanel !== "search" && <DocumentToc
         markdown={activeTab.document.content}
-        isOpen={documentTocOpen}
+        isOpen={documentSidePanel === "toc"}
         activeHeadingId={activeTocHeadingId ?? undefined}
         onOpenChange={setDocumentTocOpen}
         onJump={jumpToDocumentHeading}

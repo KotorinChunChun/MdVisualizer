@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, ZOOM_LEVELS } from "./App";
+import { focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentSidePanel, ZOOM_LEVELS } from "./App";
 
 describe("zoom level selection", () => {
   it("normalizes persisted values to a selectable status-bar option", () => {
@@ -29,5 +29,13 @@ describe("search input focus", () => {
     expect(document.activeElement).toBe(input);
     expect(select).toHaveBeenCalledOnce();
     input.remove();
+  });
+});
+
+describe("document side panel ownership", () => {
+  it("gives search results priority without discarding the requested TOC state", () => {
+    expect(resolveDocumentSidePanel(true, true)).toBe("search");
+    expect(resolveDocumentSidePanel(false, true)).toBe("toc");
+    expect(resolveDocumentSidePanel(false, false)).toBeNull();
   });
 });
