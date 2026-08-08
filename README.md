@@ -89,7 +89,8 @@ Obsidian画像は`![[images/photo.png]]`と`[[images/photo.png]]`の両方を表
 `samples/` に機能別の Markdown を収録しています。主要記法をまとめて確認する場合は
 `samples/all-markdown.md`、ローカル文書リンクは `samples/local-links.md`、Mermaid
 各種は `samples/mermaid-gallery.md`、階層プレゼンは
-`samples/presentation-hierarchy.md` を開いてください。
+`samples/presentation-hierarchy.md` を開いてください。v0.0.5で追加した検索・目次・倍率・別窓・VS Code連携は
+`samples/v0.0.5-ui-workflow.md`、Obsidian画像とalt配置は`samples/v0.0.5-obsidian-images.md`で確認できます。
 
 ## ショートカット
 

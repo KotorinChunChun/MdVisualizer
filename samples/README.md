@@ -10,8 +10,11 @@
 | `local-links.md` | 相対Markdownリンクを新しいタブで開く確認 |
 | `linked-document.md` | ローカルリンクの遷移先 |
 | `presentation-hierarchy.md` | 階層型プレゼン、10行分割、パンくず、画像ポップアップ |
+| `v0.0.5-ui-workflow.md` | 検索結果パネル、標準目次、倍率、別窓、VS Code上位ワークスペース推定 |
+| `v0.0.5-obsidian-images.md` | Obsidian画像、画像一覧・監視、altキャプションと下罫線の配置 |
 | `images/sample.png` | ラスター画像、クロップ、表示縮小 |
 | `images/sample.svg` | SVG表示専用（編集操作なし） |
 
-`all-markdown.md` から他のサンプルへ移動できます。テーマ配色を確認するときは、
+`all-markdown.md` から既存サンプルへ移動できます。v0.0.5の追加機能は
+`v0.0.5-ui-workflow.md`から順に確認してください。テーマ配色を確認するときは、
 ダーク、ライト、GitHubを切り替え、リンク、インラインコード、表見出しを比較してください。
