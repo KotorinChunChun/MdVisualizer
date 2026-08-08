@@ -1,7 +1,9 @@
 {
   "name": "markdown-viewer",
   "private": true,
-  "version": "0.0.4",
+  "version": "0.0.5",
+  "author": "KotorinChunChun",
+  "repository": "https://github.com/KotorinChunChun/MarkdownViewer",
   "type": "module",
   "scripts": {
     "dev": "vite",

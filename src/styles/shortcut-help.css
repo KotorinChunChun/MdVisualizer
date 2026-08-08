@@ -7,4 +7,9 @@
 .shortcut-help__window dl > div { display: grid; grid-template-columns: minmax(11rem, 15rem) 1fr; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent); }
 .shortcut-help__window dt, .shortcut-help__window dd { margin: 0; }
 .shortcut-help__window kbd { display: inline-block; padding: .15rem .45rem; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: .35rem; box-shadow: 0 1px 0 var(--border-color); font: inherit; font-weight: 650; }
+.shortcut-help__app-info { margin: 0 1rem 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.shortcut-help__app-info h3 { margin: 0 0 .5rem; font-size: 1rem; }
+.shortcut-help__app-info dl { padding: 0; }
+.shortcut-help__app-info a { color: var(--link-color, #58a6ff); }
+.shortcut-help__app-info a:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; border-radius: 2px; }
 @media (max-width: 560px) { .shortcut-help__window dl > div { grid-template-columns: 1fr; gap: .25rem; } }
