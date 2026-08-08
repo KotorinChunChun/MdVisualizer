@@ -25,4 +25,13 @@ describe("ExternalActions", () => {
     expect(onExecute).toHaveBeenCalledWith(expect.objectContaining({ builtinKind: "notepad" }));
     expect(screen.queryByRole("menu")).toBeNull();
   });
+
+  it("adds an in-app new-window action without putting it in the other menu", () => {
+    const onOpenInNewWindow = vi.fn();
+    render(<ExternalActions apps={DEFAULT_EXTERNAL_APPS} onExecute={vi.fn()} onOpenInNewWindow={onOpenInNewWindow} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "別窓で開く" }));
+    expect(onOpenInNewWindow).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
 });

@@ -29,7 +29,8 @@ function isWithinHorizontalScroller(target: EventTarget | null): boolean {
 
 /** Kept exported so presentation keyboard exclusions stay regression-tested. */
 export function shouldHandlePresentationArrowKey(event: KeyboardEvent, documentRoot: Document = document): boolean {
-  return !event.ctrlKey
+  return !event.defaultPrevented
+    && !event.ctrlKey
     && !event.altKey
     && !event.metaKey
     && !isEditableTarget(event.target)
@@ -195,6 +196,11 @@ export function PresentationView({
           </button>)}
         </nav>}
       </div>
+    </div>
+    <div className="presentation-print-pages" aria-hidden="true">
+      {model.pages.map((printPage) => <article className="presentation-print-page" key={printPage.id}>
+        <MarkdownPreview content={printPage.markdown} baseDir={baseDir} imageVersions={imageVersions} theme={theme} onError={onError} mermaidMode={mermaidMode} windowId={windowId} tabId={`${tabId}:print:${printPage.id}`} imageDisplaySizes={imageDisplaySizes} onOpenDocument={onOpenDocument} presentationMode onMediaOpen={onMediaOpen} />
+      </article>)}
     </div>
     <footer className="presentation-navigation">
       <button type="button" disabled={pageIndex === 0} onClick={() => { onBeforeNavigate?.(); setPageIndex((current) => current - 1); }}>← 前へ</button>

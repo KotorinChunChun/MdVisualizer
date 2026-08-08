@@ -9,8 +9,8 @@ describe("zoom level selection", () => {
   });
 
   it("moves shortcuts through the fixed option list without producing gaps", () => {
-    expect(moveZoomLevel(67, 1)).toBe(80);
-    expect(moveZoomLevel(80, -1)).toBe(67);
+    expect(moveZoomLevel(70, 1)).toBe(80);
+    expect(moveZoomLevel(80, -1)).toBe(70);
     expect(moveZoomLevel(50, -1)).toBe(50);
     expect(moveZoomLevel(200, 1)).toBe(200);
     expect(ZOOM_LEVELS).toContain(moveZoomLevel(100, 1));

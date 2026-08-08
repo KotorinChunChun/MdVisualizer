@@ -30,7 +30,7 @@ export interface StatusBarProps {
   statusText?: string;
 }
 
-const zoomOptions = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200];
+const zoomOptions = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
 
 function formatSize(sizeBytes: number) {
   return sizeBytes < 1024 ? `${sizeBytes} B` : `${(sizeBytes / 1024).toFixed(1)} KB`;

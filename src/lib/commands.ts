@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CropImageRequest, CropImageResult, MarkdownLoadResult } from "../types/app";
+import type { DiagnosticItem } from "../components/DiagnosticsPanel";
 
 export interface CorruptFileInfo {
   sourcePath: string;
@@ -38,6 +39,9 @@ export async function openInNewWindow(path: string): Promise<void> { await invok
 
 export async function loadMarkdown(path: string): Promise<MarkdownLoadResult> {
   return await invoke<MarkdownLoadResult>("load_markdown", { path });
+}
+export async function diagnoseDocument(path: string): Promise<DiagnosticItem[]> {
+  return await invoke<DiagnosticItem[]>("diagnose_document", { path });
 }
 
 export async function startWatch(path: string): Promise<void> {

@@ -37,11 +37,11 @@ describe("StatusBar", () => {
     fireEvent.change(screen.getByLabelText("レイアウト"), { target: { value: "wide" } });
     fireEvent.change(screen.getByLabelText("Auto Reload"), { target: { value: "manual" } });
     fireEvent.change(screen.getByLabelText("Mermaid"), { target: { value: "error-code" } });
-    fireEvent.change(screen.getByLabelText("Zoom"), { target: { value: "125" } });
+    fireEvent.change(screen.getByLabelText("Zoom"), { target: { value: "120" } });
 
     expect(onAutoReloadChange).toHaveBeenCalledWith("manual");
     expect(onMermaidModeChange).toHaveBeenCalledWith("error-code");
-    expect(onZoomChange).toHaveBeenCalledWith(125);
+    expect(onZoomChange).toHaveBeenCalledWith(120);
     expect(onThemeChange).toHaveBeenCalledWith("light");
     expect(onViewModeChange).toHaveBeenCalledWith("wide");
   });

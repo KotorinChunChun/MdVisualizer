@@ -10,15 +10,16 @@ use crate::image_references::{
 };
 use crate::markdown::{load_markdown as do_load_markdown, MarkdownLoadResult};
 use crate::settings::{
-    load_application_settings, merge_external_app_settings, merge_fold_state, merge_settings,
-    SettingsLoadResult,
+    load_application_settings, load_settings as load_settings_file, merge_external_app_settings,
+    merge_fold_state, merge_settings, SettingsLoadResult,
 };
 use crate::watcher::FileWatcher;
 use serde::Deserialize;
+use serde::Serialize;
 use serde_json::{Map, Value};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_opener::OpenerExt;
 
 fn settings_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
@@ -35,6 +36,124 @@ fn fold_state_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String>
         .app_data_dir()
         .map(|path| path.join("fold-state.json"))
         .map_err(|error| error.to_string())
+}
+
+/// The next-start geometry is deliberately shared rather than bound to an
+/// ephemeral viewer-* label.  The last window closed therefore becomes the
+/// next main window, even after opening documents in separate windows.
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowGeometry {
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct WorkArea {
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+}
+
+fn geometry_from_window(window: &WebviewWindow) -> Result<WindowGeometry, String> {
+    let position = window.outer_position().map_err(|error| error.to_string())?;
+    let size = window.inner_size().map_err(|error| error.to_string())?;
+    Ok(WindowGeometry { x: position.x, y: position.y, width: size.width, height: size.height })
+}
+
+fn geometry_from_native_window(window: &tauri::Window) -> Result<WindowGeometry, String> {
+    let position = window.outer_position().map_err(|error| error.to_string())?;
+    let size = window.inner_size().map_err(|error| error.to_string())?;
+    Ok(WindowGeometry { x: position.x, y: position.y, width: size.width, height: size.height })
+}
+
+fn work_areas(window: &WebviewWindow) -> Result<Vec<WorkArea>, String> {
+    let areas = window
+        .available_monitors()
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .map(|monitor| {
+            let area = monitor.work_area();
+            WorkArea {
+                x: area.position.x,
+                y: area.position.y,
+                width: area.size.width,
+                height: area.size.height,
+            }
+        })
+        .collect::<Vec<_>>();
+    Ok(areas)
+}
+
+fn geometry_is_visible(geometry: WindowGeometry, area: WorkArea) -> bool {
+    let right = geometry.x.saturating_add(geometry.width as i32);
+    let bottom = geometry.y.saturating_add(geometry.height as i32);
+    let area_right = area.x.saturating_add(area.width as i32);
+    let area_bottom = area.y.saturating_add(area.height as i32);
+    geometry.x < area_right && right > area.x && geometry.y < area_bottom && bottom > area.y
+}
+
+fn clamp_geometry_to_area(mut geometry: WindowGeometry, area: WorkArea) -> WindowGeometry {
+    geometry.width = geometry.width.min(area.width.max(1));
+    geometry.height = geometry.height.min(area.height.max(1));
+    let max_x = area.x.saturating_add(area.width.saturating_sub(geometry.width) as i32);
+    let max_y = area.y.saturating_add(area.height.saturating_sub(geometry.height) as i32);
+    geometry.x = geometry.x.clamp(area.x, max_x);
+    geometry.y = geometry.y.clamp(area.y, max_y);
+    geometry
+}
+
+fn adjacent_geometry(source: WindowGeometry, source_outer_width: u32, area: WorkArea) -> WindowGeometry {
+    let right_x = source.x.saturating_add(source_outer_width as i32);
+    let area_right = area.x.saturating_add(area.width as i32);
+    let x = if right_x.saturating_add(source.width as i32) <= area_right {
+        right_x
+    } else {
+        source.x.saturating_sub(source.width as i32)
+    };
+    clamp_geometry_to_area(WindowGeometry { x, y: source.y, width: source.width, height: source.height }, area)
+}
+
+fn saved_window_geometry(app_handle: &AppHandle) -> Result<Option<WindowGeometry>, String> {
+    let settings = load_settings_file(&settings_path(app_handle)?).map_err(|error| error.to_string())?;
+    match settings.get("windowGeometry") {
+        Some(value) => serde_json::from_value(value.clone())
+            .map(Some)
+            .map_err(|error| format!("Saved window geometry is invalid: {error}")),
+        None => Ok(None),
+    }
+}
+
+pub fn restore_saved_window_geometry(app_handle: &AppHandle, window: &WebviewWindow) -> Result<(), String> {
+    let Some(saved) = saved_window_geometry(app_handle)? else { return Ok(()); };
+    if saved.width == 0 || saved.height == 0 { return Ok(()); }
+    let areas = work_areas(window)?;
+    let geometry = if areas.iter().any(|area| geometry_is_visible(saved, *area)) {
+        saved
+    } else {
+        let fallback = areas.first().copied().ok_or_else(|| "No display is available.".to_string())?;
+        clamp_geometry_to_area(saved, fallback)
+    };
+    window
+        .set_size(PhysicalSize::new(geometry.width, geometry.height))
+        .map_err(|error| error.to_string())?;
+    window
+        .set_position(PhysicalPosition::new(geometry.x, geometry.y))
+        .map_err(|error| error.to_string())
+}
+
+pub fn save_window_geometry(app_handle: &AppHandle, window: &tauri::Window) -> Result<(), String> {
+    let geometry = geometry_from_native_window(window)?;
+    let mut updates = Map::new();
+    updates.insert(
+        "windowGeometry".into(),
+        serde_json::to_value(geometry).map_err(|error| error.to_string())?,
+    );
+    merge_settings(&settings_path(app_handle)?, updates).map_err(|error| error.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -110,6 +229,7 @@ pub fn get_initial_files(
 pub async fn open_in_new_window(
     app_handle: AppHandle,
     state: State<'_, AppState>,
+    window: WebviewWindow,
     path: String,
 ) -> Result<(), String> {
     if !Path::new(&path).exists() {
@@ -127,12 +247,28 @@ pub async fn open_in_new_window(
             .map_err(|_| "Initial file state is unavailable.".to_string())?;
         initial_files.insert(label.clone(), vec![path]);
     }
+    let source = geometry_from_window(&window)?;
+    let source_outer_width = window.outer_size().map_err(|error| error.to_string())?.width;
+    let scale_factor = window.scale_factor().map_err(|error| error.to_string())?;
+    let area = window
+        .current_monitor()
+        .map_err(|error| error.to_string())?
+        .or_else(|| window.primary_monitor().ok().flatten())
+        .map(|monitor| {
+            let area = monitor.work_area();
+            WorkArea { x: area.position.x, y: area.position.y, width: area.size.width, height: area.size.height }
+        })
+        .ok_or_else(|| "No display is available.".to_string())?;
+    let geometry = adjacent_geometry(source, source_outer_width, area);
+
     // On Windows, building a webview window from a synchronous command can
     // deadlock. Async commands run on Tauri's async worker thread.
     if let Err(error) =
         WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
             .title("MarkdownViewer")
-            .inner_size(1000.0, 750.0)
+            .inner_size(geometry.width as f64 / scale_factor, geometry.height as f64 / scale_factor)
+            .position(geometry.x as f64 / scale_factor, geometry.y as f64 / scale_factor)
+            .prevent_overflow()
             .build()
     {
         if let Ok(mut initial_files) = state.initial_files.lock() {
@@ -146,6 +282,74 @@ pub async fn open_in_new_window(
 #[tauri::command]
 pub fn load_markdown(path: String) -> Result<MarkdownLoadResult, String> {
     do_load_markdown(&path).map_err(|e| e.to_string())
+}
+
+#[derive(Serialize)]
+pub struct DiagnosticItem {
+    severity: String,
+    kind: String,
+    line: usize,
+    reference: String,
+    message: String,
+}
+
+fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>) -> String {
+    let normalized = value.trim().to_lowercase();
+    let mut slug = String::new();
+    let mut separator = false;
+    for character in normalized.chars() {
+        if character.is_alphanumeric() {
+            slug.push(character);
+            separator = false;
+        } else if !slug.is_empty() && !separator {
+            slug.push('-');
+            separator = true;
+        }
+    }
+    let slug = slug.trim_matches('-').to_string();
+    let base = if slug.is_empty() { "section".to_string() } else { slug };
+    let count = counts.entry(base.clone()).and_modify(|value| *value += 1).or_insert(1);
+    if *count == 1 { base } else { format!("{}-{}", base, count) }
+}
+
+#[tauri::command]
+pub fn diagnose_document(path: String) -> Result<Vec<DiagnosticItem>, String> {
+    let loaded = do_load_markdown(&path).map_err(|error| error.to_string())?;
+    let source = loaded.content.replace("\r\n", "\n");
+    let base = PathBuf::from(&loaded.base_dir);
+    let mut diagnostics = Vec::new();
+    let mut ids = std::collections::HashMap::new();
+    let mut heading_ids = std::collections::HashSet::new();
+    for (index, line) in source.lines().enumerate() {
+        if let Some(captures) = regex::Regex::new(r"^(#{1,6})\s+(.+?)\s*#*\s*$").unwrap().captures(line) {
+            let id = heading_id(captures.get(2).map(|value| value.as_str()).unwrap_or_default(), &mut ids);
+            if !heading_ids.insert(id.clone()) {
+                diagnostics.push(DiagnosticItem { severity: "warning".into(), kind: "見出しID".into(), line: index + 1, reference: id, message: "見出しIDが重複しています。".into() });
+            }
+        }
+    }
+    let link = regex::Regex::new(r"!?\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)").unwrap();
+    for (index, line) in source.lines().enumerate() {
+        for captures in link.captures_iter(line) {
+            let reference = captures.get(1).map(|value| value.as_str()).unwrap_or_default();
+            if reference.starts_with("http://") || reference.starts_with("https://") || reference.starts_with("mailto:") { continue; }
+            let (file_part, anchor) = reference.split_once('#').map_or((reference, None), |(file, anchor)| (file, Some(anchor)));
+            let target = if file_part.is_empty() { PathBuf::from(&loaded.path) } else { let candidate = PathBuf::from(file_part); if candidate.is_absolute() { candidate } else { base.join(candidate) } };
+            if !target.exists() {
+                diagnostics.push(DiagnosticItem { severity: "error".into(), kind: if line.trim_start().starts_with("!") { "画像".into() } else { "Markdownリンク".into() }, line: index + 1, reference: reference.into(), message: "参照先ファイルが存在しません。".into() });
+            } else if let Some(anchor) = anchor {
+                if target == PathBuf::from(&loaded.path) && !heading_ids.contains(anchor) {
+                    diagnostics.push(DiagnosticItem { severity: "error".into(), kind: "見出しアンカー".into(), line: index + 1, reference: reference.into(), message: "参照先見出しが存在しません。".into() });
+                }
+            }
+        }
+        if let Some(captures) = regex::Regex::new(r"!\[([^\]]*)\]\(").unwrap().captures(line) {
+            if captures.get(1).map(|value| value.as_str().trim().is_empty()).unwrap_or(false) {
+                diagnostics.push(DiagnosticItem { severity: "warning".into(), kind: "画像alt".into(), line: index + 1, reference: line.trim().into(), message: "画像のaltテキストが空です。".into() });
+            }
+        }
+    }
+    Ok(diagnostics)
 }
 
 #[tauri::command]
@@ -326,7 +530,7 @@ pub fn open_in_editor(path: String, editor: String) -> Result<(), String> {
         _ => return Err("Unsupported editor.".into()),
     };
     let mut command = std::process::Command::new(&program);
-    command.arg(path);
+    command.args(editor_arguments(&editor, Path::new(&path))?);
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
@@ -339,6 +543,20 @@ pub fn open_in_editor(path: String, editor: String) -> Result<(), String> {
         .spawn()
         .map_err(|error| format!("Could not start {}: {error}", program.display()))?;
     Ok(())
+}
+
+fn editor_arguments(editor: &str, file: &Path) -> Result<Vec<std::ffi::OsString>, String> {
+    match editor {
+        // Passing the folder before the file makes the containing directory a
+        // VS Code workspace.  VS Code itself reuses an already-open matching
+        // workspace; no unstable process/window introspection is required.
+        "vscode" => {
+            let directory = file.parent().ok_or_else(|| "The file has no containing directory.".to_string())?;
+            Ok(vec![directory.as_os_str().to_owned(), file.as_os_str().to_owned()])
+        }
+        "notepad" => Ok(vec![file.as_os_str().to_owned()]),
+        _ => Err("Unsupported editor.".into()),
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -512,5 +730,46 @@ mod tests {
             "42"
         );
         assert!(expand_external_app_value("${unknown}", file, 1).is_err());
+    }
+
+    #[test]
+    fn vscode_opens_the_containing_folder_before_the_markdown_file() {
+        let file = Path::new("C:/docs/readme.md");
+        let arguments = editor_arguments("vscode", file).unwrap();
+
+        assert_eq!(arguments, vec![std::ffi::OsString::from("C:/docs"), std::ffi::OsString::from("C:/docs/readme.md")]);
+    }
+
+    #[test]
+    fn adjacent_window_prefers_the_right_of_its_source() {
+        let area = WorkArea { x: 0, y: 0, width: 1920, height: 1080 };
+        let source = WindowGeometry { x: 100, y: 120, width: 800, height: 600 };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry { x: 920, y: 120, width: 800, height: 600 },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_uses_the_left_when_right_would_overflow() {
+        let area = WorkArea { x: 0, y: 0, width: 1920, height: 1080 };
+        let source = WindowGeometry { x: 1100, y: 120, width: 800, height: 600 };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry { x: 300, y: 120, width: 800, height: 600 },
+        );
+    }
+
+    #[test]
+    fn saved_geometry_outside_all_displays_is_clamped_to_a_work_area() {
+        let area = WorkArea { x: 0, y: 0, width: 1200, height: 800 };
+        let restored = clamp_geometry_to_area(
+            WindowGeometry { x: 5000, y: -200, width: 1600, height: 900 },
+            area,
+        );
+
+        assert_eq!(restored, WindowGeometry { x: 0, y: 0, width: 1200, height: 800 });
     }
 }

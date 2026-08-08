@@ -5,12 +5,14 @@ export function ExternalActions({
   apps,
   disabled,
   onExecute,
+  onOpenInNewWindow,
   title = "外部で開く",
   compact = false,
 }: {
   apps: ExternalAppConfig[];
   disabled?: boolean;
   onExecute: (app: ExternalAppConfig) => void;
+  onOpenInNewWindow?: () => void;
   title?: string;
   compact?: boolean;
 }) {
@@ -43,6 +45,7 @@ export function ExternalActions({
   return <div className={`${compact ? "" : "control-group " }external-actions`} ref={rootRef}>
     {title && <span className="control-group__title">{title}</span>}
     {primary.map((app) => <button type="button" key={app.id} disabled={disabled} onClick={() => execute(app)}>{app.label}</button>)}
+    {onOpenInNewWindow && <button type="button" disabled={disabled} onClick={onOpenInNewWindow}>別窓で開く</button>}
     {menu.length > 0 && <div className="external-more">
       <button type="button" aria-haspopup="menu" aria-expanded={open} disabled={disabled} onClick={() => setOpen((value) => !value)}>その他 ▾</button>
       {open && <div className="external-more__menu" role="menu">
