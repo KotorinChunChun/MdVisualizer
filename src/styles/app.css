@@ -597,6 +597,14 @@ body {
 }
 
 @media print {
+  .app-container {
+    --inline-code-bg: #eef2f6;
+    --inline-code-color: #24292f;
+    --code-block-bg: #f6f8fa;
+    --code-block-color: #24292f;
+    --table-header-bg: #e8edf3;
+    --table-header-color: #1f2328;
+  }
   html, body, #root, .app-container { height: auto; overflow: visible; background: #fff !important; color: #1f2328 !important; }
   .tab-bar, .view-controls, .status-bar, .document-toc-root, .image-gallery-root, .presentation-topbar, .presentation-navigation, .presentation-toc, .presentation-toc-backdrop, .search-results, .diagnostics-root { display: none !important; }
   .document-workspace, .preview-container { display: block; overflow: visible; padding: 0; background: #fff !important; }
