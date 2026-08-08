@@ -16,4 +16,8 @@ describe("markdownSanitizeSchema", () => {
     expect(classRule?.[1].test("fold-section")).toBe(true);
     expect(classRule?.[1].test("arbitrary-user-class")).toBe(false);
   });
+
+  it("keeps only the renderer marker required for Obsidian image embeds", () => {
+    expect(markdownSanitizeSchema.attributes.img).toContain("data-obsidian-image");
+  });
 });

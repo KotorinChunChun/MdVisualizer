@@ -17,6 +17,7 @@ import { resolveLocalMarkdownPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { imageOccurrenceId } from "../lib/imageOccurrences";
+import { remarkObsidianImages } from "../lib/remarkObsidianImages";
 
 type MarkdownNode = {
   type?: string;
@@ -89,7 +90,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   return (
     <div className="markdown-body" ref={contentRef}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkObsidianImages]}
         rehypePlugins={[rehypeRaw, rehypeFoldSections, rehypeBlockAnchors, [rehypeSanitize, markdownSanitizeSchema]]}
         components={{
           section: ({ node, children }) => {
@@ -132,8 +133,9 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
             }
             void openExternalUrl(href).catch((error) => onError?.(String(error)));
           }}>{children}</a>,
-          img: ({ node, src, alt }) => (
-            <ImageRenderer
+          img: ({ node, src, alt }) => {
+            const isObsidianImage = node?.properties?.["data-obsidian-image"] === "true";
+            return <ImageRenderer
               src={src}
               alt={alt}
               baseDir={baseDir}
@@ -145,9 +147,9 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
               occurrenceId={imageOccurrenceId(node?.position?.start.offset ?? 0)}
               sourceLine={node?.position?.start.line}
               markdownPath={documentPath}
-              sourceOffset={node?.position?.start.offset}
-            />
-          ),
+              sourceOffset={isObsidianImage ? undefined : node?.position?.start.offset}
+            />;
+          },
         }}
       >
         {content}

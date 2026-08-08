@@ -102,7 +102,7 @@ fn contains_japanese(value: &str) -> bool {
     ))
 }
 
-/// Markdown本文中の画像参照 (`![alt](path)` および `<img src="path">`) からローカル絶対パスを抽出
+/// Markdown本文中の画像参照 (`![alt](path)`、Obsidian画像埋め込み、`<img src="path">`) からローカル絶対パスを抽出
 pub fn extract_image_paths(content: &str, base_dir: &Path) -> Vec<String> {
     let mut results = Vec::new();
 
@@ -119,7 +119,20 @@ pub fn extract_image_paths(content: &str, base_dir: &Path) -> Vec<String> {
         }
     }
 
-    // 2. HTML <img> 記法
+    // 2. Obsidian画像埋め込み ![[path]] / [[path]]
+    let obsidian_img_re = Regex::new(r"!?\[\[([^\]\r\n|]+)(?:\|[^\]\r\n]*)?\]\]").unwrap();
+    for cap in obsidian_img_re.captures_iter(content) {
+        if let Some(src) = cap.get(1) {
+            let src_str = src.as_str().trim();
+            if is_local_image_path(src_str) && is_image_filename(src_str) {
+                if let Some(resolved) = resolve_image_path(src_str, base_dir) {
+                    results.push(resolved);
+                }
+            }
+        }
+    }
+
+    // 3. HTML <img> 記法
     let html_img_re = Regex::new(r#"(?i)<img\s+[^>]*src=["']([^"']+)["'][^>]*>"#).unwrap();
     for cap in html_img_re.captures_iter(content) {
         if let Some(src) = cap.get(1) {
@@ -135,6 +148,12 @@ pub fn extract_image_paths(content: &str, base_dir: &Path) -> Vec<String> {
     results.sort();
     results.dedup();
     results
+}
+
+fn is_image_filename(src: &str) -> bool {
+    Regex::new(r"(?i)\.(?:avif|bmp|gif|ico|jpe?g|png|svg|tiff?|webp)(?:[?#].*)?$")
+        .unwrap()
+        .is_match(src)
 }
 
 fn is_local_image_path(src: &str) -> bool {
@@ -171,6 +190,20 @@ mod tests {
         assert!(!is_local_image_path("http://example.com/img.png"));
         assert!(!is_local_image_path("https://example.com/img.png"));
         assert!(!is_local_image_path("data:image/png;base64,12345"));
+    }
+
+    #[test]
+    fn extracts_obsidian_image_embeds_but_not_note_links() {
+        let directory = tempfile::tempdir().unwrap();
+        let image = directory.path().join("構成図.png");
+        std::fs::write(&image, b"image").unwrap();
+
+        let paths = extract_image_paths(
+            "![[構成図.png|システム構成]]\n[[構成図.png]]\n[[設計ノート.md]]",
+            directory.path(),
+        );
+
+        assert_eq!(paths, vec![image.canonicalize().unwrap().to_string_lossy()]);
     }
 
     #[test]

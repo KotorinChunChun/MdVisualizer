@@ -117,26 +117,31 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       id={occurrenceId}
       data-image-occurrence-id={occurrenceId}
       data-source-line={sourceLine}
-      className={`inline-image-resize ${isResizing ? "is-resizing" : ""} ${presentationMode ? "is-presentation" : ""}`}
-      style={!presentationMode && size ? { width: `${size.width}px`, height: `${size.height}px` } : undefined}
+      className={`inline-image-resize ${size ? "has-display-size" : ""} ${isResizing ? "is-resizing" : ""} ${presentationMode ? "is-presentation" : ""}`}
+      style={!presentationMode && size ? { width: `${size.width}px` } : undefined}
     >
-      <img
-        ref={imageRef}
-        src={displaySrc}
-        alt={alt}
-        className={`markdown-img inline-image-resize__image ${isEditableLocalImage ? "croppable" : ""}`}
-        title={isEditableLocalImage ? "クリックして拡大表示。プレビューでもう一度クリックするとクロップ編集" : "クリックして拡大表示"}
-        onLoad={setInitialSize}
-        onClick={handleClick}
-        onError={() => setLoadError(true)}
-      />
-      {alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
-      {isEditableLocalImage && !presentationMode && (
-        <InlineImageResizeOverlay
-          onPointerDown={startResize}
-          onKeyDown={resizeFromKeyboard}
+      <span
+        className="inline-image-resize__stage"
+        style={!presentationMode && size ? { height: `${size.height}px` } : undefined}
+      >
+        <img
+          ref={imageRef}
+          src={displaySrc}
+          alt={alt}
+          className={`markdown-img inline-image-resize__image ${isEditableLocalImage ? "croppable" : ""}`}
+          title={isEditableLocalImage ? "クリックして拡大表示。プレビューでもう一度クリックするとクロップ編集" : "クリックして拡大表示"}
+          onLoad={setInitialSize}
+          onClick={handleClick}
+          onError={() => setLoadError(true)}
         />
-      )}
+        {isEditableLocalImage && !presentationMode && (
+          <InlineImageResizeOverlay
+            onPointerDown={startResize}
+            onKeyDown={resizeFromKeyboard}
+          />
+        )}
+      </span>
+      {alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
     </span>
   );
 };
