@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import { buildPresentationModel } from "../lib/presentationModel";
+import type { PresentationHeading } from "../lib/presentationModel";
 import { MarkdownPreview } from "./MarkdownPreview";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import "../styles/presentation.css";
@@ -36,6 +37,47 @@ export function shouldHandlePresentationArrowKey(event: KeyboardEvent, documentR
     && !isEditableTarget(event.target)
     && !isModalOpen(documentRoot)
     && !isWithinHorizontalScroller(event.target);
+}
+
+/**
+ * Renders the immediate child headings for both the interactive slide and its
+ * printed counterpart. Keeping the mapping here guarantees both surfaces use
+ * the presentation model's title and ordering.
+ */
+export function PresentationChildHeadings({
+  childIds,
+  headings,
+  currentHeadingId,
+  onSelect,
+  readOnly = false,
+}: {
+  childIds: string[];
+  headings: Record<string, PresentationHeading>;
+  currentHeadingId?: string;
+  onSelect?: (headingId: string) => void;
+  readOnly?: boolean;
+}) {
+  const children = childIds.flatMap((childId) => {
+    const heading = headings[childId];
+    return heading ? [{ id: childId, title: heading.title }] : [];
+  });
+  if (!children.length) return null;
+
+  if (readOnly) {
+    return <section className="presentation-children presentation-children--print" aria-label="下位見出し一覧">
+      <h2>下位見出し</h2>
+      <ol>
+        {children.map((child) => <li key={child.id}>{child.title}</li>)}
+      </ol>
+    </section>;
+  }
+
+  return <nav className="presentation-children" aria-label="下位見出し">
+    {children.map((child) => <button type="button" key={child.id} aria-current={child.id === currentHeadingId ? "location" : undefined} onClick={() => onSelect?.(child.id)}>
+      <span>{child.title}</span>
+      <span aria-hidden="true">→</span>
+    </button>)}
+  </nav>;
 }
 
 export function PresentationView({
@@ -189,17 +231,13 @@ export function PresentationView({
           presentationMode
           onMediaOpen={onMediaOpen}
         />
-        {page.childIds.length > 0 && <nav className="presentation-children" aria-label="下位見出し">
-          {page.childIds.map((childId) => <button type="button" key={childId} onClick={() => jumpToHeading(childId)}>
-            <span>{model.headings[childId].title}</span>
-            <span aria-hidden="true">→</span>
-          </button>)}
-        </nav>}
+        <PresentationChildHeadings childIds={page.childIds} headings={model.headings} currentHeadingId={currentHeadingId} onSelect={jumpToHeading} />
       </div>
     </div>
     <div className="presentation-print-pages" aria-hidden="true">
       {model.pages.map((printPage) => <article className="presentation-print-page" key={printPage.id}>
         <MarkdownPreview content={printPage.markdown} baseDir={baseDir} imageVersions={imageVersions} theme={theme} onError={onError} mermaidMode={mermaidMode} windowId={windowId} tabId={`${tabId}:print:${printPage.id}`} imageDisplaySizes={imageDisplaySizes} onOpenDocument={onOpenDocument} presentationMode onMediaOpen={onMediaOpen} />
+        <PresentationChildHeadings childIds={printPage.childIds} headings={model.headings} readOnly />
       </article>)}
     </div>
     <footer className="presentation-navigation">

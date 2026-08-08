@@ -12,6 +12,7 @@
 | `presentation-hierarchy.md` | 階層型プレゼン、10行分割、パンくず、画像ポップアップ |
 | `v0.0.5-ui-workflow.md` | 検索結果パネル、標準目次、倍率、別窓、VS Code上位ワークスペース推定 |
 | `v0.0.5-obsidian-images.md` | Obsidian画像、画像一覧・監視、altキャプションと下罫線の配置 |
+| `v0.0.6-markdown-presentation.md` | 引用、Markdown／HTML水平線、見出し罫線、プレゼン印刷の下位見出し一覧 |
 | `images/sample.png` | ラスター画像、クロップ、表示縮小 |
 | `images/sample.svg` | SVG表示専用（編集操作なし） |
 

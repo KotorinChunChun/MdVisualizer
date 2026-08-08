@@ -112,6 +112,38 @@
   border: 1px solid var(--border-color);
 }
 
+.presentation-children--print {
+  display: block;
+  padding: 0.9rem 1rem;
+  margin-top: 1.5rem;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--panel-bg) 72%, var(--bg-color));
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.presentation-children--print h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1em;
+}
+
+.presentation-children--print ol {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding-inline-start: 1.4rem;
+}
+
+@media print {
+  .presentation-children--print {
+    color: #1f2328;
+    background: #f6f8fa;
+    border-color: #d0d7de;
+  }
+}
+
 .presentation-navigation {
   display: grid;
   grid-template-columns: 1fr auto 1fr;

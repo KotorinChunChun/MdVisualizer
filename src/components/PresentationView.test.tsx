@@ -72,6 +72,16 @@ describe("PresentationView", () => {
     expect(screen.getByText("3 / 3")).toBeTruthy();
   });
 
+  it("uses the same child-heading model and order for the read-only print pages", () => {
+    const { container } = render(<PresentationView {...props} content={"# Parent\nintro\n\n## One\nbody\n\n## Two\nbody"} />);
+
+    const screenChildren = container.querySelector(".presentation-stage .presentation-children");
+    const printChildren = container.querySelector(".presentation-print-page .presentation-children--print");
+    expect(Array.from(screenChildren!.querySelectorAll("button span:first-child"), (element) => element.textContent)).toEqual(["One", "Two"]);
+    expect(Array.from(printChildren!.querySelectorAll("li"), (element) => element.textContent)).toEqual(["One", "Two"]);
+    expect(printChildren!.querySelectorAll("button")).toHaveLength(0);
+  });
+
   it("does not report the stale page while an external history position is restored", () => {
     const onPageChange = vi.fn();
     const content = "# Parent\nintro\n\n## One\nbody\n\n## Two\nbody";

@@ -25,6 +25,14 @@ describe("MarkdownPreview sanitization", () => {
     expect(screen.getByText("Body").closest("section")?.querySelector(":scope > .fold-content")?.hasAttribute("hidden")).toBe(true);
   });
 
+  it("renders nested block quotes and Markdown and HTML horizontal rules", () => {
+    const { container } = render(<MarkdownPreview content={"> outer\n>\n> > inner\n\n---\n\n<hr>"} baseDir="" imageVersions={{}} />);
+
+    expect(container.querySelectorAll("blockquote")).toHaveLength(2);
+    expect(container.querySelector("blockquote blockquote")?.textContent).toContain("inner");
+    expect(container.querySelectorAll("hr")).toHaveLength(2);
+  });
+
   it("opens a relative Markdown link in the app instead of the external URL handler", () => {
     const onOpenDocument = vi.fn();
     render(<MarkdownPreview content="[next](../guide/next.md)" baseDir="C:\\docs\\current" imageVersions={{}} onOpenDocument={onOpenDocument} />);
