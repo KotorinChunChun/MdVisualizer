@@ -61,6 +61,26 @@ struct WorkArea {
     height: u32,
 }
 
+const MIN_ADJACENT_WINDOW_OUTER_WIDTH: u32 = 200;
+
+fn physical_width(value: u32) -> i32 {
+    i32::try_from(value).unwrap_or(i32::MAX)
+}
+
+fn logical_geometry(geometry: WindowGeometry, scale_factor: f64) -> (f64, f64, f64, f64) {
+    let scale_factor = if scale_factor.is_finite() && scale_factor > 0.0 {
+        scale_factor
+    } else {
+        1.0
+    };
+    (
+        geometry.width as f64 / scale_factor,
+        geometry.height as f64 / scale_factor,
+        geometry.x as f64 / scale_factor,
+        geometry.y as f64 / scale_factor,
+    )
+}
+
 fn geometry_from_window(window: &WebviewWindow) -> Result<WindowGeometry, String> {
     let position = window.outer_position().map_err(|error| error.to_string())?;
     let size = window.inner_size().map_err(|error| error.to_string())?;
@@ -102,10 +122,10 @@ fn work_areas(window: &WebviewWindow) -> Result<Vec<WorkArea>, String> {
 }
 
 fn geometry_is_visible(geometry: WindowGeometry, area: WorkArea) -> bool {
-    let right = geometry.x.saturating_add(geometry.width as i32);
-    let bottom = geometry.y.saturating_add(geometry.height as i32);
-    let area_right = area.x.saturating_add(area.width as i32);
-    let area_bottom = area.y.saturating_add(area.height as i32);
+    let right = geometry.x.saturating_add(physical_width(geometry.width));
+    let bottom = geometry.y.saturating_add(physical_width(geometry.height));
+    let area_right = area.x.saturating_add(physical_width(area.width));
+    let area_bottom = area.y.saturating_add(physical_width(area.height));
     geometry.x < area_right && right > area.x && geometry.y < area_bottom && bottom > area.y
 }
 
@@ -114,10 +134,10 @@ fn clamp_geometry_to_area(mut geometry: WindowGeometry, area: WorkArea) -> Windo
     geometry.height = geometry.height.min(area.height.max(1));
     let max_x = area
         .x
-        .saturating_add(area.width.saturating_sub(geometry.width) as i32);
+        .saturating_add(physical_width(area.width.saturating_sub(geometry.width)));
     let max_y = area
         .y
-        .saturating_add(area.height.saturating_sub(geometry.height) as i32);
+        .saturating_add(physical_width(area.height.saturating_sub(geometry.height)));
     geometry.x = geometry.x.clamp(area.x, max_x);
     geometry.y = geometry.y.clamp(area.y, max_y);
     geometry
@@ -128,12 +148,29 @@ fn adjacent_geometry(
     source_outer_width: u32,
     area: WorkArea,
 ) -> WindowGeometry {
-    let right_x = source.x.saturating_add(source_outer_width as i32);
-    let area_right = area.x.saturating_add(area.width as i32);
-    let x = if right_x.saturating_add(source.width as i32) <= area_right {
-        right_x
+    let source_outer_width = source_outer_width.max(source.width);
+    let source_right = source.x.saturating_add(physical_width(source_outer_width));
+    let area_right = area.x.saturating_add(physical_width(area.width));
+    let right_space = area_right.saturating_sub(source_right).max(0) as u32;
+    let left_space = source.x.saturating_sub(area.x).max(0) as u32;
+
+    if let Some(geometry) =
+        adjacent_geometry_in_space(source, source_outer_width, right_space, source_right, area)
+    {
+        return geometry;
+    }
+    if let Some(geometry) =
+        adjacent_geometry_in_space(source, source_outer_width, left_space, source.x, area)
+    {
+        return geometry;
+    }
+
+    // Keep the previous cascade/clamp behavior when neither adjacent side has
+    // enough room for a usable window.
+    let x = if source_right.saturating_add(physical_width(source.width)) <= area_right {
+        source_right
     } else {
-        source.x.saturating_sub(source.width as i32)
+        source.x.saturating_sub(physical_width(source.width))
     };
     clamp_geometry_to_area(
         WindowGeometry {
@@ -144,6 +181,35 @@ fn adjacent_geometry(
         },
         area,
     )
+}
+
+fn adjacent_geometry_in_space(
+    source: WindowGeometry,
+    source_outer_width: u32,
+    available_outer_width: u32,
+    edge: i32,
+    area: WorkArea,
+) -> Option<WindowGeometry> {
+    if available_outer_width < MIN_ADJACENT_WINDOW_OUTER_WIDTH {
+        return None;
+    }
+    let outer_width = source_outer_width.min(available_outer_width);
+    let frame_width = source_outer_width.saturating_sub(source.width);
+    let width = outer_width.saturating_sub(frame_width).max(1);
+    let x = if edge == source.x {
+        source.x.saturating_sub(physical_width(outer_width))
+    } else {
+        edge
+    };
+    Some(clamp_geometry_to_area(
+        WindowGeometry {
+            x,
+            y: source.y,
+            width,
+            height: source.height,
+        },
+        area,
+    ))
 }
 
 fn saved_window_geometry(app_handle: &AppHandle) -> Result<Option<WindowGeometry>, String> {
@@ -308,20 +374,15 @@ pub async fn open_in_new_window(
         })
         .ok_or_else(|| "No display is available.".to_string())?;
     let geometry = adjacent_geometry(source, source_outer_width, area);
+    let (width, height, x, y) = logical_geometry(geometry, scale_factor);
 
     // On Windows, building a webview window from a synchronous command can
     // deadlock. Async commands run on Tauri's async worker thread.
     if let Err(error) =
         WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
             .title("MarkdownViewer")
-            .inner_size(
-                geometry.width as f64 / scale_factor,
-                geometry.height as f64 / scale_factor,
-            )
-            .position(
-                geometry.x as f64 / scale_factor,
-                geometry.y as f64 / scale_factor,
-            )
+            .inner_size(width, height)
+            .position(x, y)
             .prevent_overflow()
             .build()
     {
@@ -1491,11 +1552,159 @@ mod tests {
         assert_eq!(
             adjacent_geometry(source, 820, area),
             WindowGeometry {
-                x: 300,
+                x: 280,
                 y: 120,
                 width: 800,
                 height: 600
             },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_shrinks_to_right_space_without_a_gap() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: 700,
+            y: 120,
+            width: 800,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry {
+                x: 1520,
+                y: 120,
+                // The 20px non-client frame is preserved inside the 400px
+                // physical free space.
+                width: 380,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_uses_exactly_the_200px_minimum_space() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: 900,
+            y: 120,
+            width: 800,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry {
+                x: 1720,
+                y: 120,
+                width: 180,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_shrinks_to_left_space_when_right_is_too_narrow() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1000,
+            height: 800,
+        };
+        let source = WindowGeometry {
+            x: 300,
+            y: 80,
+            width: 580,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 600, area),
+            WindowGeometry {
+                x: 0,
+                y: 80,
+                width: 280,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_uses_the_existing_cascade_when_both_sides_are_under_minimum() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 400,
+            height: 800,
+        };
+        let source = WindowGeometry {
+            x: 180,
+            y: 80,
+            width: 220,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 240, area),
+            WindowGeometry {
+                x: 0,
+                y: 80,
+                width: 220,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_supports_negative_coordinate_work_areas_in_physical_pixels() {
+        let area = WorkArea {
+            x: -1920,
+            y: -100,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: -1500,
+            y: 40,
+            width: 800,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry {
+                x: -680,
+                y: 40,
+                width: 660,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn converts_physical_geometry_to_logical_coordinates_for_high_dpi_displays() {
+        assert_eq!(
+            logical_geometry(
+                WindowGeometry {
+                    x: -150,
+                    y: 75,
+                    width: 1000,
+                    height: 750,
+                },
+                1.25,
+            ),
+            (800.0, 600.0, -120.0, 60.0),
         );
     }
 

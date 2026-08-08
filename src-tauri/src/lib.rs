@@ -11,23 +11,80 @@ pub mod watcher;
 
 use app_state::AppState;
 use commands::*;
-use tauri::{Emitter, Manager};
+use std::collections::HashSet;
+use std::path::{Component, Path, PathBuf};
+use tauri::{Emitter, EventTarget, Manager};
 
-fn markdown_file_arguments(arguments: impl IntoIterator<Item = String>) -> Vec<String> {
+fn is_markdown_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            extension.eq_ignore_ascii_case("md") || extension.eq_ignore_ascii_case("markdown")
+        })
+}
+
+fn lexical_normalize(path: PathBuf) -> PathBuf {
+    let mut normalized = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                normalized.pop();
+            }
+            _ => normalized.push(component.as_os_str()),
+        }
+    }
+    normalized
+}
+
+fn normalize_markdown_path(path: &str, cwd: &Path) -> Option<PathBuf> {
+    let path = PathBuf::from(path);
+    if !is_markdown_file(&path) {
+        return None;
+    }
+    let absolute = if path.is_absolute() {
+        path
+    } else {
+        cwd.join(path)
+    };
+    Some(std::fs::canonicalize(&absolute).unwrap_or_else(|_| lexical_normalize(absolute)))
+}
+
+fn path_deduplication_key(path: &Path) -> String {
+    let value = path.to_string_lossy().replace('/', "\\");
+    #[cfg(target_os = "windows")]
+    let value = value.to_lowercase();
+    value
+}
+
+fn markdown_file_arguments(arguments: impl IntoIterator<Item = String>, cwd: &Path) -> Vec<String> {
+    let mut seen = HashSet::new();
     arguments
         .into_iter()
-        .filter(|argument| {
-            !argument.starts_with('-')
-                && (argument.to_lowercase().ends_with(".md")
-                    || argument.to_lowercase().ends_with(".markdown"))
-        })
+        .filter(|argument| !argument.starts_with('-'))
+        .filter_map(|argument| normalize_markdown_path(&argument, cwd))
+        .filter(|path| seen.insert(path_deduplication_key(path)))
+        .map(|path| path.to_string_lossy().into_owned())
         .collect()
+}
+
+fn launch_owner_label(labels: impl IntoIterator<Item = String>) -> Option<String> {
+    let mut labels = labels.into_iter().collect::<Vec<_>>();
+    labels.sort();
+    labels
+        .iter()
+        .find(|label| label.as_str() == "main")
+        .cloned()
+        .or_else(|| labels.into_iter().next())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let args: Vec<String> = std::env::args().collect();
-    let initial_files = markdown_file_arguments(args.into_iter().skip(1));
+    let initial_files = markdown_file_arguments(
+        args.into_iter().skip(1),
+        &std::env::current_dir().expect("Could not determine the current directory"),
+    );
 
     let state = AppState::new(initial_files).expect("Failed to initialize AppState");
 
@@ -35,14 +92,22 @@ pub fn run() {
         // This plugin must be first: a second file-association launch is
         // delivered to the existing app instead of becoming an overlapping
         // second process.
-        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            let files = markdown_file_arguments(args);
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+            let files = markdown_file_arguments(args, Path::new(&cwd));
             if !files.is_empty() {
-                let target = app
-                    .get_webview_window("main")
-                    .or_else(|| app.webview_windows().into_values().next());
-                if let Some(window) = target {
-                    let _ = window.emit("open-markdown-in-new-window", files);
+                let labels = app.webview_windows().into_keys();
+                if let Some(label) = launch_owner_label(labels) {
+                    // Emitter::emit is app-wide even when called on a
+                    // WebviewWindow. Target this WebviewWindow explicitly so
+                    // every open viewer does not process the same launch.
+                    let Some(window) = app.get_webview_window(&label) else {
+                        return;
+                    };
+                    let _ = window.emit_to(
+                        EventTarget::webview_window(label),
+                        "open-markdown-in-new-window",
+                        files,
+                    );
                 }
             }
         }))
@@ -98,19 +163,53 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::markdown_file_arguments;
+    use super::{launch_owner_label, markdown_file_arguments};
+    use std::path::Path;
 
     #[test]
     fn keeps_only_markdown_file_arguments() {
         assert_eq!(
-            markdown_file_arguments([
-                "MarkdownViewer.exe".into(),
-                "--flag".into(),
-                "C:/docs/readme.md".into(),
-                "C:/docs/notes.MARKDOWN".into(),
-                "C:/docs/image.png".into(),
-            ]),
-            vec!["C:/docs/readme.md", "C:/docs/notes.MARKDOWN"],
+            markdown_file_arguments(
+                [
+                    "MarkdownViewer.exe".into(),
+                    "--flag".into(),
+                    "C:/docs/readme.md".into(),
+                    "C:/docs/notes.MARKDOWN".into(),
+                    "C:/docs/image.png".into(),
+                ],
+                Path::new("C:/")
+            ),
+            vec!["C:\\docs\\readme.md", "C:\\docs\\notes.MARKDOWN"],
+        );
+    }
+
+    #[test]
+    fn normalizes_and_deduplicates_paths_in_one_launch_request() {
+        assert_eq!(
+            markdown_file_arguments(
+                [
+                    "docs/./guide.md".into(),
+                    "docs/section/../guide.md".into(),
+                    "docs/other.md".into(),
+                ],
+                Path::new("C:/workspace"),
+            ),
+            vec![
+                "C:\\workspace\\docs\\guide.md",
+                "C:\\workspace\\docs\\other.md"
+            ],
+        );
+    }
+
+    #[test]
+    fn chooses_only_one_deterministic_launch_owner() {
+        assert_eq!(
+            launch_owner_label(["viewer-2".into(), "main".into(), "viewer-1".into()]),
+            Some("main".into()),
+        );
+        assert_eq!(
+            launch_owner_label(["viewer-2".into(), "viewer-1".into()]),
+            Some("viewer-1".into()),
         );
     }
 }
