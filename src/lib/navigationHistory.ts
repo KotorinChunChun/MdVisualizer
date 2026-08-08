@@ -1,7 +1,9 @@
+import type { ViewMode } from "./viewMode";
+
 export interface NavigationSnapshot {
   activeTabId: string | null;
   scrollTop: number;
-  viewMode: string;
+  viewMode: ViewMode;
   presentationHeadingId: string | null;
   mediaPreview: unknown | null;
 }
@@ -52,4 +54,3 @@ export function navigateForward(
     },
   };
 }
-

@@ -4,7 +4,7 @@ import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation
 const snapshot = (activeTabId: string): NavigationSnapshot => ({
   activeTabId,
   scrollTop: 0,
-  viewMode: "standard",
+  viewMode: "auto",
   presentationHeadingId: null,
   mediaPreview: null,
 });

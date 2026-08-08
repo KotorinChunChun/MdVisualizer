@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { moveZoomLevel, normalizeZoom, ZOOM_LEVELS } from "./App";
+import { describe, expect, it, vi } from "vitest";
+import { focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, ZOOM_LEVELS } from "./App";
 
 describe("zoom level selection", () => {
   it("normalizes persisted values to a selectable status-bar option", () => {
@@ -14,5 +14,20 @@ describe("zoom level selection", () => {
     expect(moveZoomLevel(50, -1)).toBe(50);
     expect(moveZoomLevel(200, 1)).toBe(200);
     expect(ZOOM_LEVELS).toContain(moveZoomLevel(100, 1));
+  });
+});
+
+describe("search input focus", () => {
+  it("focuses the search box and selects the complete existing query", () => {
+    const input = document.createElement("input");
+    input.value = "cargo";
+    const select = vi.spyOn(input, "select");
+    document.body.append(input);
+
+    focusAndSelectSearchInput(input);
+
+    expect(document.activeElement).toBe(input);
+    expect(select).toHaveBeenCalledOnce();
+    input.remove();
   });
 });

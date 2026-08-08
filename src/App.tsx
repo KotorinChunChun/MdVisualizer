@@ -35,6 +35,7 @@ import { localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
 import { resolveImageSrc } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
+import { normalizeViewMode, type ViewMode } from "./lib/viewMode";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -57,6 +58,11 @@ export function moveZoomLevel(current: number, direction: 1 | -1): number {
   return ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length - 1, index + direction))];
 }
 
+export function focusAndSelectSearchInput(input: HTMLInputElement | null): void {
+  input?.focus();
+  input?.select();
+}
+
 export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markdownRef = useRef<HTMLDivElement | null>(null);
@@ -71,11 +77,12 @@ export function App() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [theme, setTheme] = useState("system");
   const [zoom, setZoom] = useState(100);
-  const [viewMode, setViewMode] = useState("standard");
+  const [viewMode, setViewMode] = useState<ViewMode>("auto");
   const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
   const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
+  const [codeHighlightRevision, setCodeHighlightRevision] = useState(0);
   const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
   const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
@@ -126,7 +133,7 @@ export function App() {
     persistSetting("zoom", next);
   }, [persistSetting]);
 
-  const updateViewMode = useCallback((value: string) => {
+  const updateViewMode = useCallback((value: ViewMode) => {
     if (viewModeRef.current === value) return;
     viewModeRef.current = value;
     setViewMode(value);
@@ -162,7 +169,9 @@ export function App() {
     void loadSettingsStatus().then(({ settings, recoveredFiles }) => {
       if (typeof settings.theme === "string") { themeRef.current = settings.theme; setTheme(settings.theme); }
       if (typeof settings.zoom === "number") { const value = normalizeZoom(settings.zoom); zoomRef.current = value; setZoom(value); }
-      if (typeof settings.viewMode === "string") { viewModeRef.current = settings.viewMode; setViewMode(settings.viewMode); }
+      const normalizedViewMode = normalizeViewMode(settings.viewMode);
+      viewModeRef.current = normalizedViewMode;
+      setViewMode(normalizedViewMode);
       if (["on", "off", "manual"].includes(String(settings.autoReload))) { const value = settings.autoReload as "on" | "off" | "manual"; autoReloadRef.current = value; setAutoReload(value); }
       else if (typeof settings.autoReload === "boolean") { const value = settings.autoReload ? "on" : "off"; autoReloadRef.current = value; setAutoReload(value); }
       if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
@@ -178,9 +187,10 @@ export function App() {
       const needsSettingsMigration = !Array.isArray(settings.externalApps)
         || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
         || settings.imageA4TargetWidth === undefined
-        || settings.imageEqualPadding === undefined;
+        || settings.imageEqualPadding === undefined
+        || settings.viewMode !== normalizedViewMode;
       if (needsSettingsMigration) {
-        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding }).catch((error) => {
+        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, viewMode: normalizedViewMode }).catch((error) => {
           setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
         });
       }
@@ -307,7 +317,10 @@ export function App() {
   const updateSearchExpandedIds = useCallback((ids: string[]) => {
     setSearchExpandedIds((current) => current.length === ids.length && current.every((id, index) => id === ids[index]) ? current : ids);
   }, []);
-  const searchRefreshKey = `${tabsState.activeId ?? "empty"}:${activeTab?.generation ?? 0}:${searchExpandedIds.join("|")}`;
+  const handleCodeHighlightComplete = useCallback(() => {
+    setCodeHighlightRevision((revision) => revision + 1);
+  }, []);
+  const searchRefreshKey = `${tabsState.activeId ?? "empty"}:${activeTab?.generation ?? 0}:${searchExpandedIds.join("|")}:${codeHighlightRevision}`;
   const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey, activeTab?.document?.content ?? "");
   const { cropTarget, startCrop, cancelCrop } = useCropEditor();
   useEffect(() => {
@@ -329,9 +342,15 @@ export function App() {
     search.setActiveIndex(activeTab.search.activeIndex);
   }, [activeTab?.id]);
 
+  const focusSearchInput = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      focusAndSelectSearchInput(searchInputRef.current);
+    });
+  }, []);
+
   useEffect(() => {
-    if (activeTab?.searchOpen) window.requestAnimationFrame(() => searchInputRef.current?.focus());
-  }, [activeTab?.id, activeTab?.searchOpen]);
+    if (activeTab?.searchOpen) focusSearchInput();
+  }, [activeTab?.id, activeTab?.searchOpen, focusSearchInput]);
 
   useEffect(() => {
     if (!activeTab) return;
@@ -819,7 +838,7 @@ export function App() {
     dispatch({ type: "ACTIVATE", id });
   }, [recordNavigationPoint]);
 
-  const changeViewMode = useCallback((value: string) => {
+  const changeViewMode = useCallback((value: ViewMode) => {
     if (viewModeRef.current === value) return;
     recordNavigationPoint();
     updateViewMode(value);
@@ -827,7 +846,8 @@ export function App() {
 
   const openSearch = useCallback(() => {
     if (activeTab?.document) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
-  }, [activeTab]);
+    focusSearchInput();
+  }, [activeTab, focusSearchInput]);
 
   const closeSearch = useCallback(() => {
     if (!activeTab) return;
@@ -1127,6 +1147,7 @@ export function App() {
             onOpenDocument={handleOpenDocument}
             onMediaOpen={openMediaPreview}
             documentPath={activeTab.path}
+            onCodeHighlightComplete={handleCodeHighlightComplete}
           />
         ) : (
           <div className="empty-state">

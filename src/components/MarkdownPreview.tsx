@@ -61,6 +61,7 @@ interface MarkdownPreviewProps {
   presentationMode?: boolean;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   documentPath?: string;
+  onCodeHighlightComplete?: () => void;
 }
 
 const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
@@ -83,6 +84,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   presentationMode = false,
   onMediaOpen,
   documentPath,
+  onCodeHighlightComplete,
 }) => {
   const mermaidCount = countMermaidFences(content);
   let mermaidIndex = 0;
@@ -114,7 +116,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
               />;
             }
             return className?.includes("language-")
-              ? <CodeBlock className={className}>{children}</CodeBlock>
+              ? <CodeBlock className={className} onHighlightComplete={onCodeHighlightComplete}>{children}</CodeBlock>
               : <code className={className} {...props}>{children}</code>;
           },
           table: ({ children }) => <div className="table-scroll"><table>{children}</table></div>,

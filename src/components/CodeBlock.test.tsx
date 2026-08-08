@@ -29,4 +29,11 @@ describe("CodeBlock", () => {
     await waitFor(() => expect(listener).toHaveBeenCalledWith(expect.objectContaining({ detail: { type: "error", message: "コードをコピーできませんでした" } })));
     window.removeEventListener("markdown-toast", listener);
   });
+
+  it("notifies its parent after asynchronous syntax highlighting commits", async () => {
+    const onHighlightComplete = vi.fn();
+    render(<CodeBlock className="language-typescript" onHighlightComplete={onHighlightComplete}>{"const cargo = 1;"}</CodeBlock>);
+    await waitFor(() => expect(onHighlightComplete).toHaveBeenCalled());
+    expect(document.querySelector("code .hljs-keyword")?.textContent).toBe("const");
+  });
 });

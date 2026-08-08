@@ -34,7 +34,7 @@ describe("StatusBar", () => {
     render(<StatusBar document={document} onAutoReloadChange={onAutoReloadChange} onMermaidModeChange={onMermaidModeChange} onZoomChange={onZoomChange} onThemeChange={onThemeChange} onViewModeChange={onViewModeChange} />);
 
     fireEvent.change(screen.getByLabelText("テーマ"), { target: { value: "light" } });
-    fireEvent.change(screen.getByLabelText("レイアウト"), { target: { value: "wide" } });
+    fireEvent.change(screen.getByLabelText("レイアウト"), { target: { value: "a3-portrait" } });
     fireEvent.change(screen.getByLabelText("Auto Reload"), { target: { value: "manual" } });
     fireEvent.change(screen.getByLabelText("Mermaid"), { target: { value: "error-code" } });
     fireEvent.change(screen.getByLabelText("Zoom"), { target: { value: "120" } });
@@ -43,7 +43,7 @@ describe("StatusBar", () => {
     expect(onMermaidModeChange).toHaveBeenCalledWith("error-code");
     expect(onZoomChange).toHaveBeenCalledWith(120);
     expect(onThemeChange).toHaveBeenCalledWith("light");
-    expect(onViewModeChange).toHaveBeenCalledWith("wide");
+    expect(onViewModeChange).toHaveBeenCalledWith("a3-portrait");
   });
 
   it("keeps legacy callers working while disabling unbound controls", () => {

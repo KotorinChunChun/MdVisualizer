@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import type { LanguageFn } from "highlight.js";
 
-interface CodeBlockProps { className?: string; children?: React.ReactNode; }
+interface CodeBlockProps {
+  className?: string;
+  children?: React.ReactNode;
+  /** Signals that highlight.js has finished replacing the code DOM. */
+  onHighlightComplete?: () => void;
+}
 
 type LanguageModule = { default: LanguageFn };
 
@@ -36,7 +41,7 @@ function emitCopyToast(type: "success" | "error", message: string): void {
   window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message } }));
 }
 
-export function CodeBlock({ className, children }: CodeBlockProps) {
+export function CodeBlock({ className, children, onHighlightComplete }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [html, setHtml] = useState("");
   const rawLanguage = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
@@ -54,6 +59,11 @@ export function CodeBlock({ className, children }: CodeBlockProps) {
     }).catch(() => { if (!cancelled) setHtml(""); });
     return () => { cancelled = true; };
   }, [language, source]);
+  useEffect(() => {
+    // Run after React has committed highlight.js HTML so search can rescan the
+    // final text nodes without competing with its DOM update.
+    if (html) onHighlightComplete?.();
+  }, [html, onHighlightComplete]);
   const copy = async (button: HTMLButtonElement) => {
     try {
       await navigator.clipboard.writeText(source);

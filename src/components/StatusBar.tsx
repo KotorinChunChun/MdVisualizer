@@ -1,4 +1,5 @@
 import { MarkdownLoadResult } from "../types/app";
+import type { ViewMode } from "../lib/viewMode";
 import "../styles/status-bar.css";
 
 export type AutoReloadMode = "on" | "off" | "manual";
@@ -23,8 +24,8 @@ export interface StatusBarProps {
   changed?: boolean;
   theme?: string;
   onThemeChange?: (value: string) => void;
-  viewMode?: string;
-  onViewModeChange?: (value: string) => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (value: ViewMode) => void;
   onOpenSettings?: () => void;
   onOpenShortcutHelp?: () => void;
   statusText?: string;
@@ -53,7 +54,7 @@ export function StatusBar({
   changed = false,
   theme = "system",
   onThemeChange,
-  viewMode = "standard",
+  viewMode = "auto",
   onViewModeChange,
   onOpenSettings,
   onOpenShortcutHelp,
@@ -94,13 +95,16 @@ export function StatusBar({
         </label>
         <label>
           <span>レイアウト</span>
-          <select aria-label="レイアウト" value={viewMode} onChange={(event) => onViewModeChange?.(event.target.value)} disabled={!onViewModeChange}>
-            <option value="standard">標準</option>
-            <option value="wide">ワイド</option>
-            <option value="compact">コンパクト</option>
-            <option value="print">印刷</option>
-            <option value="presentation">プレゼン</option>
-            <option value="images">画像中心</option>
+          <select aria-label="レイアウト" value={viewMode} onChange={(event) => onViewModeChange?.(event.target.value as ViewMode)} disabled={!onViewModeChange}>
+            <optgroup label="本文レイアウト">
+              <option value="auto">オート</option>
+              <option value="a4-portrait">A4縦</option>
+              <option value="a3-portrait">A3縦</option>
+            </optgroup>
+            <optgroup label="表示モード">
+              <option value="presentation">プレゼン</option>
+              <option value="images">画像中心</option>
+            </optgroup>
           </select>
         </label>
         <label>
