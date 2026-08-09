@@ -77,7 +77,10 @@
 .document-side-panel__backdrop { display: none; }
 
 @media (max-width: 859px) {
-  .document-side-panel-root { width: 0; }
+  /* Keep the launcher rail in the flex layout.  The drawer itself remains an
+     overlay, but reserving the rail width prevents the preview from rendering
+     beneath the visible controls at narrow window sizes. */
+  .document-side-panel-root { width: 3.25rem; }
   .document-side-panel__rail { position: absolute; z-index: 45; inset: 0 auto 0 0; }
   .document-side-panel { position: fixed; z-index: 44; inset: 0 auto 0 3.25rem; width: min(calc(86vw - 3.25rem), 20rem); max-height: none; box-shadow: 0.8rem 0 2rem rgba(0, 0, 0, 0.35); }
   .document-side-panel__backdrop { position: fixed; inset: 0; z-index: 35; display: block; width: 100vw; height: 100vh; padding: 0; background: rgba(0, 0, 0, 0.35); border: 0; }
