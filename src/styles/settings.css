@@ -7,6 +7,13 @@
 .settings-section { max-width: 980px; margin: 0 auto 16px; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 8px; }
 .settings-section label { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--text-secondary); }
 .settings-section input { width: 6rem; padding: 6px 8px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; }
+.settings-section select { padding: 6px 8px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; }
+.syntax-highlight-settings { display: grid; gap: 0.7rem; }
+.syntax-highlight-settings__toggle { justify-content: flex-start !important; }
+.syntax-highlight-settings__toggle input { width: auto; }
+.syntax-highlight-settings__colors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.syntax-highlight-settings__colors label { justify-content: flex-start; }
+.syntax-highlight-settings__colors input[type="color"] { width: 3.5rem; height: 2.25rem; padding: 0.15rem; }
 .settings-app-groups { display: grid; max-width: 980px; margin: auto; gap: 24px; }
 .settings-app-group { padding-top: 4px; }
 .settings-app-group > header { margin-bottom: 10px; }

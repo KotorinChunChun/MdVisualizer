@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ExternalAppConfig, ExternalAppTarget } from "../types/settings";
 import { DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, validateExternalApp } from "../types/settings";
+import { DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, SYNTAX_HIGHLIGHT_THEMES, type SyntaxHighlightSettings, type SyntaxHighlightTheme } from "../lib/syntaxHighlight";
 import "../styles/settings.css";
 
 export function SettingsPanel({
@@ -8,24 +9,28 @@ export function SettingsPanel({
   presentationLineThreshold,
   imageA4TargetWidth = DEFAULT_IMAGE_A4_TARGET_WIDTH,
   imageEqualPadding = DEFAULT_IMAGE_EQUAL_PADDING,
+  syntaxHighlight = DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS,
   onSave,
 }: {
   apps: ExternalAppConfig[];
   presentationLineThreshold: number;
   imageA4TargetWidth?: number;
   imageEqualPadding?: number;
-  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number) => Promise<void>;
+  syntaxHighlight?: SyntaxHighlightSettings;
+  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => apps.map((app) => ({ ...app, args: [...app.args] })));
   const [lineThreshold, setLineThreshold] = useState(presentationLineThreshold);
   const [a4TargetWidth, setA4TargetWidth] = useState(imageA4TargetWidth);
   const [equalPadding, setEqualPadding] = useState(imageEqualPadding);
+  const [syntaxDraft, setSyntaxDraft] = useState<SyntaxHighlightSettings>(() => ({ ...syntaxHighlight }));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   useEffect(() => setDraft(apps.map((app) => ({ ...app, args: [...app.args] }))), [apps]);
   useEffect(() => setLineThreshold(presentationLineThreshold), [presentationLineThreshold]);
   useEffect(() => setA4TargetWidth(imageA4TargetWidth), [imageA4TargetWidth]);
   useEffect(() => setEqualPadding(imageEqualPadding), [imageEqualPadding]);
+  useEffect(() => setSyntaxDraft({ ...syntaxHighlight }), [syntaxHighlight]);
 
   const update = (id: string, patch: Partial<ExternalAppConfig>) => {
     setDraft((current) => current.map((app) => app.id === id ? { ...app, ...patch } : app));
@@ -58,7 +63,7 @@ export function SettingsPanel({
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding);
+      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft);
     } catch (reason) {
       setError(String(reason));
     } finally {
@@ -86,6 +91,27 @@ export function SettingsPanel({
       <label>四辺の等間隔余白（px）
         <input aria-label="四辺の等間隔余白" type="number" min="0" value={equalPadding} onChange={(event) => setEqualPadding(Math.max(0, Number(event.target.value) || 0))} />
       </label>
+    </fieldset>
+    <fieldset className="settings-section syntax-highlight-settings">
+      <legend>シンタックスハイライト</legend>
+      <label>配色プリセット
+        <select aria-label="シンタックス配色" value={syntaxDraft.theme} onChange={(event) => setSyntaxDraft((current) => ({ ...current, theme: event.target.value as SyntaxHighlightTheme }))}>
+          {SYNTAX_HIGHLIGHT_THEMES.map((value) => <option key={value} value={value}>{({ adaptive: "テーマに合わせる", "github-light": "GitHub Light", "github-dark": "GitHub Dark", monokai: "Monokai", solarized: "Solarized Dark" } as const)[value]}</option>)}
+        </select>
+      </label>
+      <label className="syntax-highlight-settings__toggle"><span>背景色と本文色を上書き</span>
+        <input aria-label="コード基本色を上書き" type="checkbox" checked={syntaxDraft.customColors} onChange={(event) => setSyntaxDraft((current) => ({ ...current, customColors: event.target.checked }))} />
+      </label>
+      <div className="syntax-highlight-settings__colors">
+        <label>背景色<input aria-label="コード背景色" type="color" disabled={!syntaxDraft.customColors} value={syntaxDraft.background} onChange={(event) => setSyntaxDraft((current) => ({ ...current, background: event.target.value }))} /></label>
+        <label>本文色<input aria-label="コード本文色" type="color" disabled={!syntaxDraft.customColors} value={syntaxDraft.foreground} onChange={(event) => setSyntaxDraft((current) => ({ ...current, foreground: event.target.value }))} /></label>
+      </div>
+      <pre
+        className="code-block syntax-highlight-preview"
+        data-syntax-theme={syntaxDraft.theme}
+        style={syntaxDraft.customColors ? { "--code-block-bg": syntaxDraft.background, "--code-block-color": syntaxDraft.foreground } as React.CSSProperties : undefined}
+        aria-label="シンタックス配色プレビュー"
+      ><code><span className="hljs-keyword">const</span> <span className="hljs-title">answer</span> = <span className="hljs-number">42</span>; <span className="hljs-comment">// preview</span></code></pre>
     </fieldset>
     <div className="settings-app-groups">
       {(["document", "image"] as const).map((target) => {

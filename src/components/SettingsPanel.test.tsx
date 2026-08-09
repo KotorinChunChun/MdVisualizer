@@ -16,6 +16,7 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][1]).toBe(10);
     expect(onSave.mock.calls[0][2]).toBe(3508);
     expect(onSave.mock.calls[0][3]).toBe(32);
+    expect(onSave.mock.calls[0][4]).toMatchObject({ theme: "adaptive", customColors: false });
   });
 
   it("keeps required built-ins undeletable and validates a new document app", async () => {
@@ -55,6 +56,19 @@ describe("SettingsPanel", () => {
     fireEvent.change(screen.getByLabelText("四辺の等間隔余白"), { target: { value: "40" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0].slice(2)).toEqual([4200, 40]);
+    expect(onSave.mock.calls[0].slice(2, 4)).toEqual([4200, 40]);
+  });
+
+  it("previews and saves a syntax highlighting preset with custom base colors", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText("シンタックス配色"), { target: { value: "monokai" } });
+    fireEvent.click(screen.getByLabelText("コード基本色を上書き"));
+    fireEvent.change(screen.getByLabelText("コード背景色"), { target: { value: "#101010" } });
+    fireEvent.change(screen.getByLabelText("コード本文色"), { target: { value: "#f0f0f0" } });
+    expect(screen.getByLabelText("シンタックス配色プレビュー").getAttribute("data-syntax-theme")).toBe("monokai");
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][4]).toEqual({ theme: "monokai", customColors: true, background: "#101010", foreground: "#f0f0f0" });
   });
 });

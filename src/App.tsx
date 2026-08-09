@@ -37,10 +37,12 @@ import { resolveImageSrc } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
 import { normalizeViewMode, type ViewMode } from "./lib/viewMode";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
+import { applySyntaxHighlightSettings, DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, normalizeSyntaxHighlightSettings, type SyntaxHighlightSettings } from "./lib/syntaxHighlight";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
 import "./styles/themes.css";
+import "./styles/syntax-highlight.css";
 
 // Keep this list in sync with StatusBar's fixed zoom choices.  Normalizing at
 // the state boundary also repairs legacy persisted values that were not a
@@ -95,6 +97,7 @@ export function App() {
   const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
   const [imageA4TargetWidth, setImageA4TargetWidth] = useState(DEFAULT_IMAGE_A4_TARGET_WIDTH);
   const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
+  const [syntaxHighlight, setSyntaxHighlight] = useState<SyntaxHighlightSettings>(DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
@@ -174,6 +177,10 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
+    applySyntaxHighlightSettings(document.documentElement, syntaxHighlight);
+  }, [syntaxHighlight]);
+
+  useEffect(() => {
     void loadSettingsStatus().then(({ settings, recoveredFiles }) => {
       if (typeof settings.theme === "string") { themeRef.current = settings.theme; setTheme(settings.theme); }
       if (typeof settings.zoom === "number") { const value = normalizeZoom(settings.zoom); zoomRef.current = value; setZoom(value); }
@@ -190,15 +197,18 @@ export function App() {
       setPresentationLineThreshold(lineThreshold);
       const a4TargetWidth = normalizeImageA4TargetWidth(settings.imageA4TargetWidth);
       const equalPadding = normalizeImageEqualPadding(settings.imageEqualPadding);
+      const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(settings.syntaxHighlight);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
+      setSyntaxHighlight(normalizedSyntaxHighlight);
       const needsSettingsMigration = !Array.isArray(settings.externalApps)
         || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
         || settings.imageA4TargetWidth === undefined
         || settings.imageEqualPadding === undefined
+        || settings.syntaxHighlight === undefined
         || settings.viewMode !== normalizedViewMode;
       if (needsSettingsMigration) {
-        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, viewMode: normalizedViewMode }).catch((error) => {
+        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, viewMode: normalizedViewMode }).catch((error) => {
           setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
         });
       }
@@ -821,17 +831,20 @@ export function App() {
     dispatch({ type: "OPEN_SETTINGS" });
   }, [recordNavigationPoint]);
 
-  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number) => {
+  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number, nextSyntaxHighlight: SyntaxHighlightSettings) => {
     try {
       const previousById = new Map(externalApps.map((app) => [app.id, app]));
       const upserts = apps.filter((app) => JSON.stringify(previousById.get(app.id)) !== JSON.stringify(app));
       const nextIds = new Set(apps.map((app) => app.id));
       const removedIds = externalApps.filter((app) => !nextIds.has(app.id)).map((app) => app.id);
       const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold, a4TargetWidth, equalPadding);
+      const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(nextSyntaxHighlight);
+      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight });
       setExternalApps(normalizeExternalApps(saved.externalApps));
       setPresentationLineThreshold(lineThreshold);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
+      setSyntaxHighlight(normalizedSyntaxHighlight);
       setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
     } catch (error) {
       setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
@@ -1155,6 +1168,7 @@ export function App() {
             presentationLineThreshold={presentationLineThreshold}
             imageA4TargetWidth={imageA4TargetWidth}
             imageEqualPadding={imageEqualPadding}
+            syntaxHighlight={syntaxHighlight}
             onSave={saveExternalAppSettings}
           />
         ) : activeTab?.loading ? (
