@@ -1,7 +1,8 @@
 /** Pure model and canvas helpers for non-destructive image annotations. */
 
-export type AnnotationKind = "frame" | "ellipse" | "mask" | "label";
+export type AnnotationKind = "frame" | "ellipse" | "arrow" | "mask" | "label";
 export type MaskStyle = "solid" | "blur" | "mosaic";
+export type ArrowDirection = "right" | "down-right" | "down" | "down-left" | "left" | "up-left" | "up" | "up-right";
 
 export interface ImageBounds {
   width: number;
@@ -29,6 +30,14 @@ export interface EllipseAnnotation extends AnnotationRect {
   lineWidth: number;
 }
 
+export interface ArrowAnnotation extends AnnotationRect {
+  id: string;
+  type: "arrow";
+  color: string;
+  lineWidth: number;
+  direction: ArrowDirection;
+}
+
 export interface MaskAnnotation extends AnnotationRect {
   id: string;
   type: "mask";
@@ -46,7 +55,7 @@ export interface LabelAnnotation extends AnnotationRect {
   fontSize: number;
 }
 
-export type ImageAnnotation = FrameAnnotation | EllipseAnnotation | MaskAnnotation | LabelAnnotation;
+export type ImageAnnotation = FrameAnnotation | EllipseAnnotation | ArrowAnnotation | MaskAnnotation | LabelAnnotation;
 
 export interface ImageAnnotationState {
   annotations: ImageAnnotation[];
@@ -64,6 +73,7 @@ export interface AnnotationChanges extends Partial<AnnotationRect> {
   textColor?: string;
   backgroundColor?: string;
   fontSize?: number;
+  direction?: ArrowDirection;
 }
 
 export type ImageAnnotationAction =
@@ -110,7 +120,7 @@ export function clampRect(rect: AnnotationRect, bounds: ImageBounds): Annotation
 /** Clamp geometry and type-specific numeric fields while retaining annotation data. */
 export function clampAnnotation(annotation: ImageAnnotation, bounds: ImageBounds): ImageAnnotation {
   const rect = clampRect(annotation, bounds);
-  if (annotation.type === "frame" || annotation.type === "ellipse") {
+  if (annotation.type === "frame" || annotation.type === "ellipse" || annotation.type === "arrow") {
     return { ...annotation, ...rect, lineWidth: Math.max(1, finite(annotation.lineWidth, 1)) };
   }
   if (annotation.type === "label") {
@@ -263,11 +273,42 @@ export function containsPoint(annotation: AnnotationRect, x: number, y: number):
 }
 
 export function containsAnnotationPoint(annotation: ImageAnnotation, x: number, y: number): boolean {
-  if (annotation.type !== "ellipse") return containsPoint(annotation, x, y);
-  if (annotation.width <= 0 || annotation.height <= 0) return false;
-  const normalizedX = (x - (annotation.x + annotation.width / 2)) / (annotation.width / 2);
-  const normalizedY = (y - (annotation.y + annotation.height / 2)) / (annotation.height / 2);
-  return normalizedX * normalizedX + normalizedY * normalizedY <= 1;
+  if (annotation.type === "ellipse") {
+    if (annotation.width <= 0 || annotation.height <= 0) return false;
+    const normalizedX = (x - (annotation.x + annotation.width / 2)) / (annotation.width / 2);
+    const normalizedY = (y - (annotation.y + annotation.height / 2)) / (annotation.height / 2);
+    return normalizedX * normalizedX + normalizedY * normalizedY <= 1;
+  }
+  if (annotation.type === "arrow") {
+    const [start, end] = arrowEndpoints(annotation, annotation.direction);
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared === 0) return Math.hypot(x - start.x, y - start.y) <= annotation.lineWidth + 6;
+    const ratio = clamp(((x - start.x) * dx + (y - start.y) * dy) / lengthSquared, 0, 1);
+    const distance = Math.hypot(x - (start.x + dx * ratio), y - (start.y + dy * ratio));
+    return distance <= Math.max(6, annotation.lineWidth + 4);
+  }
+  return containsPoint(annotation, x, y);
+}
+
+function arrowEndpoints(rect: AnnotationRect, direction: ArrowDirection): [{ x: number; y: number }, { x: number; y: number }] {
+  const left = rect.x;
+  const right = rect.x + rect.width;
+  const top = rect.y;
+  const bottom = rect.y + rect.height;
+  const centerX = rect.x + rect.width / 2;
+  const centerY = rect.y + rect.height / 2;
+  switch (direction) {
+    case "right": return [{ x: left, y: centerY }, { x: right, y: centerY }];
+    case "down-right": return [{ x: left, y: top }, { x: right, y: bottom }];
+    case "down": return [{ x: centerX, y: top }, { x: centerX, y: bottom }];
+    case "down-left": return [{ x: right, y: top }, { x: left, y: bottom }];
+    case "left": return [{ x: right, y: centerY }, { x: left, y: centerY }];
+    case "up-left": return [{ x: right, y: bottom }, { x: left, y: top }];
+    case "up": return [{ x: centerX, y: bottom }, { x: centerX, y: top }];
+    case "up-right": return [{ x: left, y: bottom }, { x: right, y: top }];
+  }
 }
 
 /** Returns the top-most annotation at the given original-image pixel. */
@@ -453,6 +494,25 @@ export function drawImageAnnotations(
       ctx.lineWidth = annotation.lineWidth;
       ctx.beginPath();
       ctx.ellipse(rect.x + rect.width / 2, rect.y + rect.height / 2, rect.width / 2, rect.height / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else if (annotation.type === "arrow") {
+      const [start, end] = arrowEndpoints(rect, annotation.direction);
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const headLength = Math.max(10, Math.min(32, Math.hypot(end.x - start.x, end.y - start.y) * 0.24));
+      const headAngle = Math.PI / 7;
+      ctx.save();
+      ctx.strokeStyle = annotation.color;
+      ctx.lineWidth = annotation.lineWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - headLength * Math.cos(angle - headAngle), end.y - headLength * Math.sin(angle - headAngle));
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - headLength * Math.cos(angle + headAngle), end.y - headLength * Math.sin(angle + headAngle));
       ctx.stroke();
       ctx.restore();
     } else if (annotation.type === "label") {

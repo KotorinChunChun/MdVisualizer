@@ -36,7 +36,7 @@ describe("ImageAnnotationEditor", () => {
   it("shows independent tools, the color palette, and canvas scale controls", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     expect(screen.getByRole("dialog", { name: "画像編集: sample.png" })).toBeTruthy();
-    for (const tool of ["選択", "四角", "楕円", "マスク", "ラベル"]) {
+    for (const tool of ["選択", "四角", "楕円", "矢印", "マスク", "ラベル"]) {
       expect(screen.getByRole("button", { name: new RegExp(tool) })).toBeTruthy();
     }
     expect(container.querySelectorAll(".annotation-editor__palette > button")).toHaveLength(4);
@@ -45,6 +45,16 @@ describe("ImageAnnotationEditor", () => {
     expect(scale.value).toBe("110");
     fireEvent.change(scale, { target: { value: "75" } });
     expect(scale.value).toBe("75");
+  });
+
+  it("uses two-dot stamp inputs and exposes all arrow directions", () => {
+    render(<ImageAnnotationEditor {...props} />);
+    expect((screen.getByLabelText("幅") as HTMLInputElement).step).toBe("2");
+    expect((screen.getByLabelText("高さ") as HTMLInputElement).step).toBe("2");
+    fireEvent.click(screen.getByRole("button", { name: /矢印/ }));
+    expect((screen.getByLabelText("幅") as HTMLInputElement).value).toBe("240");
+    expect((screen.getByLabelText("高さ") as HTMLInputElement).value).toBe("80");
+    expect((screen.getByLabelText("向き") as HTMLSelectElement).options).toHaveLength(8);
   });
 
   it("resizes the canvas display by dragging any side handle", () => {

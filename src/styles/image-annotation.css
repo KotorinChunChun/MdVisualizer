@@ -6,7 +6,9 @@
 .annotation-editor button:disabled { opacity: .46; }
 .annotation-editor__toolbar { grid-column: 1 / -1; display: flex; align-items: stretch; gap: 5px; padding: 7px 14px; overflow-x: auto; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); }
 .annotation-editor__toolbar button { display: inline-flex; align-items: center; gap: 6px; min-width: 74px; justify-content: center; }
-.annotation-editor__toolbar button span { font-size: 18px; line-height: 1; }
+.annotation-editor__toolbar button span { display: inline-grid; place-items: center; font-size: 18px; line-height: 1; }
+.annotation-editor__toolbar button svg { width: 18px; height: 18px; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.annotation-editor__toolbar button:first-child svg { fill: currentColor; stroke: var(--panel-bg); stroke-width: 1; }
 .annotation-editor__toolbar button.is-active { color: #fff; background: var(--accent-color); border-color: var(--accent-color); }
 .annotation-editor__tools { display: grid; align-content: start; gap: 0; overflow: auto; background: var(--panel-bg); border-right: 1px solid var(--border-color); }
 .annotation-editor__tools section { display: grid; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border-color); }

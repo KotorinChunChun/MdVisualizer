@@ -9,6 +9,7 @@ import {
   hitTestAnnotation,
   imageAnnotationReducer,
   type AnnotationKind,
+  type ArrowDirection,
   type ImageAnnotation,
   type MaskStyle,
 } from "../lib/imageAnnotations";
@@ -51,6 +52,7 @@ const MAX_CANVAS_SCALE = 400;
 const DEFAULT_STAMP_SIZES: Record<AnnotationKind, { width: number; height: number }> = {
   frame: { width: 320, height: 180 },
   ellipse: { width: 240, height: 160 },
+  arrow: { width: 240, height: 80 },
   mask: { width: 320, height: 120 },
   label: { width: 200, height: 48 },
 };
@@ -82,6 +84,7 @@ export function ImageAnnotationEditor({
   const [lineWidth, setLineWidth] = useState(6);
   const [color, setColor] = useState("#ef4444");
   const [maskStyle, setMaskStyle] = useState<MaskStyle>("blur");
+  const [arrowDirection, setArrowDirection] = useState<ArrowDirection>("right");
   const [labelText, setLabelText] = useState("ラベル");
   const [textColor, setTextColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#dc2626");
@@ -128,6 +131,7 @@ export function ImageAnnotationEditor({
       height,
     };
     if (tool === "frame" || tool === "ellipse") return { ...common, type: tool, color, lineWidth };
+    if (tool === "arrow") return { ...common, type: "arrow", color, lineWidth, direction: arrowDirection };
     if (tool === "mask") return { ...common, type: "mask", style: maskStyle, color };
     return { ...common, type: "label", text: labelText, textColor, backgroundColor, fontSize };
   };
@@ -176,7 +180,7 @@ export function ImageAnnotationEditor({
     }
   };
 
-  useEffect(render, [state.annotations, state.selectedId, loadedVersion, cursor, dragPreview, tool, width, height, lineWidth, color, maskStyle, labelText, textColor, backgroundColor, fontSize]);
+  useEffect(render, [state.annotations, state.selectedId, loadedVersion, cursor, dragPreview, tool, width, height, lineWidth, color, arrowDirection, maskStyle, labelText, textColor, backgroundColor, fontSize]);
 
   useEffect(() => {
     if (imageVersion === acceptedVersionRef.current) return;
@@ -351,7 +355,7 @@ export function ImageAnnotationEditor({
   };
 
   const setActiveColor = (nextColor: string) => {
-    if (selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "mask") {
+    if (selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "arrow" || selected?.type === "mask") {
       updateSelected({ color: nextColor });
     } else if (selected?.type === "label") {
       updateSelected({ backgroundColor: nextColor });
@@ -449,12 +453,13 @@ export function ImageAnnotationEditor({
 
     <nav className="annotation-editor__toolbar" aria-label="画像編集ツール">
       {([
-        ["select", "↖", "選択"],
-        ["frame", "□", "四角"],
-        ["ellipse", "○", "楕円"],
-        ["mask", "▦", "マスク"],
-        ["label", "A", "ラベル"],
-      ] as const).map(([value, icon, label]) => <button
+        ["select", "選択"],
+        ["frame", "四角"],
+        ["ellipse", "楕円"],
+        ["arrow", "矢印"],
+        ["mask", "マスク"],
+        ["label", "ラベル"],
+      ] as const).map(([value, label]) => <button
         key={value}
         type="button"
         className={tool === value ? "is-active" : ""}
@@ -463,22 +468,38 @@ export function ImageAnnotationEditor({
           dispatch({ type: "commitSelection" });
           setTool(value);
         }}
-      ><span aria-hidden="true">{icon}</span>{label}</button>)}
+      ><span aria-hidden="true">{value === "select"
+          ? <svg viewBox="0 0 24 24"><path d="M5 3l13 9-6 1.4 3.8 6.1-2.7 1.6-3.7-6.2L5 19V3z" /></svg>
+          : value === "arrow"
+            ? <svg viewBox="0 0 24 24"><path d="M4 12h14m-5-5 5 5-5 5" /></svg>
+            : value === "frame" ? "□" : value === "ellipse" ? "○" : value === "mask" ? "▦" : "A"}</span>{label}</button>)}
     </nav>
 
     <aside className="annotation-editor__tools">
       <section>
         <h2>{selected ? "選択アイテム" : "スタンプサイズ"}</h2>
         <div className="annotation-editor__fields">
-          <label>幅<input type="number" min="1" value={Math.round(selected?.width ?? width)} onChange={(event) => selected ? updateSelected({ width: Number(event.target.value) }) : setWidth(Math.max(1, Number(event.target.value)))} /></label>
-          <label>高さ<input type="number" min="1" value={Math.round(selected?.height ?? height)} onChange={(event) => selected ? updateSelected({ height: Number(event.target.value) }) : setHeight(Math.max(1, Number(event.target.value)))} /></label>
+          <label>幅<input type="number" min="1" step="2" value={Math.round(selected?.width ?? width)} onChange={(event) => selected
+            ? dispatch({ type: "resizeSelected", axis: "width", delta: Number(event.target.value) - selected.width, bounds: imageBounds() })
+            : setWidth(Math.max(1, Number(event.target.value)))} /></label>
+          <label>高さ<input type="number" min="1" step="2" value={Math.round(selected?.height ?? height)} onChange={(event) => selected
+            ? dispatch({ type: "resizeSelected", axis: "height", delta: Number(event.target.value) - selected.height, bounds: imageBounds() })
+            : setHeight(Math.max(1, Number(event.target.value)))} /></label>
         </div>
         <p className="annotation-editor__hint">ホイール: 高さ　Shift+ホイール: 幅<br />選択中: 拡縮、ドラッグ移動</p>
       </section>
 
-      {(activeKind === "frame" || activeKind === "ellipse") && <section>
+      {(activeKind === "frame" || activeKind === "ellipse" || activeKind === "arrow") && <section>
         <h2>線</h2>
-        <label>線幅<input type="number" min="1" value={selected?.type === "frame" || selected?.type === "ellipse" ? selected.lineWidth : lineWidth} onChange={(event) => selected?.type === "frame" || selected?.type === "ellipse" ? updateSelected({ lineWidth: Number(event.target.value) }) : setLineWidth(Math.max(1, Number(event.target.value)))} /></label>
+        <label>線幅<input type="number" min="1" value={selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "arrow" ? selected.lineWidth : lineWidth} onChange={(event) => selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "arrow" ? updateSelected({ lineWidth: Number(event.target.value) }) : setLineWidth(Math.max(1, Number(event.target.value)))} /></label>
+      </section>}
+
+      {activeKind === "arrow" && <section>
+        <h2>矢印</h2>
+        <label>向き<select value={selected?.type === "arrow" ? selected.direction : arrowDirection} onChange={(event) => selected?.type === "arrow" ? updateSelected({ direction: event.target.value }) : setArrowDirection(event.target.value as ArrowDirection)}>
+          <option value="right">右</option><option value="down-right">右下</option><option value="down">下</option><option value="down-left">左下</option>
+          <option value="left">左</option><option value="up-left">左上</option><option value="up">上</option><option value="up-right">右上</option>
+        </select></label>
       </section>}
 
       {activeKind === "mask" && <section>

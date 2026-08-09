@@ -9,6 +9,7 @@ import {
   hitTestAnnotation,
   imageAnnotationReducer,
   type FrameAnnotation,
+  type ArrowAnnotation,
   type ImageAnnotation,
   type MaskAnnotation,
 } from "./imageAnnotations";
@@ -19,6 +20,9 @@ const frame = (id = "frame"): FrameAnnotation => ({
 });
 const solidMask = (): MaskAnnotation => ({
   id: "mask", type: "mask", x: 0, y: 0, width: 2, height: 2, style: "solid", color: "#000",
+});
+const arrow = (): ArrowAnnotation => ({
+  id: "arrow", type: "arrow", x: 10, y: 20, width: 30, height: 20, color: "#d00", lineWidth: 3, direction: "right",
 });
 
 describe("image annotation geometry", () => {
@@ -44,6 +48,11 @@ describe("image annotation geometry", () => {
     const ellipse = { ...frame("ellipse"), type: "ellipse" as const };
     expect(hitTestAnnotation([ellipse], 25, 30)?.id).toBe("ellipse");
     expect(hitTestAnnotation([ellipse], 10, 20)).toBeUndefined();
+  });
+
+  it("hit-tests an arrow along its shaft instead of its whole bounding box", () => {
+    expect(hitTestAnnotation([arrow()], 25, 30)?.id).toBe("arrow");
+    expect(hitTestAnnotation([arrow()], 25, 20)).toBeUndefined();
   });
 
   it("duplicates an annotation with a new identity and bounded offset", () => {
@@ -134,6 +143,8 @@ class FakeContext {
   fillStyle = "";
   strokeStyle = "";
   lineWidth = 1;
+  lineCap: CanvasLineCap = "butt";
+  lineJoin: CanvasLineJoin = "miter";
   font = "";
   textBaseline: CanvasTextBaseline = "alphabetic";
   calls: string[] = [];
@@ -148,6 +159,8 @@ class FakeContext {
   fillText() { this.calls.push("fillText"); }
   beginPath() { this.calls.push("beginPath"); }
   ellipse() { this.calls.push("ellipse"); }
+  moveTo() { this.calls.push("moveTo"); }
+  lineTo() { this.calls.push("lineTo"); }
   stroke() { this.calls.push("stroke"); }
   getImageData(x: number, y: number, width: number, height: number) {
     const data = new Uint8ClampedArray(width * height * 4);
@@ -175,6 +188,13 @@ describe("image annotation drawing", () => {
     const ctx = new FakeContext();
     drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...frame(), type: "ellipse" }]);
     expect(ctx.calls).toEqual(expect.arrayContaining(["beginPath", "ellipse", "stroke"]));
+  });
+
+  it("draws an arrow shaft and arrowhead", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [arrow()]);
+    expect(ctx.calls.filter((call) => call === "lineTo")).toHaveLength(3);
+    expect(ctx.calls).toEqual(expect.arrayContaining(["beginPath", "moveTo", "stroke"]));
   });
 
   it("blurs image pixels inside a mask", () => {
