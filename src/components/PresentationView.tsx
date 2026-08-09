@@ -91,6 +91,7 @@ export function PresentationView({
   tabId,
   imageDisplaySizes,
   onOpenDocument,
+  onOpenDocumentWindow,
   lineThreshold = 10,
   initialHeadingId,
   onPageChange,
@@ -107,6 +108,7 @@ export function PresentationView({
   tabId: string;
   imageDisplaySizes: Record<string, ImageSize>;
   onOpenDocument?: (path: string) => void;
+  onOpenDocumentWindow?: (path: string) => void;
   lineThreshold?: number;
   initialHeadingId?: string;
   onPageChange?: (headingId: string, sourceLine: number) => void;
@@ -227,7 +229,7 @@ export function PresentationView({
           windowId={windowId}
           tabId={`${tabId}:${page.id}`}
           imageDisplaySizes={imageDisplaySizes}
-          onOpenDocument={onOpenDocument}
+          onOpenDocument={onOpenDocument} onOpenDocumentWindow={onOpenDocumentWindow}
           presentationMode
           onMediaOpen={onMediaOpen}
         />
@@ -236,7 +238,7 @@ export function PresentationView({
     </div>
     <div className="presentation-print-pages" aria-hidden="true">
       {model.pages.map((printPage) => <article className="presentation-print-page" key={printPage.id}>
-        <MarkdownPreview content={printPage.markdown} baseDir={baseDir} imageVersions={imageVersions} theme={theme} onError={onError} mermaidMode={mermaidMode} windowId={windowId} tabId={`${tabId}:print:${printPage.id}`} imageDisplaySizes={imageDisplaySizes} onOpenDocument={onOpenDocument} presentationMode onMediaOpen={onMediaOpen} />
+        <MarkdownPreview content={printPage.markdown} baseDir={baseDir} imageVersions={imageVersions} theme={theme} onError={onError} mermaidMode={mermaidMode} windowId={windowId} tabId={`${tabId}:print:${printPage.id}`} imageDisplaySizes={imageDisplaySizes} onOpenDocument={onOpenDocument} onOpenDocumentWindow={onOpenDocumentWindow} presentationMode onMediaOpen={onMediaOpen} />
         <PresentationChildHeadings childIds={printPage.childIds} headings={model.headings} readOnly />
       </article>)}
     </div>
