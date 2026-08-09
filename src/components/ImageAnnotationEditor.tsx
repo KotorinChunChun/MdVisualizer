@@ -11,7 +11,7 @@ import {
 } from "../lib/imageAnnotations";
 import "../styles/image-annotation.css";
 
-type Tool = "frame" | "mask" | "label";
+type Tool = "frame" | "ellipse" | "mask" | "label";
 
 export function ImageAnnotationEditor({
   target,
@@ -134,7 +134,7 @@ export function ImageAnnotationEditor({
       width,
       height,
     };
-    if (tool === "frame") return { ...common, type: "frame", color, lineWidth };
+    if (tool === "frame" || tool === "ellipse") return { ...common, type: tool, color, lineWidth };
     if (tool === "mask") return { ...common, type: "mask", style: maskStyle, color };
     return { ...common, type: "label", text: labelText, textColor, backgroundColor, fontSize };
   };
@@ -209,9 +209,9 @@ export function ImageAnnotationEditor({
       </select></label>
       <label>幅<input type="number" min="1" value={selected?.width ?? width} onChange={(event) => selected ? updateSelected({ width: Number(event.target.value) }) : setWidth(Math.max(1, Number(event.target.value)))} /></label>
       <label>高さ<input type="number" min="1" value={selected?.height ?? height} onChange={(event) => selected ? updateSelected({ height: Number(event.target.value) }) : setHeight(Math.max(1, Number(event.target.value)))} /></label>
-      {tool === "frame" && <>
-        <label>線幅<input type="number" min="1" value={selected?.type === "frame" ? selected.lineWidth : lineWidth} onChange={(event) => selected?.type === "frame" ? updateSelected({ lineWidth: Number(event.target.value) }) : setLineWidth(Math.max(1, Number(event.target.value)))} /></label>
-        <label>色<input type="color" value={selected?.type === "frame" ? selected.color : color} onChange={(event) => selected?.type === "frame" ? updateSelected({ color: event.target.value }) : setColor(event.target.value)} /></label>
+      {(tool === "frame" || tool === "ellipse") && <>
+        <label>線幅<input type="number" min="1" value={selected?.type === "frame" || selected?.type === "ellipse" ? selected.lineWidth : lineWidth} onChange={(event) => selected?.type === "frame" || selected?.type === "ellipse" ? updateSelected({ lineWidth: Number(event.target.value) }) : setLineWidth(Math.max(1, Number(event.target.value)))} /></label>
+        <label>色<input type="color" value={selected?.type === "frame" || selected?.type === "ellipse" ? selected.color : color} onChange={(event) => selected?.type === "frame" || selected?.type === "ellipse" ? updateSelected({ color: event.target.value }) : setColor(event.target.value)} /></label>
       </>}
       {tool === "mask" && <>
         <label>方式<select value={selected?.type === "mask" ? selected.style : maskStyle} onChange={(event) => selected?.type === "mask" ? updateSelected({ style: event.target.value }) : setMaskStyle(event.target.value as MaskStyle)}>

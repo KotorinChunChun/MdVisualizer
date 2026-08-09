@@ -1,6 +1,6 @@
 /** Pure model and canvas helpers for non-destructive image annotations. */
 
-export type AnnotationKind = "frame" | "mask" | "label";
+export type AnnotationKind = "frame" | "ellipse" | "mask" | "label";
 export type MaskStyle = "solid" | "blur" | "mosaic";
 
 export interface ImageBounds {
@@ -22,6 +22,13 @@ export interface FrameAnnotation extends AnnotationRect {
   lineWidth: number;
 }
 
+export interface EllipseAnnotation extends AnnotationRect {
+  id: string;
+  type: "ellipse";
+  color: string;
+  lineWidth: number;
+}
+
 export interface MaskAnnotation extends AnnotationRect {
   id: string;
   type: "mask";
@@ -39,7 +46,7 @@ export interface LabelAnnotation extends AnnotationRect {
   fontSize: number;
 }
 
-export type ImageAnnotation = FrameAnnotation | MaskAnnotation | LabelAnnotation;
+export type ImageAnnotation = FrameAnnotation | EllipseAnnotation | MaskAnnotation | LabelAnnotation;
 
 export interface ImageAnnotationState {
   annotations: ImageAnnotation[];
@@ -102,7 +109,7 @@ export function clampRect(rect: AnnotationRect, bounds: ImageBounds): Annotation
 /** Clamp geometry and type-specific numeric fields while retaining annotation data. */
 export function clampAnnotation(annotation: ImageAnnotation, bounds: ImageBounds): ImageAnnotation {
   const rect = clampRect(annotation, bounds);
-  if (annotation.type === "frame") {
+  if (annotation.type === "frame" || annotation.type === "ellipse") {
     return { ...annotation, ...rect, lineWidth: Math.max(1, finite(annotation.lineWidth, 1)) };
   }
   if (annotation.type === "label") {
@@ -226,6 +233,14 @@ export function containsPoint(annotation: AnnotationRect, x: number, y: number):
     && y >= annotation.y && y <= annotation.y + annotation.height;
 }
 
+export function containsAnnotationPoint(annotation: ImageAnnotation, x: number, y: number): boolean {
+  if (annotation.type !== "ellipse") return containsPoint(annotation, x, y);
+  if (annotation.width <= 0 || annotation.height <= 0) return false;
+  const normalizedX = (x - (annotation.x + annotation.width / 2)) / (annotation.width / 2);
+  const normalizedY = (y - (annotation.y + annotation.height / 2)) / (annotation.height / 2);
+  return normalizedX * normalizedX + normalizedY * normalizedY <= 1;
+}
+
 /** Returns the top-most annotation at the given original-image pixel. */
 export function hitTestAnnotation(
   annotations: readonly ImageAnnotation[],
@@ -233,7 +248,7 @@ export function hitTestAnnotation(
   y: number,
 ): ImageAnnotation | undefined {
   for (let index = annotations.length - 1; index >= 0; index -= 1) {
-    if (containsPoint(annotations[index], x, y)) return annotations[index];
+    if (containsAnnotationPoint(annotations[index], x, y)) return annotations[index];
   }
   return undefined;
 }
@@ -341,6 +356,14 @@ export function drawImageAnnotations(
       ctx.lineWidth = annotation.lineWidth;
       ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
       ctx.restore();
+    } else if (annotation.type === "ellipse") {
+      ctx.save();
+      ctx.strokeStyle = annotation.color;
+      ctx.lineWidth = annotation.lineWidth;
+      ctx.beginPath();
+      ctx.ellipse(rect.x + rect.width / 2, rect.y + rect.height / 2, rect.width / 2, rect.height / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     } else if (annotation.type === "label") {
       ctx.save();
       ctx.fillStyle = annotation.backgroundColor;
@@ -352,4 +375,20 @@ export function drawImageAnnotations(
       ctx.restore();
     }
   }
+}
+
+/** Create a pasted copy without sharing identity with the source annotation. */
+export function duplicateImageAnnotation(
+  annotation: ImageAnnotation,
+  id: string,
+  offset = 16,
+  bounds?: ImageBounds,
+): ImageAnnotation {
+  const duplicate = {
+    ...annotation,
+    id,
+    x: annotation.x + offset,
+    y: annotation.y + offset,
+  } as ImageAnnotation;
+  return bounds ? clampAnnotation(duplicate, bounds) : duplicate;
 }

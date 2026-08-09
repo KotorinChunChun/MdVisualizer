@@ -4,6 +4,7 @@ import {
   clampAnnotation,
   clampRect,
   createImageAnnotationState,
+  duplicateImageAnnotation,
   drawImageAnnotations,
   hitTestAnnotation,
   imageAnnotationReducer,
@@ -37,6 +38,21 @@ describe("image annotation geometry", () => {
     const top = { ...frame("top"), color: "#000" };
     expect(hitTestAnnotation([frame(), top], 20, 25)?.id).toBe("top");
     expect(hitTestAnnotation([frame()], 99, 25)).toBeUndefined();
+  });
+
+  it("uses ellipse geometry for ellipse hit testing", () => {
+    const ellipse = { ...frame("ellipse"), type: "ellipse" as const };
+    expect(hitTestAnnotation([ellipse], 25, 30)?.id).toBe("ellipse");
+    expect(hitTestAnnotation([ellipse], 10, 20)).toBeUndefined();
+  });
+
+  it("duplicates an annotation with a new identity and bounded offset", () => {
+    expect(duplicateImageAnnotation(frame(), "copy", 16, bounds)).toMatchObject({
+      id: "copy", x: 26, y: 36, width: 30, height: 20,
+    });
+    expect(duplicateImageAnnotation({ ...frame(), x: 80, y: 70 }, "edge", 16, bounds)).toMatchObject({
+      id: "edge", x: 96, y: 80, width: 4, height: 0,
+    });
   });
 });
 
@@ -121,6 +137,9 @@ class FakeContext {
   fillRect() { this.calls.push("fillRect"); }
   strokeRect() { this.calls.push("strokeRect"); }
   fillText() { this.calls.push("fillText"); }
+  beginPath() { this.calls.push("beginPath"); }
+  ellipse() { this.calls.push("ellipse"); }
+  stroke() { this.calls.push("stroke"); }
   getImageData(x: number, y: number, width: number, height: number) {
     const data = new Uint8ClampedArray(width * height * 4);
     for (let row = 0; row < height; row += 1) data.set(this.pixels.slice(((y + row) * this.canvas.width + x) * 4, ((y + row) * this.canvas.width + x + width) * 4), row * width * 4);
@@ -141,6 +160,12 @@ describe("image annotation drawing", () => {
     expect(ctx.calls).toContain("fillRect");
     expect(ctx.calls).toContain("strokeRect");
     expect(ctx.calls).toContain("fillText");
+  });
+
+  it("draws an ellipse frame", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...frame(), type: "ellipse" }]);
+    expect(ctx.calls).toEqual(expect.arrayContaining(["beginPath", "ellipse", "stroke"]));
   });
 
   it("blurs image pixels inside a mask", () => {
