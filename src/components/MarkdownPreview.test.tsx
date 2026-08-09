@@ -41,6 +41,13 @@ describe("MarkdownPreview sanitization", () => {
     expect(openExternalUrl).not.toHaveBeenCalled();
   });
 
+  it("opens an Obsidian-style local Markdown wiki link in the app", () => {
+    const onOpenDocument = vi.fn();
+    render(<MarkdownPreview content="[[linked-document.md|リンク先]]" baseDir="C:\\docs" imageVersions={{}} onOpenDocument={onOpenDocument} />);
+    fireEvent.click(screen.getByRole("link", { name: "リンク先" }));
+    expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/linked-document.md");
+  });
+
   it("offers confirmed execution only for PowerShell fences backed by a document path", () => {
     render(<MarkdownPreview content={"```pwsh\nWrite-Output safe\n```\n\n```bash\necho no\n```"} baseDir="C:\\docs" documentPath="C:\\docs\\sample.md" imageVersions={{}} />);
     expect(screen.getAllByRole("button", { name: "PowerShellを実行" })).toHaveLength(1);

@@ -95,6 +95,22 @@ SVGは表示とポップアップの対象ですが、ラスター画像用の�
 
 ![[images/sample.png|Obsidian PNG 04]]
 
+## 空白行なしの連続画像
+
+次の各行は画像の間に空白行を置いていません。2枚、3枚、4枚がそれぞれ等幅（1/2、1/3、1/4）で横並びになることを確認します。
+
+![横並び 2-1](images/sample.png)
+![横並び 2-2](images/sample.png)
+
+![横並び 3-1](images/sample.png)
+![横並び 3-2](images/sample.png)
+![横並び 3-3](images/sample.png)
+
+![横並び 4-1](images/sample.png)
+![横並び 4-2](images/sample.svg)
+![横並び 4-3](images/sample.png)
+![横並び 4-4](images/sample.svg)
+
 ---
 
 表示しながら `images/sample.png` または `images/sample.svg` を更新し、

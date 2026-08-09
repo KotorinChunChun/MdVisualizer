@@ -5,7 +5,7 @@
 | ファイル | 用途 |
 | :--- | :--- |
 | `sample.md` | 検証用サンプル目次、画像クロップ、自動更新、表、コードの基本確認 |
-| `image-gallery.md` | 多数のPNG／SVG、リスト・引用・表・Obsidian記法での画像表示 |
+| `image-gallery.md` | 多数のPNG／SVG、連続画像の等幅横並び、リスト・引用・表・Obsidian記法での画像表示 |
 | `all-markdown.md` | 本アプリが対応するMarkdown記法の総合確認 |
 | `mermaid-gallery.md` | Mermaid代表図とエラー表示の確認 |
 | `local-links.md` | 相対Markdownリンクを新しいタブで開く確認 |

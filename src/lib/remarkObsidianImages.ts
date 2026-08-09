@@ -32,6 +32,11 @@ export interface ObsidianImageReference {
   alt: string;
 }
 
+export interface ObsidianMarkdownLinkReference {
+  source: string;
+  label: string;
+}
+
 export function parseObsidianImageReference(value: string): ObsidianImageReference | null {
   const separator = value.indexOf("|");
   const source = (separator >= 0 ? value.slice(0, separator) : value).trim();
@@ -41,6 +46,14 @@ export function parseObsidianImageReference(value: string): ObsidianImageReferen
     source,
     alt: alias && !SIZE_ALIAS_PATTERN.test(alias) ? alias : "",
   };
+}
+
+export function parseObsidianMarkdownLinkReference(value: string): ObsidianMarkdownLinkReference | null {
+  const separator = value.indexOf("|");
+  const source = (separator >= 0 ? value.slice(0, separator) : value).trim();
+  if (!source || !/\.(?:md|markdown)(?:[?#].*)?$/i.test(source)) return null;
+  const alias = separator >= 0 ? value.slice(separator + 1).trim() : "";
+  return { source, label: alias || source };
 }
 
 function pointAt(node: MarkdownNode, index: number): PositionPoint | undefined {
@@ -75,19 +88,29 @@ function transformText(node: MarkdownNode): MarkdownNode[] {
   for (const match of value.matchAll(OBSIDIAN_EMBED_PATTERN)) {
     const start = match.index ?? 0;
     const end = start + match[0].length;
-    const reference = parseObsidianImageReference(match[1]);
-    if (!reference) continue;
+    const imageReference = parseObsidianImageReference(match[1]);
+    const linkReference = !match[0].startsWith("!") ? parseObsidianMarkdownLinkReference(match[1]) : null;
+    if (!imageReference && !linkReference) continue;
     if (start > cursor) transformed.push(positionedText(node, value.slice(cursor, start), cursor, start));
     const positionStart = pointAt(node, start);
     const positionEnd = pointAt(node, end);
-    transformed.push({
-      type: "image",
-      url: reference.source,
-      alt: reference.alt,
-      title: null,
-      data: { hProperties: { "data-obsidian-image": "true" } },
-      position: positionStart && positionEnd ? { start: positionStart, end: positionEnd } : undefined,
-    });
+    if (imageReference) {
+      transformed.push({
+        type: "image",
+        url: imageReference.source,
+        alt: imageReference.alt,
+        title: null,
+        data: { hProperties: { "data-obsidian-image": "true" } },
+        position: positionStart && positionEnd ? { start: positionStart, end: positionEnd } : undefined,
+      });
+    } else if (linkReference) {
+      transformed.push({
+        type: "link",
+        url: linkReference.source,
+        children: [{ type: "text", value: linkReference.label }],
+        position: positionStart && positionEnd ? { start: positionStart, end: positionEnd } : undefined,
+      });
+    }
     cursor = end;
   }
   if (cursor === 0) return [node];
@@ -109,7 +132,7 @@ function transformChildren(node: MarkdownNode) {
   node.children = children;
 }
 
-/** Converts Obsidian image embeds to standard Markdown image AST nodes. */
+/** Converts Obsidian image embeds and local Markdown wiki links to Markdown AST nodes. */
 export function remarkObsidianImages() {
   return (tree: MarkdownNode) => transformChildren(tree);
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
-import { parseObsidianImageReference, remarkObsidianImages } from "./remarkObsidianImages";
+import { parseObsidianImageReference, parseObsidianMarkdownLinkReference, remarkObsidianImages } from "./remarkObsidianImages";
 
 type Node = {
   type: string;
@@ -39,8 +39,18 @@ describe("remarkObsidianImages", () => {
   });
 
   it("leaves notes, inline code, and non-image wiki links unchanged", () => {
-    const markdown = "[[設計ノート]] `[[code.png]]` [[manual.md]]";
+    const markdown = "[[設計ノート]] `[[code.png]]` [[diagram.drawio]]";
     expect(imageNodes(markdown)).toEqual([]);
+  });
+
+  it("converts local Markdown wiki links while leaving other wiki links alone", () => {
+    expect(parseObsidianMarkdownLinkReference("linked-document.md|リンク先")).toEqual({ source: "linked-document.md", label: "リンク先" });
+    expect(parseObsidianMarkdownLinkReference("note.txt")).toBeNull();
+    const tree = parser.runSync(parser.parse("[[linked-document.md]] [[設計ノート]]")) as Node;
+    expect(tree.children?.[0]?.children?.map((node) => ({ type: node.type, url: node.url, value: node.value }))).toEqual([
+      { type: "link", url: "linked-document.md", value: undefined },
+      { type: "text", url: undefined, value: " [[設計ノート]]" },
+    ]);
   });
 
   it("treats Obsidian size aliases as dimensions rather than visible alt text", () => {
