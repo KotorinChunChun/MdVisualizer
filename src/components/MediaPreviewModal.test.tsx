@@ -49,4 +49,26 @@ describe("MediaPreviewModal", () => {
     expect(viewport.scrollTop).toBe(500);
     vi.unstubAllGlobals();
   });
+
+  it("keeps the diagram point under the pointer fixed during smooth ctrl-wheel zoom", () => {
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callback(0); return 1; });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    render(<MediaPreviewModal content={{ kind: "svg", svg: '<svg viewBox="0 0 400 200" />', alt: "図" }} onClose={vi.fn()} />);
+    const viewport = document.querySelector<HTMLElement>(".media-preview__viewport")!;
+    Object.defineProperties(viewport, {
+      clientWidth: { configurable: true, value: 800 },
+      clientHeight: { configurable: true, value: 600 },
+    });
+    vi.spyOn(viewport, "getBoundingClientRect").mockReturnValue({
+      x: 0, y: 0, left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600, toJSON: () => ({}),
+    });
+    act(() => { window.dispatchEvent(new Event("resize")); });
+
+    fireEvent.wheel(viewport, { ctrlKey: true, deltaY: -100, deltaMode: 0, clientX: 200, clientY: 150 });
+
+    expect(viewport.scrollLeft).toBeCloseTo(844.28, 1);
+    expect(viewport.scrollTop).toBeCloseTo(511.07, 1);
+    expect(screen.getByText(/244%/)).toBeTruthy();
+    vi.unstubAllGlobals();
+  });
 });

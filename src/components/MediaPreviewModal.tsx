@@ -24,6 +24,13 @@ export interface MediaPreviewTarget {
   imageContext?: ImageEditContext;
 }
 
+interface ZoomAnchor {
+  viewportX: number;
+  viewportY: number;
+  mediaX: number;
+  mediaY: number;
+}
+
 function svgIntrinsicSize(svg: string): { width: number; height: number } {
   try {
     const element = new DOMParser().parseFromString(svg, "image/svg+xml").documentElement;
@@ -74,6 +81,8 @@ export function MediaPreviewModal({
   const [metadataOpen, setMetadataOpen] = useState(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const scaleRef = useRef(1);
+  const zoomAnchorRef = useRef<ZoomAnchor | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [panning, setPanning] = useState(false);
   const intrinsic = content.kind === "svg" ? svgSize! : imageSize;
@@ -114,6 +123,15 @@ export function MediaPreviewModal({
     return () => window.cancelAnimationFrame(frame);
   }, [content.kind, content.kind === "image" ? content.src : content.svg, display, mode, intrinsic.width, intrinsic.height, viewportSize.height, viewportSize.width]);
 
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    const anchor = zoomAnchorRef.current;
+    if (!viewport || !anchor || display === "code") return;
+    viewport.scrollLeft = panInset.x + anchor.mediaX * effectiveScale - anchor.viewportX;
+    viewport.scrollTop = panInset.y + anchor.mediaY * effectiveScale - anchor.viewportY;
+    zoomAnchorRef.current = null;
+  }, [display, effectiveScale, panInset.x, panInset.y]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -127,6 +145,7 @@ export function MediaPreviewModal({
 
   const toggleMode = () => {
     setMode((current) => current === "fit" ? "actual" : "fit");
+    scaleRef.current = 1;
     setScale(1);
   };
 
@@ -163,12 +182,21 @@ export function MediaPreviewModal({
       onWheel={(event) => {
         if (!event.ctrlKey) return;
         event.preventDefault(); event.stopPropagation();
-        const nextScale = Math.min(8, Math.max(0.1, scale * (event.deltaY < 0 ? 1.2 : 1 / 1.2)));
         const viewport = event.currentTarget;
-        const pointX = event.clientX - viewport.getBoundingClientRect().left + viewport.scrollLeft;
-        const pointY = event.clientY - viewport.getBoundingClientRect().top + viewport.scrollTop;
-        viewport.scrollLeft += (pointX - viewport.scrollLeft) * (nextScale / scale - 1);
-        viewport.scrollTop += (pointY - viewport.scrollTop) * (nextScale / scale - 1);
+        const rect = viewport.getBoundingClientRect();
+        const viewportX = event.clientX - rect.left;
+        const viewportY = event.clientY - rect.top;
+        const currentScale = scaleRef.current;
+        const currentEffectiveScale = (mode === "fit" ? fitScale : 1) * currentScale;
+        zoomAnchorRef.current = {
+          viewportX,
+          viewportY,
+          mediaX: (viewport.scrollLeft + viewportX - panInset.x) / currentEffectiveScale,
+          mediaY: (viewport.scrollTop + viewportY - panInset.y) / currentEffectiveScale,
+        };
+        const deltaPixels = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? Math.max(1, viewport.clientHeight) : 1);
+        const nextScale = Math.min(8, Math.max(0.1, currentScale * Math.exp(-deltaPixels * 0.002)));
+        scaleRef.current = nextScale;
         setScale(nextScale);
       }}
       onPointerDown={(event) => {

@@ -458,7 +458,6 @@ body {
   position: absolute;
   display: grid;
   place-items: center;
-  transition: width 80ms ease-out, height 80ms ease-out;
 }
 .media-preview__transform img,
 .media-preview__svg,
