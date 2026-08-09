@@ -58,6 +58,7 @@ interface MarkdownPreviewProps {
   searchExpandedIds?: string[];
   onSearchFoldManualOverride?: (foldId: string) => void;
   onOpenDocument?: (path: string) => void;
+  onOpenDocumentWindow?: (path: string) => void;
   presentationMode?: boolean;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   documentPath?: string;
@@ -81,6 +82,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   searchExpandedIds = [],
   onSearchFoldManualOverride,
   onOpenDocument,
+  onOpenDocumentWindow,
   presentationMode = false,
   onMediaOpen,
   documentPath,
@@ -125,7 +127,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
             if (!href) return;
             const localPath = resolveLocalMarkdownPath(href, baseDir);
             if (localPath) {
-              onOpenDocument?.(localPath);
+              if (event.ctrlKey) onOpenDocumentWindow?.(localPath);
+              else onOpenDocument?.(localPath);
               return;
             }
             if (href.startsWith("#")) {

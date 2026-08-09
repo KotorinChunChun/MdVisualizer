@@ -1212,6 +1212,7 @@ export function App() {
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
             onOpenDocument={handleOpenDocument}
+            onOpenDocumentWindow={(path) => void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }))}
             lineThreshold={presentationLineThreshold}
             initialHeadingId={presentationPositions[activeTab.id]}
             onPageChange={(headingId, sourceLine) => {
@@ -1240,6 +1241,7 @@ export function App() {
             searchExpandedIds={searchExpandedIds}
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
             onOpenDocument={handleOpenDocument}
+            onOpenDocumentWindow={(path) => void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }))}
             onMediaOpen={openMediaPreview}
             documentPath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
