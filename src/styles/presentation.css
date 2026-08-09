@@ -138,9 +138,9 @@
 
 @media print {
   .presentation-children--print {
-    color: #1f2328;
-    background: #f6f8fa;
-    border-color: #d0d7de;
+    color: var(--print-effective-heading, #1f2328);
+    background: color-mix(in srgb, var(--print-effective-background, #fff) 88%, var(--print-effective-border, #d0d7de));
+    border-color: var(--print-effective-border, #d0d7de);
   }
 }
 

@@ -38,6 +38,7 @@ import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, ty
 import { normalizeViewMode, type ViewMode } from "./lib/viewMode";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { applySyntaxHighlightSettings, DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, normalizeSyntaxHighlightSettings, type SyntaxHighlightSettings } from "./lib/syntaxHighlight";
+import { applyPrintStyleSettings, DEFAULT_PRINT_STYLE_SETTINGS, normalizePrintStyleSettings, type PrintStyleSettings } from "./lib/printStyle";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -98,6 +99,7 @@ export function App() {
   const [imageA4TargetWidth, setImageA4TargetWidth] = useState(DEFAULT_IMAGE_A4_TARGET_WIDTH);
   const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
   const [syntaxHighlight, setSyntaxHighlight] = useState<SyntaxHighlightSettings>(DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS);
+  const [printStyle, setPrintStyle] = useState<PrintStyleSettings>(DEFAULT_PRINT_STYLE_SETTINGS);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
@@ -181,6 +183,10 @@ export function App() {
   }, [syntaxHighlight]);
 
   useEffect(() => {
+    applyPrintStyleSettings(document.documentElement, printStyle);
+  }, [printStyle]);
+
+  useEffect(() => {
     void loadSettingsStatus().then(({ settings, recoveredFiles }) => {
       if (typeof settings.theme === "string") { themeRef.current = settings.theme; setTheme(settings.theme); }
       if (typeof settings.zoom === "number") { const value = normalizeZoom(settings.zoom); zoomRef.current = value; setZoom(value); }
@@ -198,17 +204,20 @@ export function App() {
       const a4TargetWidth = normalizeImageA4TargetWidth(settings.imageA4TargetWidth);
       const equalPadding = normalizeImageEqualPadding(settings.imageEqualPadding);
       const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(settings.syntaxHighlight);
+      const normalizedPrintStyle = normalizePrintStyleSettings(settings.printStyle);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
       setSyntaxHighlight(normalizedSyntaxHighlight);
+      setPrintStyle(normalizedPrintStyle);
       const needsSettingsMigration = !Array.isArray(settings.externalApps)
         || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
         || settings.imageA4TargetWidth === undefined
         || settings.imageEqualPadding === undefined
         || settings.syntaxHighlight === undefined
+        || settings.printStyle === undefined
         || settings.viewMode !== normalizedViewMode;
       if (needsSettingsMigration) {
-        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, viewMode: normalizedViewMode }).catch((error) => {
+        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, viewMode: normalizedViewMode }).catch((error) => {
           setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
         });
       }
@@ -831,7 +840,7 @@ export function App() {
     dispatch({ type: "OPEN_SETTINGS" });
   }, [recordNavigationPoint]);
 
-  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number, nextSyntaxHighlight: SyntaxHighlightSettings) => {
+  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number, nextSyntaxHighlight: SyntaxHighlightSettings, nextPrintStyle: PrintStyleSettings) => {
     try {
       const previousById = new Map(externalApps.map((app) => [app.id, app]));
       const upserts = apps.filter((app) => JSON.stringify(previousById.get(app.id)) !== JSON.stringify(app));
@@ -839,12 +848,14 @@ export function App() {
       const removedIds = externalApps.filter((app) => !nextIds.has(app.id)).map((app) => app.id);
       const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold, a4TargetWidth, equalPadding);
       const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(nextSyntaxHighlight);
-      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight });
+      const normalizedPrintStyle = normalizePrintStyleSettings(nextPrintStyle);
+      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle });
       setExternalApps(normalizeExternalApps(saved.externalApps));
       setPresentationLineThreshold(lineThreshold);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
       setSyntaxHighlight(normalizedSyntaxHighlight);
+      setPrintStyle(normalizedPrintStyle);
       setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
     } catch (error) {
       setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
@@ -1169,6 +1180,7 @@ export function App() {
             imageA4TargetWidth={imageA4TargetWidth}
             imageEqualPadding={imageEqualPadding}
             syntaxHighlight={syntaxHighlight}
+            printStyle={printStyle}
             onSave={saveExternalAppSettings}
           />
         ) : activeTab?.loading ? (

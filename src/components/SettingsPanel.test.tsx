@@ -17,6 +17,7 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][2]).toBe(3508);
     expect(onSave.mock.calls[0][3]).toBe(32);
     expect(onSave.mock.calls[0][4]).toMatchObject({ theme: "adaptive", customColors: false });
+    expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#1f2328", monochrome: false });
   });
 
   it("keeps required built-ins undeletable and validates a new document app", async () => {
@@ -70,5 +71,19 @@ describe("SettingsPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][4]).toEqual({ theme: "monokai", customColors: true, background: "#101010", foreground: "#f0f0f0" });
+  });
+
+  it("previews and saves typed print colors, font, and monochrome mode", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText("印刷見出し色"), { target: { value: "#123456" } });
+    fireEvent.change(screen.getByLabelText("印刷罫線色"), { target: { value: "#654321" } });
+    fireEvent.change(screen.getByLabelText("印刷背景色"), { target: { value: "#eeeeee" } });
+    fireEvent.change(screen.getByLabelText("印刷フォント"), { target: { value: "serif" } });
+    fireEvent.click(screen.getByLabelText("白黒印刷"));
+    expect(screen.getByLabelText("印刷スタイルプレビュー").getAttribute("style")).toContain("rgb(255, 255, 255)");
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][5]).toEqual({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true });
   });
 });

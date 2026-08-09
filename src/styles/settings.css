@@ -14,6 +14,15 @@
 .syntax-highlight-settings__colors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .syntax-highlight-settings__colors label { justify-content: flex-start; }
 .syntax-highlight-settings__colors input[type="color"] { width: 3.5rem; height: 2.25rem; padding: 0.15rem; }
+.print-style-settings { display: grid; gap: 0.7rem; }
+.print-style-settings__colors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.print-style-settings__colors label { justify-content: flex-start; }
+.print-style-settings__colors input[type="color"] { width: 3.5rem; height: 2.25rem; padding: 0.15rem; }
+.print-style-settings__toggle { justify-content: flex-start !important; }
+.print-style-settings__toggle input { width: auto; }
+.print-style-preview { padding: 0.8rem; border: 2px solid; border-radius: 0.4rem; }
+.print-style-preview strong { display: block; padding-bottom: 0.3rem; border-bottom: 1px solid currentColor; }
+.print-style-preview p { margin: 0.45rem 0 0; color: inherit; }
 .settings-app-groups { display: grid; max-width: 980px; margin: auto; gap: 24px; }
 .settings-app-group { padding-top: 4px; }
 .settings-app-group > header { margin-bottom: 10px; }

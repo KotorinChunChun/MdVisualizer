@@ -20,11 +20,13 @@ describe("Markdown and presentation print styles", () => {
   });
 
   it("keeps print colors legible and prevents printed child headings from splitting", () => {
-    expect(appCss).toContain(".markdown-body blockquote { color: #57606a; background: #f6f8fa; border-inline-start-color: #d0d7de; }");
-    expect(appCss).toContain(".markdown-body hr { background: #d0d7de; }");
+    expect(appCss).toContain(".markdown-body blockquote { color: var(--print-effective-heading)");
+    expect(appCss).toContain(".markdown-body hr { background: var(--print-effective-border); }");
+    expect(appCss).toContain(':root[data-print-monochrome="true"]');
     const printChildren = ruleBody(presentationCss, ".presentation-children--print");
     expect(printChildren).toContain("break-inside: avoid");
     expect(printChildren).toContain("page-break-inside: avoid");
-    expect(presentationCss).toContain(".presentation-children--print {\n    color: #1f2328;\n    background: #f6f8fa;\n    border-color: #d0d7de;");
+    expect(presentationCss).toContain("color: var(--print-effective-heading");
+    expect(presentationCss).toContain("border-color: var(--print-effective-border");
   });
 });
