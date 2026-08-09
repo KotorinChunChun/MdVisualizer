@@ -2,16 +2,42 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { CropTarget } from "../hooks/useCropEditor";
 import { saveRenderedImage } from "../lib/commands";
 import {
+  clamp,
   createImageAnnotationState,
   drawImageAnnotations,
+  duplicateImageAnnotation,
   hitTestAnnotation,
   imageAnnotationReducer,
+  type AnnotationKind,
   type ImageAnnotation,
   type MaskStyle,
 } from "../lib/imageAnnotations";
 import "../styles/image-annotation.css";
 
-type Tool = "frame" | "ellipse" | "mask" | "label";
+type Tool = "select" | AnnotationKind;
+
+interface ContextMenuState {
+  clientX: number;
+  clientY: number;
+  imageX: number;
+  imageY: number;
+  targetId: string | null;
+}
+
+interface DragState {
+  id: string;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  annotationX: number;
+  annotationY: number;
+}
+
+const RECOMMENDED_COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6"];
+const MIN_CANVAS_SCALE = 10;
+const MAX_CANVAS_SCALE = 400;
+
+const newAnnotationId = () => `annotation-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 export function ImageAnnotationEditor({
   target,
@@ -29,6 +55,8 @@ export function ImageAnnotationEditor({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const acceptedVersionRef = useRef(imageVersion);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<DragState | null>(null);
   const [state, dispatch] = useReducer(imageAnnotationReducer, undefined, () => createImageAnnotationState());
   const [tool, setTool] = useState<Tool>("frame");
   const [width, setWidth] = useState(320);
@@ -40,7 +68,12 @@ export function ImageAnnotationEditor({
   const [textColor, setTextColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#dc2626");
   const [fontSize, setFontSize] = useState(32);
-  const [cursor, setCursor] = useState({ x: 0, y: 0 });
+  const [canvasScale, setCanvasScale] = useState(100);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  const [dragPreview, setDragPreview] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [clipboard, setClipboard] = useState<ImageAnnotation | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [loadedVersion, setLoadedVersion] = useState(imageVersion);
   const [saving, setSaving] = useState(false);
   const [externalConflict, setExternalConflict] = useState(false);
@@ -49,7 +82,35 @@ export function ImageAnnotationEditor({
     () => state.annotations.find((annotation) => annotation.id === state.selectedId),
     [state.annotations, state.selectedId],
   );
+  const activeKind = selected?.type ?? (tool === "select" ? null : tool);
   const dirty = state.undoStack.length > 0;
+
+  const imageBounds = () => ({
+    width: canvasRef.current?.width ?? 0,
+    height: canvasRef.current?.height ?? 0,
+  });
+
+  const makeAnnotation = (x: number, y: number): ImageAnnotation => {
+    const common = {
+      id: newAnnotationId(),
+      x: x - width / 2,
+      y: y - height / 2,
+      width,
+      height,
+    };
+    if (tool === "frame" || tool === "ellipse") return { ...common, type: tool, color, lineWidth };
+    if (tool === "mask") return { ...common, type: "mask", style: maskStyle, color };
+    return { ...common, type: "label", text: labelText, textColor, backgroundColor, fontSize };
+  };
+
+  const effectiveAnnotations = dragPreview
+    ? state.annotations.map((annotation) => annotation.id === dragPreview.id
+      ? { ...annotation, x: dragPreview.x, y: dragPreview.y }
+      : annotation) as ImageAnnotation[]
+    : state.annotations;
+  const effectiveSelected = dragPreview && selected?.id === dragPreview.id
+    ? { ...selected, x: dragPreview.x, y: dragPreview.y }
+    : selected;
 
   const render = () => {
     const canvas = canvasRef.current;
@@ -61,27 +122,32 @@ export function ImageAnnotationEditor({
       const context = canvas.getContext("2d");
       if (!context) return;
       context.drawImage(image, 0, 0);
-      drawImageAnnotations(context, state.annotations);
-      if (!selected && (cursor.x !== 0 || cursor.y !== 0)) {
-        context.save(); context.globalAlpha = 0.62;
+      drawImageAnnotations(context, effectiveAnnotations);
+      if (!selected && tool !== "select" && cursor) {
+        context.save();
+        context.globalAlpha = 0.62;
         drawImageAnnotations(context, [makeAnnotation(cursor.x, cursor.y)]);
         context.restore();
       }
-      if (selected) {
-        context.save(); context.strokeStyle = "#38bdf8"; context.lineWidth = Math.max(2, canvas.width / 500);
-        context.setLineDash([10, 6]); context.strokeRect(selected.x, selected.y, selected.width, selected.height); context.restore();
+      if (effectiveSelected) {
+        context.save();
+        context.strokeStyle = "#38bdf8";
+        context.lineWidth = Math.max(2, canvas.width / 500);
+        context.setLineDash([10, 6]);
+        context.strokeRect(effectiveSelected.x, effectiveSelected.y, effectiveSelected.width, effectiveSelected.height);
+        context.restore();
       }
       lastRenderError.current = null;
     } catch (error) {
       const message = String(error);
       if (lastRenderError.current !== message) {
         lastRenderError.current = message;
-        onError(`画像注釈のプレビューに失敗しました: ${message}`);
+        onError(`画像編集のプレビューに失敗しました: ${message}`);
       }
     }
   };
 
-  useEffect(render, [state.annotations, state.selectedId, loadedVersion, cursor, tool, width, height, lineWidth, color, maskStyle, labelText, textColor, backgroundColor, fontSize]);
+  useEffect(render, [state.annotations, state.selectedId, loadedVersion, cursor, dragPreview, tool, width, height, lineWidth, color, maskStyle, labelText, textColor, backgroundColor, fontSize]);
 
   useEffect(() => {
     if (imageVersion === acceptedVersionRef.current) return;
@@ -94,11 +160,20 @@ export function ImageAnnotationEditor({
   }, [dirty, imageVersion]);
 
   useEffect(() => {
+    const closeContextMenu = (event: PointerEvent) => {
+      if (!contextMenuRef.current?.contains(event.target as Node)) setContextMenu(null);
+    };
+    window.addEventListener("pointerdown", closeContextMenu);
+    return () => window.removeEventListener("pointerdown", closeContextMenu);
+  }, []);
+
+  useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
       const editingText = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
       if (event.key === "Escape") {
         event.preventDefault();
-        if (state.selectedId) dispatch({ type: "commitSelection" });
+        if (contextMenu) setContextMenu(null);
+        else if (state.selectedId) dispatch({ type: "commitSelection" });
         else onCancel();
       } else if (event.key === "Enter" && !editingText) {
         event.preventDefault();
@@ -116,9 +191,9 @@ export function ImageAnnotationEditor({
     };
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
-  }, [onCancel, state.selectedId]);
+  }, [contextMenu, onCancel, state.selectedId]);
 
-  const imagePoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const imagePoint = (event: Pick<React.PointerEvent<HTMLCanvasElement>, "clientX" | "clientY" | "currentTarget">) => {
     const rect = event.currentTarget.getBoundingClientRect();
     return {
       x: ((event.clientX - rect.left) / rect.width) * event.currentTarget.width,
@@ -126,32 +201,63 @@ export function ImageAnnotationEditor({
     };
   };
 
-  const makeAnnotation = (x: number, y: number): ImageAnnotation => {
-    const common = {
-      id: `annotation-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      x: x - width / 2,
-      y: y - height / 2,
-      width,
-      height,
-    };
-    if (tool === "frame" || tool === "ellipse") return { ...common, type: tool, color, lineWidth };
-    if (tool === "mask") return { ...common, type: "mask", style: maskStyle, color };
-    return { ...common, type: "label", text: labelText, textColor, backgroundColor, fontSize };
-  };
-
-  const placeOrSelect = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const beginCanvasInteraction = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (event.button !== 0) return;
+    setContextMenu(null);
     const point = imagePoint(event);
     const hit = hitTestAnnotation(state.annotations, point.x, point.y);
     if (hit) {
-      setTool(hit.type);
       dispatch({ type: "select", id: hit.id });
-    } else if (selected) {
+      dragRef.current = {
+        id: hit.id,
+        pointerId: event.pointerId,
+        startX: point.x,
+        startY: point.y,
+        annotationX: hit.x,
+        annotationY: hit.y,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      return;
+    }
+    if (tool === "select") {
       dispatch({ type: "commitSelection" });
-    } else dispatch({
+      return;
+    }
+    dispatch({
       type: "place",
       annotation: makeAnnotation(point.x, point.y),
-      bounds: { width: event.currentTarget.width, height: event.currentTarget.height },
+      bounds: imageBounds(),
     });
+  };
+
+  const moveCanvasPointer = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const point = imagePoint(event);
+    setCursor(point);
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const annotation = state.annotations.find((item) => item.id === drag.id);
+    if (!annotation) return;
+    setDragPreview({
+      id: drag.id,
+      x: clamp(drag.annotationX + point.x - drag.startX, 0, event.currentTarget.width - annotation.width),
+      y: clamp(drag.annotationY + point.y - drag.startY, 0, event.currentTarget.height - annotation.height),
+    });
+  };
+
+  const finishCanvasInteraction = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (dragPreview) {
+      dispatch({
+        type: "update",
+        id: drag.id,
+        changes: { x: dragPreview.x, y: dragPreview.y },
+        bounds: imageBounds(),
+      });
+    }
+    dragRef.current = null;
+    setDragPreview(null);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
   const apply = async () => {
@@ -177,81 +283,211 @@ export function ImageAnnotationEditor({
       });
       onApply(target.filename, result.backup_available);
     } catch (error) {
-      onError(`画像注釈の保存に失敗しました: ${String(error)}`);
+      onError(`画像編集の保存に失敗しました: ${String(error)}`);
     } finally {
       setSaving(false);
     }
   };
 
   const updateSelected = (changes: Record<string, string | number>) => {
-    if (selected) dispatch({
-      type: "update",
-      changes,
-      bounds: { width: canvasRef.current?.width ?? 0, height: canvasRef.current?.height ?? 0 },
-    });
+    if (selected) dispatch({ type: "update", changes, bounds: imageBounds() });
   };
 
+  const setActiveColor = (nextColor: string) => {
+    if (selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "mask") {
+      updateSelected({ color: nextColor });
+    } else if (selected?.type === "label") {
+      updateSelected({ backgroundColor: nextColor });
+    } else if (tool === "label") {
+      setBackgroundColor(nextColor);
+    } else {
+      setColor(nextColor);
+    }
+  };
+
+  const activeColor = selected?.type === "label"
+    ? selected.backgroundColor
+    : selected && "color" in selected
+      ? selected.color
+      : tool === "label" ? backgroundColor : color;
+
+  const copyContextTarget = () => {
+    const annotation = state.annotations.find((item) => item.id === contextMenu?.targetId);
+    if (annotation) setClipboard({ ...annotation });
+    setContextMenu(null);
+  };
+
+  const pasteContextTarget = () => {
+    if (!clipboard || !contextMenu) return;
+    const positioned = {
+      ...clipboard,
+      x: contextMenu.imageX - clipboard.width / 2,
+      y: contextMenu.imageY - clipboard.height / 2,
+    } as ImageAnnotation;
+    dispatch({
+      type: "place",
+      annotation: duplicateImageAnnotation(positioned, newAnnotationId(), 0, imageBounds()),
+      bounds: imageBounds(),
+    });
+    setContextMenu(null);
+  };
+
+  const setScale = (value: number) => setCanvasScale(Math.round(clamp(value, MIN_CANVAS_SCALE, MAX_CANVAS_SCALE)));
   const imageSource = `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`;
-  return <div className="annotation-editor" role="dialog" aria-label={`画像注釈: ${target.filename}`}>
+  const canvasStyle = canvasSize.width > 0
+    ? { width: `${canvasSize.width * canvasScale / 100}px`, height: `${canvasSize.height * canvasScale / 100}px` }
+    : undefined;
+
+  return <div className="annotation-editor" role="dialog" aria-modal="true" aria-label={`画像編集: ${target.filename}`}>
     <header className="annotation-editor__header">
-      <strong>画像注釈: {target.filename}</strong>
-      <div>
+      <strong>画像編集: {target.filename}</strong>
+      <div className="annotation-editor__header-actions">
         <button type="button" disabled={state.undoStack.length === 0} onClick={() => dispatch({ type: "undo" })}>元に戻す</button>
         <button type="button" disabled={state.redoStack.length === 0} onClick={() => dispatch({ type: "redo" })}>やり直す</button>
-        <button type="button" disabled={!selected} onClick={() => dispatch({ type: "delete" })}>削除</button>
         <button type="button" disabled={saving || state.annotations.length === 0} onClick={() => void apply()}>{saving ? "保存中…" : "適用"}</button>
         <button type="button" disabled={saving} onClick={onCancel}>閉じる</button>
       </div>
     </header>
+
+    <nav className="annotation-editor__toolbar" aria-label="画像編集ツール">
+      {([
+        ["select", "↖", "選択"],
+        ["frame", "□", "四角"],
+        ["ellipse", "○", "楕円"],
+        ["mask", "▦", "マスク"],
+        ["label", "A", "ラベル"],
+      ] as const).map(([value, icon, label]) => <button
+        key={value}
+        type="button"
+        className={tool === value ? "is-active" : ""}
+        aria-pressed={tool === value}
+        onClick={() => setTool(value)}
+      ><span aria-hidden="true">{icon}</span>{label}</button>)}
+    </nav>
+
     <aside className="annotation-editor__tools">
-      <label>種類<select value={tool} onChange={(event) => setTool(event.target.value as Tool)}>
-        <option value="frame">枠</option><option value="mask">マスク</option><option value="label">ラベル</option>
-      </select></label>
-      <label>幅<input type="number" min="1" value={selected?.width ?? width} onChange={(event) => selected ? updateSelected({ width: Number(event.target.value) }) : setWidth(Math.max(1, Number(event.target.value)))} /></label>
-      <label>高さ<input type="number" min="1" value={selected?.height ?? height} onChange={(event) => selected ? updateSelected({ height: Number(event.target.value) }) : setHeight(Math.max(1, Number(event.target.value)))} /></label>
-      {(tool === "frame" || tool === "ellipse") && <>
+      <section>
+        <h2>{selected ? "選択アイテム" : "スタンプサイズ"}</h2>
+        <div className="annotation-editor__fields">
+          <label>幅<input type="number" min="1" value={Math.round(selected?.width ?? width)} onChange={(event) => selected ? updateSelected({ width: Number(event.target.value) }) : setWidth(Math.max(1, Number(event.target.value)))} /></label>
+          <label>高さ<input type="number" min="1" value={Math.round(selected?.height ?? height)} onChange={(event) => selected ? updateSelected({ height: Number(event.target.value) }) : setHeight(Math.max(1, Number(event.target.value)))} /></label>
+        </div>
+        <p className="annotation-editor__hint">ホイール: 高さ　Shift+ホイール: 幅<br />選択中: 拡縮、ドラッグ移動</p>
+      </section>
+
+      {(activeKind === "frame" || activeKind === "ellipse") && <section>
+        <h2>線</h2>
         <label>線幅<input type="number" min="1" value={selected?.type === "frame" || selected?.type === "ellipse" ? selected.lineWidth : lineWidth} onChange={(event) => selected?.type === "frame" || selected?.type === "ellipse" ? updateSelected({ lineWidth: Number(event.target.value) }) : setLineWidth(Math.max(1, Number(event.target.value)))} /></label>
-        <label>色<input type="color" value={selected?.type === "frame" || selected?.type === "ellipse" ? selected.color : color} onChange={(event) => selected?.type === "frame" || selected?.type === "ellipse" ? updateSelected({ color: event.target.value }) : setColor(event.target.value)} /></label>
-      </>}
-      {tool === "mask" && <>
+      </section>}
+
+      {activeKind === "mask" && <section>
+        <h2>マスク</h2>
         <label>方式<select value={selected?.type === "mask" ? selected.style : maskStyle} onChange={(event) => selected?.type === "mask" ? updateSelected({ style: event.target.value }) : setMaskStyle(event.target.value as MaskStyle)}>
           <option value="solid">単色</option><option value="blur">ぼかし</option><option value="mosaic">モザイク</option>
         </select></label>
-        <label>色<input type="color" value={selected?.type === "mask" ? selected.color : color} onChange={(event) => selected?.type === "mask" ? updateSelected({ color: event.target.value }) : setColor(event.target.value)} /></label>
-      </>}
-      {tool === "label" && <>
+      </section>}
+
+      {activeKind === "label" && <section>
+        <h2>ラベル</h2>
         <label>文字<input value={selected?.type === "label" ? selected.text : labelText} onChange={(event) => selected?.type === "label" ? updateSelected({ text: event.target.value }) : setLabelText(event.target.value)} /></label>
-        <label>文字色<input type="color" value={selected?.type === "label" ? selected.textColor : textColor} onChange={(event) => selected?.type === "label" ? updateSelected({ textColor: event.target.value }) : setTextColor(event.target.value)} /></label>
-        <label>背景色<input type="color" value={selected?.type === "label" ? selected.backgroundColor : backgroundColor} onChange={(event) => selected?.type === "label" ? updateSelected({ backgroundColor: event.target.value }) : setBackgroundColor(event.target.value)} /></label>
-        <label>文字サイズ<input type="number" min="1" value={selected?.type === "label" ? selected.fontSize : fontSize} onChange={(event) => selected?.type === "label" ? updateSelected({ fontSize: Number(event.target.value) }) : setFontSize(Math.max(1, Number(event.target.value)))} /></label>
-      </>}
-      <p>{Math.round(cursor.x)}, {Math.round(cursor.y)} px</p>
+        <div className="annotation-editor__fields">
+          <label>フォントサイズ<input type="number" min="1" value={selected?.type === "label" ? selected.fontSize : fontSize} onChange={(event) => selected?.type === "label" ? updateSelected({ fontSize: Number(event.target.value) }) : setFontSize(Math.max(1, Number(event.target.value)))} /></label>
+          <label>文字色<input type="color" value={selected?.type === "label" ? selected.textColor : textColor} onChange={(event) => selected?.type === "label" ? updateSelected({ textColor: event.target.value }) : setTextColor(event.target.value)} /></label>
+        </div>
+      </section>}
+
+      {activeKind && <section>
+        <h2>{activeKind === "label" ? "背景色" : "色"}</h2>
+        <div className="annotation-editor__palette">
+          {RECOMMENDED_COLORS.map((paletteColor) => <button
+            key={paletteColor}
+            type="button"
+            className={activeColor.toLowerCase() === paletteColor ? "is-active" : ""}
+            style={{ "--annotation-color": paletteColor } as React.CSSProperties}
+            aria-label={paletteColor}
+            aria-pressed={activeColor.toLowerCase() === paletteColor}
+            onClick={() => setActiveColor(paletteColor)}
+          />)}
+          <label className="annotation-editor__custom-color" title="カスタム色">
+            <span>＋</span><input type="color" value={activeColor} onChange={(event) => setActiveColor(event.target.value)} />
+          </label>
+        </div>
+      </section>}
+
+      <section>
+        <h2>キャンバスサイズ</h2>
+        <div className="annotation-editor__scale-controls">
+          <button type="button" aria-label="キャンバスを縮小" onClick={() => setScale(canvasScale - 10)}>−</button>
+          <label><input type="number" min={MIN_CANVAS_SCALE} max={MAX_CANVAS_SCALE} value={canvasScale} onChange={(event) => setScale(Number(event.target.value))} /><span>%</span></label>
+          <button type="button" aria-label="キャンバスを拡大" onClick={() => setScale(canvasScale + 10)}>＋</button>
+        </div>
+      </section>
+
+      <output>{cursor ? `${Math.round(cursor.x)}, ${Math.round(cursor.y)} px` : "—"}</output>
     </aside>
+
     <main className="annotation-editor__stage" onPointerDown={(event) => {
       if (event.target === event.currentTarget) dispatch({ type: "commitSelection" });
-    }}>
-      <img
-        ref={imageRef}
-        src={imageSource}
-        alt=""
-        hidden
-        onLoad={render}
-      />
-      <canvas
-        ref={canvasRef}
-        onPointerMove={(event) => setCursor(imagePoint(event))}
-        onPointerDown={placeOrSelect}
-        onWheel={(event) => {
-          if (!selected) return;
-          event.preventDefault();
-          dispatch({
-            type: "scaleSelected",
-            scale: event.deltaY < 0 ? 1.08 : 1 / 1.08,
-            bounds: { width: event.currentTarget.width, height: event.currentTarget.height },
-          });
-        }}
-      />
+    }} onContextMenu={(event) => event.preventDefault()}>
+      <div className="annotation-editor__canvas-wrap">
+        <img ref={imageRef} src={imageSource} alt="" hidden onLoad={(event) => {
+          setCanvasSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
+          render();
+        }} />
+        <canvas
+          ref={canvasRef}
+          className={`is-tool-${tool}${dragRef.current ? " is-dragging" : ""}`}
+          style={canvasStyle}
+          onPointerMove={moveCanvasPointer}
+          onPointerLeave={() => { if (!dragRef.current) setCursor(null); }}
+          onPointerDown={beginCanvasInteraction}
+          onPointerUp={finishCanvasInteraction}
+          onPointerCancel={(event) => {
+            dragRef.current = null;
+            setDragPreview(null);
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+          }}
+          onWheel={(event) => {
+            event.preventDefault();
+            const maximumWidth = event.currentTarget.width;
+            const maximumHeight = event.currentTarget.height;
+            const deltaPixels = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? Math.max(1, event.currentTarget.clientHeight) : 1);
+            const scale = Math.exp(-deltaPixels * 0.002);
+            if (selected) {
+              dispatch({ type: "scaleSelected", scale, bounds: imageBounds() });
+            } else if (event.shiftKey) {
+              setWidth((current) => Math.max(1, Math.min(maximumWidth, current * scale)));
+            } else {
+              setHeight((current) => Math.max(1, Math.min(maximumHeight, current * scale)));
+            }
+          }}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            const point = imagePoint(event);
+            const hit = hitTestAnnotation(state.annotations, point.x, point.y);
+            if (hit) dispatch({ type: "select", id: hit.id });
+            setContextMenu({ clientX: event.clientX, clientY: event.clientY, imageX: point.x, imageY: point.y, targetId: hit?.id ?? null });
+          }}
+        />
+      </div>
     </main>
+
+    {contextMenu && <div
+      ref={contextMenuRef}
+      className="annotation-editor__context-menu"
+      role="menu"
+      style={{ left: contextMenu.clientX, top: contextMenu.clientY }}
+      onContextMenu={(event) => event.preventDefault()}
+    >
+      <button type="button" role="menuitem" disabled={!contextMenu.targetId} onClick={copyContextTarget}>コピー</button>
+      <button type="button" role="menuitem" disabled={!clipboard} onClick={pasteContextTarget}>貼り付け</button>
+      <div role="separator" />
+      <button type="button" role="menuitem" className="is-danger" disabled={!contextMenu.targetId} onClick={() => {
+        if (contextMenu.targetId) dispatch({ type: "delete", id: contextMenu.targetId });
+        setContextMenu(null);
+      }}>削除</button>
+    </div>}
+
     {externalConflict && <div className="annotation-editor__conflict" role="alert">
       <p>編集中に画像が外部で変更されました。</p>
       <button type="button" onClick={() => {
