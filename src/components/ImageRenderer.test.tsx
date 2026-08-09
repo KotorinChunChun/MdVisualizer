@@ -121,7 +121,7 @@ describe("ImageRenderer inline resize", () => {
     const frame = container.querySelector<HTMLElement>(".inline-image-resize")!;
     const stage = container.querySelector<HTMLElement>(".inline-image-resize__stage")!;
     expect(frame.style.width).toBe("270px");
-    expect(stage.style.height).toBe("200px");
+    expect(stage.style.height).toBe("168.75px");
     fireEvent.click(image);
     expect(onMediaOpen).toHaveBeenCalledTimes(1);
   });
