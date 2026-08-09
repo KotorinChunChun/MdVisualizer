@@ -47,6 +47,23 @@ describe("ImageAnnotationEditor", () => {
     expect(scale.value).toBe("75");
   });
 
+  it("resizes the canvas display by dragging any side handle", () => {
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    editorCanvas(container);
+    const scale = container.querySelector(".annotation-editor__scale-controls input") as HTMLInputElement;
+    const rightHandle = screen.getByRole("button", { name: "右辺をドラッグしてキャンバスサイズを変更" });
+    fireEvent.pointerDown(rightHandle, { pointerId: 10, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(rightHandle, { pointerId: 10, clientX: 200, clientY: 100 });
+    fireEvent.pointerUp(rightHandle, { pointerId: 10, clientX: 200, clientY: 100 });
+    expect(scale.value).toBe("110");
+
+    const topHandle = screen.getByRole("button", { name: "上辺をドラッグしてキャンバスサイズを変更" });
+    fireEvent.pointerDown(topHandle, { pointerId: 11, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(topHandle, { pointerId: 11, clientX: 100, clientY: 180 });
+    fireEvent.pointerUp(topHandle, { pointerId: 11, clientX: 100, clientY: 180 });
+    expect(scale.value).toBe("100");
+  });
+
   it("changes stamp height with the wheel and width with Shift+wheel", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     const canvas = editorCanvas(container);

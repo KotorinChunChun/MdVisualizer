@@ -33,6 +33,18 @@ interface DragState {
   annotationY: number;
 }
 
+type CanvasEdge = "north" | "east" | "south" | "west";
+
+interface CanvasScaleDragState {
+  edge: CanvasEdge;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  startScale: number;
+  baseWidth: number;
+  baseHeight: number;
+}
+
 const RECOMMENDED_COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6"];
 const MIN_CANVAS_SCALE = 10;
 const MAX_CANVAS_SCALE = 400;
@@ -63,6 +75,7 @@ export function ImageAnnotationEditor({
   const acceptedVersionRef = useRef(imageVersion);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
+  const canvasScaleDragRef = useRef<CanvasScaleDragState | null>(null);
   const [state, dispatch] = useReducer(imageAnnotationReducer, undefined, () => createImageAnnotationState());
   const [tool, setTool] = useState<Tool>("frame");
   const [stampSizes, setStampSizes] = useState(DEFAULT_STAMP_SIZES);
@@ -386,6 +399,38 @@ export function ImageAnnotationEditor({
   };
 
   const setScale = (value: number) => setCanvasScale(Math.round(clamp(value, MIN_CANVAS_SCALE, MAX_CANVAS_SCALE)));
+  const beginCanvasScaleDrag = (edge: CanvasEdge, event: React.PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    canvasScaleDragRef.current = {
+      edge,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScale: canvasScale,
+      baseWidth: Math.max(1, canvasSize.width || canvasRef.current?.width || 1),
+      baseHeight: Math.max(1, canvasSize.height || canvasRef.current?.height || 1),
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const moveCanvasScaleDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = canvasScaleDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const delta = drag.edge === "east"
+      ? (event.clientX - drag.startX) / drag.baseWidth * 100
+      : drag.edge === "west"
+        ? (drag.startX - event.clientX) / drag.baseWidth * 100
+        : drag.edge === "south"
+          ? (event.clientY - drag.startY) / drag.baseHeight * 100
+          : (drag.startY - event.clientY) / drag.baseHeight * 100;
+    setScale(drag.startScale + delta);
+  };
+  const finishCanvasScaleDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = canvasScaleDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    canvasScaleDragRef.current = null;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  };
   const imageSource = `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`;
   const canvasStyle = canvasSize.width > 0
     ? { width: `${canvasSize.width * canvasScale / 100}px`, height: `${canvasSize.height * canvasScale / 100}px` }
@@ -490,42 +535,56 @@ export function ImageAnnotationEditor({
           setCanvasSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
           render();
         }} />
-        <canvas
-          ref={canvasRef}
-          className={`is-tool-${tool}${dragRef.current ? " is-dragging" : ""}`}
-          style={canvasStyle}
-          onPointerMove={moveCanvasPointer}
-          onPointerLeave={() => { if (!dragRef.current) setCursor(null); }}
-          onPointerDown={beginCanvasInteraction}
-          onPointerUp={finishCanvasInteraction}
-          onPointerCancel={(event) => {
-            dragRef.current = null;
-            setDragPreview(null);
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-          }}
-          onWheel={(event) => {
-            event.preventDefault();
-            const maximumWidth = event.currentTarget.width;
-            const maximumHeight = event.currentTarget.height;
-            const deltaPixels = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? Math.max(1, event.currentTarget.clientHeight) : 1);
-            if (deltaPixels === 0) return;
-            const delta = deltaPixels < 0 ? 2 : -2;
-            if (selected) {
-              dispatch({ type: "resizeSelected", axis: event.shiftKey ? "width" : "height", delta, bounds: imageBounds() });
-            } else if (event.shiftKey) {
-              setWidth((current) => Math.max(1, Math.min(maximumWidth, current + delta)));
-            } else {
-              setHeight((current) => Math.max(1, Math.min(maximumHeight, current + delta)));
-            }
-          }}
-          onContextMenu={(event) => {
-            event.preventDefault();
-            const point = imagePoint(event);
-            const hit = hitTestAnnotation(state.annotations, point.x, point.y);
-            if (tool === "select" && hit) dispatch({ type: "select", id: hit.id });
-            setContextMenu({ clientX: event.clientX, clientY: event.clientY, imageX: point.x, imageY: point.y, targetId: hit?.id ?? null });
-          }}
-        />
+        <div className="annotation-editor__canvas-frame" style={canvasStyle}>
+          <canvas
+            ref={canvasRef}
+            className={`is-tool-${tool}${dragRef.current ? " is-dragging" : ""}`}
+            onPointerMove={moveCanvasPointer}
+            onPointerLeave={() => { if (!dragRef.current) setCursor(null); }}
+            onPointerDown={beginCanvasInteraction}
+            onPointerUp={finishCanvasInteraction}
+            onPointerCancel={(event) => {
+              dragRef.current = null;
+              setDragPreview(null);
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onWheel={(event) => {
+              event.preventDefault();
+              const maximumWidth = event.currentTarget.width;
+              const maximumHeight = event.currentTarget.height;
+              const deltaPixels = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? Math.max(1, event.currentTarget.clientHeight) : 1);
+              if (deltaPixels === 0) return;
+              const delta = deltaPixels < 0 ? 2 : -2;
+              if (selected) {
+                dispatch({ type: "resizeSelected", axis: event.shiftKey ? "width" : "height", delta, bounds: imageBounds() });
+              } else if (event.shiftKey) {
+                setWidth((current) => Math.max(1, Math.min(maximumWidth, current + delta)));
+              } else {
+                setHeight((current) => Math.max(1, Math.min(maximumHeight, current + delta)));
+              }
+            }}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              const point = imagePoint(event);
+              const hit = hitTestAnnotation(state.annotations, point.x, point.y);
+              if (tool === "select" && hit) dispatch({ type: "select", id: hit.id });
+              setContextMenu({ clientX: event.clientX, clientY: event.clientY, imageX: point.x, imageY: point.y, targetId: hit?.id ?? null });
+            }}
+          />
+          {(["north", "east", "south", "west"] as const).map((edge) => <button
+            key={edge}
+            type="button"
+            className={`annotation-editor__resize-handle is-${edge}`}
+            aria-label={`${edge === "north" ? "上" : edge === "east" ? "右" : edge === "south" ? "下" : "左"}辺をドラッグしてキャンバスサイズを変更`}
+            onPointerDown={(event) => beginCanvasScaleDrag(edge, event)}
+            onPointerMove={moveCanvasScaleDrag}
+            onPointerUp={finishCanvasScaleDrag}
+            onPointerCancel={(event) => {
+              canvasScaleDragRef.current = null;
+              if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+          />)}
+        </div>
       </div>
     </main>
 

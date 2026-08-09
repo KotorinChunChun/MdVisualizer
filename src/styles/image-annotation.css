@@ -30,9 +30,17 @@
 .annotation-editor__tools output { padding: 12px 14px; color: var(--text-secondary); font-size: 12px; }
 .annotation-editor__stage { min-width: 0; min-height: 0; overflow: auto; background-color: #20242a; background-image: linear-gradient(45deg,#2b3038 25%,transparent 25%),linear-gradient(-45deg,#2b3038 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#2b3038 75%),linear-gradient(-45deg,transparent 75%,#2b3038 75%); background-size: 20px 20px; background-position: 0 0,0 10px,10px -10px,-10px 0; }
 .annotation-editor__canvas-wrap { display: grid; place-items: center; min-width: 100%; min-height: 100%; padding: 32px; box-sizing: border-box; }
-.annotation-editor__stage canvas { display: block; max-width: none; max-height: none; cursor: crosshair; box-shadow: 0 12px 34px #0008; touch-action: none; }
+.annotation-editor__canvas-frame { position: relative; flex: none; line-height: 0; }
+.annotation-editor__stage canvas { display: block; width: 100%; height: 100%; max-width: none; max-height: none; cursor: crosshair; box-shadow: 0 12px 34px #0008; touch-action: none; }
 .annotation-editor__stage canvas.is-tool-select { cursor: default; }
 .annotation-editor__stage canvas.is-dragging { cursor: move; }
+.annotation-editor .annotation-editor__resize-handle { position: absolute; z-index: 2; padding: 0; background: #f8fafc; border: 2px solid var(--accent-color); border-radius: 999px; box-shadow: 0 2px 7px #0008; touch-action: none; }
+.annotation-editor__resize-handle.is-north,.annotation-editor__resize-handle.is-south { left: 50%; width: 44px; height: 10px; margin-left: -22px; cursor: ns-resize; }
+.annotation-editor__resize-handle.is-north { top: -6px; }
+.annotation-editor__resize-handle.is-south { bottom: -6px; }
+.annotation-editor__resize-handle.is-east,.annotation-editor__resize-handle.is-west { top: 50%; width: 10px; height: 44px; margin-top: -22px; cursor: ew-resize; }
+.annotation-editor__resize-handle.is-east { right: -6px; }
+.annotation-editor__resize-handle.is-west { left: -6px; }
 .annotation-editor__context-menu { position: fixed; z-index: 4; display: grid; min-width: 150px; padding: 5px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 12px 36px #0009; }
 .annotation-editor__context-menu button { border: 0; text-align: left; background: transparent; }
 .annotation-editor__context-menu button:not(:disabled):hover { background: var(--btn-bg); }
