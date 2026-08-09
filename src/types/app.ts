@@ -1,5 +1,6 @@
 export interface MarkdownLoadResult {
   path: string;
+  kind: "markdown" | "svg" | "mermaid";
   content: string;
   base_dir: string;
   image_paths: string[];

@@ -7,15 +7,42 @@ use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DocumentKind {
+    Markdown,
+    Svg,
+    Mermaid,
+}
+
 #[derive(Serialize, Debug, Clone)]
 pub struct MarkdownLoadResult {
     pub path: String,
+    pub kind: DocumentKind,
     pub content: String,
     pub base_dir: String,
     pub image_paths: Vec<String>,
     pub encoding: String,
     pub size_bytes: u64,
     pub modified_at: String,
+}
+
+pub fn document_kind(path: &Path) -> Option<DocumentKind> {
+    match path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
+        Some("md") | Some("markdown") => Some(DocumentKind::Markdown),
+        Some("svg") => Some(DocumentKind::Svg),
+        Some("mmd") | Some("mermaid") => Some(DocumentKind::Mermaid),
+        _ => None,
+    }
+}
+
+pub fn is_supported_document(path: &Path) -> bool {
+    document_kind(path).is_some()
 }
 
 fn normalize_webview_path(path: &str) -> &str {
@@ -33,6 +60,8 @@ fn normalize_webview_path(path: &str) -> &str {
 pub fn load_markdown(path_str: &str) -> AppResult<MarkdownLoadResult> {
     let normalized_path = normalize_webview_path(path_str);
     let path = PathBuf::from(normalized_path);
+    let kind = document_kind(&path)
+        .ok_or_else(|| AppError::UnsupportedDocument(normalized_path.to_string()))?;
     if !path.exists() {
         return Err(AppError::FileNotFound(normalized_path.to_string()));
     }
@@ -55,10 +84,15 @@ pub fn load_markdown(path_str: &str) -> AppResult<MarkdownLoadResult> {
         .unwrap_or_default();
 
     let base_path = Path::new(&base_dir);
-    let image_paths = extract_image_paths(&content, base_path);
+    let image_paths = if kind == DocumentKind::Markdown {
+        extract_image_paths(&content, base_path)
+    } else {
+        Vec::new()
+    };
 
     Ok(MarkdownLoadResult {
         path: canonical_path.to_string_lossy().to_string(),
+        kind,
         content,
         base_dir,
         image_paths,
@@ -232,5 +266,44 @@ mod tests {
         let (shift_jis, shift_jis_encoding) = decode_markdown(&encoded);
         assert_eq!(shift_jis, "日本語");
         assert_eq!(shift_jis_encoding, "Shift_JIS");
+    }
+
+    #[test]
+    fn classifies_every_supported_document_extension_case_insensitively() {
+        assert_eq!(document_kind(Path::new("readme.md")), Some(DocumentKind::Markdown));
+        assert_eq!(document_kind(Path::new("README.MARKDOWN")), Some(DocumentKind::Markdown));
+        assert_eq!(document_kind(Path::new("diagram.svg")), Some(DocumentKind::Svg));
+        assert_eq!(document_kind(Path::new("flow.MMD")), Some(DocumentKind::Mermaid));
+        assert_eq!(document_kind(Path::new("flow.mermaid")), Some(DocumentKind::Mermaid));
+        assert_eq!(document_kind(Path::new("image.png")), None);
+    }
+
+    #[test]
+    fn loads_svg_and_mermaid_as_standalone_documents_without_image_references() {
+        let directory = tempfile::tempdir().unwrap();
+        let svg = directory.path().join("diagram.svg");
+        let mermaid = directory.path().join("flow.mmd");
+        std::fs::write(&svg, r#"<svg><image href="nested.png"/></svg>"#).unwrap();
+        std::fs::write(&mermaid, "flowchart LR\n  A --> B").unwrap();
+
+        let loaded_svg = load_markdown(&svg.to_string_lossy()).unwrap();
+        assert_eq!(loaded_svg.kind, DocumentKind::Svg);
+        assert!(loaded_svg.image_paths.is_empty());
+
+        let loaded_mermaid = load_markdown(&mermaid.to_string_lossy()).unwrap();
+        assert_eq!(loaded_mermaid.kind, DocumentKind::Mermaid);
+        assert!(loaded_mermaid.image_paths.is_empty());
+        assert!(loaded_mermaid.content.contains("A --> B"));
+    }
+
+    #[test]
+    fn rejects_files_outside_the_supported_document_set() {
+        let directory = tempfile::tempdir().unwrap();
+        let image = directory.path().join("image.png");
+        std::fs::write(&image, b"png").unwrap();
+        assert!(matches!(
+            load_markdown(&image.to_string_lossy()),
+            Err(AppError::UnsupportedDocument(_))
+        ));
     }
 }

@@ -53,6 +53,11 @@ describe("remarkObsidianImages", () => {
     ]);
   });
 
+  it("converts standalone Mermaid wiki links", () => {
+    expect(parseObsidianMarkdownLinkReference("flow.mmd|フロー図")).toEqual({ source: "flow.mmd", label: "フロー図" });
+    expect(parseObsidianMarkdownLinkReference("sequence.mermaid")).toEqual({ source: "sequence.mermaid", label: "sequence.mermaid" });
+  });
+
   it("treats Obsidian size aliases as dimensions rather than visible alt text", () => {
     expect(parseObsidianImageReference("photo.webp|320x200")).toEqual({
       source: "photo.webp",

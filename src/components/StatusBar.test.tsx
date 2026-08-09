@@ -4,6 +4,7 @@ import { StatusBar } from "./StatusBar";
 
 const document = {
   path: "C:\\docs\\sample.md",
+  kind: "markdown" as const,
   content: "# Sample",
   base_dir: "C:\\docs",
   image_paths: [],

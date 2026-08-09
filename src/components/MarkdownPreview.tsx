@@ -13,7 +13,7 @@ import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
 import { CodeBlock } from "./CodeBlock";
 import { MermaidBlock } from "./MermaidBlock";
 import { openExternalUrl } from "../lib/commands";
-import { resolveLocalMarkdownPath } from "../lib/path";
+import { resolveLocalDocumentPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { imageOccurrenceId } from "../lib/imageOccurrences";
@@ -125,7 +125,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
           a: ({ href, children, ...props }) => <a {...props} href={href} onClick={(event) => {
             event.preventDefault();
             if (!href) return;
-            const localPath = resolveLocalMarkdownPath(href, baseDir);
+            const localPath = resolveLocalDocumentPath(href, baseDir);
             if (localPath) {
               if (event.ctrlKey) onOpenDocumentWindow?.(localPath);
               else onOpenDocument?.(localPath);

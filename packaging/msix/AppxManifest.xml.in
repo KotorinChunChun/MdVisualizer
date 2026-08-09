@@ -44,11 +44,14 @@
         <uap:Extension Category="windows.fileTypeAssociation">
           <uap:FileTypeAssociation
             Name="markdown">
-            <uap:DisplayName>Markdown Document</uap:DisplayName>
+            <uap:DisplayName>Markdown or Diagram Document</uap:DisplayName>
             <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
             <uap:SupportedFileTypes>
               <uap:FileType ContentType="text/markdown">.md</uap:FileType>
               <uap:FileType ContentType="text/markdown">.markdown</uap:FileType>
+              <uap:FileType ContentType="image/svg+xml">.svg</uap:FileType>
+              <uap:FileType ContentType="text/plain">.mmd</uap:FileType>
+              <uap:FileType ContentType="text/plain">.mermaid</uap:FileType>
             </uap:SupportedFileTypes>
           </uap:FileTypeAssociation>
         </uap:Extension>

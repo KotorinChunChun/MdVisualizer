@@ -9,7 +9,9 @@ use crate::image_references::{
     rename_image_and_references as do_rename_image_and_references,
     update_image_caption as do_update_image_caption, RenameImageResult,
 };
-use crate::markdown::{load_markdown as do_load_markdown, MarkdownLoadResult};
+use crate::markdown::{
+    is_supported_document, load_markdown as do_load_markdown, DocumentKind, MarkdownLoadResult,
+};
 use crate::settings::{
     load_application_settings, load_settings as load_settings_file, merge_external_app_settings,
     merge_fold_state, merge_settings, SettingsLoadResult,
@@ -471,6 +473,9 @@ pub async fn open_in_new_window(
     window: WebviewWindow,
     path: String,
 ) -> Result<(), String> {
+    if !is_supported_document(Path::new(&path)) {
+        return Err(AppError::UnsupportedDocument(path).to_string());
+    }
     if !Path::new(&path).exists() {
         return Err(AppError::FileNotFound(path).to_string());
     }
@@ -574,6 +579,9 @@ fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>
 #[tauri::command]
 pub fn diagnose_document(path: String) -> Result<Vec<DiagnosticItem>, String> {
     let loaded = do_load_markdown(&path).map_err(|error| error.to_string())?;
+    if loaded.kind != DocumentKind::Markdown {
+        return Ok(Vec::new());
+    }
     let source = loaded.content.replace("\r\n", "\n");
     let base = PathBuf::from(&loaded.base_dir);
     let mut diagnostics = Vec::new();
@@ -2154,5 +2162,21 @@ mod tests {
             mermaid_clipboard_file(png).unwrap(),
             ("png".into(), vec![137, 80, 78, 71])
         );
+    }
+
+    #[test]
+    fn standalone_diagrams_are_not_parsed_as_markdown_diagnostics() {
+        let directory = tempfile::tempdir().unwrap();
+        let mermaid = directory.path().join("broken-links.mermaid");
+        let svg = directory.path().join("broken-links.svg");
+        std::fs::write(&mermaid, "A --> B\n[missing](missing.md)").unwrap();
+        std::fs::write(&svg, r#"<svg><text>[missing](missing.md)</text></svg>"#).unwrap();
+
+        assert!(diagnose_document(mermaid.to_string_lossy().into_owned())
+            .unwrap()
+            .is_empty());
+        assert!(diagnose_document(svg.to_string_lossy().into_owned())
+            .unwrap()
+            .is_empty());
     }
 }

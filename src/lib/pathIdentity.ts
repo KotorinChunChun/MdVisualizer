@@ -23,3 +23,6 @@ export function isMarkdownPath(path: string): boolean {
   return /\.(?:md|markdown)$/i.test(path.trim());
 }
 
+export function isSupportedDocumentPath(path: string): boolean {
+  return /\.(?:md|markdown|svg|mmd|mermaid)$/i.test(path.trim());
+}

@@ -51,7 +51,7 @@ export function parseObsidianImageReference(value: string): ObsidianImageReferen
 export function parseObsidianMarkdownLinkReference(value: string): ObsidianMarkdownLinkReference | null {
   const separator = value.indexOf("|");
   const source = (separator >= 0 ? value.slice(0, separator) : value).trim();
-  if (!source || !/\.(?:md|markdown)(?:[?#].*)?$/i.test(source)) return null;
+  if (!source || !/\.(?:md|markdown|mmd|mermaid)(?:[?#].*)?$/i.test(source)) return null;
   const alias = separator >= 0 ? value.slice(separator + 1).trim() : "";
   return { source, label: alias || source };
 }
@@ -132,7 +132,7 @@ function transformChildren(node: MarkdownNode) {
   node.children = children;
 }
 
-/** Converts Obsidian image embeds and local Markdown wiki links to Markdown AST nodes. */
+/** Converts Obsidian image embeds and local document wiki links to Markdown AST nodes. */
 export function remarkObsidianImages() {
   return (tree: MarkdownNode) => transformChildren(tree);
 }

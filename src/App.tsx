@@ -4,6 +4,7 @@ import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
 import { StatusBar } from "./components/StatusBar";
 import { MarkdownPreview } from "./components/MarkdownPreview";
+import { StandaloneDocumentPreview } from "./components/StandaloneDocumentPreview";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
 import { SearchBar } from "./components/SearchBar";
@@ -1051,7 +1052,8 @@ export function App() {
 
   const handleMarkdownChanged = useCallback(
     ({ path, changeKind }: { path: string; changeKind: string }) => {
-      const tabs = tabsState.tabs.filter((candidate) => candidate.path === path);
+      const identity = localPathIdentity(path);
+      const tabs = tabsState.tabs.filter((candidate) => localPathIdentity(candidate.path) === identity);
       if (!tabs.length) return;
       const canReload = changeKind !== "deleted" && changeKind !== "renamed";
       if (autoReload === "on" && canReload) tabs.forEach((tab) => reloadTab(tab.id));
@@ -1178,7 +1180,7 @@ export function App() {
           onOpenChange={() => undefined}
         />}
       />}
-      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => handlePreviewScroll(event.currentTarget)} onPointerMove={handlePreviewPointerMove} style={{ zoom: viewMode === "presentation" && activeTab?.kind !== "settings" ? 1 : zoom / 100 }}>
+      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => handlePreviewScroll(event.currentTarget)} onPointerMove={handlePreviewPointerMove} style={{ zoom: viewMode === "presentation" && activeTab?.document?.kind === "markdown" ? 1 : zoom / 100 }}>
         {activeTab?.kind === "settings" ? (
           <SettingsPanel
             apps={externalApps}
@@ -1200,6 +1202,16 @@ export function App() {
             <div className="empty-title">ファイルを読み込めません</div>
             <div className="empty-desc">{activeTab.error}</div>
           </div>
+        ) : activeTab?.document && activeTab.document.kind !== "markdown" ? (
+          <StandaloneDocumentPreview
+            document={activeTab.document}
+            imageVersions={imageVersions}
+            contentRef={markdownRef}
+            theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+            windowId={windowLabel}
+            tabId={activeTab.id}
+            onMediaOpen={openMediaPreview}
+          />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
             content={activeTab.document.content}
@@ -1249,9 +1261,9 @@ export function App() {
         ) : (
           <div className="empty-state">
             <div className="empty-icon">📑</div>
-            <div className="empty-title">Markdownファイルが指定されていません</div>
+            <div className="empty-title">表示するファイルが指定されていません</div>
             <div className="empty-desc">
-              <code>.md</code> ファイルをダブルクリックして開くか、コマンドライン引数で指定してください。
+              <code>.md</code>、<code>.svg</code>、<code>.mmd</code> ファイルをダブルクリックして開くか、ドロップしてください。
             </div>
           </div>
         )}

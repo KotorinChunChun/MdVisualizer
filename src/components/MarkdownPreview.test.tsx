@@ -48,6 +48,24 @@ describe("MarkdownPreview sanitization", () => {
     expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/linked-document.md");
   });
 
+  it("opens SVG and Mermaid document links in tabs or adjacent windows", () => {
+    const onOpenDocument = vi.fn();
+    const onOpenDocumentWindow = vi.fn();
+    render(<MarkdownPreview
+      content="[SVG](diagram.svg) [Mermaid](flow.mmd)"
+      baseDir="C:\\docs"
+      imageVersions={{}}
+      onOpenDocument={onOpenDocument}
+      onOpenDocumentWindow={onOpenDocumentWindow}
+    />);
+
+    fireEvent.click(screen.getByRole("link", { name: "SVG" }));
+    fireEvent.click(screen.getByRole("link", { name: "Mermaid" }), { ctrlKey: true });
+
+    expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/diagram.svg");
+    expect(onOpenDocumentWindow).toHaveBeenCalledWith("C:/docs/flow.mmd");
+  });
+
   it("offers confirmed execution only for PowerShell fences backed by a document path", () => {
     render(<MarkdownPreview content={"```pwsh\nWrite-Output safe\n```\n\n```bash\necho no\n```"} baseDir="C:\\docs" documentPath="C:\\docs\\sample.md" imageVersions={{}} />);
     expect(screen.getAllByRole("button", { name: "PowerShellを実行" })).toHaveLength(1);

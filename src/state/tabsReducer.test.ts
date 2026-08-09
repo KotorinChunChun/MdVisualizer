@@ -3,6 +3,7 @@ import { initialTabsState, tabsReducer } from "./tabsReducer";
 
 const loadedDocument = (path: string) => ({
   path,
+  kind: "markdown" as const,
   content: "# Test",
   base_dir: "C:/docs",
   image_paths: [],

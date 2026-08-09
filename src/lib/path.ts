@@ -1,4 +1,5 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { isSupportedDocumentPath } from "./pathIdentity";
 
 /** Windows drive paths are absolute even when written with forward slashes. */
 export function isWindowsAbsolutePath(value: string): boolean {
@@ -91,11 +92,15 @@ export function isMarkdownDocumentPath(value: string): boolean {
   return /\.(?:md|markdown)$/i.test(value.split(/[?#]/, 1)[0]);
 }
 
+export function isSupportedLocalDocumentPath(value: string): boolean {
+  return isSupportedDocumentPath(value.split(/[?#]/, 1)[0]);
+}
+
 /**
- * Resolves a Markdown link without asking the browser to turn it into a
- * tauri.localhost HTTP URL. Returns null for external or non-Markdown links.
+ * Resolves a supported local document link without asking the browser to turn
+ * it into a tauri.localhost HTTP URL. Returns null for external or unsupported links.
  */
-export function resolveLocalMarkdownPath(href: string, baseDir: string): string | null {
+export function resolveLocalDocumentPath(href: string, baseDir: string): string | null {
   if (!href || href.startsWith("#")) return null;
   const lower = href.toLowerCase();
   if (lower.startsWith("https://") || lower.startsWith("mailto:")) return null;
@@ -126,7 +131,10 @@ export function resolveLocalMarkdownPath(href: string, baseDir: string): string 
 
   candidate = decodePath(candidate.split(/[?#]/, 1)[0])
     .replace(/^\/\?\/(?=[a-zA-Z]:\/)/, "");
-  if (!isMarkdownDocumentPath(candidate)) return null;
+  if (!isSupportedLocalDocumentPath(candidate)) return null;
   if (isAbsoluteLocalPath(candidate)) return normalizeLocalPath(candidate);
   return normalizeLocalPath(`${baseDir.replace(/[\\/]$/, "")}/${candidate}`);
 }
+
+/** Compatibility alias for callers that still use the original Markdown-only name. */
+export const resolveLocalMarkdownPath = resolveLocalDocumentPath;

@@ -11,17 +11,10 @@ pub mod watcher;
 
 use app_state::AppState;
 use commands::*;
+use markdown::is_supported_document;
 use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 use tauri::{Emitter, EventTarget, Manager};
-
-fn is_markdown_file(path: &Path) -> bool {
-    path.extension()
-        .and_then(|extension| extension.to_str())
-        .is_some_and(|extension| {
-            extension.eq_ignore_ascii_case("md") || extension.eq_ignore_ascii_case("markdown")
-        })
-}
 
 fn lexical_normalize(path: PathBuf) -> PathBuf {
     let mut normalized = PathBuf::new();
@@ -37,9 +30,9 @@ fn lexical_normalize(path: PathBuf) -> PathBuf {
     normalized
 }
 
-fn normalize_markdown_path(path: &str, cwd: &Path) -> Option<PathBuf> {
+fn normalize_document_path(path: &str, cwd: &Path) -> Option<PathBuf> {
     let path = PathBuf::from(path);
-    if !is_markdown_file(&path) {
+    if !is_supported_document(&path) {
         return None;
     }
     let absolute = if path.is_absolute() {
@@ -57,12 +50,12 @@ fn path_deduplication_key(path: &Path) -> String {
     value
 }
 
-fn markdown_file_arguments(arguments: impl IntoIterator<Item = String>, cwd: &Path) -> Vec<String> {
+fn document_file_arguments(arguments: impl IntoIterator<Item = String>, cwd: &Path) -> Vec<String> {
     let mut seen = HashSet::new();
     arguments
         .into_iter()
         .filter(|argument| !argument.starts_with('-'))
-        .filter_map(|argument| normalize_markdown_path(&argument, cwd))
+        .filter_map(|argument| normalize_document_path(&argument, cwd))
         .filter(|path| seen.insert(path_deduplication_key(path)))
         .map(|path| path.to_string_lossy().into_owned())
         .collect()
@@ -81,7 +74,7 @@ fn launch_owner_label(labels: impl IntoIterator<Item = String>) -> Option<String
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let args: Vec<String> = std::env::args().collect();
-    let initial_files = markdown_file_arguments(
+    let initial_files = document_file_arguments(
         args.into_iter().skip(1),
         &std::env::current_dir().expect("Could not determine the current directory"),
     );
@@ -93,7 +86,7 @@ pub fn run() {
         // delivered to the existing app instead of becoming an overlapping
         // second process.
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
-            let files = markdown_file_arguments(args, Path::new(&cwd));
+            let files = document_file_arguments(args, Path::new(&cwd));
             if !files.is_empty() {
                 let labels = app.webview_windows().into_keys();
                 if let Some(label) = launch_owner_label(labels) {
@@ -165,30 +158,39 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{launch_owner_label, markdown_file_arguments};
+    use super::{document_file_arguments, launch_owner_label};
     use std::path::Path;
 
     #[test]
-    fn keeps_only_markdown_file_arguments() {
+    fn keeps_only_supported_document_arguments() {
         assert_eq!(
-            markdown_file_arguments(
+            document_file_arguments(
                 [
                     "MarkdownViewer.exe".into(),
                     "--flag".into(),
                     "C:/docs/readme.md".into(),
                     "C:/docs/notes.MARKDOWN".into(),
+                    "C:/docs/diagram.svg".into(),
+                    "C:/docs/flow.mmd".into(),
+                    "C:/docs/sequence.MERMAID".into(),
                     "C:/docs/image.png".into(),
                 ],
                 Path::new("C:/")
             ),
-            vec!["C:\\docs\\readme.md", "C:\\docs\\notes.MARKDOWN"],
+            vec![
+                "C:\\docs\\readme.md",
+                "C:\\docs\\notes.MARKDOWN",
+                "C:\\docs\\diagram.svg",
+                "C:\\docs\\flow.mmd",
+                "C:\\docs\\sequence.MERMAID",
+            ],
         );
     }
 
     #[test]
     fn normalizes_and_deduplicates_paths_in_one_launch_request() {
         assert_eq!(
-            markdown_file_arguments(
+            document_file_arguments(
                 [
                     "docs/./guide.md".into(),
                     "docs/section/../guide.md".into(),

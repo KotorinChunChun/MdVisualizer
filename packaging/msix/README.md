@@ -43,5 +43,5 @@ Microsoft Storeへ提出する場合は、Partner Centerで割り当てられた
 - Windows 10 2004（build 19041）以降のx64環境を対象とする。
 - Windows SDK 10のx64版`MakeAppx.exe`と`SignTool.exe`が必要。
 - WebView2 RuntimeはOS側にインストール済みであること。
-- `.md`と`.markdown`を関連付け対象として登録する。
+- `.md`、`.markdown`、`.svg`、`.mmd`、`.mermaid`を関連付け対象として登録する。
 - MSIXの更新にはIdentity、Publisher、アーキテクチャを維持し、4要素のVersionを増加させる。

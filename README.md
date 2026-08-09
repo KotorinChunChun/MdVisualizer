@@ -42,7 +42,7 @@ npm.cmd run tauri -- dev -- -- C:\Project\README.md C:\Project\design.markdown
 
 開発中のアプリは `http://localhost:1420` のViteサーバーを表示します。起動したPowerShellを終了するとサーバーも停止するため、アプリには接続拒否画面が表示されます。`src-tauri\target\debug\markdown-viewer.exe` を単独で起動するのではなく、上記コマンドから起動してください。
 
-リリース版は `.md` と `.markdown` の関連付けを登録します。ファイルをダブルクリックすると、新しいプロセスで開きます。
+リリース版は `.md`、`.markdown`、`.svg`、`.mmd`、`.mermaid` の関連付けを登録します。ファイルをダブルクリックすると、Markdown、SVG、Mermaid文書として開きます。
 
 ### MSIXインストーラー
 

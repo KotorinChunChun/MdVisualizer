@@ -4,7 +4,7 @@ vi.mock("@tauri-apps/api/core", () => ({
   convertFileSrc: (path: string) => `asset://${path}`,
 }));
 
-import { isAbsoluteLocalPath, isWindowsAbsolutePath, resolveImageSrc, resolveLocalMarkdownPath } from "./path";
+import { isAbsoluteLocalPath, isWindowsAbsolutePath, resolveImageSrc, resolveLocalDocumentPath, resolveLocalMarkdownPath } from "./path";
 
 describe("Windows image paths", () => {
   it.each(["C:/images/a.png", "C:\\images\\a.png", "z:/x/y.png"])("recognizes %s as an absolute Windows path", (path) => {
@@ -31,5 +31,11 @@ describe("Windows image paths", () => {
   it("does not classify external or non-Markdown links as local documents", () => {
     expect(resolveLocalMarkdownPath("https://example.com/readme.md", "C:\\docs")).toBeNull();
     expect(resolveLocalMarkdownPath("image.png", "C:\\docs")).toBeNull();
+  });
+
+  it("resolves SVG and Mermaid links as local documents", () => {
+    expect(resolveLocalDocumentPath("../diagrams/system.svg", "C:\\docs\\current")).toBe("C:/docs/diagrams/system.svg");
+    expect(resolveLocalDocumentPath("flow.mmd", "C:\\docs")).toBe("C:/docs/flow.mmd");
+    expect(resolveLocalDocumentPath("sequence.mermaid#ignored", "C:\\docs")).toBe("C:/docs/sequence.mermaid");
   });
 });
