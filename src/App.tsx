@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { listen } from "@tauri-apps/api/event";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
 import { StatusBar } from "./components/StatusBar";
@@ -36,6 +35,7 @@ import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccur
 import { resolveImageSrc } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
 import { normalizeViewMode, type ViewMode } from "./lib/viewMode";
+import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -446,7 +446,7 @@ export function App() {
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
-    void listen<string[]>("open-markdown-in-new-window", (event) => {
+    void listenForSecondaryLaunches((event) => {
       for (const path of event.payload) {
         void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
       }
