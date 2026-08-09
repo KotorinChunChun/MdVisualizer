@@ -135,6 +135,7 @@ pub fn run() {
             load_settings,
             load_settings_status,
             save_settings,
+            copy_mermaid_file,
             update_external_app_settings,
             save_fold_state,
             get_initial_files,

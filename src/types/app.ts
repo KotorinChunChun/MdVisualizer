@@ -31,4 +31,6 @@ export interface ToastState {
   message: string;
   type: 'info' | 'error' | 'success';
   restorePath?: string;
+  actionLabel?: string;
+  onAction?: () => void | Promise<void>;
 }

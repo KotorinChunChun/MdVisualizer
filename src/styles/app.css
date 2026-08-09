@@ -587,6 +587,11 @@ body {
   background-color: var(--accent-hover);
 }
 
+.btn-toast-action {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 .btn-close {
   background: none;
   border: none;

@@ -20,13 +20,131 @@ use serde_json::{Map, Value};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::atomic::Ordering;
-use std::time::{Duration, Instant};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{
     AppHandle, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindow,
     WebviewWindowBuilder,
 };
 use tauri_plugin_opener::OpenerExt;
+
+static CLIPBOARD_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MermaidFileCopyRequest {
+    pub kind: String,
+    pub source: String,
+    pub svg: String,
+    pub png_bytes: Vec<u8>,
+}
+
+fn mermaid_clipboard_file(request: MermaidFileCopyRequest) -> Result<(String, Vec<u8>), String> {
+    match request.kind.as_str() {
+        "code" => Ok(("mmd".into(), request.source.into_bytes())),
+        "svg" => Ok(("svg".into(), request.svg.into_bytes())),
+        "png" if !request.png_bytes.is_empty() => Ok(("png".into(), request.png_bytes)),
+        "png" => Err("PNGデータが空です。".into()),
+        _ => Err("未対応のMermaidコピー形式です。".into()),
+    }
+}
+
+fn write_mermaid_clipboard_file(extension: &str, bytes: &[u8]) -> Result<PathBuf, String> {
+    let directory = std::env::temp_dir()
+        .join("markdown-viewer")
+        .join("clipboard");
+    std::fs::create_dir_all(&directory)
+        .map_err(|error| format!("一時フォルダを作成できません: {error}"))?;
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| error.to_string())?
+        .as_nanos();
+    for _ in 0..16 {
+        let sequence = CLIPBOARD_FILE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let path = directory.join(format!("mermaid-{timestamp}-{sequence}.{extension}"));
+        match std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)
+        {
+            Ok(mut file) => {
+                file.write_all(bytes)
+                    .map_err(|error| format!("一時ファイルを書き込めません: {error}"))?;
+                return Ok(path);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(format!("一時ファイルを作成できません: {error}")),
+        }
+    }
+    Err("一時ファイル名を確保できません。".into())
+}
+
+#[cfg(target_os = "windows")]
+fn copy_file_to_clipboard(path: &Path) -> Result<(), String> {
+    use std::mem::size_of;
+    use std::os::windows::ffi::OsStrExt;
+    use std::ptr;
+    use windows_sys::Win32::Foundation::{GlobalFree, BOOL, POINT};
+    use windows_sys::Win32::System::DataExchange::{
+        CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
+    };
+    use windows_sys::Win32::System::Memory::{
+        GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE,
+    };
+    use windows_sys::Win32::System::Ole::CF_HDROP;
+    use windows_sys::Win32::UI::Shell::DROPFILES;
+
+    let mut wide = path.as_os_str().encode_wide().collect::<Vec<u16>>();
+    wide.extend([0, 0]);
+    let byte_len = size_of::<DROPFILES>() + std::mem::size_of_val(wide.as_slice());
+    unsafe {
+        let memory = GlobalAlloc(GMEM_MOVEABLE, byte_len);
+        if memory.is_null() {
+            return Err("クリップボード用メモリを確保できません。".into());
+        }
+        let data = GlobalLock(memory);
+        if data.is_null() {
+            GlobalFree(memory);
+            return Err("クリップボード用メモリをロックできません。".into());
+        }
+        ptr::write(
+            data.cast::<DROPFILES>(),
+            DROPFILES {
+                pFiles: size_of::<DROPFILES>() as u32,
+                pt: POINT { x: 0, y: 0 },
+                fNC: 0 as BOOL,
+                fWide: 1 as BOOL,
+            },
+        );
+        ptr::copy_nonoverlapping(
+            wide.as_ptr().cast::<u8>(),
+            data.cast::<u8>().add(size_of::<DROPFILES>()),
+            std::mem::size_of_val(wide.as_slice()),
+        );
+        GlobalUnlock(memory);
+        if OpenClipboard(ptr::null_mut()) == 0 {
+            GlobalFree(memory);
+            return Err("クリップボードを開けません。".into());
+        }
+        if EmptyClipboard() == 0 {
+            CloseClipboard();
+            GlobalFree(memory);
+            return Err("クリップボードを空にできません。".into());
+        }
+        if SetClipboardData(CF_HDROP as u32, memory).is_null() {
+            CloseClipboard();
+            GlobalFree(memory);
+            return Err("ファイルをクリップボードへ設定できません。".into());
+        }
+        CloseClipboard();
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn copy_file_to_clipboard(_path: &Path) -> Result<(), String> {
+    Err("ファイルとしてコピーはWindowsでのみ利用できます。".into())
+}
 
 fn settings_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
     app_handle
@@ -289,6 +407,17 @@ pub fn save_settings(app_handle: AppHandle, updates: Value) -> Result<Value, Str
         .cloned()
         .ok_or_else(|| "Settings update must be an object.".to_string())?;
     merge_settings(&settings_path(&app_handle)?, updates).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn copy_mermaid_file(request: MermaidFileCopyRequest) -> Result<String, String> {
+    let (extension, bytes) = mermaid_clipboard_file(request)?;
+    let path = write_mermaid_clipboard_file(&extension, &bytes)?;
+    if let Err(error) = copy_file_to_clipboard(&path) {
+        let _ = std::fs::remove_file(&path);
+        return Err(error);
+    }
+    Ok(path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
@@ -1984,6 +2113,32 @@ mod tests {
                 width: 1200,
                 height: 800
             }
+        );
+    }
+
+    #[test]
+    fn prepares_expected_file_contents_for_each_mermaid_copy_kind() {
+        let request = || MermaidFileCopyRequest {
+            kind: "code".into(),
+            source: "flowchart LR".into(),
+            svg: "<svg/>".into(),
+            png_bytes: vec![137, 80, 78, 71],
+        };
+        assert_eq!(
+            mermaid_clipboard_file(request()).unwrap(),
+            ("mmd".into(), b"flowchart LR".to_vec())
+        );
+        let mut svg = request();
+        svg.kind = "svg".into();
+        assert_eq!(
+            mermaid_clipboard_file(svg).unwrap(),
+            ("svg".into(), b"<svg/>".to_vec())
+        );
+        let mut png = request();
+        png.kind = "png".into();
+        assert_eq!(
+            mermaid_clipboard_file(png).unwrap(),
+            ("png".into(), vec![137, 80, 78, 71])
         );
     }
 }

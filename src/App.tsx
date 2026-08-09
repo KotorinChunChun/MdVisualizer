@@ -230,9 +230,9 @@ export function App() {
 
   useEffect(() => {
     const handleMarkdownToast = (event: Event) => {
-      const detail = (event as CustomEvent<{ message?: string; type?: ToastState["type"] }>).detail;
+      const detail = (event as CustomEvent<{ message?: string; type?: ToastState["type"]; actionLabel?: string; onAction?: ToastState["onAction"] }>).detail;
       if (!detail?.message) return;
-      setToast({ id: String(Date.now()), message: detail.message, type: detail.type ?? "info" });
+      setToast({ id: String(Date.now()), message: detail.message, type: detail.type ?? "info", actionLabel: detail.actionLabel, onAction: detail.onAction });
     };
     window.addEventListener("markdown-toast", handleMarkdownToast);
     return () => window.removeEventListener("markdown-toast", handleMarkdownToast);

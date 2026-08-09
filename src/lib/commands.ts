@@ -15,6 +15,9 @@ export interface SettingsLoadStatus {
 export async function loadSettings(): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("load_settings"); }
 export async function loadSettingsStatus(): Promise<SettingsLoadStatus> { return await invoke<SettingsLoadStatus>("load_settings_status"); }
 export async function saveSettings(updates: Record<string, unknown>): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("save_settings", { updates }); }
+export async function copyMermaidFile(request: { kind: "code" | "png" | "svg"; source: string; svg: string; pngBytes: number[] }): Promise<string> {
+  return await invoke<string>("copy_mermaid_file", { request });
+}
 export async function updateExternalAppSettings(
   upserts: unknown[],
   removedIds: string[],

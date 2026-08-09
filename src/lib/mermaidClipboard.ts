@@ -62,3 +62,9 @@ export async function copyMermaid(kind: MermaidCopyKind, source: string, svg: st
     await navigator.clipboard.writeText(svg);
   }
 }
+
+export async function copyMermaidAsFile(kind: MermaidCopyKind, source: string, svg: string): Promise<string> {
+  const pngBytes = kind === "png" ? Array.from(new Uint8Array(await (await svgToPngBlob(svg)).arrayBuffer())) : [];
+  return await copyMermaidFile({ kind, source, svg, pngBytes });
+}
+import { copyMermaidFile } from "./commands";
