@@ -46,11 +46,12 @@ describe("CodeBlock", () => {
     render(<CodeBlock className="language-pwsh" documentPath={documentPath}>{"Write-Output 'safe-output'"}</CodeBlock>);
 
     fireEvent.click(screen.getByRole("button", { name: "PowerShellを実行" }));
-    expect(screen.getByRole("dialog", { name: "PowerShellコードを実行しますか？" }).textContent).toContain(String.raw`C:\docs`);
+    expect((screen.getByRole("textbox", { name: "作業フォルダー" }) as HTMLInputElement).value).toBe(String.raw`C:\docs`);
     expect(runPowerShell).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole("textbox", { name: "作業フォルダー" }), { target: { value: String.raw`C:\work` } });
     fireEvent.click(screen.getByRole("button", { name: "実行する" }));
 
-    await waitFor(() => expect(runPowerShell).toHaveBeenCalledWith({ documentPath, language: "pwsh", source: "Write-Output 'safe-output'" }));
+    await waitFor(() => expect(runPowerShell).toHaveBeenCalledWith({ documentPath, language: "pwsh", source: "Write-Output 'safe-output'", workingDirectory: String.raw`C:\work` }));
     expect((await screen.findByLabelText("標準出力")).textContent).toContain("safe-output");
     expect(screen.getByLabelText("PowerShell実行結果").textContent).toContain("終了コード: 0");
   });

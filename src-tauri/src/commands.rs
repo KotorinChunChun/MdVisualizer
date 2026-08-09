@@ -1,4 +1,5 @@
 use crate::app_state::AppState;
+use base64::Engine;
 use crate::errors::AppError;
 use crate::image_ops::{
     crop_image as do_crop_image, save_rendered_image as do_save_rendered_image, CropImageRequest,
@@ -1353,6 +1354,7 @@ pub struct RunPowerShellRequest {
     document_path: String,
     language: String,
     source: String,
+    working_directory: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1402,10 +1404,18 @@ fn validate_powershell_request(
     if !is_markdown {
         return Err("PowerShell code can only be executed from a Markdown document.".into());
     }
-    let working_directory = document_path
+    let default_working_directory = document_path
         .parent()
         .ok_or_else(|| "The Markdown document has no containing directory.".to_string())?
         .to_path_buf();
+    let working_directory = match request.working_directory.filter(|directory| !directory.trim().is_empty()) {
+        Some(directory) => std::fs::canonicalize(&directory)
+            .map_err(|error| format!("Could not resolve working directory: {error}"))?,
+        None => default_working_directory,
+    };
+    if !working_directory.is_dir() {
+        return Err("The working directory is not a directory.".into());
+    }
     Ok(ValidatedPowerShellRequest {
         working_directory,
         source: request.source,
@@ -1434,6 +1444,14 @@ fn run_powershell_process(
     timeout: Duration,
 ) -> Result<PowerShellRunResult, String> {
     let started = Instant::now();
+    let utf8_preamble = "$OutputEncoding = [System.Text.UTF8Encoding]::new($false); [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); $PSStyle.OutputRendering = 'PlainText'; ";
+    let encoded_source = utf8_preamble.to_owned() + &request.source;
+    let encoded_command = base64::engine::general_purpose::STANDARD.encode(
+        encoded_source
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect::<Vec<_>>(),
+    );
     let mut command = Command::new("pwsh");
     command
         .args([
@@ -1442,8 +1460,8 @@ fn run_powershell_process(
             "-NonInteractive",
             "-ExecutionPolicy",
             "Bypass",
-            "-Command",
-            "-",
+            "-EncodedCommand",
+            &encoded_command,
         ])
         .current_dir(&request.working_directory)
         .stdin(Stdio::piped())
@@ -1457,7 +1475,13 @@ fn run_powershell_process(
     }
     let mut child = command
         .spawn()
-        .map_err(|error| format!("Could not start pwsh: {error}"))?;
+        .map_err(|error| {
+            if error.kind() == std::io::ErrorKind::NotFound {
+                "PowerShell 7 (pwsh) が見つかりません。Microsoft Store から『PowerShell』をインストールしてから再実行してください。".to_string()
+            } else {
+                format!("Could not start pwsh: {error}")
+            }
+        })?;
     let stdout_reader = read_limited_output(
         child
             .stdout
@@ -1470,19 +1494,6 @@ fn run_powershell_process(
             .take()
             .ok_or_else(|| "PowerShell stderr was unavailable.".to_string())?,
     );
-    if let Some(mut stdin) = child.stdin.take() {
-        let mut source = request.source.into_bytes();
-        if !source.ends_with(b"\n") {
-            source.push(b'\n');
-        }
-        if let Err(error) = stdin.write_all(&source) {
-            let _ = child.kill();
-            let _ = child.wait();
-            let _ = stdout_reader.join();
-            let _ = stderr_reader.join();
-            return Err(format!("Could not send source to pwsh: {error}"));
-        }
-    }
 
     let (status, timed_out) = loop {
         if let Some(status) = child
@@ -1651,6 +1662,7 @@ mod tests {
             document_path: document.to_string_lossy().into_owned(),
             language: "pwsh".into(),
             source: "Get-Location".into(),
+            working_directory: None,
         })
         .unwrap();
         assert_eq!(
@@ -1661,6 +1673,7 @@ mod tests {
             document_path: document.to_string_lossy().into_owned(),
             language: "bash".into(),
             source: "echo unsafe".into(),
+            working_directory: None,
         })
         .is_err());
         let text_file = directory.path().join("sample.txt");
@@ -1669,6 +1682,7 @@ mod tests {
             document_path: text_file.to_string_lossy().into_owned(),
             language: "pwsh".into(),
             source: "Get-Location".into(),
+            working_directory: None,
         })
         .is_err());
     }

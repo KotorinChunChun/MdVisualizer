@@ -50,6 +50,7 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<PowerShellRunResult | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
+  const [workingDirectory, setWorkingDirectory] = useState(() => powerShellWorkingDirectory(documentPath ?? ""));
   const runGeneration = useRef(0);
   const runInFlight = useRef(false);
   const rawLanguage = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
@@ -79,6 +80,7 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
     setRunResult(null);
     setRunError(null);
     setConfirmationOpen(false);
+    setWorkingDirectory(powerShellWorkingDirectory(documentPath ?? ""));
   }, [documentPath, source]);
   useEffect(() => () => { runGeneration.current += 1; }, []);
   const copy = async (button: HTMLButtonElement) => {
@@ -104,7 +106,7 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
     setRunResult(null);
     setRunError(null);
     try {
-      const result = await runPowerShell({ documentPath, language: rawLanguage, source });
+      const result = await runPowerShell({ documentPath, language: rawLanguage, source, workingDirectory });
       if (runGeneration.current === generation) setRunResult(result);
     } catch (error) {
       if (runGeneration.current === generation) setRunError(String(error));
@@ -118,7 +120,10 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
 
   return <div className="code-block">
     <div className="code-actions">
-      {executable && <button type="button" className="code-run" disabled={running} onClick={() => setConfirmationOpen(true)}>{running ? "実行中…" : "PowerShellを実行"}</button>}
+      {executable && <button type="button" className="code-run" disabled={running} onClick={() => {
+        setWorkingDirectory(powerShellWorkingDirectory(documentPath ?? ""));
+        setConfirmationOpen(true);
+      }}>{running ? "実行中…" : "PowerShellを実行"}</button>}
       <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
     </div>
     <pre><code className={className} {...(html ? { dangerouslySetInnerHTML: { __html: html } } : {})}>{html ? undefined : source}</code></pre>
@@ -132,7 +137,8 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
       <section className="code-run-confirmation" role="dialog" aria-modal="true" aria-labelledby="code-run-confirmation-title">
         <h2 id="code-run-confirmation-title">PowerShellコードを実行しますか？</h2>
         <p>このMarkdownに書かれたコードが、次のフォルダーで実行されます。内容を確認できる場合だけ続行してください。</p>
-        <dl><dt>作業フォルダー</dt><dd><code>{powerShellWorkingDirectory(documentPath ?? "")}</code></dd><dt>制限</dt><dd>非対話・30秒・出力1MiB</dd></dl>
+        <label className="code-run-confirmation__directory">作業フォルダー<input type="text" value={workingDirectory} onChange={(event) => setWorkingDirectory(event.target.value)} /></label>
+        <dl><dt>実行環境</dt><dd>pwsh（PowerShell 7）</dd><dt>制限</dt><dd>非対話・30秒・出力1MiB</dd></dl>
         <pre>{source}</pre>
         <footer><button type="button" onClick={() => setConfirmationOpen(false)}>キャンセル</button><button type="button" className="code-run-confirmation__execute" onClick={() => void execute()}>実行する</button></footer>
       </section>

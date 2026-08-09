@@ -2347,6 +2347,7 @@ dependencies = [
 name = "markdown-viewer"
 version = "0.0.7"
 dependencies = [
+ "base64 0.22.1",
  "chardetng",
  "chrono",
  "encoding_rs",
