@@ -71,6 +71,7 @@ export type ImageAnnotationAction =
   | { type: "select"; id: string | null }
   | { type: "update"; id?: string; changes: AnnotationChanges; bounds?: ImageBounds }
   | { type: "scaleSelected"; scale: number; bounds?: ImageBounds }
+  | { type: "resizeSelected"; axis: "width" | "height"; delta: number; bounds?: ImageBounds }
   | { type: "delete"; id?: string }
   | { type: "commitSelection" }
   | { type: "undo" }
@@ -189,6 +190,34 @@ export function imageAnnotationReducer(
         height,
       });
       const replacement = action.bounds ? clampAnnotation(scaled, action.bounds) : scaled;
+      return withHistory(
+        state,
+        state.annotations.map((item) => item.id === target.id ? replacement : item),
+      );
+    }
+    case "resizeSelected": {
+      const target = selectedAnnotation(state);
+      if (!target || !Number.isFinite(action.delta) || action.delta === 0) return state;
+      const centerX = target.x + target.width / 2;
+      const centerY = target.y + target.height / 2;
+      const maximumWidth = action.bounds
+        ? Math.max(1, Math.min(centerX, action.bounds.width - centerX) * 2)
+        : Number.POSITIVE_INFINITY;
+      const maximumHeight = action.bounds
+        ? Math.max(1, Math.min(centerY, action.bounds.height - centerY) * 2)
+        : Number.POSITIVE_INFINITY;
+      const width = action.axis === "width"
+        ? clamp(target.width + action.delta, 1, maximumWidth)
+        : target.width;
+      const height = action.axis === "height"
+        ? clamp(target.height + action.delta, 1, maximumHeight)
+        : target.height;
+      const replacement = updateAnnotation(target, {
+        x: centerX - width / 2,
+        y: centerY - height / 2,
+        width,
+        height,
+      });
       return withHistory(
         state,
         state.annotations.map((item) => item.id === target.id ? replacement : item),

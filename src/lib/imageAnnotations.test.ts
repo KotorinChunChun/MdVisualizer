@@ -113,10 +113,19 @@ describe("image annotation reducer", () => {
     expect(clamped.annotations[0]).toMatchObject({ x: 0, y: 0, width: 100, height: 80 });
   });
 
+  it("resizes one selected axis symmetrically around its center", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const taller = imageAnnotationReducer(placed, { type: "resizeSelected", axis: "height", delta: 2, bounds });
+    expect(taller.annotations[0]).toMatchObject({ x: 10, y: 19, width: 30, height: 22 });
+    const narrower = imageAnnotationReducer(taller, { type: "resizeSelected", axis: "width", delta: -2, bounds });
+    expect(narrower.annotations[0]).toMatchObject({ x: 11, y: 19, width: 28, height: 22 });
+  });
+
   it("ignores edits without a selected target", () => {
     const state = createImageAnnotationState([frame()]);
     expect(imageAnnotationReducer(state, { type: "delete" })).toBe(state);
     expect(imageAnnotationReducer(state, { type: "scaleSelected", scale: 2 })).toBe(state);
+    expect(imageAnnotationReducer(state, { type: "resizeSelected", axis: "height", delta: 2 })).toBe(state);
   });
 });
 

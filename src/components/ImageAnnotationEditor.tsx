@@ -181,6 +181,10 @@ export function ImageAnnotationEditor({
       } else if (event.key === "Delete" && !editingText) {
         event.preventDefault();
         dispatch({ type: "delete" });
+      } else if (event.ctrlKey && event.key.toLowerCase() === "x" && !editingText && selected) {
+        event.preventDefault();
+        setClipboard({ ...selected });
+        dispatch({ type: "delete" });
       } else if (event.ctrlKey && event.key.toLowerCase() === "z") {
         event.preventDefault();
         dispatch({ type: event.shiftKey ? "redo" : "undo" });
@@ -191,7 +195,7 @@ export function ImageAnnotationEditor({
     };
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
-  }, [contextMenu, onCancel, state.selectedId]);
+  }, [contextMenu, onCancel, selected, state.selectedId]);
 
   const imagePoint = (event: Pick<React.PointerEvent<HTMLCanvasElement>, "clientX" | "clientY" | "currentTarget">) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -206,20 +210,31 @@ export function ImageAnnotationEditor({
     setContextMenu(null);
     const point = imagePoint(event);
     const hit = hitTestAnnotation(state.annotations, point.x, point.y);
-    if (hit) {
-      dispatch({ type: "select", id: hit.id });
+    const beginDrag = (annotation: ImageAnnotation) => {
       dragRef.current = {
-        id: hit.id,
+        id: annotation.id,
         pointerId: event.pointerId,
         startX: point.x,
         startY: point.y,
-        annotationX: hit.x,
-        annotationY: hit.y,
+        annotationX: annotation.x,
+        annotationY: annotation.y,
       };
       event.currentTarget.setPointerCapture(event.pointerId);
+    };
+    if (tool === "select") {
+      if (hit) {
+        dispatch({ type: "select", id: hit.id });
+        beginDrag(hit);
+      } else {
+        dispatch({ type: "commitSelection" });
+      }
       return;
     }
-    if (tool === "select") {
+    if (selected) {
+      if (hit?.id === selected.id) {
+        beginDrag(selected);
+        return;
+      }
       dispatch({ type: "commitSelection" });
       return;
     }
@@ -314,6 +329,15 @@ export function ImageAnnotationEditor({
   const copyContextTarget = () => {
     const annotation = state.annotations.find((item) => item.id === contextMenu?.targetId);
     if (annotation) setClipboard({ ...annotation });
+    setContextMenu(null);
+  };
+
+  const cutContextTarget = () => {
+    const annotation = state.annotations.find((item) => item.id === contextMenu?.targetId);
+    if (annotation) {
+      setClipboard({ ...annotation });
+      dispatch({ type: "delete", id: annotation.id });
+    }
     setContextMenu(null);
   };
 
@@ -452,20 +476,21 @@ export function ImageAnnotationEditor({
             const maximumWidth = event.currentTarget.width;
             const maximumHeight = event.currentTarget.height;
             const deltaPixels = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? Math.max(1, event.currentTarget.clientHeight) : 1);
-            const scale = Math.exp(-deltaPixels * 0.002);
+            if (deltaPixels === 0) return;
+            const delta = deltaPixels < 0 ? 2 : -2;
             if (selected) {
-              dispatch({ type: "scaleSelected", scale, bounds: imageBounds() });
+              dispatch({ type: "resizeSelected", axis: event.shiftKey ? "width" : "height", delta, bounds: imageBounds() });
             } else if (event.shiftKey) {
-              setWidth((current) => Math.max(1, Math.min(maximumWidth, current * scale)));
+              setWidth((current) => Math.max(1, Math.min(maximumWidth, current + delta)));
             } else {
-              setHeight((current) => Math.max(1, Math.min(maximumHeight, current * scale)));
+              setHeight((current) => Math.max(1, Math.min(maximumHeight, current + delta)));
             }
           }}
           onContextMenu={(event) => {
             event.preventDefault();
             const point = imagePoint(event);
             const hit = hitTestAnnotation(state.annotations, point.x, point.y);
-            if (hit) dispatch({ type: "select", id: hit.id });
+            if (tool === "select" && hit) dispatch({ type: "select", id: hit.id });
             setContextMenu({ clientX: event.clientX, clientY: event.clientY, imageX: point.x, imageY: point.y, targetId: hit?.id ?? null });
           }}
         />
@@ -480,6 +505,7 @@ export function ImageAnnotationEditor({
       onContextMenu={(event) => event.preventDefault()}
     >
       <button type="button" role="menuitem" disabled={!contextMenu.targetId} onClick={copyContextTarget}>コピー</button>
+      <button type="button" role="menuitem" disabled={!contextMenu.targetId} onClick={cutContextTarget}>切り取り</button>
       <button type="button" role="menuitem" disabled={!clipboard} onClick={pasteContextTarget}>貼り付け</button>
       <div role="separator" />
       <button type="button" role="menuitem" className="is-danger" disabled={!contextMenu.targetId} onClick={() => {
