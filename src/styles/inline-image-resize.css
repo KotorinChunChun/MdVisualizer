@@ -34,9 +34,9 @@
 
 .markdown-body .inline-image-resize.has-display-size .inline-image-resize__stage > img.markdown-img.inline-image-resize__image {
   width: 100%;
-  height: 100%; /* Deliberately outranks app.css .markdown-img { height:auto }. */
-  max-width: none;
-  object-fit: fill;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .markdown-img.inline-image-resize__image.croppable:hover {

@@ -162,7 +162,13 @@ export function MediaPreviewModal({
       onClick={(event) => event.stopPropagation()}
       onWheel={(event) => {
         event.preventDefault();
-        setScale((current) => Math.min(8, Math.max(0.1, current * (event.deltaY < 0 ? 1.2 : 1 / 1.2))));
+        event.stopPropagation();
+        const nextScale = Math.min(8, Math.max(0.1, scale * (event.deltaY < 0 ? 1.2 : 1 / 1.2)));
+        const scaleBase = mode === "fit" ? fitScale : 1;
+        const viewport = event.currentTarget;
+        viewport.scrollLeft += intrinsic.width * scaleBase * (nextScale - scale) / 2;
+        viewport.scrollTop += intrinsic.height * scaleBase * (nextScale - scale) / 2;
+        setScale(nextScale);
       }}
       onPointerDown={(event) => {
         if (event.button !== 1) return;
