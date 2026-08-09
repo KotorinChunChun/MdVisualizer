@@ -5,7 +5,6 @@ export interface NavigationSnapshot {
   scrollTop: number;
   viewMode: ViewMode;
   presentationHeadingId: string | null;
-  mediaPreview: unknown | null;
 }
 
 export interface NavigationHistory {

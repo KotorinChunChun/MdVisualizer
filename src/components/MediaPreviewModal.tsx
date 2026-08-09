@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MermaidToolbar } from "./MermaidToolbar";
 import { ImageMetadataEditor } from "./ImageMetadataEditor";
@@ -69,11 +69,32 @@ export function MediaPreviewModal({
   );
   const [mode, setMode] = useState<"fit" | "actual">("fit");
   const [scale, setScale] = useState(1);
-  const [origin, setOrigin] = useState("50% 50%");
   const [imageSize, setImageSize] = useState({ width: 1000, height: 600 });
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
   const [metadataOpen, setMetadataOpen] = useState(false);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const [panning, setPanning] = useState(false);
   const intrinsic = content.kind === "svg" ? svgSize! : imageSize;
+  const fitScale = viewportSize.width > 0 && viewportSize.height > 0
+    ? Math.min(viewportSize.width / intrinsic.width, viewportSize.height / intrinsic.height)
+    : 1;
+  const effectiveScale = (mode === "fit" ? fitScale : 1) * scale;
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const updateSize = () => setViewportSize({ width: viewport.clientWidth, height: viewport.clientHeight });
+    updateSize();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateSize);
+    observer?.observe(viewport);
+    window.addEventListener("resize", updateSize);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateSize);
+    };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -89,7 +110,6 @@ export function MediaPreviewModal({
   const toggleMode = () => {
     setMode((current) => current === "fit" ? "actual" : "fit");
     setScale(1);
-    setOrigin("50% 50%");
   };
 
   return createPortal(<div
@@ -120,24 +140,42 @@ export function MediaPreviewModal({
     </div>}
     <div
       className={`media-preview__viewport${display === "code" ? " is-code" : ""}`}
+      ref={viewportRef}
       onClick={(event) => event.stopPropagation()}
       onWheel={(event) => {
         event.preventDefault();
-        const bounds = event.currentTarget.getBoundingClientRect();
-        if (bounds.width > 0 && bounds.height > 0) {
-          setOrigin(`${((event.clientX - bounds.left) / bounds.width) * 100}% ${((event.clientY - bounds.top) / bounds.height) * 100}%`);
-        }
         setScale((current) => Math.min(8, Math.max(0.1, current * (event.deltaY < 0 ? 1.2 : 1 / 1.2))));
       }}
+      onPointerDown={(event) => {
+        if (event.button !== 1) return;
+        event.preventDefault();
+        const viewport = event.currentTarget;
+        panRef.current = { x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
+        viewport.setPointerCapture(event.pointerId);
+        setPanning(true);
+      }}
+      onPointerMove={(event) => {
+        const pan = panRef.current;
+        if (!pan) return;
+        event.currentTarget.scrollLeft = pan.left - (event.clientX - pan.x);
+        event.currentTarget.scrollTop = pan.top - (event.clientY - pan.y);
+      }}
+      onPointerUp={(event) => {
+        if (!panRef.current) return;
+        panRef.current = null;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        setPanning(false);
+      }}
+      onPointerCancel={() => { panRef.current = null; setPanning(false); }}
+      onAuxClick={(event) => { if (event.button === 1) event.preventDefault(); }}
     >
       {display === "code" && mermaidSource
         ? <pre className="mermaid-source media-preview__source"><code>{mermaidSource}</code></pre>
         : <div
         className={`media-preview__transform is-${mode}`}
         style={{
-          ...(mode === "actual" ? { width: `${intrinsic.width}px`, height: `${intrinsic.height}px` } : {}),
-          transform: `scale(${scale})`,
-          transformOrigin: origin,
+          width: `${intrinsic.width * effectiveScale}px`,
+          height: `${intrinsic.height * effectiveScale}px`,
         }}
         onClick={(event) => {
           event.stopPropagation();
@@ -159,7 +197,7 @@ export function MediaPreviewModal({
       </div>}
     </div>
     <output className="media-preview__scale">
-      {mode === "fit" ? "全体表示" : "1:1"} · {Math.round(scale * 100)}%
+      {mode === "fit" ? "全体表示" : "1:1"} · {Math.round(effectiveScale * 100)}%{panning ? " · パン中" : ""}
     </output>
   </div>, document.body);
 }

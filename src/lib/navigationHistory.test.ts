@@ -6,7 +6,6 @@ const snapshot = (activeTabId: string): NavigationSnapshot => ({
   scrollTop: 0,
   viewMode: "auto",
   presentationHeadingId: null,
-  mediaPreview: null,
 });
 
 describe("navigation history", () => {

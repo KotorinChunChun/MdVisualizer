@@ -581,7 +581,6 @@ export function App() {
       scrollTop: activeId && containerRef.current ? containerRef.current.scrollTop : tab?.scrollTop ?? 0,
       viewMode: viewModeRef.current,
       presentationHeadingId: activeId ? presentationPositionsRef.current[activeId] ?? null : null,
-      mediaPreview: mediaPreviewRef.current,
     };
   }, []);
 
@@ -733,7 +732,7 @@ export function App() {
         });
       }
     }
-    setMediaPreview((snapshot.mediaPreview as MediaPreviewTarget | null) ?? null);
+    setMediaPreview(null);
   }, []);
 
   const goBack = useCallback(() => {
@@ -758,15 +757,13 @@ export function App() {
   useFileDrop((paths) => paths.forEach(handleOpenDocument));
 
   const openMediaPreview = useCallback((target: MediaPreviewTarget) => {
-    recordNavigationPoint();
     setMediaPreview(target);
-  }, [recordNavigationPoint]);
+  }, []);
 
   const closeMediaPreview = useCallback(() => {
     if (!mediaPreviewRef.current) return;
-    recordNavigationPoint();
     setMediaPreview(null);
-  }, [recordNavigationPoint]);
+  }, []);
 
   const saveImageCaption = useCallback(async (context: ImageEditContext, caption: string) => {
     await updateImageCaption({

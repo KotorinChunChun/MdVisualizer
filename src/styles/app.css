@@ -348,6 +348,7 @@ body {
 .mermaid-toolbar button { padding: 5px 9px; color: inherit; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 7px; cursor: pointer; }
 .mermaid-toolbar button[aria-pressed="true"] { color: var(--accent-contrast, #fff); background: var(--accent-color); border-color: var(--accent-color); }
 .mermaid-toolbar__view { display: flex; }
+.mermaid-toolbar__copy { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
 .mermaid-toolbar__view button { border-radius: 0; }
 .mermaid-toolbar__view button:first-child { border-radius: 7px 0 0 7px; }
 .mermaid-toolbar__view button:last-child { margin-left: -1px; border-radius: 0 7px 7px 0; }
@@ -367,7 +368,7 @@ body {
   justify-content: flex-end;
   gap: 0.55rem;
 }
-.media-preview__toolbar .mermaid-toolbar { flex: 1; padding: 0; }
+.media-preview__toolbar .mermaid-toolbar { flex: 1; min-width: 0; padding: 0; }
 .image-metadata-editor {
   position: fixed;
   z-index: 2;
@@ -406,38 +407,33 @@ body {
 }
 .media-preview__viewport {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   min-width: 0;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
 }
+.media-preview__viewport:has(.media-preview__transform) { cursor: grab; }
+.media-preview__viewport:has(.media-preview__transform):active { cursor: grabbing; }
 .media-preview__viewport.is-code { align-items: stretch; justify-content: stretch; }
 .media-preview__source { width: min(72rem, calc(100vw - 4rem)); max-height: calc(100vh - 10rem); margin: auto; white-space: pre; }
 .media-preview__transform {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  transition: transform 80ms ease-out;
-}
-.media-preview__transform.is-fit {
-  width: 100%;
-  height: 100%;
+  margin: auto;
+  transition: width 80ms ease-out, height 80ms ease-out;
 }
 .media-preview__transform img,
 .media-preview__svg,
 .media-preview__svg svg {
   display: block;
 }
-.media-preview__transform.is-fit img {
+.media-preview__transform img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-.media-preview__transform.is-actual img {
-  width: 100%;
-  height: 100%;
   max-width: none;
   max-height: none;
 }

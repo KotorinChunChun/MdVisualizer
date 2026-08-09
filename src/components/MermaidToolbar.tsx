@@ -40,8 +40,10 @@ export function MermaidToolbar({
       <button type="button" aria-pressed={display === "diagram"} onClick={() => onDisplayChange("diagram")}>図</button>
       <button type="button" aria-pressed={display === "code"} onClick={() => onDisplayChange("code")}>コード</button>
     </div>
-    <button type="button" onClick={(event) => void copy(event, "code")}>コードをコピー</button>
-    <button type="button" onClick={(event) => void copy(event, "png")}>PNGをコピー</button>
-    <button type="button" onClick={(event) => void copy(event, "svg")}>SVGをコピー</button>
+    <div className="mermaid-toolbar__copy" role="group" aria-label="コピー">
+      <button type="button" onClick={(event) => void copy(event, "code")}>コードをコピー</button>
+      <button type="button" onClick={(event) => void copy(event, "png")}>PNGをコピー</button>
+      <button type="button" onClick={(event) => void copy(event, "svg")}>SVGをコピー</button>
+    </div>
   </div>;
 }
