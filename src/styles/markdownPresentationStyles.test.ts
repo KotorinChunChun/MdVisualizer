@@ -15,8 +15,19 @@ describe("Markdown and presentation print styles", () => {
   it("styles quotes, horizontal rules, and heading borders with theme variables", () => {
     expect(ruleBody(appCss, ".markdown-body blockquote")).toContain("var(--border-color)");
     expect(ruleBody(appCss, ".markdown-body blockquote > blockquote")).toContain("border-inline-start-color");
+    expect(ruleBody(appCss, ".markdown-body blockquote > :last-child")).toContain("margin-bottom: 0");
     expect(ruleBody(appCss, ".markdown-body hr")).toContain("height: 3px");
     expect(ruleBody(appCss, ".markdown-body h1,\n.markdown-body h2,\n.markdown-body h3,\n.markdown-body h4,\n.markdown-body h5,\n.markdown-body h6")).toContain("border-bottom: 1px solid var(--border-color)");
+  });
+
+  it("keeps side-by-side images proportional and vertically centered", () => {
+    const rowRule = ruleBody(appCss, ".markdown-body p:has(> .inline-image-resize ~ .inline-image-resize)");
+    const stageRule = ruleBody(appCss, ".markdown-body p:has(> .inline-image-resize ~ .inline-image-resize) .inline-image-resize__stage");
+    const imageRule = ruleBody(appCss, ".markdown-body p:has(> .inline-image-resize ~ .inline-image-resize) .inline-image-resize__image");
+    expect(rowRule).toContain("align-items: stretch");
+    expect(stageRule).toContain("align-items: center");
+    expect(imageRule).toContain("height: auto !important");
+    expect(imageRule).toContain("object-fit: contain");
   });
 
   it("keeps print colors legible and prevents printed child headings from splitting", () => {
