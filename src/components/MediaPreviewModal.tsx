@@ -165,7 +165,7 @@ export function MediaPreviewModal({
         onExecute={(app) => onOpenImageApp(app, imageContext)}
       />}
       {onCrop && <button type="button" onClick={onCrop}>クロップ</button>}
-      {onActivate && <button type="button" onClick={onActivate}>注釈</button>}
+      {onActivate && <button type="button" onClick={onActivate}>画像編集</button>}
       {imageContext && onSaveCaption && onRenameImage && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
       <button type="button" className="media-preview__mode" onClick={toggleMode}>
         {mode === "fit" ? "1:1表示" : "全体表示"}

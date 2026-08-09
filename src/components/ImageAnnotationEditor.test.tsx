@@ -22,6 +22,7 @@ function editorCanvas(container: HTMLElement): HTMLCanvasElement {
     value: () => ({ x: 0, y: 0, left: 0, top: 0, right: 300, bottom: 150, width: 300, height: 150, toJSON: () => ({}) }),
   });
   Object.defineProperty(canvas, "setPointerCapture", { value: vi.fn() });
+  Object.defineProperty(canvas, "releasePointerCapture", { value: vi.fn() });
   Object.defineProperty(canvas, "hasPointerCapture", { value: () => false });
   return canvas;
 }
@@ -79,5 +80,23 @@ describe("ImageAnnotationEditor", () => {
     fireEvent.click(copy);
     fireEvent.contextMenu(canvas, { clientX: 150, clientY: 75 });
     expect((screen.getByRole("menuitem", { name: "貼り付け" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("moves a selected item by dragging and commits the new hit area", () => {
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    const canvas = editorCanvas(container);
+    fireEvent.change(screen.getByLabelText("幅"), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText("高さ"), { target: { value: "40" } });
+    fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 150, clientY: 75 });
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerId: 2, clientX: 150, clientY: 75 });
+    fireEvent.pointerMove(canvas, { pointerId: 2, clientX: 180, clientY: 90 });
+    fireEvent.pointerUp(canvas, { pointerId: 2, clientX: 180, clientY: 90 });
+
+    fireEvent.contextMenu(canvas, { clientX: 150, clientY: 75 });
+    expect((screen.getByRole("menuitem", { name: "コピー" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.pointerDown(window);
+    fireEvent.contextMenu(canvas, { clientX: 180, clientY: 90 });
+    expect((screen.getByRole("menuitem", { name: "コピー" }) as HTMLButtonElement).disabled).toBe(false);
   });
 });

@@ -5,6 +5,14 @@ import { MediaPreviewModal } from "./MediaPreviewModal";
 afterEach(cleanup);
 
 describe("MediaPreviewModal", () => {
+  it("opens the image editing workspace from its named action", () => {
+    const onActivate = vi.fn();
+    render(<MediaPreviewModal content={{ kind: "image", src: "asset://sample.png", alt: "図" }} onClose={vi.fn()} onActivate={onActivate} />);
+    fireEvent.click(screen.getByRole("button", { name: "画像編集" }));
+    expect(onActivate).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "注釈" })).toBeNull();
+  });
+
   it("defaults to maximum-fit display and switches to 1:1", () => {
     render(<MediaPreviewModal content={{ kind: "svg", svg: '<svg viewBox="0 0 400 200" />', alt: "図" }} onClose={vi.fn()} />);
 

@@ -107,6 +107,7 @@ export function App() {
   const [printStyle, setPrintStyle] = useState<PrintStyleSettings>(DEFAULT_PRINT_STYLE_SETTINGS);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
+  const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [documentPanels, setDocumentPanels] = useState<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
   const documentPanelsRef = useRef(documentPanels);
@@ -1308,6 +1309,7 @@ export function App() {
           updateImageVersion(annotationTarget.fullPath);
           setImageBackups((current) => ({ ...current, [annotationTarget.fullPath]: backupAvailable }));
           setAnnotationTarget(null);
+          setAnnotationReturnPreview(null);
           setToast({
             id: String(Date.now()),
             message: `${filename} の注釈を保存しました`,
@@ -1315,7 +1317,11 @@ export function App() {
             restorePath: backupAvailable ? annotationTarget.fullPath : undefined,
           });
         }}
-        onCancel={() => setAnnotationTarget(null)}
+        onCancel={() => {
+          setAnnotationTarget(null);
+          setMediaPreview(annotationReturnPreview);
+          setAnnotationReturnPreview(null);
+        }}
         onError={handleCropError}
       />}
 
@@ -1334,6 +1340,7 @@ export function App() {
         onOpenImageApp={executeImageApp}
         onClose={closeMediaPreview}
         onActivate={mediaPreview.cropTarget ? () => {
+          setAnnotationReturnPreview(mediaPreview);
           setMediaPreview(null);
           setAnnotationTarget(mediaPreview.cropTarget!);
         } : undefined}

@@ -161,7 +161,7 @@ export function ImageAnnotationEditor({
 
   useEffect(() => {
     const closeContextMenu = (event: PointerEvent) => {
-      if (!contextMenuRef.current?.contains(event.target as Node)) setContextMenu(null);
+      if (!(event.target instanceof Node) || !contextMenuRef.current?.contains(event.target)) setContextMenu(null);
     };
     window.addEventListener("pointerdown", closeContextMenu);
     return () => window.removeEventListener("pointerdown", closeContextMenu);
