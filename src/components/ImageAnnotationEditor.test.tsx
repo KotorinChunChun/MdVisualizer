@@ -27,24 +27,30 @@ function editorCanvas(container: HTMLElement): HTMLCanvasElement {
   return canvas;
 }
 
+function loadEditorImage(container: HTMLElement, width = 320, height = 240): void {
+  const image = container.querySelector("img")!;
+  Object.defineProperty(image, "naturalWidth", { configurable: true, value: width });
+  Object.defineProperty(image, "naturalHeight", { configurable: true, value: height });
+  fireEvent.load(image);
+}
+
 describe("ImageAnnotationEditor", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
   });
 
-  it("shows independent tools, the color palette, and canvas scale controls", () => {
+  it("shows independent tools, the color palette, and canvas dot controls", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
+    loadEditorImage(container);
     expect(screen.getByRole("dialog", { name: "画像編集: sample.png" })).toBeTruthy();
     for (const tool of ["選択", "四角", "楕円", "矢印", "マスク", "ラベル"]) {
       expect(screen.getByRole("button", { name: new RegExp(tool) })).toBeTruthy();
     }
     expect(container.querySelectorAll(".annotation-editor__palette > button")).toHaveLength(4);
-    const scale = container.querySelector(".annotation-editor__scale-controls input") as HTMLInputElement;
-    fireEvent.click(screen.getByRole("button", { name: "キャンバスを拡大" }));
-    expect(scale.value).toBe("110");
-    fireEvent.change(scale, { target: { value: "75" } });
-    expect(scale.value).toBe("75");
+    expect((screen.getByLabelText("幅 (dot)") as HTMLInputElement).value).toBe("320");
+    expect((screen.getByLabelText("高さ (dot)") as HTMLInputElement).value).toBe("240");
+    expect(container.querySelector(".annotation-editor__scale-controls")).toBeNull();
   });
 
   it("uses two-dot stamp inputs and exposes all arrow directions", () => {
@@ -57,21 +63,34 @@ describe("ImageAnnotationEditor", () => {
     expect((screen.getByLabelText("向き") as HTMLSelectElement).options).toHaveLength(8);
   });
 
-  it("resizes the canvas display by dragging any side handle", () => {
+  it("resizes actual canvas dots by dragging any side handle", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
+    loadEditorImage(container);
     editorCanvas(container);
-    const scale = container.querySelector(".annotation-editor__scale-controls input") as HTMLInputElement;
+    const canvasWidth = screen.getByLabelText("幅 (dot)") as HTMLInputElement;
+    const canvasHeight = screen.getByLabelText("高さ (dot)") as HTMLInputElement;
     const rightHandle = screen.getByRole("button", { name: "右辺をドラッグしてキャンバスサイズを変更" });
     fireEvent.pointerDown(rightHandle, { pointerId: 10, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(rightHandle, { pointerId: 10, clientX: 200, clientY: 100 });
     fireEvent.pointerUp(rightHandle, { pointerId: 10, clientX: 200, clientY: 100 });
-    expect(scale.value).toBe("110");
+    expect(canvasWidth.value).toBe("420");
+    expect(canvasHeight.value).toBe("240");
 
     const topHandle = screen.getByRole("button", { name: "上辺をドラッグしてキャンバスサイズを変更" });
     fireEvent.pointerDown(topHandle, { pointerId: 11, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(topHandle, { pointerId: 11, clientX: 100, clientY: 180 });
     fireEvent.pointerUp(topHandle, { pointerId: 11, clientX: 100, clientY: 180 });
-    expect(scale.value).toBe("100");
+    expect(canvasWidth.value).toBe("420");
+    expect(canvasHeight.value).toBe("160");
+  });
+
+  it("enables applying a centered numeric canvas expansion without annotations", () => {
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    loadEditorImage(container);
+    const apply = screen.getByRole("button", { name: "適用" }) as HTMLButtonElement;
+    expect(apply.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "420" } });
+    expect(apply.disabled).toBe(false);
   });
 
   it("changes stamp height with the wheel and width with Shift+wheel", () => {

@@ -136,6 +136,14 @@ describe("image annotation reducer", () => {
     expect(imageAnnotationReducer(state, { type: "scaleSelected", scale: 2 })).toBe(state);
     expect(imageAnnotationReducer(state, { type: "resizeSelected", axis: "height", delta: 2 })).toBe(state);
   });
+
+  it("translates current annotations and history together for canvas origin changes", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const moved = imageAnnotationReducer(placed, { type: "translateAll", x: 12, y: 8 });
+    expect(moved.annotations[0]).toMatchObject({ x: 22, y: 28 });
+    expect(moved.undoStack[0]).toEqual([]);
+    expect(imageAnnotationReducer(moved, { type: "undo" }).annotations).toEqual([]);
+  });
 });
 
 class FakeContext {

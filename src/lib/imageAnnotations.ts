@@ -82,6 +82,7 @@ export type ImageAnnotationAction =
   | { type: "update"; id?: string; changes: AnnotationChanges; bounds?: ImageBounds }
   | { type: "scaleSelected"; scale: number; bounds?: ImageBounds }
   | { type: "resizeSelected"; axis: "width" | "height"; delta: number; bounds?: ImageBounds }
+  | { type: "translateAll"; x: number; y: number }
   | { type: "delete"; id?: string }
   | { type: "commitSelection" }
   | { type: "undo" }
@@ -232,6 +233,18 @@ export function imageAnnotationReducer(
         state,
         state.annotations.map((item) => item.id === target.id ? replacement : item),
       );
+    }
+    case "translateAll": {
+      if ((!Number.isFinite(action.x) || action.x === 0) && (!Number.isFinite(action.y) || action.y === 0)) return state;
+      const x = finite(action.x);
+      const y = finite(action.y);
+      const translate = (items: ImageAnnotation[]) => items.map((item) => ({ ...item, x: item.x + x, y: item.y + y }));
+      return {
+        ...state,
+        annotations: translate(state.annotations),
+        undoStack: state.undoStack.map(translate),
+        redoStack: state.redoStack.map(translate),
+      };
     }
     case "delete": {
       const target = selectedAnnotation(state, action.id);

@@ -75,9 +75,9 @@ pub fn save_rendered_image(
                 AppError::ImageError(format!("Failed to decode rendered image: {error}"))
             })?;
         let (width, height) = rendered.dimensions();
-        if (width, height) != (original_width, original_height) {
+        if width == 0 || height == 0 {
             return Err(AppError::ImageError(
-                "Rendered image dimensions do not match the source image.".into(),
+                "Rendered image dimensions must be positive.".into(),
             ));
         }
         let format = ImageFormat::from_path(&original_path).unwrap_or(ImageFormat::Png);
@@ -388,8 +388,8 @@ mod tests {
             .unwrap();
         let mut bytes = Vec::new();
         image::DynamicImage::ImageRgba8(RgbaImage::from_pixel(
-            4,
-            3,
+            6,
+            5,
             Rgba([200, 10, 20, 255]),
         ))
         .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
@@ -406,6 +406,8 @@ mod tests {
         )
         .unwrap();
         assert!(result.backup_available);
+        assert_eq!((result.width, result.height), (6, 5));
+        assert_eq!(image::open(&path).unwrap().dimensions(), (6, 5));
         assert_eq!(
             image::open(&path).unwrap().to_rgba8().get_pixel(0, 0),
             &Rgba([200, 10, 20, 255])

@@ -2,6 +2,13 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { CropTarget } from "../hooks/useCropEditor";
 import { saveRenderedImage } from "../lib/commands";
 import {
+  resizeImageCanvasCentered,
+  resizeImageCanvasFromEdge,
+  type CanvasEdge,
+  type ImageCanvasGeometry,
+  type ImageCanvasResize,
+} from "../lib/imageCanvas";
+import {
   clamp,
   createImageAnnotationState,
   drawImageAnnotations,
@@ -34,21 +41,15 @@ interface DragState {
   annotationY: number;
 }
 
-type CanvasEdge = "north" | "east" | "south" | "west";
-
-interface CanvasScaleDragState {
+interface CanvasResizeDragState {
   edge: CanvasEdge;
   pointerId: number;
   startX: number;
   startY: number;
-  startScale: number;
-  baseWidth: number;
-  baseHeight: number;
+  startGeometry: ImageCanvasGeometry;
 }
 
 const RECOMMENDED_COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6"];
-const MIN_CANVAS_SCALE = 10;
-const MAX_CANVAS_SCALE = 400;
 const DEFAULT_STAMP_SIZES: Record<AnnotationKind, { width: number; height: number }> = {
   frame: { width: 320, height: 180 },
   ellipse: { width: 240, height: 160 },
@@ -77,7 +78,9 @@ export function ImageAnnotationEditor({
   const acceptedVersionRef = useRef(imageVersion);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
-  const canvasScaleDragRef = useRef<CanvasScaleDragState | null>(null);
+  const canvasResizeDragRef = useRef<CanvasResizeDragState | null>(null);
+  const canvasResizePreviewRef = useRef<ImageCanvasResize | null>(null);
+  const originalSourceSizeRef = useRef<{ width: number; height: number } | null>(null);
   const [state, dispatch] = useReducer(imageAnnotationReducer, undefined, () => createImageAnnotationState());
   const [tool, setTool] = useState<Tool>("frame");
   const [stampSizes, setStampSizes] = useState(DEFAULT_STAMP_SIZES);
@@ -89,8 +92,8 @@ export function ImageAnnotationEditor({
   const [textColor, setTextColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#dc2626");
   const [fontSize, setFontSize] = useState(32);
-  const [canvasScale, setCanvasScale] = useState(100);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [canvasGeometry, setCanvasGeometry] = useState<ImageCanvasGeometry>({ width: 0, height: 0, imageX: 0, imageY: 0 });
+  const [canvasResizePreview, setCanvasResizePreview] = useState<ImageCanvasResize | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [dragPreview, setDragPreview] = useState<{ id: string; x: number; y: number } | null>(null);
   const [clipboard, setClipboard] = useState<ImageAnnotation | null>(null);
@@ -104,7 +107,15 @@ export function ImageAnnotationEditor({
     [state.annotations, state.selectedId],
   );
   const activeKind = selected?.type ?? (tool === "select" ? null : tool);
-  const dirty = state.undoStack.length > 0;
+  const sourceSize = originalSourceSizeRef.current;
+  const canvasDirty = sourceSize !== null && (
+    canvasGeometry.width !== sourceSize.width
+    || canvasGeometry.height !== sourceSize.height
+    || canvasGeometry.imageX !== 0
+    || canvasGeometry.imageY !== 0
+  );
+  const dirty = state.undoStack.length > 0 || canvasDirty;
+  const hasOutputChanges = state.annotations.length > 0 || canvasDirty;
   const stampKind: AnnotationKind = tool === "select" ? "frame" : tool;
   const { width, height } = stampSizes[stampKind];
   const updateStampDimension = (dimension: "width" | "height", updater: React.SetStateAction<number>) => {
@@ -117,9 +128,10 @@ export function ImageAnnotationEditor({
   const setWidth = (updater: React.SetStateAction<number>) => updateStampDimension("width", updater);
   const setHeight = (updater: React.SetStateAction<number>) => updateStampDimension("height", updater);
 
+  const displayGeometry = canvasResizePreview?.geometry ?? canvasGeometry;
   const imageBounds = () => ({
-    width: canvasRef.current?.width ?? 0,
-    height: canvasRef.current?.height ?? 0,
+    width: displayGeometry.width || canvasRef.current?.width || 0,
+    height: displayGeometry.height || canvasRef.current?.height || 0,
   });
 
   const makeAnnotation = (x: number, y: number): ImageAnnotation => {
@@ -136,25 +148,37 @@ export function ImageAnnotationEditor({
     return { ...common, type: "label", text: labelText, textColor, backgroundColor, fontSize };
   };
 
+  const positionedAnnotations = canvasResizePreview
+    ? state.annotations.map((annotation) => ({
+      ...annotation,
+      x: annotation.x + canvasResizePreview.annotationShiftX,
+      y: annotation.y + canvasResizePreview.annotationShiftY,
+    })) as ImageAnnotation[]
+    : state.annotations;
   const effectiveAnnotations = dragPreview
-    ? state.annotations.map((annotation) => annotation.id === dragPreview.id
+    ? positionedAnnotations.map((annotation) => annotation.id === dragPreview.id
       ? { ...annotation, x: dragPreview.x, y: dragPreview.y }
       : annotation) as ImageAnnotation[]
-    : state.annotations;
-  const effectiveSelected = dragPreview && selected?.id === dragPreview.id
-    ? { ...selected, x: dragPreview.x, y: dragPreview.y }
+    : positionedAnnotations;
+  const positionedSelected = selected && canvasResizePreview
+    ? { ...selected, x: selected.x + canvasResizePreview.annotationShiftX, y: selected.y + canvasResizePreview.annotationShiftY }
     : selected;
+  const effectiveSelected = dragPreview && positionedSelected?.id === dragPreview.id
+    ? { ...positionedSelected, x: dragPreview.x, y: dragPreview.y }
+    : positionedSelected;
 
   const render = () => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
     if (!canvas || !image || !image.complete || image.naturalWidth === 0) return;
     try {
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
+      const width = Math.max(1, displayGeometry.width || image.naturalWidth);
+      const height = Math.max(1, displayGeometry.height || image.naturalHeight);
+      canvas.width = width;
+      canvas.height = height;
       const context = canvas.getContext("2d");
       if (!context) return;
-      context.drawImage(image, 0, 0);
+      context.drawImage(image, displayGeometry.imageX, displayGeometry.imageY);
       drawImageAnnotations(context, effectiveAnnotations);
       if (!selected && tool !== "select" && cursor) {
         context.save();
@@ -180,7 +204,7 @@ export function ImageAnnotationEditor({
     }
   };
 
-  useEffect(render, [state.annotations, state.selectedId, loadedVersion, cursor, dragPreview, tool, width, height, lineWidth, color, arrowDirection, maskStyle, labelText, textColor, backgroundColor, fontSize]);
+  useEffect(render, [state.annotations, state.selectedId, loadedVersion, canvasGeometry, canvasResizePreview, cursor, dragPreview, tool, width, height, lineWidth, color, arrowDirection, maskStyle, labelText, textColor, backgroundColor, fontSize]);
 
   useEffect(() => {
     if (imageVersion === acceptedVersionRef.current) return;
@@ -314,11 +338,11 @@ export function ImageAnnotationEditor({
     setSaving(true);
     try {
       const output = document.createElement("canvas");
-      output.width = image.naturalWidth;
-      output.height = image.naturalHeight;
+      output.width = Math.max(1, canvasGeometry.width);
+      output.height = Math.max(1, canvasGeometry.height);
       const context = output.getContext("2d");
       if (!context) throw new Error("画像キャンバスを作成できません。");
-      context.drawImage(image, 0, 0);
+      context.drawImage(image, canvasGeometry.imageX, canvasGeometry.imageY);
       drawImageAnnotations(context, state.annotations);
       const blob = await new Promise<Blob>((resolve, reject) =>
         output.toBlob((value) => value ? resolve(value) : reject(new Error("画像をPNGへ変換できません。")), "image/png"),
@@ -326,8 +350,8 @@ export function ImageAnnotationEditor({
       const result = await saveRenderedImage({
         path: target.fullPath,
         pngBytes: [...new Uint8Array(await blob.arrayBuffer())],
-        expectedSourceWidth: image.naturalWidth,
-        expectedSourceHeight: image.naturalHeight,
+        expectedSourceWidth: originalSourceSizeRef.current?.width ?? image.naturalWidth,
+        expectedSourceHeight: originalSourceSizeRef.current?.height ?? image.naturalHeight,
       });
       onApply(target.filename, result.backup_available);
     } catch (error) {
@@ -402,42 +426,57 @@ export function ImageAnnotationEditor({
     setContextMenu(null);
   };
 
-  const setScale = (value: number) => setCanvasScale(Math.round(clamp(value, MIN_CANVAS_SCALE, MAX_CANVAS_SCALE)));
-  const beginCanvasScaleDrag = (edge: CanvasEdge, event: React.PointerEvent<HTMLButtonElement>) => {
+  const commitCanvasResize = (resize: ImageCanvasResize) => {
+    setCanvasGeometry(resize.geometry);
+    if (resize.annotationShiftX !== 0 || resize.annotationShiftY !== 0) {
+      dispatch({ type: "translateAll", x: resize.annotationShiftX, y: resize.annotationShiftY });
+    }
+  };
+  const setCanvasDimension = (dimension: "width" | "height", value: number) => {
+    const resize = resizeImageCanvasCentered(
+      canvasGeometry,
+      dimension === "width" ? value : canvasGeometry.width,
+      dimension === "height" ? value : canvasGeometry.height,
+    );
+    commitCanvasResize(resize);
+  };
+  const beginCanvasResizeDrag = (edge: CanvasEdge, event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    canvasScaleDragRef.current = {
+    canvasResizeDragRef.current = {
       edge,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      startScale: canvasScale,
-      baseWidth: Math.max(1, canvasSize.width || canvasRef.current?.width || 1),
-      baseHeight: Math.max(1, canvasSize.height || canvasRef.current?.height || 1),
+      startGeometry: canvasGeometry,
     };
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
-  const moveCanvasScaleDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
-    const drag = canvasScaleDragRef.current;
+  const moveCanvasResizeDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = canvasResizeDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    const delta = drag.edge === "east"
-      ? (event.clientX - drag.startX) / drag.baseWidth * 100
-      : drag.edge === "west"
-        ? (drag.startX - event.clientX) / drag.baseWidth * 100
-        : drag.edge === "south"
-          ? (event.clientY - drag.startY) / drag.baseHeight * 100
-          : (drag.startY - event.clientY) / drag.baseHeight * 100;
-    setScale(drag.startScale + delta);
+    const resize = resizeImageCanvasFromEdge(
+      drag.startGeometry,
+      drag.edge,
+      event.clientX - drag.startX,
+      event.clientY - drag.startY,
+    );
+    canvasResizePreviewRef.current = resize;
+    setCanvasResizePreview(resize);
   };
-  const finishCanvasScaleDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
-    const drag = canvasScaleDragRef.current;
+  const finishCanvasResizeDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = canvasResizeDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    canvasScaleDragRef.current = null;
+    const resize = canvasResizePreviewRef.current;
+    canvasResizeDragRef.current = null;
+    canvasResizePreviewRef.current = null;
+    setCanvasResizePreview(null);
+    if (resize) commitCanvasResize(resize);
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
   const imageSource = `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`;
-  const canvasStyle = canvasSize.width > 0
-    ? { width: `${canvasSize.width * canvasScale / 100}px`, height: `${canvasSize.height * canvasScale / 100}px` }
+  const canvasStyle = displayGeometry.width > 0
+    ? { width: `${displayGeometry.width}px`, height: `${displayGeometry.height}px` }
     : undefined;
 
   return <div className="annotation-editor" role="dialog" aria-modal="true" aria-label={`画像編集: ${target.filename}`}>
@@ -446,7 +485,7 @@ export function ImageAnnotationEditor({
       <div className="annotation-editor__header-actions">
         <button type="button" disabled={state.undoStack.length === 0} onClick={() => dispatch({ type: "undo" })}>元に戻す</button>
         <button type="button" disabled={state.redoStack.length === 0} onClick={() => dispatch({ type: "redo" })}>やり直す</button>
-        <button type="button" disabled={saving || state.annotations.length === 0} onClick={() => void apply()}>{saving ? "保存中…" : "適用"}</button>
+        <button type="button" disabled={saving || !hasOutputChanges} onClick={() => void apply()}>{saving ? "保存中…" : "適用"}</button>
         <button type="button" disabled={saving} onClick={onCancel}>閉じる</button>
       </div>
     </header>
@@ -538,11 +577,11 @@ export function ImageAnnotationEditor({
 
       <section>
         <h2>キャンバスサイズ</h2>
-        <div className="annotation-editor__scale-controls">
-          <button type="button" aria-label="キャンバスを縮小" onClick={() => setScale(canvasScale - 10)}>−</button>
-          <label><input type="number" min={MIN_CANVAS_SCALE} max={MAX_CANVAS_SCALE} value={canvasScale} onChange={(event) => setScale(Number(event.target.value))} /><span>%</span></label>
-          <button type="button" aria-label="キャンバスを拡大" onClick={() => setScale(canvasScale + 10)}>＋</button>
+        <div className="annotation-editor__fields">
+          <label>幅 (dot)<input type="number" min="1" value={Math.round(canvasGeometry.width)} onChange={(event) => setCanvasDimension("width", Number(event.target.value))} /></label>
+          <label>高さ (dot)<input type="number" min="1" value={Math.round(canvasGeometry.height)} onChange={(event) => setCanvasDimension("height", Number(event.target.value))} /></label>
         </div>
+        <p className="annotation-editor__hint">数値指定は四方へ均等に余白を追加します。<br />四辺ハンドルはその辺だけを変更します。</p>
       </section>
 
       <output>{cursor ? `${Math.round(cursor.x)}, ${Math.round(cursor.y)} px` : "—"}</output>
@@ -553,8 +592,13 @@ export function ImageAnnotationEditor({
     }} onContextMenu={(event) => event.preventDefault()}>
       <div className="annotation-editor__canvas-wrap">
         <img ref={imageRef} src={imageSource} alt="" hidden onLoad={(event) => {
-          setCanvasSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
-          render();
+          const size = { width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight };
+          if (!originalSourceSizeRef.current) {
+            originalSourceSizeRef.current = size;
+            setCanvasGeometry({ ...size, imageX: 0, imageY: 0 });
+          } else {
+            render();
+          }
         }} />
         <div className="annotation-editor__canvas-frame" style={canvasStyle}>
           <canvas
@@ -597,11 +641,13 @@ export function ImageAnnotationEditor({
             type="button"
             className={`annotation-editor__resize-handle is-${edge}`}
             aria-label={`${edge === "north" ? "上" : edge === "east" ? "右" : edge === "south" ? "下" : "左"}辺をドラッグしてキャンバスサイズを変更`}
-            onPointerDown={(event) => beginCanvasScaleDrag(edge, event)}
-            onPointerMove={moveCanvasScaleDrag}
-            onPointerUp={finishCanvasScaleDrag}
+            onPointerDown={(event) => beginCanvasResizeDrag(edge, event)}
+            onPointerMove={moveCanvasResizeDrag}
+            onPointerUp={finishCanvasResizeDrag}
             onPointerCancel={(event) => {
-              canvasScaleDragRef.current = null;
+              canvasResizeDragRef.current = null;
+              canvasResizePreviewRef.current = null;
+              setCanvasResizePreview(null);
               if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
             }}
           />)}
@@ -631,6 +677,8 @@ export function ImageAnnotationEditor({
       <button type="button" onClick={() => {
         acceptedVersionRef.current = imageVersion;
         setExternalConflict(false);
+        originalSourceSizeRef.current = null;
+        setCanvasGeometry({ width: 0, height: 0, imageX: 0, imageY: 0 });
         setLoadedVersion(imageVersion);
         dispatch({ type: "reset" });
       }}>外部変更を読み込む</button>
