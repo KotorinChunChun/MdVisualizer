@@ -120,3 +120,16 @@ export async function openExternalApp(request: {
 }): Promise<void> {
   await invoke<void>("open_external_app", { request });
 }
+
+export interface PowerShellRunResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  timedOut: boolean;
+  truncated: boolean;
+  durationMs: number;
+}
+
+export async function runPowerShell(request: { documentPath: string; language: string; source: string }): Promise<PowerShellRunResult> {
+  return await invoke<PowerShellRunResult>("run_powershell", { request });
+}

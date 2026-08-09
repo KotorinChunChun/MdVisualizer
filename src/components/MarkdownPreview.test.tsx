@@ -4,7 +4,7 @@ import { countMermaidFences, MarkdownPreview } from "./MarkdownPreview";
 import { openExternalUrl } from "../lib/commands";
 
 vi.mock("./ImageRenderer", () => ({ ImageRenderer: () => null }));
-vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn() }));
+vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn(), runPowerShell: vi.fn() }));
 
 describe("MarkdownPreview sanitization", () => {
   it("renders safe HTML and removes scripts, event handlers, and unsafe URLs", () => {
@@ -39,6 +39,11 @@ describe("MarkdownPreview sanitization", () => {
     fireEvent.click(screen.getByRole("link", { name: "next" }));
     expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/guide/next.md");
     expect(openExternalUrl).not.toHaveBeenCalled();
+  });
+
+  it("offers confirmed execution only for PowerShell fences backed by a document path", () => {
+    render(<MarkdownPreview content={"```pwsh\nWrite-Output safe\n```\n\n```bash\necho no\n```"} baseDir="C:\\docs" documentPath="C:\\docs\\sample.md" imageVersions={{}} />);
+    expect(screen.getAllByRole("button", { name: "PowerShellを実行" })).toHaveLength(1);
   });
 });
 

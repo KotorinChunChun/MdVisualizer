@@ -17,8 +17,11 @@ use crate::watcher::FileWatcher;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{Map, Value};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::sync::atomic::Ordering;
+use std::time::{Duration, Instant};
 use tauri::{
     AppHandle, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindow,
     WebviewWindowBuilder,
@@ -1211,6 +1214,189 @@ pub fn open_external_app(request: OpenExternalAppRequest) -> Result<(), String> 
     Ok(())
 }
 
+const POWERSHELL_SOURCE_LIMIT: usize = 256 * 1024;
+const POWERSHELL_OUTPUT_LIMIT: u64 = 1024 * 1024;
+const POWERSHELL_TIMEOUT: Duration = Duration::from_secs(30);
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RunPowerShellRequest {
+    document_path: String,
+    language: String,
+    source: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerShellRunResult {
+    stdout: String,
+    stderr: String,
+    exit_code: Option<i32>,
+    timed_out: bool,
+    truncated: bool,
+    duration_ms: u64,
+}
+
+struct ValidatedPowerShellRequest {
+    working_directory: PathBuf,
+    source: String,
+}
+
+fn validate_powershell_request(
+    request: RunPowerShellRequest,
+) -> Result<ValidatedPowerShellRequest, String> {
+    if !matches!(
+        request.language.trim().to_ascii_lowercase().as_str(),
+        "powershell" | "pwsh" | "ps1"
+    ) {
+        return Err("Only powershell, pwsh, and ps1 code blocks can be executed.".into());
+    }
+    if request.source.trim().is_empty() {
+        return Err("PowerShell source is empty.".into());
+    }
+    if request.source.len() > POWERSHELL_SOURCE_LIMIT {
+        return Err(format!(
+            "PowerShell source exceeds the {POWERSHELL_SOURCE_LIMIT} byte limit."
+        ));
+    }
+    let document_path = std::fs::canonicalize(&request.document_path)
+        .map_err(|error| format!("Could not resolve Markdown document path: {error}"))?;
+    if !document_path.is_file() {
+        return Err("The Markdown document path is not a file.".into());
+    }
+    let is_markdown = document_path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            extension.eq_ignore_ascii_case("md") || extension.eq_ignore_ascii_case("markdown")
+        });
+    if !is_markdown {
+        return Err("PowerShell code can only be executed from a Markdown document.".into());
+    }
+    let working_directory = document_path
+        .parent()
+        .ok_or_else(|| "The Markdown document has no containing directory.".to_string())?
+        .to_path_buf();
+    Ok(ValidatedPowerShellRequest {
+        working_directory,
+        source: request.source,
+    })
+}
+
+fn read_limited_output<R: Read + Send + 'static>(
+    reader: R,
+) -> std::thread::JoinHandle<Result<(String, bool), String>> {
+    std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        reader
+            .take(POWERSHELL_OUTPUT_LIMIT + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|error| format!("Could not read PowerShell output: {error}"))?;
+        let truncated = bytes.len() as u64 > POWERSHELL_OUTPUT_LIMIT;
+        if truncated {
+            bytes.truncate(POWERSHELL_OUTPUT_LIMIT as usize);
+        }
+        Ok((String::from_utf8_lossy(&bytes).into_owned(), truncated))
+    })
+}
+
+fn run_powershell_process(
+    request: ValidatedPowerShellRequest,
+    timeout: Duration,
+) -> Result<PowerShellRunResult, String> {
+    let started = Instant::now();
+    let mut command = Command::new("pwsh");
+    command
+        .args([
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            "-",
+        ])
+        .current_dir(&request.working_directory)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("Could not start pwsh: {error}"))?;
+    let stdout_reader = read_limited_output(
+        child
+            .stdout
+            .take()
+            .ok_or_else(|| "PowerShell stdout was unavailable.".to_string())?,
+    );
+    let stderr_reader = read_limited_output(
+        child
+            .stderr
+            .take()
+            .ok_or_else(|| "PowerShell stderr was unavailable.".to_string())?,
+    );
+    if let Some(mut stdin) = child.stdin.take() {
+        let mut source = request.source.into_bytes();
+        if !source.ends_with(b"\n") {
+            source.push(b'\n');
+        }
+        if let Err(error) = stdin.write_all(&source) {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = stdout_reader.join();
+            let _ = stderr_reader.join();
+            return Err(format!("Could not send source to pwsh: {error}"));
+        }
+    }
+
+    let (status, timed_out) = loop {
+        if let Some(status) = child
+            .try_wait()
+            .map_err(|error| format!("Could not query pwsh status: {error}"))?
+        {
+            break (status, false);
+        }
+        if started.elapsed() >= timeout {
+            let _ = child.kill();
+            let status = child
+                .wait()
+                .map_err(|error| format!("Could not stop timed out pwsh: {error}"))?;
+            break (status, true);
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    let (stdout, stdout_truncated) = stdout_reader
+        .join()
+        .map_err(|_| "PowerShell stdout reader stopped unexpectedly.".to_string())??;
+    let (stderr, stderr_truncated) = stderr_reader
+        .join()
+        .map_err(|_| "PowerShell stderr reader stopped unexpectedly.".to_string())??;
+    Ok(PowerShellRunResult {
+        stdout,
+        stderr,
+        exit_code: status.code(),
+        timed_out,
+        truncated: stdout_truncated || stderr_truncated,
+        duration_ms: started.elapsed().as_millis().try_into().unwrap_or(u64::MAX),
+    })
+}
+
+#[tauri::command]
+pub async fn run_powershell(request: RunPowerShellRequest) -> Result<PowerShellRunResult, String> {
+    let validated = validate_powershell_request(request)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        run_powershell_process(validated, POWERSHELL_TIMEOUT)
+    })
+    .await
+    .map_err(|error| format!("PowerShell worker failed: {error}"))?
+}
+
 fn resolve_vscode_executable() -> Result<PathBuf, String> {
     let path_candidates: Vec<PathBuf> = std::env::var_os("PATH")
         .map(|path| {
@@ -1325,6 +1511,70 @@ mod tests {
             "42"
         );
         assert!(expand_external_app_value("${unknown}", file, 1).is_err());
+    }
+
+    #[test]
+    fn powershell_request_requires_an_explicit_language_and_document_directory() {
+        let directory = tempfile::tempdir().unwrap();
+        let document = directory.path().join("sample.md");
+        std::fs::write(&document, "# sample").unwrap();
+        let validated = validate_powershell_request(RunPowerShellRequest {
+            document_path: document.to_string_lossy().into_owned(),
+            language: "pwsh".into(),
+            source: "Get-Location".into(),
+        })
+        .unwrap();
+        assert_eq!(
+            validated.working_directory,
+            std::fs::canonicalize(directory.path()).unwrap()
+        );
+        assert!(validate_powershell_request(RunPowerShellRequest {
+            document_path: document.to_string_lossy().into_owned(),
+            language: "bash".into(),
+            source: "echo unsafe".into(),
+        })
+        .is_err());
+        let text_file = directory.path().join("sample.txt");
+        std::fs::write(&text_file, "not markdown").unwrap();
+        assert!(validate_powershell_request(RunPowerShellRequest {
+            document_path: text_file.to_string_lossy().into_owned(),
+            language: "pwsh".into(),
+            source: "Get-Location".into(),
+        })
+        .is_err());
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn powershell_process_captures_output_and_enforces_timeout() {
+        let directory = tempfile::tempdir().unwrap();
+        let output = run_powershell_process(
+            ValidatedPowerShellRequest {
+                working_directory: directory.path().to_path_buf(),
+                source: "Write-Output 'safe-output'".into(),
+            },
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert_eq!(
+            output.exit_code,
+            Some(0),
+            "stderr: {} / stdout: {}",
+            output.stderr,
+            output.stdout
+        );
+        assert!(output.stdout.contains("safe-output"));
+        assert!(!output.timed_out);
+
+        let timed_out = run_powershell_process(
+            ValidatedPowerShellRequest {
+                working_directory: directory.path().to_path_buf(),
+                source: "Start-Sleep -Seconds 5".into(),
+            },
+            Duration::from_millis(100),
+        )
+        .unwrap();
+        assert!(timed_out.timed_out);
     }
 
     #[test]

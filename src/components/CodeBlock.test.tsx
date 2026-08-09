@@ -1,9 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CodeBlock } from "./CodeBlock";
+import { runPowerShell } from "../lib/commands";
+
+vi.mock("../lib/commands", () => ({ runPowerShell: vi.fn() }));
 
 describe("CodeBlock", () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); });
 
   it("copies only code text and emits a success notification", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
@@ -35,5 +38,27 @@ describe("CodeBlock", () => {
     render(<CodeBlock className="language-typescript" onHighlightComplete={onHighlightComplete}>{"const cargo = 1;"}</CodeBlock>);
     await waitFor(() => expect(onHighlightComplete).toHaveBeenCalled());
     expect(document.querySelector("code .hljs-keyword")?.textContent).toBe("const");
+  });
+
+  it("requires explicit confirmation before running an allowed PowerShell block", async () => {
+    const documentPath = String.raw`C:\docs\sample.md`;
+    vi.mocked(runPowerShell).mockResolvedValue({ stdout: "safe-output\n", stderr: "", exitCode: 0, timedOut: false, truncated: false, durationMs: 25 });
+    render(<CodeBlock className="language-pwsh" documentPath={documentPath}>{"Write-Output 'safe-output'"}</CodeBlock>);
+
+    fireEvent.click(screen.getByRole("button", { name: "PowerShellを実行" }));
+    expect(screen.getByRole("dialog", { name: "PowerShellコードを実行しますか？" }).textContent).toContain(String.raw`C:\docs`);
+    expect(runPowerShell).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "実行する" }));
+
+    await waitFor(() => expect(runPowerShell).toHaveBeenCalledWith({ documentPath, language: "pwsh", source: "Write-Output 'safe-output'" }));
+    expect((await screen.findByLabelText("標準出力")).textContent).toContain("safe-output");
+    expect(screen.getByLabelText("PowerShell実行結果").textContent).toContain("終了コード: 0");
+  });
+
+  it("does not offer execution for unlabeled or non-PowerShell code", () => {
+    const { rerender } = render(<CodeBlock className="language-bash" documentPath={String.raw`C:\docs\sample.md`}>echo no</CodeBlock>);
+    expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
+    rerender(<CodeBlock className="language-powershell">Write-Output no-path</CodeBlock>);
+    expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
   });
 });
