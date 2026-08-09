@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { CropTarget } from "../hooks/useCropEditor";
 import { saveRenderedImage } from "../lib/commands";
 import {
@@ -50,6 +52,7 @@ interface CanvasResizeDragState {
 }
 
 const RECOMMENDED_COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6"];
+const IMAGE_PATH_PATTERN = /\.(?:avif|bmp|gif|jpe?g|png|svg|tiff?|webp)$/i;
 const DEFAULT_STAMP_SIZES: Record<AnnotationKind, { width: number; height: number }> = {
   frame: { width: 320, height: 180 },
   ellipse: { width: 240, height: 160 },
@@ -77,6 +80,9 @@ export function ImageAnnotationEditor({
   const imageRef = useRef<HTMLImageElement | null>(null);
   const acceptedVersionRef = useRef(imageVersion);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const replacementFileInputRef = useRef<HTMLInputElement>(null);
+  const replacementObjectUrlRef = useRef<string | null>(null);
+  const displayedImageSizeRef = useRef<{ width: number; height: number } | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const canvasResizeDragRef = useRef<CanvasResizeDragState | null>(null);
   const canvasResizePreviewRef = useRef<ImageCanvasResize | null>(null);
@@ -101,6 +107,9 @@ export function ImageAnnotationEditor({
   const [loadedVersion, setLoadedVersion] = useState(imageVersion);
   const [saving, setSaving] = useState(false);
   const [externalConflict, setExternalConflict] = useState(false);
+  const [replacementPath, setReplacementPath] = useState("");
+  const [replacementSource, setReplacementSource] = useState<string | null>(null);
+  const [replacementLabel, setReplacementLabel] = useState<string | null>(null);
   const lastRenderError = useRef<string | null>(null);
   const selected = useMemo(
     () => state.annotations.find((annotation) => annotation.id === state.selectedId),
@@ -114,8 +123,8 @@ export function ImageAnnotationEditor({
     || canvasGeometry.imageX !== 0
     || canvasGeometry.imageY !== 0
   );
-  const dirty = state.undoStack.length > 0 || canvasDirty;
-  const hasOutputChanges = state.annotations.length > 0 || canvasDirty;
+  const dirty = state.undoStack.length > 0 || canvasDirty || replacementSource !== null;
+  const hasOutputChanges = state.annotations.length > 0 || canvasDirty || replacementSource !== null;
   const stampKind: AnnotationKind = tool === "select" ? "frame" : tool;
   const { width, height } = stampSizes[stampKind];
   const updateStampDimension = (dimension: "width" | "height", updater: React.SetStateAction<number>) => {
@@ -127,6 +136,49 @@ export function ImageAnnotationEditor({
   };
   const setWidth = (updater: React.SetStateAction<number>) => updateStampDimension("width", updater);
   const setHeight = (updater: React.SetStateAction<number>) => updateStampDimension("height", updater);
+
+  const releaseReplacementObjectUrl = () => {
+    if (replacementObjectUrlRef.current) URL.revokeObjectURL(replacementObjectUrlRef.current);
+    replacementObjectUrlRef.current = null;
+  };
+  const beginReplacement = (source: string, label: string, objectUrl: string | null = null) => {
+    if (!originalSourceSizeRef.current) {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      onError("元画像の読み込みが完了してから差し替えてください。");
+      return;
+    }
+    releaseReplacementObjectUrl();
+    replacementObjectUrlRef.current = objectUrl;
+    setReplacementSource(source);
+    setReplacementLabel(label);
+  };
+  const replaceFromPath = (value: string) => {
+    const path = value.trim().replace(/^['\"]|['\"]$/g, "");
+    if (!IMAGE_PATH_PATTERN.test(path)) {
+      onError("差し替え可能な画像パスを指定してください。");
+      return;
+    }
+    let source = path;
+    try {
+      source = convertFileSrc(path);
+    } catch {
+      // Browser tests and previews can load ordinary URLs without Tauri conversion.
+    }
+    setReplacementPath(path);
+    beginReplacement(source, path);
+  };
+  const replaceFromFile = (file: File) => {
+    if (!file.type.startsWith("image/") && !IMAGE_PATH_PATTERN.test(file.name)) {
+      onError("画像ファイルを貼り付けるかドロップしてください。");
+      return;
+    }
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      beginReplacement(objectUrl, file.name || "貼り付け画像", objectUrl);
+    } catch (error) {
+      onError(`差し替え画像を読み込めませんでした: ${String(error)}`);
+    }
+  };
 
   const displayGeometry = canvasResizePreview?.geometry ?? canvasGeometry;
   const imageBounds = () => ({
@@ -222,6 +274,47 @@ export function ImageAnnotationEditor({
     };
     window.addEventListener("pointerdown", closeContextMenu);
     return () => window.removeEventListener("pointerdown", closeContextMenu);
+  }, []);
+
+  useEffect(() => () => releaseReplacementObjectUrl(), []);
+
+  useEffect(() => {
+    const paste = (event: ClipboardEvent) => {
+      const file = [...(event.clipboardData?.files ?? [])].find((candidate) => candidate.type.startsWith("image/") || IMAGE_PATH_PATTERN.test(candidate.name));
+      if (file) {
+        event.preventDefault();
+        replaceFromFile(file);
+        return;
+      }
+      if (event.target === replacementFileInputRef.current) return;
+      const editingText = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+      const text = event.clipboardData?.getData("text/plain").trim() ?? "";
+      if (!editingText && IMAGE_PATH_PATTERN.test(text)) {
+        event.preventDefault();
+        replaceFromPath(text);
+      }
+    };
+    window.addEventListener("paste", paste);
+    return () => window.removeEventListener("paste", paste);
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | null = null;
+    void getCurrentWebview().onDragDropEvent((event) => {
+      if (event.payload.type !== "drop") return;
+      const path = event.payload.paths.find((candidate) => IMAGE_PATH_PATTERN.test(candidate));
+      if (path) replaceFromPath(path);
+    }).then((remove) => {
+      if (disposed) remove();
+      else unlisten = remove;
+    }).catch(() => {
+      // Browser previews use the HTML drop handler below instead of Tauri paths.
+    });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -474,7 +567,8 @@ export function ImageAnnotationEditor({
     if (resize) commitCanvasResize(resize);
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
-  const imageSource = `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`;
+  const originalImageSource = `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`;
+  const imageSource = replacementSource ?? originalImageSource;
   const canvasStyle = displayGeometry.width > 0
     ? { width: `${displayGeometry.width}px`, height: `${displayGeometry.height}px` }
     : undefined;
@@ -576,6 +670,39 @@ export function ImageAnnotationEditor({
       </section>}
 
       <section>
+        <h2>画像差し替え</h2>
+        <label>代わりの画像パス<input
+          value={replacementPath}
+          placeholder="C:\\images\\replacement.png"
+          onChange={(event) => setReplacementPath(event.target.value)}
+          onPaste={(event) => {
+            const text = event.clipboardData.getData("text/plain").trim();
+            if (!IMAGE_PATH_PATTERN.test(text)) return;
+            event.preventDefault();
+            replaceFromPath(text);
+          }}
+        /></label>
+        <div className="annotation-editor__replacement-actions">
+          <button type="button" disabled={!replacementPath.trim()} onClick={() => replaceFromPath(replacementPath)}>パスを読み込む</button>
+          <button type="button" onClick={() => replacementFileInputRef.current?.click()}>ファイルを選択</button>
+        </div>
+        <input
+          ref={replacementFileInputRef}
+          className="annotation-editor__replacement-file"
+          type="file"
+          accept="image/*,.svg"
+          aria-label="差し替え画像ファイル"
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            if (file) replaceFromFile(file);
+            event.currentTarget.value = "";
+          }}
+        />
+        <p className="annotation-editor__hint">画像ファイルまたはパスの貼り付け・ドロップにも対応します。</p>
+        {replacementLabel && <output className="annotation-editor__replacement-status">差し替え候補: {replacementLabel}</output>}
+      </section>
+
+      <section>
         <h2>キャンバスサイズ</h2>
         <div className="annotation-editor__fields">
           <label>幅 (dot)<input type="number" min="1" value={Math.round(canvasGeometry.width)} onChange={(event) => setCanvasDimension("width", Number(event.target.value))} /></label>
@@ -589,15 +716,54 @@ export function ImageAnnotationEditor({
 
     <main className="annotation-editor__stage" onPointerDown={(event) => {
       if (event.target === event.currentTarget) dispatch({ type: "commitSelection" });
-    }} onContextMenu={(event) => event.preventDefault()}>
+    }} onContextMenu={(event) => event.preventDefault()} onDragOver={(event) => {
+      if (event.dataTransfer.types.includes("Files") || event.dataTransfer.types.includes("text/plain")) event.preventDefault();
+    }} onDrop={(event) => {
+      const file = [...event.dataTransfer.files].find((candidate) => candidate.type.startsWith("image/") || IMAGE_PATH_PATTERN.test(candidate.name));
+      if (file) {
+        event.preventDefault();
+        replaceFromFile(file);
+        return;
+      }
+      const path = event.dataTransfer.getData("text/plain").trim();
+      if (IMAGE_PATH_PATTERN.test(path)) {
+        event.preventDefault();
+        replaceFromPath(path);
+      }
+    }}>
       <div className="annotation-editor__canvas-wrap">
         <img ref={imageRef} src={imageSource} alt="" hidden onLoad={(event) => {
           const size = { width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight };
           if (!originalSourceSizeRef.current) {
             originalSourceSizeRef.current = size;
+            displayedImageSizeRef.current = size;
             setCanvasGeometry({ ...size, imageX: 0, imageY: 0 });
+          } else if (replacementSource) {
+            const previous = displayedImageSizeRef.current ?? originalSourceSizeRef.current;
+            const left = canvasGeometry.imageX;
+            const top = canvasGeometry.imageY;
+            const right = canvasGeometry.width - left - previous.width;
+            const bottom = canvasGeometry.height - top - previous.height;
+            displayedImageSizeRef.current = size;
+            setCanvasGeometry({
+              width: Math.max(1, Math.round(size.width + left + right)),
+              height: Math.max(1, Math.round(size.height + top + bottom)),
+              imageX: left,
+              imageY: top,
+            });
           } else {
+            originalSourceSizeRef.current = size;
+            displayedImageSizeRef.current = size;
             render();
+          }
+        }} onError={() => {
+          if (replacementSource) {
+            onError(`差し替え画像を読み込めませんでした: ${replacementLabel ?? replacementSource}`);
+            releaseReplacementObjectUrl();
+            setReplacementSource(null);
+            setReplacementLabel(null);
+          } else {
+            onError("元画像を読み込めませんでした。");
           }
         }} />
         <div className="annotation-editor__canvas-frame" style={canvasStyle}>
@@ -677,7 +843,11 @@ export function ImageAnnotationEditor({
       <button type="button" onClick={() => {
         acceptedVersionRef.current = imageVersion;
         setExternalConflict(false);
+        releaseReplacementObjectUrl();
+        setReplacementSource(null);
+        setReplacementLabel(null);
         originalSourceSizeRef.current = null;
+        displayedImageSizeRef.current = null;
         setCanvasGeometry({ width: 0, height: 0, imageX: 0, imageY: 0 });
         setLoadedVersion(imageVersion);
         dispatch({ type: "reset" });

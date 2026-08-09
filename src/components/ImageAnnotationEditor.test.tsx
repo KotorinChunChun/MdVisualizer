@@ -1,9 +1,26 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ImageAnnotationEditor } from "./ImageAnnotationEditor";
 
 vi.mock("../lib/commands", () => ({
   saveRenderedImage: vi.fn(),
+}));
+
+const tauriDrop = vi.hoisted(() => ({
+  callback: null as ((event: { payload: { type: string; paths: string[] } }) => void) | null,
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  convertFileSrc: (path: string) => `asset://${path}`,
+}));
+
+vi.mock("@tauri-apps/api/webview", () => ({
+  getCurrentWebview: () => ({
+    onDragDropEvent: (callback: (event: { payload: { type: string; paths: string[] } }) => void) => {
+      tauriDrop.callback = callback;
+      return Promise.resolve(vi.fn());
+    },
+  }),
 }));
 
 const props = {
@@ -37,7 +54,9 @@ function loadEditorImage(container: HTMLElement, width = 320, height = 240): voi
 describe("ImageAnnotationEditor", () => {
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     vi.clearAllMocks();
+    tauriDrop.callback = null;
   });
 
   it("shows independent tools, the color palette, and canvas dot controls", () => {
@@ -45,7 +64,7 @@ describe("ImageAnnotationEditor", () => {
     loadEditorImage(container);
     expect(screen.getByRole("dialog", { name: "画像編集: sample.png" })).toBeTruthy();
     for (const tool of ["選択", "四角", "楕円", "矢印", "マスク", "ラベル"]) {
-      expect(screen.getByRole("button", { name: new RegExp(tool) })).toBeTruthy();
+      expect(screen.getByRole("button", { name: new RegExp(`^${tool}$`) })).toBeTruthy();
     }
     expect(container.querySelectorAll(".annotation-editor__palette > button")).toHaveLength(4);
     expect((screen.getByLabelText("幅 (dot)") as HTMLInputElement).value).toBe("320");
@@ -91,6 +110,44 @@ describe("ImageAnnotationEditor", () => {
     expect(apply.disabled).toBe(true);
     fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "420" } });
     expect(apply.disabled).toBe(false);
+  });
+
+  it("loads a pasted replacement path and keeps canvas margins around its dimensions", () => {
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    loadEditorImage(container);
+    fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "420" } });
+    const pathInput = screen.getByLabelText("代わりの画像パス");
+    fireEvent.paste(pathInput, { clipboardData: { getData: () => "C:\\images\\new.png" } });
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("asset://C:\\images\\new.png");
+    loadEditorImage(container, 640, 480);
+    expect((screen.getByLabelText("幅 (dot)") as HTMLInputElement).value).toBe("740");
+    expect((screen.getByLabelText("高さ (dot)") as HTMLInputElement).value).toBe("480");
+    expect(screen.getByText("差し替え候補: C:\\images\\new.png")).toBeTruthy();
+  });
+
+  it("accepts pasted and HTML-dropped image File objects", () => {
+    const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValueOnce("blob:pasted").mockReturnValueOnce("blob:dropped");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    loadEditorImage(container);
+    const pasted = new File(["image"], "pasted.png", { type: "image/png" });
+    fireEvent.paste(window, { clipboardData: { files: [pasted], getData: () => "" } });
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("blob:pasted");
+
+    const dropped = new File(["image"], "dropped.webp", { type: "image/webp" });
+    fireEvent.drop(container.querySelector(".annotation-editor__stage")!, {
+      dataTransfer: { files: [dropped], types: ["Files"], getData: () => "" },
+    });
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("blob:dropped");
+    expect(createObjectURL).toHaveBeenCalledTimes(2);
+  });
+
+  it("accepts an image path from the Tauri native drop event", async () => {
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    loadEditorImage(container);
+    await waitFor(() => expect(tauriDrop.callback).not.toBeNull());
+    act(() => tauriDrop.callback?.({ payload: { type: "drop", paths: ["C:\\images\\native.jpg"] } }));
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("asset://C:\\images\\native.jpg");
   });
 
   it("changes stamp height with the wheel and width with Shift+wheel", () => {
