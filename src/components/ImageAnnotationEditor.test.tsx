@@ -59,6 +59,25 @@ describe("ImageAnnotationEditor", () => {
     expect(width.value).toBe("318");
   });
 
+  it("uses rectangular blur masks and a font-sized label default", () => {
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    const canvas = editorCanvas(container);
+    fireEvent.click(screen.getByRole("button", { name: /マスク/ }));
+    expect((screen.getByLabelText("幅") as HTMLInputElement).value).toBe("320");
+    expect((screen.getByLabelText("高さ") as HTMLInputElement).value).toBe("120");
+    expect((screen.getByLabelText("方式") as HTMLSelectElement).value).toBe("blur");
+
+    fireEvent.click(screen.getByRole("button", { name: /ラベル/ }));
+    expect((screen.getByLabelText("幅") as HTMLInputElement).value).toBe("200");
+    expect((screen.getByLabelText("高さ") as HTMLInputElement).value).toBe("48");
+    fireEvent.change(screen.getByLabelText("フォントサイズ"), { target: { value: "40" } });
+    expect((screen.getByLabelText("高さ") as HTMLInputElement).value).toBe("56");
+    fireEvent.wheel(canvas, { deltaY: -100 });
+    expect((screen.getByLabelText("高さ") as HTMLInputElement).value).toBe("58");
+    fireEvent.wheel(canvas, { deltaY: 100, shiftKey: true });
+    expect((screen.getByLabelText("幅") as HTMLInputElement).value).toBe("198");
+  });
+
   it("places and deletes a selected item with the Delete key", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     const canvas = editorCanvas(container);

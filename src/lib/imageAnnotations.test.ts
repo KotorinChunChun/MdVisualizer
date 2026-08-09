@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   clamp,
   clampAnnotation,
@@ -183,6 +183,28 @@ describe("image annotation drawing", () => {
     expect(ctx.pixels[0]).toBeGreaterThan(0);
     expect(ctx.pixels[0]).toBeLessThan(255);
     expect(ctx.pixels[4]).toBeGreaterThan(0);
+  });
+
+  it("uses native canvas filtering for browser blur masks without reading pixels", () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 100;
+    canvas.height = 80;
+    const scratchContext = { drawImage: vi.fn(), imageSmoothingEnabled: true };
+    const scratch = document.createElement("canvas");
+    Object.defineProperty(scratch, "getContext", { value: () => scratchContext });
+    const originalCreateElement = document.createElement.bind(document);
+    const createElement = vi.spyOn(document, "createElement").mockImplementation(((tagName: string) =>
+      tagName === "canvas" ? scratch : originalCreateElement(tagName)) as typeof document.createElement);
+    const ctx = {
+      canvas,
+      save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(), rect: vi.fn(), clip: vi.fn(),
+      drawImage: vi.fn(), fillRect: vi.fn(), getImageData: vi.fn(() => { throw new Error("pixel read is not allowed"); }),
+      filter: "none", globalAlpha: 1, fillStyle: "",
+    };
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...solidMask(), style: "blur", width: 40, height: 30 }]);
+    expect(ctx.drawImage).toHaveBeenCalledOnce();
+    expect(ctx.getImageData).not.toHaveBeenCalled();
+    createElement.mockRestore();
   });
 
   it("mosaics pixels into equal colour blocks", () => {

@@ -286,7 +286,41 @@ function canvasRect(annotation: AnnotationRect, bounds: ImageBounds): Annotation
   return clampRect(annotation, bounds);
 }
 
-function applyBlur(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
+function isHtmlCanvasContext(ctx: CanvasRenderingContext2D): boolean {
+  return typeof document !== "undefined"
+    && typeof HTMLCanvasElement !== "undefined"
+    && ctx.canvas instanceof HTMLCanvasElement;
+}
+
+function applyNativeBlur(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
+  const width = Math.floor(rect.width);
+  const height = Math.floor(rect.height);
+  if (width < 1 || height < 1) return;
+  try {
+    const scratch = document.createElement("canvas");
+    scratch.width = width;
+    scratch.height = height;
+    const scratchContext = scratch.getContext("2d");
+    if (!scratchContext) throw new Error("blur scratch canvas unavailable");
+    scratchContext.drawImage(ctx.canvas, Math.floor(rect.x), Math.floor(rect.y), width, height, 0, 0, width, height);
+    const radius = Math.max(2, Math.min(16, Math.round(Math.min(width, height) / 18)));
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
+    ctx.filter = `blur(${radius}px)`;
+    ctx.drawImage(scratch, rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  } catch {
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  }
+}
+
+function applyPixelBlur(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
   const width = Math.floor(rect.width);
   const height = Math.floor(rect.height);
   if (width < 1 || height < 1) return;
@@ -319,7 +353,33 @@ function applyBlur(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
   ctx.putImageData(source, Math.floor(rect.x), Math.floor(rect.y));
 }
 
-function applyMosaic(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
+function applyNativeMosaic(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
+  const width = Math.floor(rect.width);
+  const height = Math.floor(rect.height);
+  if (width < 1 || height < 1) return;
+  try {
+    const blockSize = Math.max(4, Math.min(24, Math.round(Math.min(width, height) / 12)));
+    const scratch = document.createElement("canvas");
+    scratch.width = Math.max(1, Math.ceil(width / blockSize));
+    scratch.height = Math.max(1, Math.ceil(height / blockSize));
+    const scratchContext = scratch.getContext("2d");
+    if (!scratchContext) throw new Error("mosaic scratch canvas unavailable");
+    scratchContext.imageSmoothingEnabled = true;
+    scratchContext.drawImage(ctx.canvas, Math.floor(rect.x), Math.floor(rect.y), width, height, 0, 0, scratch.width, scratch.height);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(scratch, 0, 0, scratch.width, scratch.height, rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  } catch {
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  }
+}
+
+function applyPixelMosaic(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
   const width = Math.floor(rect.width);
   const height = Math.floor(rect.height);
   if (width < 1 || height < 1) return;
@@ -371,9 +431,11 @@ export function drawImageAnnotations(
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
       ctx.restore();
     } else if (annotation.style === "blur") {
-      applyBlur(ctx, rect);
+      if (isHtmlCanvasContext(ctx)) applyNativeBlur(ctx, rect);
+      else applyPixelBlur(ctx, rect);
     } else {
-      applyMosaic(ctx, rect);
+      if (isHtmlCanvasContext(ctx)) applyNativeMosaic(ctx, rect);
+      else applyPixelMosaic(ctx, rect);
     }
   }
 

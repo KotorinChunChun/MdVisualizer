@@ -36,6 +36,12 @@ interface DragState {
 const RECOMMENDED_COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6"];
 const MIN_CANVAS_SCALE = 10;
 const MAX_CANVAS_SCALE = 400;
+const DEFAULT_STAMP_SIZES: Record<AnnotationKind, { width: number; height: number }> = {
+  frame: { width: 320, height: 180 },
+  ellipse: { width: 240, height: 160 },
+  mask: { width: 320, height: 120 },
+  label: { width: 200, height: 48 },
+};
 
 const newAnnotationId = () => `annotation-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
@@ -59,11 +65,10 @@ export function ImageAnnotationEditor({
   const dragRef = useRef<DragState | null>(null);
   const [state, dispatch] = useReducer(imageAnnotationReducer, undefined, () => createImageAnnotationState());
   const [tool, setTool] = useState<Tool>("frame");
-  const [width, setWidth] = useState(320);
-  const [height, setHeight] = useState(180);
+  const [stampSizes, setStampSizes] = useState(DEFAULT_STAMP_SIZES);
   const [lineWidth, setLineWidth] = useState(6);
   const [color, setColor] = useState("#ef4444");
-  const [maskStyle, setMaskStyle] = useState<MaskStyle>("solid");
+  const [maskStyle, setMaskStyle] = useState<MaskStyle>("blur");
   const [labelText, setLabelText] = useState("ラベル");
   const [textColor, setTextColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#dc2626");
@@ -84,6 +89,17 @@ export function ImageAnnotationEditor({
   );
   const activeKind = selected?.type ?? (tool === "select" ? null : tool);
   const dirty = state.undoStack.length > 0;
+  const stampKind: AnnotationKind = tool === "select" ? "frame" : tool;
+  const { width, height } = stampSizes[stampKind];
+  const updateStampDimension = (dimension: "width" | "height", updater: React.SetStateAction<number>) => {
+    setStampSizes((current) => {
+      const previous = current[stampKind][dimension];
+      const value = typeof updater === "function" ? updater(previous) : updater;
+      return { ...current, [stampKind]: { ...current[stampKind], [dimension]: value } };
+    });
+  };
+  const setWidth = (updater: React.SetStateAction<number>) => updateStampDimension("width", updater);
+  const setHeight = (updater: React.SetStateAction<number>) => updateStampDimension("height", updater);
 
   const imageBounds = () => ({
     width: canvasRef.current?.width ?? 0,
@@ -308,6 +324,19 @@ export function ImageAnnotationEditor({
     if (selected) dispatch({ type: "update", changes, bounds: imageBounds() });
   };
 
+  const updateFontSize = (value: number) => {
+    const nextFontSize = Math.max(1, value);
+    if (selected?.type === "label") {
+      updateSelected({ fontSize: nextFontSize });
+    } else {
+      setFontSize(nextFontSize);
+      setStampSizes((current) => ({
+        ...current,
+        label: { ...current.label, height: nextFontSize + 16 },
+      }));
+    }
+  };
+
   const setActiveColor = (nextColor: string) => {
     if (selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "mask") {
       updateSelected({ color: nextColor });
@@ -385,7 +414,10 @@ export function ImageAnnotationEditor({
         type="button"
         className={tool === value ? "is-active" : ""}
         aria-pressed={tool === value}
-        onClick={() => setTool(value)}
+        onClick={() => {
+          dispatch({ type: "commitSelection" });
+          setTool(value);
+        }}
       ><span aria-hidden="true">{icon}</span>{label}</button>)}
     </nav>
 
@@ -415,7 +447,7 @@ export function ImageAnnotationEditor({
         <h2>ラベル</h2>
         <label>文字<input value={selected?.type === "label" ? selected.text : labelText} onChange={(event) => selected?.type === "label" ? updateSelected({ text: event.target.value }) : setLabelText(event.target.value)} /></label>
         <div className="annotation-editor__fields">
-          <label>フォントサイズ<input type="number" min="1" value={selected?.type === "label" ? selected.fontSize : fontSize} onChange={(event) => selected?.type === "label" ? updateSelected({ fontSize: Number(event.target.value) }) : setFontSize(Math.max(1, Number(event.target.value)))} /></label>
+          <label>フォントサイズ<input type="number" min="1" value={selected?.type === "label" ? selected.fontSize : fontSize} onChange={(event) => updateFontSize(Number(event.target.value))} /></label>
           <label>文字色<input type="color" value={selected?.type === "label" ? selected.textColor : textColor} onChange={(event) => selected?.type === "label" ? updateSelected({ textColor: event.target.value }) : setTextColor(event.target.value)} /></label>
         </div>
       </section>}
