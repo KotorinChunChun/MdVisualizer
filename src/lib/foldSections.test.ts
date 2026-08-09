@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { __test__ } from "./foldSections";
-import { ancestorFoldIds, collapsedForFoldCommand, resolveFoldToggle, resolveNestedFoldToggle } from "./foldSections";
+import { ancestorFoldIds, collapsedForFoldCommand, resolveFoldToggle, resolveNestedFoldToggle, toggleNestedFoldStates } from "./foldSections";
 
 const heading = (level: number, text: string) => ({ type: "element", tagName: `h${level}`, children: [{ type: "text", value: text }] });
 
@@ -59,5 +59,19 @@ describe("fold sections", () => {
       { level: 3, collapsed: true },
     ])).toBe("collapse");
     expect(resolveNestedFoldToggle([{ level: 1, collapsed: true }])).toBe("collapse");
+  });
+
+  it("always expands H1 while toggling only H2-H6", () => {
+    expect(toggleNestedFoldStates([
+      { id: "root", level: 1, collapsed: true },
+      { id: "section", level: 2, collapsed: false },
+      { id: "detail", level: 3, collapsed: true },
+    ])).toEqual({ root: false, section: true, detail: true });
+
+    expect(toggleNestedFoldStates([
+      { id: "root", level: 1, collapsed: true },
+      { id: "section", level: 2, collapsed: true },
+      { id: "detail", level: 3, collapsed: true },
+    ])).toEqual({ root: false, section: false, detail: false });
   });
 });

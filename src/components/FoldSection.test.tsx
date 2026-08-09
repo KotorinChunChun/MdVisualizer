@@ -15,6 +15,15 @@ describe("FoldSection", () => {
     expect(screen.getByText("Visible content").closest("div[hidden]")).not.toBeNull();
   });
 
+  it("exposes the rendered heading level for document-wide nested toggles", () => {
+    const { container } = render(<><FoldSection foldId="root"><h1>Root</h1><div>Root body</div></FoldSection><FoldSection foldId="child"><h2>Child</h2><div>Child body</div></FoldSection></>);
+    const sections = [...container.querySelectorAll<HTMLElement>(".fold-section[data-fold-id][data-fold-level]")];
+    expect(sections.map((section) => [section.dataset.foldId, section.dataset.foldLevel])).toEqual([
+      ["root", "1"],
+      ["child", "2"],
+    ]);
+  });
+
   it("responds to global fold-all commands", () => {
     render(<FoldSection><h2>Details</h2><div>Visible content</div></FoldSection>);
     const toggle = screen.getByRole("button", { name: /Details/ });

@@ -27,7 +27,7 @@ import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
-import { ancestorFoldIds, resolveNestedFoldToggle } from "./lib/foldSections";
+import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
 import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { localPathIdentity } from "./lib/pathIdentity";
@@ -517,17 +517,16 @@ export function App() {
     if (!sections.length) return;
     setFoldStates((current) => {
       const currentForPath = current[activeTab.path] ?? {};
-      const command = resolveNestedFoldToggle(sections.map((section) => ({
-        level: Number(section.dataset.foldLevel ?? 6),
-        collapsed: currentForPath[section.dataset.foldId ?? ""] ?? false,
-      })));
-      const nextForPath = { ...currentForPath };
-      for (const section of sections) {
+      const headingStates = sections.flatMap((section) => {
         const id = section.dataset.foldId;
-        if (!id) continue;
-        const level = Number(section.dataset.foldLevel ?? 6);
-        nextForPath[id] = level === 1 ? false : command === "collapse";
-      }
+        if (!id) return [];
+        return [{
+          id,
+          level: Number(section.dataset.foldLevel ?? 6),
+          collapsed: currentForPath[id] ?? false,
+        }];
+      });
+      const nextForPath = { ...currentForPath, ...toggleNestedFoldStates(headingStates) };
       void saveFoldState(activeTab.path, nextForPath).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
       return { ...current, [activeTab.path]: nextForPath };
     });
