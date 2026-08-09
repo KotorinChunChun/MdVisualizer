@@ -61,15 +61,10 @@ describe("PresentationView", () => {
     expect(shouldHandlePresentationArrowKey(event)).toBe(true);
   });
 
-  it("toggles a full heading tree and marks the current location", () => {
+  it("does not render the removed presentation-specific table of contents", () => {
     render(<PresentationView {...props} content={"# Parent\nintro\n\n## One\nbody\n\n## Two\nbody"} />);
-    fireEvent.click(screen.getByRole("button", { name: /目次/ }));
-    const toc = screen.getByRole("navigation", { name: "文書全体の目次" });
-
-    expect(toc.querySelectorAll("li")).toHaveLength(3);
-    expect(toc.querySelector('button[aria-current="location"]')?.textContent).toBe("Parent");
-    fireEvent.click(Array.from(toc.querySelectorAll("button")).find((button) => button.textContent === "Two")!);
-    expect(screen.getByText("3 / 3")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /目次/ })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "文書全体の目次" })).toBeNull();
   });
 
   it("uses the same child-heading model and order for the read-only print pages", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentSidePanel, ZOOM_LEVELS } from "./App";
+import { focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, ZOOM_LEVELS } from "./App";
 
 describe("zoom level selection", () => {
   it("normalizes persisted values to a selectable status-bar option", () => {
@@ -38,5 +38,11 @@ describe("document side panel ownership", () => {
     expect(resolveDocumentSidePanel(false, "toc")).toBe("toc");
     expect(resolveDocumentSidePanel(false, "images")).toBe("images");
     expect(resolveDocumentSidePanel(false, null)).toBeNull();
+  });
+
+  it("keeps the shared TOC available in presentation mode while hiding only images", () => {
+    expect(resolveDocumentPanelForView("presentation", "toc")).toBe("toc");
+    expect(resolveDocumentPanelForView("presentation", "images")).toBeNull();
+    expect(resolveDocumentPanelForView("auto", "images")).toBe("images");
   });
 });

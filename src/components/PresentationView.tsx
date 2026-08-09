@@ -118,12 +118,12 @@ export function PresentationView({
   const model = useMemo(() => buildPresentationModel(content, lineThreshold), [content, lineThreshold]);
   const initialIndex = () => Math.max(0, model.pages.findIndex((candidate) => candidate.id === initialHeadingId || candidate.mergedHeadingIds.includes(initialHeadingId ?? "")));
   const [pageIndex, setPageIndex] = useState(initialIndex);
-  const [tocOpen, setTocOpen] = useState(false);
   const currentCrumbRef = useRef<HTMLButtonElement | null>(null);
   const synchronizedHeadingRef = useRef(initialHeadingId);
   const synchronizedModelRef = useRef(model);
   const pendingExternalPageRef = useRef<number | null>(null);
   const page = model.pages[Math.min(pageIndex, model.pages.length - 1)];
+  const currentHeadingId = page.mergedHeadingIds[page.mergedHeadingIds.length - 1] ?? page.id;
 
   if (synchronizedHeadingRef.current !== initialHeadingId || synchronizedModelRef.current !== model) {
     synchronizedHeadingRef.current = initialHeadingId;
@@ -143,8 +143,8 @@ export function PresentationView({
   }, [content, initialHeadingId, model, pageIndex, tabId]);
   useEffect(() => {
     if (pendingExternalPageRef.current !== null) return;
-    onPageChange?.(page.id, page.sourceLine);
-  }, [onPageChange, page.id, page.sourceLine]);
+    onPageChange?.(currentHeadingId, page.sourceLine);
+  }, [currentHeadingId, onPageChange, page.sourceLine]);
   useEffect(() => {
     currentCrumbRef.current?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
   }, [pageIndex]);
@@ -172,32 +172,8 @@ export function PresentationView({
       setPageIndex(index);
     }
   };
-  const currentHeadingId = page.mergedHeadingIds[page.mergedHeadingIds.length - 1] ?? page.id;
-  const renderTocItems = (ids: string[]): React.ReactNode => <ul>
-    {ids.map((id) => {
-      const heading = model.headings[id];
-      if (!heading) return null;
-      return <li key={id}>
-        <button
-          type="button"
-          aria-current={id === currentHeadingId ? "location" : undefined}
-          onClick={() => {
-            jumpToHeading(id);
-            if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 1500px)").matches) setTocOpen(false);
-          }}
-        >
-          {heading.title}
-        </button>
-        {heading.childIds.length > 0 && renderTocItems(heading.childIds)}
-      </li>;
-    })}
-  </ul>;
-
   return <section className="presentation-view" aria-label="階層型プレゼンテーション">
     <div className="presentation-topbar">
-      <button type="button" className="presentation-toc-toggle" aria-expanded={tocOpen} aria-controls="presentation-toc" onClick={() => setTocOpen((open) => !open)}>
-        ☰ 目次
-      </button>
       <nav className="presentation-breadcrumbs" aria-label="見出し階層">
         {page.breadcrumbs.map((crumb, index) => <span key={crumb.id}>
           {index > 0 && <span aria-hidden="true">›</span>}
@@ -207,17 +183,7 @@ export function PresentationView({
         </span>)}
       </nav>
     </div>
-    <div className={`presentation-main${tocOpen ? " has-toc" : ""}`}>
-      {tocOpen && <>
-        <button type="button" className="presentation-toc-backdrop" aria-label="目次を閉じる" onClick={() => setTocOpen(false)} />
-        <aside id="presentation-toc" className="presentation-toc">
-          <div className="presentation-toc__header">
-            <strong>目次</strong>
-            <button type="button" aria-label="目次を閉じる" onClick={() => setTocOpen(false)}>×</button>
-          </div>
-          <nav aria-label="文書全体の目次">{renderTocItems(model.rootIds)}</nav>
-        </aside>
-      </>}
+    <div className="presentation-main">
       <div className="presentation-stage">
         <MarkdownPreview
           content={page.markdown}

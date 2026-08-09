@@ -73,6 +73,10 @@ export function resolveDocumentSidePanel(searchOpen: boolean, requestedPanel: Ex
   return requestedPanel;
 }
 
+export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): Exclude<DocumentSidePanelTab, "search"> | null {
+  return viewMode === "presentation" && requestedPanel === "images" ? null : requestedPanel;
+}
+
 export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markdownRef = useRef<HTMLDivElement | null>(null);
@@ -650,6 +654,22 @@ export function App() {
     requestAnimationFrame(() => requestAnimationFrame(() => section.scrollIntoView({ block: "start" })));
   }, [activeTab?.document, activeTab?.id, activeTab?.path, recordNavigationPoint]);
 
+  const jumpToTocHeading = useCallback((headingId: string) => {
+    if (viewModeRef.current !== "presentation") {
+      jumpToDocumentHeading(headingId);
+      return;
+    }
+    if (!activeTab?.document) return;
+    recordNavigationPoint();
+    presentationPositionsRef.current[activeTab.id] = headingId;
+    setPresentationPositions((current) => current[activeTab.id] === headingId
+      ? current
+      : { ...current, [activeTab.id]: headingId });
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) {
+      setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
+    }
+  }, [activeTab?.document, activeTab?.id, jumpToDocumentHeading, recordNavigationPoint]);
+
   const jumpToSearchResult = useCallback((index: number) => {
     const result = search.results[index];
     if (!result || !activeTab?.document) return;
@@ -1116,8 +1136,9 @@ export function App() {
   };
 
   const requestedDocumentPanel = activeTab ? documentPanels[activeTab.id] ?? null : null;
+  const requestedPanelForView = resolveDocumentPanelForView(viewMode, requestedDocumentPanel);
   const documentSidePanel = activeTab?.document
-    ? resolveDocumentSidePanel(Boolean(activeTab.searchOpen), viewMode === "presentation" ? null : requestedDocumentPanel)
+    ? resolveDocumentSidePanel(Boolean(activeTab.searchOpen), requestedPanelForView)
     : null;
 
   return (
@@ -1156,14 +1177,14 @@ export function App() {
         activeTab={documentSidePanel}
         onTabChange={changeDocumentSidePanel}
         onClose={documentSidePanel === "search" ? closeSearch : closeDocumentSidePanel}
-        disabledTabs={viewMode === "presentation" ? ["toc", "images"] : []}
+        disabledTabs={viewMode === "presentation" ? ["images"] : []}
         toc={<DocumentToc
           markdown={activeTab.document.content}
           isOpen
           embedded
-          activeHeadingId={activeTocHeadingId ?? undefined}
+          activeHeadingId={viewMode === "presentation" ? presentationPositions[activeTab.id] : activeTocHeadingId ?? undefined}
           onOpenChange={() => undefined}
-          onJump={jumpToDocumentHeading}
+          onJump={jumpToTocHeading}
         />}
         search={<div className="document-side-panel__search">
           <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} embedded />

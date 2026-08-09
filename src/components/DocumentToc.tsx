@@ -14,7 +14,7 @@ export interface DocumentTocProps {
 /**
  * A normal-layout table of contents.  Visibility and document navigation are
  * intentionally owned by the containing layout, so the same component can be
- * used by every non-presentation view without coupling it to App state.
+ * used by normal and presentation views without coupling it to App state.
  */
 export function DocumentToc({
   markdown,
