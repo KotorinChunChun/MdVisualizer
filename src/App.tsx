@@ -16,6 +16,7 @@ import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { ImageAnnotationEditor } from "./components/ImageAnnotationEditor";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
+import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
@@ -63,9 +64,9 @@ export function focusAndSelectSearchInput(input: HTMLInputElement | null): void 
   input?.select();
 }
 
-export function resolveDocumentSidePanel(searchResultsOpen: boolean, tocRequestedOpen: boolean): "search" | "toc" | null {
-  if (searchResultsOpen) return "search";
-  return tocRequestedOpen ? "toc" : null;
+export function resolveDocumentSidePanel(searchOpen: boolean, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): DocumentSidePanelTab | null {
+  if (searchOpen) return "search";
+  return requestedPanel;
 }
 
 export function App() {
@@ -97,8 +98,9 @@ export function App() {
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
-  const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
-  const [documentTocOpen, setDocumentTocOpen] = useState(false);
+  const [documentPanels, setDocumentPanels] = useState<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
+  const documentPanelsRef = useRef(documentPanels);
+  const panelBeforeSearchRef = useRef<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([]);
   const [printing, setPrinting] = useState(false);
@@ -115,6 +117,7 @@ export function App() {
   const autoReloadRef = useRef(autoReload);
   const mermaidModeRef = useRef(mermaidMode);
   const windowLabel = getCurrentWindow().label;
+  documentPanelsRef.current = documentPanels;
 
   const persistSetting = useCallback((key: "theme" | "zoom" | "viewMode" | "autoReload" | "mermaidMode", value: string | number) => {
     void saveSettings({ [key]: value }).catch((error) => {
@@ -257,7 +260,6 @@ export function App() {
   }, [activeTab?.document?.base_dir, imageOccurrenceGroups]);
 
   useEffect(() => {
-    setImageGalleryOpen(false);
     setActiveImageOccurrenceId(null);
     setActiveTocHeadingId(null);
   }, [activeTab?.id]);
@@ -599,8 +601,11 @@ export function App() {
         return { ...current, [activeTab.path]: nextForPath };
       });
     }
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) {
+      setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
+    }
     requestAnimationFrame(() => requestAnimationFrame(() => target.scrollIntoView({ block: "center" })));
-  }, [activeTab?.document, activeTab?.path, recordNavigationPoint]);
+  }, [activeTab?.document, activeTab?.id, activeTab?.path, recordNavigationPoint]);
 
   const jumpToDocumentHeading = useCallback((headingId: string) => {
     const section = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-fold-id]") ?? [])]
@@ -629,9 +634,11 @@ export function App() {
         return { ...current, [activeTab.path]: nextForPath };
       });
     }
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) setDocumentTocOpen(false);
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) {
+      setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
+    }
     requestAnimationFrame(() => requestAnimationFrame(() => section.scrollIntoView({ block: "start" })));
-  }, [activeTab?.document, activeTab?.path, recordNavigationPoint]);
+  }, [activeTab?.document, activeTab?.id, activeTab?.path, recordNavigationPoint]);
 
   const jumpToSearchResult = useCallback((index: number) => {
     const result = search.results[index];
@@ -864,7 +871,10 @@ export function App() {
   }, [recordNavigationPoint, updateViewMode]);
 
   const openSearch = useCallback(() => {
-    if (activeTab?.document) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
+    if (activeTab?.document) {
+      panelBeforeSearchRef.current[activeTab.id] = documentPanelsRef.current[activeTab.id] ?? null;
+      dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
+    }
     focusSearchInput();
   }, [activeTab, focusSearchInput]);
 
@@ -872,6 +882,33 @@ export function App() {
     if (!activeTab) return;
     search.clear();
     dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: false });
+    const restore = panelBeforeSearchRef.current[activeTab.id] ?? null;
+    setDocumentPanels((current) => ({ ...current, [activeTab.id]: restore }));
+    delete panelBeforeSearchRef.current[activeTab.id];
+  }, [activeTab, search]);
+
+  const changeDocumentSidePanel = useCallback((panel: DocumentSidePanelTab | null) => {
+    if (!activeTab?.document) return;
+    if (panel === "search") {
+      openSearch();
+      return;
+    }
+    if (activeTab.searchOpen) {
+      search.clear();
+      dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: false });
+      delete panelBeforeSearchRef.current[activeTab.id];
+    }
+    setDocumentPanels((current) => ({ ...current, [activeTab.id]: panel }));
+  }, [activeTab, openSearch, search]);
+
+  const closeDocumentSidePanel = useCallback(() => {
+    if (!activeTab) return;
+    if (activeTab.searchOpen) {
+      search.clear();
+      dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: false });
+      delete panelBeforeSearchRef.current[activeTab.id];
+    }
+    setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
   }, [activeTab, search]);
 
   const printDocument = useCallback(async () => {
@@ -1046,24 +1083,18 @@ export function App() {
     });
   };
 
-  const searchResultsPanelOpen = Boolean(activeTab?.document && activeTab.searchOpen && search.results.length > 1);
-  const documentSidePanel = resolveDocumentSidePanel(searchResultsPanelOpen, documentTocOpen);
+  const requestedDocumentPanel = activeTab ? documentPanels[activeTab.id] ?? null : null;
+  const documentSidePanel = activeTab?.document
+    ? resolveDocumentSidePanel(Boolean(activeTab.searchOpen), viewMode === "presentation" ? null : requestedDocumentPanel)
+    : null;
 
   return (
     <div className={`app-container${printing ? " is-printing" : ""}`}>
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
-          <button type="button" disabled={!activeTab?.document} onClick={openSearch}>検索</button>
-          {activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
           <button type="button" disabled={!activeTab?.document || printing} onClick={() => void printDocument()}>印刷/PDF</button>
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
-          {viewMode !== "presentation" && <button
-            type="button"
-            aria-pressed={imageGalleryOpen}
-            disabled={imageOccurrenceGroups.length === 0}
-            onClick={() => setImageGalleryOpen((open) => !open)}
-          >画像</button>}
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
         </div>
         {viewMode !== "presentation" && <div className="control-group fold-controls">
@@ -1088,27 +1119,34 @@ export function App() {
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
       </div>}
 
-      <div className={`document-workspace${imageGalleryOpen && viewMode !== "presentation" ? " has-image-gallery" : ""}`}>
-      {documentSidePanel === "search" && <>
-        <button type="button" className="search-results-backdrop" aria-label="検索を閉じる" onClick={closeSearch} />
-        <aside className="search-results-panel" aria-label="検索結果パネル">
-          <header><strong>検索結果</strong><span>{search.results.length}件</span></header>
-          <SearchResults results={search.results} activeIndex={search.activeIndex} truncated={search.truncated} onSelect={search.setActiveIndex} onActivate={(result) => jumpToSearchResult(result.index)} />
-        </aside>
-      </>}
-      {activeTab?.document && viewMode !== "presentation" && documentSidePanel !== "search" && <DocumentToc
-        markdown={activeTab.document.content}
-        isOpen={documentSidePanel === "toc"}
-        activeHeadingId={activeTocHeadingId ?? undefined}
-        onOpenChange={setDocumentTocOpen}
-        onJump={jumpToDocumentHeading}
-      />}
-      {activeTab?.document && viewMode !== "presentation" && <ImageGallery
-        items={imageGalleryItems}
-        activeOccurrenceId={activeImageOccurrenceId ?? undefined}
-        onJump={jumpToImageOccurrence}
-        isOpen={imageGalleryOpen}
-        onOpenChange={setImageGalleryOpen}
+      <div className="document-workspace">
+      {activeTab?.document && <DocumentSidePanel
+        activeTab={documentSidePanel}
+        onTabChange={changeDocumentSidePanel}
+        onClose={documentSidePanel === "search" ? closeSearch : closeDocumentSidePanel}
+        disabledTabs={viewMode === "presentation" ? ["toc", "images"] : []}
+        toc={<DocumentToc
+          markdown={activeTab.document.content}
+          isOpen
+          embedded
+          activeHeadingId={activeTocHeadingId ?? undefined}
+          onOpenChange={() => undefined}
+          onJump={jumpToDocumentHeading}
+        />}
+        search={<div className="document-side-panel__search">
+          <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} embedded />
+          {search.results.length > 0
+            ? <SearchResults results={search.results} activeIndex={search.activeIndex} truncated={search.truncated} onSelect={search.setActiveIndex} onActivate={(result) => jumpToSearchResult(result.index)} />
+            : <p className="document-side-panel__empty">{search.query ? "一致する結果はありません。" : "検索語を入力してください。"}</p>}
+        </div>}
+        images={<ImageGallery
+          items={imageGalleryItems}
+          activeOccurrenceId={activeImageOccurrenceId ?? undefined}
+          onJump={jumpToImageOccurrence}
+          isOpen
+          embedded
+          onOpenChange={() => undefined}
+        />}
       />}
       <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => handlePreviewScroll(event.currentTarget)} onPointerMove={handlePreviewPointerMove} style={{ zoom: viewMode === "presentation" && activeTab?.kind !== "settings" ? 1 : zoom / 100 }}>
         {activeTab?.kind === "settings" ? (

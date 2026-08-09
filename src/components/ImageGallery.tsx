@@ -19,6 +19,7 @@ export function ImageGallery({
   isOpen: controlledOpen,
   defaultOpen = false,
   onOpenChange,
+  embedded = false,
 }: {
   items: ImageGalleryItem[];
   activeOccurrenceId?: string;
@@ -27,6 +28,7 @@ export function ImageGallery({
   isOpen?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
+  embedded?: boolean;
 }) {
   const generatedId = useId();
   const panelId = `image-gallery-${generatedId.replace(/:/g, "")}`;
@@ -47,6 +49,50 @@ export function ImageGallery({
     });
   };
 
+  const galleryContents = items.length === 0 ? <p className="image-gallery__empty">この文書には画像がありません。</p> : <ul className="image-gallery__list">
+    {items.map((item) => {
+      const expanded = expandedPaths.has(item.path);
+      const itemId = `${panelId}-${item.path}`;
+      const primaryCaption = item.occurrences.find((occurrence) => occurrence.caption.trim())?.caption.trim() || "キャプションなし";
+      return <li className="image-gallery-card" key={item.path}>
+        <button
+          type="button"
+          className="image-gallery-card__summary"
+          aria-expanded={expanded}
+          aria-controls={itemId}
+          onClick={() => toggleItem(item.path)}
+        >
+          <img className="image-gallery-card__thumbnail" src={item.src} alt="" />
+          <span className="image-gallery-card__details">
+            <span className="image-gallery-card__filename" title={item.filename}>{item.filename}</span>
+            <span className="image-gallery-card__caption" title={primaryCaption}>{primaryCaption}</span>
+            <span className="image-gallery-card__count">{item.occurrences.length} 箇所</span>
+          </span>
+          <span className="image-gallery-card__chevron" aria-hidden="true">{expanded ? "⌄" : "›"}</span>
+        </button>
+        {expanded && <ul id={itemId} className="image-gallery-card__occurrences" aria-label={`${item.filename} の使用箇所`}>
+          {item.occurrences.map((occurrence, index) => {
+            const caption = occurrence.caption.trim() || "キャプションなし";
+            const active = occurrence.id === activeOccurrenceId;
+            return <li key={occurrence.id}>
+              <button
+                type="button"
+                aria-current={active ? "location" : undefined}
+                aria-label={`${item.filename} の使用箇所 ${index + 1}: ${caption}（${occurrence.sourceLine}行目）へ移動`}
+                onClick={() => onJump(occurrence.id)}
+              >
+                <span>{caption}</span>
+                <small>{occurrence.sourceLine}行目</small>
+              </button>
+            </li>;
+          })}
+        </ul>}
+      </li>;
+    })}
+  </ul>;
+
+  if (embedded) return <div className="image-gallery image-gallery--embedded">{galleryContents}</div>;
+
   const externallyControlled = controlledOpen !== undefined;
   return <section className={`image-gallery-root${isOpen ? " is-open" : ""}`} aria-label="画像ギャラリー">
     {!externallyControlled && <button
@@ -65,45 +111,7 @@ export function ImageGallery({
           <strong>画像ギャラリー</strong>
           <button type="button" aria-label="ギャラリーパネルを閉じる" onClick={() => setOpen(false)}>×</button>
         </header>
-        {items.length === 0 ? <p className="image-gallery__empty">この文書には画像がありません。</p> : <ul className="image-gallery__list">
-          {items.map((item) => {
-            const expanded = expandedPaths.has(item.path);
-            const itemId = `${panelId}-${item.path}`;
-            return <li className="image-gallery-card" key={item.path}>
-              <button
-                type="button"
-                className="image-gallery-card__summary"
-                aria-expanded={expanded}
-                aria-controls={itemId}
-                onClick={() => toggleItem(item.path)}
-              >
-                <img className="image-gallery-card__thumbnail" src={item.src} alt="" />
-                <span className="image-gallery-card__details">
-                  <span className="image-gallery-card__filename" title={item.filename}>{item.filename}</span>
-                  <span className="image-gallery-card__count">{item.occurrences.length} 箇所</span>
-                </span>
-                <span className="image-gallery-card__chevron" aria-hidden="true">{expanded ? "⌄" : "›"}</span>
-              </button>
-              {expanded && <ul id={itemId} className="image-gallery-card__occurrences" aria-label={`${item.filename} の使用箇所`}>
-                {item.occurrences.map((occurrence, index) => {
-                  const caption = occurrence.caption.trim() || "キャプションなし";
-                  const active = occurrence.id === activeOccurrenceId;
-                  return <li key={occurrence.id}>
-                    <button
-                      type="button"
-                      aria-current={active ? "location" : undefined}
-                      aria-label={`${item.filename} の使用箇所 ${index + 1}: ${caption}（${occurrence.sourceLine}行目）へ移動`}
-                      onClick={() => onJump(occurrence.id)}
-                    >
-                      <span>{caption}</span>
-                      <small>{occurrence.sourceLine}行目</small>
-                    </button>
-                  </li>;
-                })}
-              </ul>}
-            </li>;
-          })}
-        </ul>}
+        {galleryContents}
       </aside>
     </>}
   </section>;

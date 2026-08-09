@@ -34,8 +34,9 @@ describe("search input focus", () => {
 
 describe("document side panel ownership", () => {
   it("gives search results priority without discarding the requested TOC state", () => {
-    expect(resolveDocumentSidePanel(true, true)).toBe("search");
-    expect(resolveDocumentSidePanel(false, true)).toBe("toc");
-    expect(resolveDocumentSidePanel(false, false)).toBeNull();
+    expect(resolveDocumentSidePanel(true, "toc")).toBe("search");
+    expect(resolveDocumentSidePanel(false, "toc")).toBe("toc");
+    expect(resolveDocumentSidePanel(false, "images")).toBe("images");
+    expect(resolveDocumentSidePanel(false, null)).toBeNull();
   });
 });

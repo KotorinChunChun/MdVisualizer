@@ -29,9 +29,17 @@ describe("ImageGallery", () => {
     expect(container.querySelectorAll(".image-gallery-card__thumbnail")).toHaveLength(2);
     expect(container.querySelector<HTMLImageElement>(".image-gallery-card__thumbnail")?.src).toContain("asset://diagram.png");
     expect(screen.getByText("diagram.png")).toBeTruthy();
+    expect(screen.getByText("概要図")).toBeTruthy();
     expect(screen.getByText("2 箇所")).toBeTruthy();
     expect(screen.getByText("photo.png")).toBeTruthy();
     expect(screen.getByText("1 箇所")).toBeTruthy();
+  });
+
+  it("renders reusable content without a second panel shell when embedded", () => {
+    const { container } = render(<ImageGallery items={items} onJump={vi.fn()} isOpen embedded />);
+    expect(container.querySelector(".image-gallery--embedded")).toBeTruthy();
+    expect(screen.queryByRole("complementary", { name: "画像ギャラリーの一覧" })).toBeNull();
+    expect(screen.getByText("概要図")).toBeTruthy();
   });
 
   it("expands a card and jumps to the selected occurrence", () => {

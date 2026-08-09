@@ -8,6 +8,7 @@ export interface DocumentTocProps {
   activeHeadingId?: string;
   onOpenChange: (isOpen: boolean) => void;
   onJump: (headingId: string) => void;
+  embedded?: boolean;
 }
 
 /**
@@ -21,6 +22,7 @@ export function DocumentToc({
   activeHeadingId,
   onOpenChange,
   onJump,
+  embedded = false,
 }: DocumentTocProps) {
   const generatedId = useId();
   const tocId = `document-toc-${generatedId.replace(/:/g, "")}`;
@@ -45,6 +47,12 @@ export function DocumentToc({
     })}
   </ul>;
 
+  const contents = model.rootIds.length === 0
+    ? <p className="document-toc__empty">見出しがありません。</p>
+    : <nav aria-label="文書全体の目次">{renderItems(model.rootIds)}</nav>;
+
+  if (embedded) return <div className="document-toc document-toc--embedded">{contents}</div>;
+
   return <section className={`document-toc-root${isOpen ? " is-open" : ""}`} aria-label="文書目次">
     <button
       type="button"
@@ -62,9 +70,7 @@ export function DocumentToc({
           <strong>目次</strong>
           <button type="button" aria-label="目次を閉じる" onClick={() => onOpenChange(false)}>×</button>
         </header>
-        {model.rootIds.length === 0
-          ? <p className="document-toc__empty">見出しがありません。</p>
-          : <nav aria-label="文書全体の目次">{renderItems(model.rootIds)}</nav>}
+        {contents}
       </aside>
     </>}
   </section>;
