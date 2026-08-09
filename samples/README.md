@@ -4,7 +4,8 @@
 
 | ファイル | 用途 |
 | :--- | :--- |
-| `sample.md` | 画像クロップ、自動更新、表、コードの基本確認 |
+| `sample.md` | 検証用サンプル目次、画像クロップ、自動更新、表、コードの基本確認 |
+| `image-gallery.md` | 多数のPNG／SVG、リスト・引用・表・Obsidian記法での画像表示 |
 | `all-markdown.md` | 本アプリが対応するMarkdown記法の総合確認 |
 | `mermaid-gallery.md` | Mermaid代表図とエラー表示の確認 |
 | `local-links.md` | 相対Markdownリンクを新しいタブで開く確認 |
@@ -17,7 +18,7 @@
 | `images/sample.png` | ラスター画像、クロップ、表示縮小 |
 | `images/sample.svg` | SVG表示専用（編集操作なし） |
 
-`all-markdown.md` から既存サンプルへ移動できます。v0.0.5の追加機能は
+最初に`sample.md`を開くと、すべての検証用サンプルへ移動できます。v0.0.5の追加機能は
 `v0.0.5-ui-workflow.md`、v0.0.6の基本表示とプレゼン印刷は
 `v0.0.6-markdown-presentation.md`、v0.0.7の設定機能は`v0.0.7-customization.md`で確認してください。テーマ配色を確認するときは、
 ダーク、ライト、GitHubを切り替え、リンク、インラインコード、表見出しを比較してください。
