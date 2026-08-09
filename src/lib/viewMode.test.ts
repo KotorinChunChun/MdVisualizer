@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isDocumentLayout, normalizeViewMode } from "./viewMode";
+import { isDocumentLayout, normalizeDocumentViewModes, normalizeViewMode } from "./viewMode";
 
 describe("view mode normalization", () => {
   it.each([
@@ -24,5 +24,11 @@ describe("view mode normalization", () => {
     expect(normalizeViewMode(undefined)).toBe("auto");
     expect(isDocumentLayout("auto")).toBe(true);
     expect(isDocumentLayout("presentation")).toBe(false);
+  });
+
+  it("normalizes only non-empty full-path keyed document layouts", () => {
+    expect(normalizeDocumentViewModes({ "C:\\docs\\a.md": "a4-portrait", "": "images", "C:\\docs\\b.md": "invalid" }))
+      .toEqual({ "C:\\docs\\a.md": "a4-portrait" });
+    expect(normalizeDocumentViewModes(null)).toEqual({});
   });
 });

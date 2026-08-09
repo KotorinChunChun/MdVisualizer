@@ -35,7 +35,7 @@ import { localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
 import { resolveImageSrc } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
-import { normalizeViewMode, type ViewMode } from "./lib/viewMode";
+import { normalizeDocumentViewModes, type ViewMode } from "./lib/viewMode";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { applySyntaxHighlightSettings, DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, normalizeSyntaxHighlightSettings, type SyntaxHighlightSettings } from "./lib/syntaxHighlight";
 import { applyPrintStyleSettings, DEFAULT_PRINT_STYLE_SETTINGS, normalizePrintStyleSettings, type PrintStyleSettings } from "./lib/printStyle";
@@ -87,6 +87,7 @@ export function App() {
   const [theme, setTheme] = useState("system");
   const [zoom, setZoom] = useState(100);
   const [viewMode, setViewMode] = useState<ViewMode>("auto");
+  const [documentViewModes, setDocumentViewModes] = useState<Record<string, ViewMode>>({});
   const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
@@ -119,12 +120,14 @@ export function App() {
   const themeRef = useRef(theme);
   const zoomRef = useRef(zoom);
   const viewModeRef = useRef(viewMode);
+  const documentViewModesRef = useRef(documentViewModes);
   const autoReloadRef = useRef(autoReload);
   const mermaidModeRef = useRef(mermaidMode);
   const windowLabel = getCurrentWindow().label;
   documentPanelsRef.current = documentPanels;
+  documentViewModesRef.current = documentViewModes;
 
-  const persistSetting = useCallback((key: "theme" | "zoom" | "viewMode" | "autoReload" | "mermaidMode", value: string | number) => {
+  const persistSetting = useCallback((key: "theme" | "zoom" | "autoReload" | "mermaidMode", value: string | number) => {
     void saveSettings({ [key]: value }).catch((error) => {
       setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
     });
@@ -144,13 +147,6 @@ export function App() {
     zoomRef.current = next;
     setZoom(next);
     persistSetting("zoom", next);
-  }, [persistSetting]);
-
-  const updateViewMode = useCallback((value: ViewMode) => {
-    if (viewModeRef.current === value) return;
-    viewModeRef.current = value;
-    setViewMode(value);
-    persistSetting("viewMode", value);
   }, [persistSetting]);
 
   const updateAutoReload = useCallback((value: "on" | "off" | "manual") => {
@@ -190,9 +186,8 @@ export function App() {
     void loadSettingsStatus().then(({ settings, recoveredFiles }) => {
       if (typeof settings.theme === "string") { themeRef.current = settings.theme; setTheme(settings.theme); }
       if (typeof settings.zoom === "number") { const value = normalizeZoom(settings.zoom); zoomRef.current = value; setZoom(value); }
-      const normalizedViewMode = normalizeViewMode(settings.viewMode);
-      viewModeRef.current = normalizedViewMode;
-      setViewMode(normalizedViewMode);
+      const normalizedDocumentViewModes = normalizeDocumentViewModes(settings.documentViewModes);
+      setDocumentViewModes(normalizedDocumentViewModes);
       if (["on", "off", "manual"].includes(String(settings.autoReload))) { const value = settings.autoReload as "on" | "off" | "manual"; autoReloadRef.current = value; setAutoReload(value); }
       else if (typeof settings.autoReload === "boolean") { const value = settings.autoReload ? "on" : "off"; autoReloadRef.current = value; setAutoReload(value); }
       if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
@@ -215,9 +210,9 @@ export function App() {
         || settings.imageEqualPadding === undefined
         || settings.syntaxHighlight === undefined
         || settings.printStyle === undefined
-        || settings.viewMode !== normalizedViewMode;
+        || JSON.stringify(settings.documentViewModes) !== JSON.stringify(normalizedDocumentViewModes);
       if (needsSettingsMigration) {
-        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, viewMode: normalizedViewMode }).catch((error) => {
+        void saveSettings({ schemaVersion: 4, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, documentViewModes: normalizedDocumentViewModes }).catch((error) => {
           setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
         });
       }
@@ -250,6 +245,12 @@ export function App() {
   mediaPreviewRef.current = mediaPreview;
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
+
+  useEffect(() => {
+    const next = activeTab?.document ? documentViewModes[activeTab.document.path] ?? "auto" : "auto";
+    viewModeRef.current = next;
+    setViewMode(next);
+  }, [activeTab?.document?.path, documentViewModes]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -720,10 +721,20 @@ export function App() {
     if (viewModeRef.current !== snapshot.viewMode) {
       viewModeRef.current = snapshot.viewMode;
       setViewMode(snapshot.viewMode);
-      persistSetting("viewMode", snapshot.viewMode);
+      const documentPath = snapshot.activeTabId
+        ? tabsStateRef.current.tabs.find((tab) => tab.id === snapshot.activeTabId)?.document?.path
+        : undefined;
+      if (documentPath) {
+        const next = { ...documentViewModesRef.current, [documentPath]: snapshot.viewMode };
+        documentViewModesRef.current = next;
+        setDocumentViewModes(next);
+        void saveSettings({ documentViewModes: next }).catch((error) => {
+          setToast({ id: String(Date.now()), message: `レイアウト設定の保存に失敗しました: ${String(error)}`, type: "error" });
+        });
+      }
     }
     setMediaPreview((snapshot.mediaPreview as MediaPreviewTarget | null) ?? null);
-  }, [persistSetting]);
+  }, []);
 
   const goBack = useCallback(() => {
     const result = navigateBack(navigationHistoryRef.current, captureNavigationSnapshot());
@@ -889,10 +900,18 @@ export function App() {
   }, [recordNavigationPoint]);
 
   const changeViewMode = useCallback((value: ViewMode) => {
-    if (viewModeRef.current === value) return;
+    const documentPath = activeTab?.document?.path;
+    if (!documentPath || viewModeRef.current === value) return;
     recordNavigationPoint();
-    updateViewMode(value);
-  }, [recordNavigationPoint, updateViewMode]);
+    const next = { ...documentViewModesRef.current, [documentPath]: value };
+    documentViewModesRef.current = next;
+    setDocumentViewModes(next);
+    viewModeRef.current = value;
+    setViewMode(value);
+    void saveSettings({ documentViewModes: next }).catch((error) => {
+      setToast({ id: String(Date.now()), message: `レイアウト設定の保存に失敗しました: ${String(error)}`, type: "error" });
+    });
+  }, [activeTab?.document?.path, recordNavigationPoint]);
 
   const openSearch = useCallback(() => {
     if (activeTab?.document) {
