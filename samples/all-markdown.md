@@ -76,6 +76,10 @@ fn main() {
 
 ![PNGサンプル](images/sample.png)
 
+### ラスター画像（インデントされた画像）
+
+  ![PNGサンプル](images/sample.png)
+
 ### SVG画像（表示専用）
 
 ![SVGサンプル](images/sample.svg)
