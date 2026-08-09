@@ -81,6 +81,14 @@ export function MediaPreviewModal({
     ? Math.min(viewportSize.width / intrinsic.width, viewportSize.height / intrinsic.height)
     : 1;
   const effectiveScale = (mode === "fit" ? fitScale : 1) * scale;
+  const mediaWidth = intrinsic.width * effectiveScale;
+  const mediaHeight = intrinsic.height * effectiveScale;
+  const panInset = {
+    x: Math.max(viewportSize.width, 96),
+    y: Math.max(viewportSize.height, 96),
+  };
+  const stageWidth = mediaWidth + panInset.x * 2;
+  const stageHeight = mediaHeight + panInset.y * 2;
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -95,6 +103,16 @@ export function MediaPreviewModal({
       window.removeEventListener("resize", updateSize);
     };
   }, []);
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || display === "code" || viewportSize.width <= 0 || viewportSize.height <= 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      viewport.scrollLeft = Math.max(0, (stageWidth - viewport.clientWidth) / 2);
+      viewport.scrollTop = Math.max(0, (stageHeight - viewport.clientHeight) / 2);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [content.kind, content.kind === "image" ? content.src : content.svg, display, mode, intrinsic.width, intrinsic.height, viewportSize.height, viewportSize.width]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -171,30 +189,34 @@ export function MediaPreviewModal({
     >
       {display === "code" && mermaidSource
         ? <pre className="mermaid-source media-preview__source"><code>{mermaidSource}</code></pre>
-        : <div
-        className={`media-preview__transform is-${mode}`}
-        style={{
-          width: `${intrinsic.width * effectiveScale}px`,
-          height: `${intrinsic.height * effectiveScale}px`,
-        }}
-        onClick={(event) => {
-          event.stopPropagation();
-          onActivate?.();
-        }}
-      >
-        {content.kind === "image"
-          ? <img
-            src={content.src}
-            alt={content.alt}
-            onLoad={(event) => {
-              const image = event.currentTarget;
-              if (image.naturalWidth > 0 && image.naturalHeight > 0) {
-                setImageSize({ width: image.naturalWidth, height: image.naturalHeight });
-              }
+        : <div className="media-preview__stage" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
+          <div
+            className={`media-preview__transform is-${mode}`}
+            style={{
+              width: `${mediaWidth}px`,
+              height: `${mediaHeight}px`,
+              left: `${panInset.x}px`,
+              top: `${panInset.y}px`,
             }}
-          />
-          : <div className="media-preview__svg" dangerouslySetInnerHTML={{ __html: content.svg }} />}
-      </div>}
+            onClick={(event) => {
+              event.stopPropagation();
+              onActivate?.();
+            }}
+          >
+            {content.kind === "image"
+              ? <img
+                src={content.src}
+                alt={content.alt}
+                onLoad={(event) => {
+                  const image = event.currentTarget;
+                  if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+                    setImageSize({ width: image.naturalWidth, height: image.naturalHeight });
+                  }
+                }}
+              />
+              : <div className="media-preview__svg" dangerouslySetInnerHTML={{ __html: content.svg }} />}
+          </div>
+        </div>}
     </div>
     <output className="media-preview__scale">
       {mode === "fit" ? "全体表示" : "1:1"} · {Math.round(effectiveScale * 100)}%{panning ? " · パン中" : ""}

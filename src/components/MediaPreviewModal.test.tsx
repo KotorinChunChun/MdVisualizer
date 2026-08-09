@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MediaPreviewModal } from "./MediaPreviewModal";
 
@@ -25,5 +25,28 @@ describe("MediaPreviewModal", () => {
     expect(viewport.scrollLeft).toBe(140);
     expect(viewport.scrollTop).toBe(110);
     fireEvent.pointerUp(viewport, { pointerId: 1 });
+  });
+
+  it("centers the diagram within a pan canvas that has space on every side", () => {
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    render(<MediaPreviewModal content={{ kind: "svg", svg: '<svg viewBox="0 0 400 200" />', alt: "図" }} onClose={vi.fn()} />);
+    const viewport = document.querySelector<HTMLElement>(".media-preview__viewport")!;
+    Object.defineProperties(viewport, {
+      clientWidth: { configurable: true, value: 800 },
+      clientHeight: { configurable: true, value: 600 },
+    });
+
+    act(() => { window.dispatchEvent(new Event("resize")); });
+
+    const stage = document.querySelector<HTMLElement>(".media-preview__stage")!;
+    expect(stage.style.width).toBe("2400px");
+    expect(stage.style.height).toBe("1600px");
+    expect(viewport.scrollLeft).toBe(800);
+    expect(viewport.scrollTop).toBe(500);
+    vi.unstubAllGlobals();
   });
 });
