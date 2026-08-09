@@ -582,10 +582,12 @@ body {
   border: 1px solid var(--border-color);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   font-size: 14px;
-  z-index: 100;
+  z-index: 1301;
+  pointer-events: none;
   animation: slideUp 0.3s ease-out;
   transition: opacity 1s ease, transform 1s ease;
 }
+.toast button { pointer-events: auto; }
 .toast.is-fading { opacity: 0; transform: translateY(10px); pointer-events: none; }
 
 @keyframes slideUp {

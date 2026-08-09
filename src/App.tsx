@@ -90,7 +90,6 @@ export function App() {
   const [documentViewModes, setDocumentViewModes] = useState<Record<string, ViewMode>>({});
   const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
-  const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
   const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
   const [codeHighlightRevision, setCodeHighlightRevision] = useState(0);
   const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
@@ -122,12 +121,11 @@ export function App() {
   const viewModeRef = useRef(viewMode);
   const documentViewModesRef = useRef(documentViewModes);
   const autoReloadRef = useRef(autoReload);
-  const mermaidModeRef = useRef(mermaidMode);
   const windowLabel = getCurrentWindow().label;
   documentPanelsRef.current = documentPanels;
   documentViewModesRef.current = documentViewModes;
 
-  const persistSetting = useCallback((key: "theme" | "zoom" | "autoReload" | "mermaidMode", value: string | number) => {
+  const persistSetting = useCallback((key: "theme" | "zoom" | "autoReload", value: string | number) => {
     void saveSettings({ [key]: value }).catch((error) => {
       setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
     });
@@ -154,13 +152,6 @@ export function App() {
     autoReloadRef.current = value;
     setAutoReload(value);
     persistSetting("autoReload", value);
-  }, [persistSetting]);
-
-  const updateMermaidMode = useCallback((value: "on" | "off" | "error-code" | "always-code") => {
-    if (mermaidModeRef.current === value) return;
-    mermaidModeRef.current = value;
-    setMermaidMode(value);
-    persistSetting("mermaidMode", value);
   }, [persistSetting]);
 
   useEffect(() => {
@@ -191,7 +182,6 @@ export function App() {
       if (["on", "off", "manual"].includes(String(settings.autoReload))) { const value = settings.autoReload as "on" | "off" | "manual"; autoReloadRef.current = value; setAutoReload(value); }
       else if (typeof settings.autoReload === "boolean") { const value = settings.autoReload ? "on" : "off"; autoReloadRef.current = value; setAutoReload(value); }
       if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
-      if (["on", "off", "error-code", "always-code"].includes(String(settings.mermaidMode))) { const value = settings.mermaidMode as typeof mermaidMode; mermaidModeRef.current = value; setMermaidMode(value); }
       const apps = normalizeExternalApps(settings.externalApps);
       setExternalApps(apps);
       const lineThreshold = normalizePresentationLineThreshold(settings.presentationLineThreshold);
@@ -1217,7 +1207,7 @@ export function App() {
             imageVersions={imageVersions}
             theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             onError={handlePreviewError}
-            mermaidMode={mermaidMode}
+            mermaidMode="on"
             windowId={windowLabel}
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
@@ -1242,7 +1232,7 @@ export function App() {
             onError={handlePreviewError}
             foldState={foldStates[activeTab.path]}
             onFoldChange={handleFoldChange}
-            mermaidMode={mermaidMode}
+            mermaidMode="on"
             windowId={windowLabel}
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
@@ -1324,8 +1314,6 @@ export function App() {
         onAutoReloadChange={updateAutoReload}
         zoom={viewMode === "presentation" && activeTab?.kind !== "settings" ? 100 : zoom}
         onZoomChange={viewMode === "presentation" && activeTab?.kind !== "settings" ? undefined : updateZoom}
-        mermaidMode={mermaidMode}
-        onMermaidModeChange={updateMermaidMode}
         mermaidStatus={mermaidStatus.pending ? `描画中 ${mermaidStatus.pending}` : mermaidStatus.error ? "エラー" : mermaidStatus.rendered ? `描画済み ${mermaidStatus.rendered}` : "対象なし"}
         mermaidErrorCount={mermaidStatus.errorCount}
         imageBackupAvailable={activeImageBackupAvailable}

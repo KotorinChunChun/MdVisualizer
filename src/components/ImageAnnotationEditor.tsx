@@ -44,6 +44,7 @@ export function ImageAnnotationEditor({
   const [loadedVersion, setLoadedVersion] = useState(imageVersion);
   const [saving, setSaving] = useState(false);
   const [externalConflict, setExternalConflict] = useState(false);
+  const lastRenderError = useRef<string | null>(null);
   const selected = useMemo(
     () => state.annotations.find((annotation) => annotation.id === state.selectedId),
     [state.annotations, state.selectedId],
@@ -54,25 +55,29 @@ export function ImageAnnotationEditor({
     const canvas = canvasRef.current;
     const image = imageRef.current;
     if (!canvas || !image || !image.complete || image.naturalWidth === 0) return;
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.drawImage(image, 0, 0);
-    drawImageAnnotations(context, state.annotations);
-    if (!selected && (cursor.x !== 0 || cursor.y !== 0)) {
-      context.save();
-      context.globalAlpha = 0.62;
-      drawImageAnnotations(context, [makeAnnotation(cursor.x, cursor.y)]);
-      context.restore();
-    }
-    if (selected) {
-      context.save();
-      context.strokeStyle = "#38bdf8";
-      context.lineWidth = Math.max(2, canvas.width / 500);
-      context.setLineDash([10, 6]);
-      context.strokeRect(selected.x, selected.y, selected.width, selected.height);
-      context.restore();
+    try {
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.drawImage(image, 0, 0);
+      drawImageAnnotations(context, state.annotations);
+      if (!selected && (cursor.x !== 0 || cursor.y !== 0)) {
+        context.save(); context.globalAlpha = 0.62;
+        drawImageAnnotations(context, [makeAnnotation(cursor.x, cursor.y)]);
+        context.restore();
+      }
+      if (selected) {
+        context.save(); context.strokeStyle = "#38bdf8"; context.lineWidth = Math.max(2, canvas.width / 500);
+        context.setLineDash([10, 6]); context.strokeRect(selected.x, selected.y, selected.width, selected.height); context.restore();
+      }
+      lastRenderError.current = null;
+    } catch (error) {
+      const message = String(error);
+      if (lastRenderError.current !== message) {
+        lastRenderError.current = message;
+        onError(`画像注釈のプレビューに失敗しました: ${message}`);
+      }
     }
   };
 

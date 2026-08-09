@@ -3,7 +3,6 @@ import type { ViewMode } from "../lib/viewMode";
 import "../styles/status-bar.css";
 
 export type AutoReloadMode = "on" | "off" | "manual";
-export type MermaidMode = "on" | "off" | "error-code" | "always-code";
 
 export interface StatusBarProps {
   document: MarkdownLoadResult | null;
@@ -15,9 +14,6 @@ export interface StatusBarProps {
   zoom?: number;
   onZoomChange?: (value: number) => void;
   setZoom?: (value: number) => void;
-  mermaidMode?: MermaidMode;
-  onMermaidModeChange?: (value: MermaidMode) => void;
-  setMermaidMode?: (value: MermaidMode) => void;
   mermaidStatus?: string;
   mermaidErrorCount?: number;
   imageBackupAvailable?: boolean;
@@ -45,9 +41,6 @@ export function StatusBar({
   zoom = 100,
   onZoomChange,
   setZoom,
-  mermaidMode = "on",
-  onMermaidModeChange,
-  setMermaidMode,
   mermaidStatus,
   mermaidErrorCount = 0,
   imageBackupAvailable = false,
@@ -62,7 +55,6 @@ export function StatusBar({
 }: StatusBarProps) {
   const updateAutoReload = onAutoReloadChange ?? setAutoReload;
   const updateZoom = onZoomChange ?? setZoom;
-  const updateMermaidMode = onMermaidModeChange ?? setMermaidMode;
   const mermaidSummary = mermaidStatus
     ? `Mermaid: ${mermaidStatus}${mermaidErrorCount > 0 ? ` (${mermaidErrorCount}件のエラー)` : ""}`
     : mermaidErrorCount > 0
@@ -113,15 +105,6 @@ export function StatusBar({
             <option value="on">ON</option>
             <option value="manual">手動のみ</option>
             <option value="off">OFF</option>
-          </select>
-        </label>
-        <label>
-          <span>Mermaid</span>
-          <select aria-label="Mermaid" value={mermaidMode} onChange={(event) => updateMermaidMode?.(event.target.value as MermaidMode)} disabled={!updateMermaidMode}>
-            <option value="on">ON</option>
-            <option value="off">OFF</option>
-            <option value="error-code">エラー時コード</option>
-            <option value="always-code">常にコード</option>
           </select>
         </label>
         <label>

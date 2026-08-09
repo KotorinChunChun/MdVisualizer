@@ -27,20 +27,18 @@ describe("StatusBar", () => {
 
   it("uses controlled callbacks for all status-bar selects", () => {
     const onAutoReloadChange = vi.fn();
-    const onMermaidModeChange = vi.fn();
     const onZoomChange = vi.fn();
     const onThemeChange = vi.fn();
     const onViewModeChange = vi.fn();
-    render(<StatusBar document={document} onAutoReloadChange={onAutoReloadChange} onMermaidModeChange={onMermaidModeChange} onZoomChange={onZoomChange} onThemeChange={onThemeChange} onViewModeChange={onViewModeChange} />);
+    render(<StatusBar document={document} onAutoReloadChange={onAutoReloadChange} onZoomChange={onZoomChange} onThemeChange={onThemeChange} onViewModeChange={onViewModeChange} />);
 
     fireEvent.change(screen.getByLabelText("テーマ"), { target: { value: "light" } });
     fireEvent.change(screen.getByLabelText("レイアウト"), { target: { value: "a3-portrait" } });
     fireEvent.change(screen.getByLabelText("Auto Reload"), { target: { value: "manual" } });
-    fireEvent.change(screen.getByLabelText("Mermaid"), { target: { value: "error-code" } });
     fireEvent.change(screen.getByLabelText("Zoom"), { target: { value: "120" } });
 
     expect(onAutoReloadChange).toHaveBeenCalledWith("manual");
-    expect(onMermaidModeChange).toHaveBeenCalledWith("error-code");
+    expect(screen.queryByLabelText("Mermaid")).toBeNull();
     expect(onZoomChange).toHaveBeenCalledWith(120);
     expect(onThemeChange).toHaveBeenCalledWith("light");
     expect(onViewModeChange).toHaveBeenCalledWith("a3-portrait");
@@ -51,7 +49,7 @@ describe("StatusBar", () => {
 
     expect(screen.getByText("Markdownファイル未選択")).toBeTruthy();
     expect((screen.getByLabelText("Auto Reload") as HTMLSelectElement).disabled).toBe(true);
-    expect((screen.getByLabelText("Mermaid") as HTMLSelectElement).disabled).toBe(true);
+    expect(screen.queryByLabelText("Mermaid")).toBeNull();
     expect((screen.getByLabelText("Zoom") as HTMLSelectElement).disabled).toBe(true);
     expect((screen.getByLabelText("テーマ") as HTMLSelectElement).disabled).toBe(true);
     expect((screen.getByLabelText("レイアウト") as HTMLSelectElement).disabled).toBe(true);
