@@ -2,6 +2,13 @@
 
 Windows 向けの閲覧専用 Markdown ビューアです。複数の Markdown をタブで開き、画像クロップ、Mermaid、コード、表を軽快に表示します。
 
+## beta版ダウンロード
+
+[MarkdownViewer v0.0.7-beta ダウンロード](https://excel-chunchun.sakura.ne.jp/download/)から、
+初回インストール用のApp Installer、MSIX、自己署名証明書を取得できます。自己署名証明書を
+「信頼されたユーザー」へ登録してからApp Installerを開いてください。導入後はアプリ起動時に
+betaチャネルの更新を確認します。
+
 ## 起動
 
 ### Windows の初回セットアップ
