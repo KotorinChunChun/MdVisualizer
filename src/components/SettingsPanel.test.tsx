@@ -87,13 +87,9 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][5]).toEqual({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true });
   });
 
-  it("validates and saves SharePoint public-client settings", async () => {
-    const onSave = vi.fn().mockResolvedValue(undefined);
-    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
-    fireEvent.change(screen.getByLabelText("SharePointクライアントID"), { target: { value: "12345678-1234-abcd-9876-1234567890ab" } });
-    fireEvent.change(screen.getByLabelText("SharePointテナント"), { target: { value: "contoso.onmicrosoft.com" } });
-    fireEvent.click(screen.getByRole("button", { name: "保存" }));
-    await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0][6]).toEqual({ clientId: "12345678-1234-abcd-9876-1234567890ab", tenant: "contoso.onmicrosoft.com" });
+  it("does not ask users for SharePoint application registration values", () => {
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={vi.fn()} />);
+    expect(screen.queryByLabelText("SharePointクライアントID")).toBeNull();
+    expect(screen.queryByLabelText("SharePointテナント")).toBeNull();
   });
 });

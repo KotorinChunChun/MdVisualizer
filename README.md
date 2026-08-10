@@ -59,14 +59,9 @@ npm.cmd run tauri -- dev -- -- C:\Project\README.md C:\Project\design.markdown
 spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/README.md
 ```
 
-利用前にMicrosoft Entra管理センターでデスクトップ用のアプリ登録を作成します。
+アプリケーションIDとマルチテナント設定はMarkdownViewerに組み込み済みです。利用者がMicrosoft EntraのテナントIDやアプリケーションIDを設定する必要はありません。
 
-1. 「認証」でパブリッククライアントフローを許可します。
-2. Microsoft Graphの委任されたアクセス許可`Sites.Read.All`を追加し、組織の運用に応じて同意を与えます。
-3. MarkdownViewerの設定を開き、「SharePoint Markdown」にアプリケーション（クライアント）IDを入力します。
-4. テナントは通常`organizations`のまま使用できます。単一テナント登録ではテナントIDまたは`contoso.onmicrosoft.com`形式のドメインを指定します。
-
-初回アクセス時は既定ブラウザーにMicrosoftのサインインページを開き、MarkdownViewerに表示されたデバイスコードを入力します。アクセストークンと更新トークンはアプリのプロセス内だけに保持し、設定ファイルには保存しません。そのため、アプリを終了した後は再度サインインが必要です。
+初回アクセス時は既定ブラウザーにMicrosoftのサインインページを開き、MarkdownViewerに表示されたデバイスコードを入力して、所属組織のMicrosoftアカウントで認証します。外部テナントのユーザーも利用できますが、所属組織の同意ポリシーによっては管理者による承認が必要です。アクセストークンと更新トークンはアプリのプロセス内だけに保持し、設定ファイルには保存しません。そのため、アプリを終了した後は再度サインインが必要です。
 
 `spmd:` URIにはアクセストークン、共有トークン、クエリ文字列を含めないでください。SharePoint文書では再読み込み、印刷、別窓、同じSharePoint内の相対Markdownリンクを使用できます。ローカルファイル監視、診断、外部エディター、相対画像の取得・画像編集は対象外です。
 

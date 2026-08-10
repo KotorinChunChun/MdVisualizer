@@ -31,7 +31,7 @@ import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReduc
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
-import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, DEFAULT_SHAREPOINT_SETTINGS, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, normalizeSharePointSettings, type ExternalAppConfig, type SharePointSettings } from "./types/settings";
+import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
@@ -114,7 +114,6 @@ export function App() {
   const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
   const [syntaxHighlight, setSyntaxHighlight] = useState<SyntaxHighlightSettings>(DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS);
   const [printStyle, setPrintStyle] = useState<PrintStyleSettings>(DEFAULT_PRINT_STYLE_SETTINGS);
-  const [sharePointSettings, setSharePointSettings] = useState<SharePointSettings>(DEFAULT_SHAREPOINT_SETTINGS);
   const [sharePointAuthPrompt, setSharePointAuthPrompt] = useState<SharePointAuthPrompt | null>(null);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
@@ -208,22 +207,19 @@ export function App() {
       const equalPadding = normalizeImageEqualPadding(settings.imageEqualPadding);
       const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(settings.syntaxHighlight);
       const normalizedPrintStyle = normalizePrintStyleSettings(settings.printStyle);
-      const normalizedSharePoint = normalizeSharePointSettings(settings.sharePoint);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
       setSyntaxHighlight(normalizedSyntaxHighlight);
       setPrintStyle(normalizedPrintStyle);
-      setSharePointSettings(normalizedSharePoint);
       const needsSettingsMigration = !Array.isArray(settings.externalApps)
         || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
         || settings.imageA4TargetWidth === undefined
         || settings.imageEqualPadding === undefined
         || settings.syntaxHighlight === undefined
         || settings.printStyle === undefined
-        || settings.sharePoint === undefined
         || JSON.stringify(settings.documentViewModes) !== JSON.stringify(normalizedDocumentViewModes);
       if (needsSettingsMigration) {
-        void saveSettings({ schemaVersion: 5, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, sharePoint: normalizedSharePoint, documentViewModes: normalizedDocumentViewModes }).catch((error) => {
+        void saveSettings({ schemaVersion: 5, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, documentViewModes: normalizedDocumentViewModes }).catch((error) => {
           setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
         });
       }
@@ -891,7 +887,7 @@ export function App() {
     dispatch({ type: "OPEN_SETTINGS" });
   }, [recordNavigationPoint]);
 
-  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number, nextSyntaxHighlight: SyntaxHighlightSettings, nextPrintStyle: PrintStyleSettings, nextSharePoint: SharePointSettings) => {
+  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number, nextSyntaxHighlight: SyntaxHighlightSettings, nextPrintStyle: PrintStyleSettings) => {
     try {
       const previousById = new Map(externalApps.map((app) => [app.id, app]));
       const upserts = apps.filter((app) => JSON.stringify(previousById.get(app.id)) !== JSON.stringify(app));
@@ -900,15 +896,13 @@ export function App() {
       const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold, a4TargetWidth, equalPadding);
       const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(nextSyntaxHighlight);
       const normalizedPrintStyle = normalizePrintStyleSettings(nextPrintStyle);
-      const normalizedSharePoint = normalizeSharePointSettings(nextSharePoint);
-      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, sharePoint: normalizedSharePoint });
+      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle });
       setExternalApps(normalizeExternalApps(saved.externalApps));
       setPresentationLineThreshold(lineThreshold);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
       setSyntaxHighlight(normalizedSyntaxHighlight);
       setPrintStyle(normalizedPrintStyle);
-      setSharePointSettings(normalizedSharePoint);
       setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
     } catch (error) {
       setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
@@ -1252,7 +1246,6 @@ export function App() {
             imageEqualPadding={imageEqualPadding}
             syntaxHighlight={syntaxHighlight}
             printStyle={printStyle}
-            sharePoint={sharePointSettings}
             onSave={saveExternalAppSettings}
           />
         ) : activeTab?.loading ? (

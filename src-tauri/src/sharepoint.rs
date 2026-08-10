@@ -2,7 +2,6 @@ use crate::markdown::{decode_markdown, DocumentKind, DocumentSourceKind, Markdow
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 use reqwest::{Client, Response, StatusCode};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -13,6 +12,8 @@ use url::Url;
 pub const SPMD_SCHEME: &str = "spmd";
 const GRAPH_ROOT: &str = "https://graph.microsoft.com/v1.0";
 const GRAPH_SCOPE: &str = "offline_access https://graph.microsoft.com/Sites.Read.All";
+const SHAREPOINT_CLIENT_ID: &str = "f0fe07a2-a716-44de-bf0e-55d5b468d225";
+const SHAREPOINT_TENANT: &str = "organizations";
 const MAX_MARKDOWN_BYTES: usize = 10 * 1024 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -137,34 +138,11 @@ pub struct SharePointAuthConfig {
 }
 
 impl SharePointAuthConfig {
-    pub fn from_settings(settings: &Value) -> Result<Self, SharePointError> {
-        let sharepoint = settings.get("sharePoint").and_then(Value::as_object);
-        let client_id = sharepoint
-            .and_then(|value| value.get("clientId"))
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .unwrap_or_default();
-        let tenant = sharepoint
-            .and_then(|value| value.get("tenant"))
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .unwrap_or("organizations");
-        if !is_guid(client_id) {
-            return Err(SharePointError::Configuration(
-                "設定画面でMicrosoft Entraアプリケーション（クライアント）IDを指定してください。"
-                    .into(),
-            ));
+    pub fn embedded() -> Self {
+        Self {
+            client_id: SHAREPOINT_CLIENT_ID.into(),
+            tenant: SHAREPOINT_TENANT.into(),
         }
-        if !is_valid_tenant(tenant) {
-            return Err(SharePointError::Configuration(
-                "SharePointテナントはorganizations、テナントID、またはテナントドメインで指定してください。".into(),
-            ));
-        }
-        Ok(Self {
-            client_id: client_id.to_ascii_lowercase(),
-            tenant: tenant.to_ascii_lowercase(),
-        })
     }
 
     fn cache_key(&self) -> String {
@@ -172,30 +150,8 @@ impl SharePointAuthConfig {
     }
 }
 
-fn is_guid(value: &str) -> bool {
-    let expected = [8, 4, 4, 4, 12];
-    let parts = value.split('-').collect::<Vec<_>>();
-    parts.len() == expected.len()
-        && parts.iter().zip(expected).all(|(part, length)| {
-            part.len() == length && part.chars().all(|character| character.is_ascii_hexdigit())
-        })
-}
-
-fn is_valid_tenant(value: &str) -> bool {
-    value == "organizations"
-        || value == "common"
-        || is_guid(value)
-        || (value.len() <= 253
-            && value.contains('.')
-            && value.chars().all(|character| {
-                character.is_ascii_alphanumeric() || matches!(character, '.' | '-')
-            }))
-}
-
 #[derive(Debug, Error)]
 pub enum SharePointError {
-    #[error("SharePoint設定エラー: {0}")]
-    Configuration(String),
     #[error("Microsoftへのサインインを完了できませんでした: {0}")]
     Authentication(String),
     #[error("SharePoint文書を取得できませんでした: {0}")]
@@ -769,25 +725,14 @@ mod tests {
     }
 
     #[test]
-    fn reads_and_validates_public_client_settings() {
-        let settings = serde_json::json!({
-            "sharePoint": {
-                "clientId": "12345678-1234-ABCD-9876-1234567890ab",
-                "tenant": "contoso.onmicrosoft.com"
-            }
-        });
+    fn uses_the_embedded_multitenant_public_client() {
         assert_eq!(
-            SharePointAuthConfig::from_settings(&settings).unwrap(),
+            SharePointAuthConfig::embedded(),
             SharePointAuthConfig {
-                client_id: "12345678-1234-abcd-9876-1234567890ab".into(),
-                tenant: "contoso.onmicrosoft.com".into(),
+                client_id: "f0fe07a2-a716-44de-bf0e-55d5b468d225".into(),
+                tenant: "organizations".into(),
             }
         );
-        assert!(SharePointAuthConfig::from_settings(&serde_json::json!({})).is_err());
-        assert!(SharePointAuthConfig::from_settings(&serde_json::json!({
-            "sharePoint": { "clientId": "not-a-guid", "tenant": "https://evil.example" }
-        }))
-        .is_err());
     }
 
     #[test]

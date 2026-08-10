@@ -538,7 +538,6 @@ pub async fn open_in_new_window(
 
 #[tauri::command]
 pub async fn load_markdown(
-    app_handle: AppHandle,
     window: WebviewWindow,
     state: State<'_, AppState>,
     path: String,
@@ -547,9 +546,7 @@ pub async fn load_markdown(
         return do_load_markdown(&path).map_err(|error| error.to_string());
     }
     let source = parse_spmd_uri(&path).map_err(|error| error.to_string())?;
-    let settings = load_settings_file(&settings_path(&app_handle)?)
-        .map_err(|error| error.to_string())?;
-    let config = SharePointAuthConfig::from_settings(&settings).map_err(|error| error.to_string())?;
+    let config = SharePointAuthConfig::embedded();
     state
         .sharepoint
         .load_markdown(&source, &config, |prompt| {
