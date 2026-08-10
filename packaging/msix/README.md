@@ -2,14 +2,22 @@
 
 Windows SDKの`MakeAppx.exe`と`SignTool.exe`を使い、x64版のMarkdownViewerをMSIXへまとめる。
 
-## 開発署名版を作る
+## 自己署名版を作る
 
 ```powershell
 pwsh -NoProfile -File .\scripts\build-msix.ps1
 ```
 
-`release\msix`へ署名済み`.msix`と公開鍵`.cer`を出力する。秘密鍵を含む一時PFXは
-`src-tauri\target\msix`内で生成し、署名完了後に削除する。
+`release\msix`へ署名済み`.msix`と公開鍵`.cer`を出力する。初回はCurrent Userの
+`Personal (My)`証明書ストアへ`MarkdownViewer Self-Signed Code Signing`というFriendly Nameの
+コード署名証明書を作成し、秘密鍵を永続保存する。2回目以降は同じ証明書を再利用する。
+
+証明書のThumbprintを明示して再利用する場合は次のように指定する。
+
+```powershell
+pwsh -NoProfile -File .\scripts\build-msix.ps1 `
+  -CertificateThumbprint "<thumbprint>"
+```
 
 開発用証明書はOSに信頼されていない。内容を確認したうえで、現在のユーザーの`TrustedPeople`へ
 証明書を登録してインストールする場合は次を実行する。
@@ -20,6 +28,22 @@ pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 
 証明書を信頼せずに`.msix`だけを直接実行してもインストールできない。開発用証明書を信頼する操作は
 検証端末だけで行う。
+
+証明書ストアの秘密鍵は将来の更新署名に必要である。秘密鍵を削除せず、必要に応じてアクセス制限された
+場所へPFXバックアップを作成する。PFXやパスワードをリポジトリとWeb公開領域へ保存しない。
+
+## beta App Installerを作る
+
+MSIX生成後、beta更新チャネルの`.appinstaller`を生成する。
+
+```powershell
+pwsh -NoProfile -File .\scripts\build-appinstaller.ps1 `
+  -MsixPath .\release\msix\MarkdownViewer_0.0.7.0_x64.msix `
+  -ChannelBaseUri "https://excel-chunchun.sakura.ne.jp/download/beta/"
+```
+
+起動時に毎回更新を確認するが、現在の起動はブロックしない。更新されたMSIXは次回起動時に使用される。
+betaと正式版は別のApp Installer URIを使用し、Package Identityと署名証明書は共通にする。
 
 ## 本番署名版を作る
 

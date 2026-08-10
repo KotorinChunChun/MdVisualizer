@@ -3,7 +3,10 @@ param(
     [string]$OutputDirectory,
     [string]$PfxPath,
     [string]$PfxPassword,
+    [string]$CertificateThumbprint,
     [string]$Publisher = "CN=KotorinChunChun",
+    [string]$PersistentCertificateFriendlyName = "MarkdownViewer Self-Signed Code Signing",
+    [int]$PersistentCertificateValidityYears = 5,
     [string]$TimestampUrl,
     [switch]$SkipTauriBuild
 )
@@ -88,83 +91,77 @@ function Convert-ToMsixVersion {
     return $normalized -join "."
 }
 
-function New-DevelopmentSigningCertificate {
+function Test-CodeSigningCertificate {
+    param(
+        [Parameter(Mandatory)]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
+    )
+
+    if (-not $Certificate.HasPrivateKey) {
+        return $false
+    }
+    if ($Certificate.NotBefore -gt (Get-Date) -or $Certificate.NotAfter -le (Get-Date)) {
+        return $false
+    }
+
+    foreach ($extension in $Certificate.Extensions) {
+        if ($extension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
+            foreach ($usage in $extension.EnhancedKeyUsages) {
+                if ($usage.Value -eq "1.3.6.1.5.5.7.3.3") {
+                    return $true
+                }
+            }
+        }
+    }
+
+    return $false
+}
+
+function Get-PersistentSigningCertificate {
     param(
         [Parameter(Mandatory)]
         [string]$Subject,
         [Parameter(Mandatory)]
-        [string]$TemporaryPfxPath,
+        [string]$FriendlyName,
         [Parameter(Mandatory)]
-        [string]$PublicCertificatePath
+        [int]$ValidityYears
     )
 
-    $rsa = [System.Security.Cryptography.RSA]::Create(3072)
-    try {
-        $request = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
-            $Subject,
-            $rsa,
-            [System.Security.Cryptography.HashAlgorithmName]::SHA256,
-            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
-        )
-        $request.CertificateExtensions.Add(
-            [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new(
-                [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature,
-                $true
-            )
-        )
-        $enhancedKeyUsages = [System.Security.Cryptography.OidCollection]::new()
-        [void]$enhancedKeyUsages.Add(
-            [System.Security.Cryptography.Oid]::new("1.3.6.1.5.5.7.3.3", "Code Signing")
-        )
-        $request.CertificateExtensions.Add(
-            [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]::new(
-                $enhancedKeyUsages,
-                $false
-            )
-        )
-        $request.CertificateExtensions.Add(
-            [System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new(
-                $false,
-                $false,
-                0,
-                $true
-            )
-        )
-
-        $certificate = $request.CreateSelfSigned(
-            [DateTimeOffset]::UtcNow.AddMinutes(-5),
-            [DateTimeOffset]::UtcNow.AddYears(2)
-        )
-        try {
-            $passwordBytes = [System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
-            $password = [Convert]::ToBase64String($passwordBytes)
-            [System.IO.File]::WriteAllBytes(
-                $TemporaryPfxPath,
-                $certificate.Export(
-                    [System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12,
-                    $password
-                )
-            )
-            [System.IO.File]::WriteAllBytes(
-                $PublicCertificatePath,
-                $certificate.Export(
-                    [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert
-                )
-            )
-
-            return @{
-                Certificate = $certificate
-                Password = $password
-            }
-        }
-        catch {
-            $certificate.Dispose()
-            throw
-        }
+    if ($ValidityYears -lt 1 -or $ValidityYears -gt 20) {
+        throw "PersistentCertificateValidityYears must be between 1 and 20."
     }
-    finally {
-        $rsa.Dispose()
+
+    $existingCertificate = Get-ChildItem -LiteralPath "Cert:\CurrentUser\My" |
+        Where-Object {
+            $_.Subject -eq $Subject -and
+            $_.FriendlyName -eq $FriendlyName -and
+            (Test-CodeSigningCertificate -Certificate $_)
+        } |
+        Sort-Object NotAfter -Descending |
+        Select-Object -First 1
+
+    if ($existingCertificate) {
+        Write-Host "Reusing persistent signing certificate: $($existingCertificate.Thumbprint)"
+        return $existingCertificate
     }
+
+    $newCertificate = New-SelfSignedCertificate `
+        -Type CodeSigningCert `
+        -Subject $Subject `
+        -FriendlyName $FriendlyName `
+        -CertStoreLocation "Cert:\CurrentUser\My" `
+        -KeyAlgorithm RSA `
+        -KeyLength 3072 `
+        -HashAlgorithm SHA256 `
+        -KeyExportPolicy Exportable `
+        -NotAfter (Get-Date).AddYears($ValidityYears)
+
+    if (-not (Test-CodeSigningCertificate -Certificate $newCertificate)) {
+        throw "The persistent code-signing certificate was created without a usable private key or Code Signing EKU."
+    }
+
+    Write-Host "Created persistent signing certificate: $($newCertificate.Thumbprint)"
+    return $newCertificate
 }
 
 $tauriConfig = Get-Content -LiteralPath $tauriConfigPath -Raw | ConvertFrom-Json
@@ -173,24 +170,16 @@ $packageName = "MarkdownViewer_${packageVersion}_x64"
 $outputDirectoryFullPath = [System.IO.Path]::GetFullPath($OutputDirectory)
 $msixPath = Join-Path $outputDirectoryFullPath "${packageName}.msix"
 $certificatePath = Join-Path $outputDirectoryFullPath "${packageName}.cer"
-$temporaryPfxPath = Join-Path $tauriRoot "target\msix\development-signing.pfx"
-$usingDevelopmentCertificate = [string]::IsNullOrWhiteSpace($PfxPath)
+$usingPfx = -not [string]::IsNullOrWhiteSpace($PfxPath)
 $signingCertificate = $null
 $signingPassword = $PfxPassword
 
 New-Item -ItemType Directory -Path $outputDirectoryFullPath -Force | Out-Null
-New-Item -ItemType Directory -Path (Split-Path -Parent $temporaryPfxPath) -Force | Out-Null
 
-if ($usingDevelopmentCertificate) {
-    $developmentCertificate = New-DevelopmentSigningCertificate `
-        -Subject $Publisher `
-        -TemporaryPfxPath $temporaryPfxPath `
-        -PublicCertificatePath $certificatePath
-    $signingCertificate = $developmentCertificate.Certificate
-    $signingPassword = $developmentCertificate.Password
-    $PfxPath = $temporaryPfxPath
-}
-else {
+if ($usingPfx) {
+    if (-not [string]::IsNullOrWhiteSpace($CertificateThumbprint)) {
+        throw "Specify either PfxPath or CertificateThumbprint, not both."
+    }
     $PfxPath = [System.IO.Path]::GetFullPath($PfxPath)
     if (-not (Test-Path -LiteralPath $PfxPath)) {
         throw "Signing certificate was not found: $PfxPath"
@@ -201,13 +190,28 @@ else {
         [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
     )
     $Publisher = $signingCertificate.Subject
-    [System.IO.File]::WriteAllBytes(
-        $certificatePath,
-        $signingCertificate.Export(
-            [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert
-        )
-    )
 }
+elseif (-not [string]::IsNullOrWhiteSpace($CertificateThumbprint)) {
+    $normalizedThumbprint = $CertificateThumbprint.Replace(" ", "").ToUpperInvariant()
+    $signingCertificate = Get-ChildItem -LiteralPath "Cert:\CurrentUser\My\$normalizedThumbprint" -ErrorAction Stop
+    if (-not (Test-CodeSigningCertificate -Certificate $signingCertificate)) {
+        throw "The selected certificate does not have a usable private key and Code Signing EKU: $normalizedThumbprint"
+    }
+    $Publisher = $signingCertificate.Subject
+}
+else {
+    $signingCertificate = Get-PersistentSigningCertificate `
+        -Subject $Publisher `
+        -FriendlyName $PersistentCertificateFriendlyName `
+        -ValidityYears $PersistentCertificateValidityYears
+}
+
+[System.IO.File]::WriteAllBytes(
+    $certificatePath,
+    $signingCertificate.Export(
+        [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert
+    )
+)
 
 try {
     if (-not $SkipTauriBuild) {
@@ -282,12 +286,16 @@ try {
     $signArguments = @(
         "sign",
         "/fd",
-        "SHA256",
-        "/f",
-        $PfxPath
+        "SHA256"
     )
-    if (-not [string]::IsNullOrEmpty($signingPassword)) {
-        $signArguments += @("/p", $signingPassword)
+    if ($usingPfx) {
+        $signArguments += @("/f", $PfxPath)
+        if (-not [string]::IsNullOrEmpty($signingPassword)) {
+            $signArguments += @("/p", $signingPassword)
+        }
+    }
+    else {
+        $signArguments += @("/s", "My", "/sha1", $signingCertificate.Thumbprint)
     }
     if (-not [string]::IsNullOrWhiteSpace($TimestampUrl)) {
         $signArguments += @("/tr", $TimestampUrl, "/td", "SHA256")
@@ -308,15 +316,12 @@ try {
 
     Write-Host "MSIX package: $msixPath"
     Write-Host "Public certificate: $certificatePath"
-    if ($usingDevelopmentCertificate) {
-        Write-Warning "This package uses a self-signed development certificate. Trust the .cer file before installation."
+    if (-not $usingPfx) {
+        Write-Warning "This package uses a self-signed certificate from Cert:\CurrentUser\My. Keep its private key for future updates and trust the .cer file on client devices."
     }
 }
 finally {
     if ($signingCertificate) {
         $signingCertificate.Dispose()
-    }
-    if ($usingDevelopmentCertificate -and (Test-Path -LiteralPath $temporaryPfxPath)) {
-        Remove-Item -LiteralPath $temporaryPfxPath -Force
     }
 }

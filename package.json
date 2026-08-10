@@ -1,7 +1,7 @@
 {
   "name": "markdown-viewer",
   "private": true,
-  "version": "0.0.8",
+  "version": "0.0.7",
   "author": "KotorinChunChun",
   "repository": "https://github.com/KotorinChunChun/MarkdownViewer",
   "type": "module",
@@ -9,6 +9,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:msix": "pwsh -NoProfile -File ./scripts/build-msix.ps1",
+    "build:appinstaller": "pwsh -NoProfile -File ./scripts/build-appinstaller.ps1",
     "test": "vitest run",
     "preview": "vite preview",
     "tauri": "tauri"
