@@ -101,7 +101,8 @@ function Invoke-BuildRelease {
     Write-Host "Running Rust tests for the explicitly requested release..."
     Invoke-CheckedExternalCommand -FilePath "cargo" -ArgumentList @("test") -WorkingDirectory (Join-Path $projectRoot "src-tauri")
     Write-Host "Building and signing the explicitly requested MSIX release..."
-    & (Join-Path $PSScriptRoot "build-msix.ps1")
+    & (Join-Path $PSScriptRoot "build-msix.ps1") `
+        -ConfigPath $configuration.ConfigPath
     Write-Host "Generating the explicitly requested $SelectedChannel App Installer..."
     & (Join-Path $PSScriptRoot "build-appinstaller.ps1") `
         -Channel $SelectedChannel `

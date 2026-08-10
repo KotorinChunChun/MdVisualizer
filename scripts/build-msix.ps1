@@ -4,10 +4,11 @@ param(
     [string]$PfxPath,
     [string]$PfxPassword,
     [string]$CertificateThumbprint,
-    [string]$Publisher = "CN=KotorinChunChun",
-    [string]$PersistentCertificateFriendlyName = "MarkdownViewer Self-Signed Code Signing",
+    [string]$Publisher,
+    [string]$PersistentCertificateFriendlyName,
     [int]$PersistentCertificateValidityYears = 5,
     [string]$TimestampUrl,
+    [string]$ConfigPath,
     [switch]$SkipTauriBuild
 )
 
@@ -16,13 +17,26 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $tauriRoot = Join-Path $projectRoot "src-tauri"
-$tauriConfigPath = Join-Path $tauriRoot "tauri.conf.json"
+Import-Module (Join-Path $PSScriptRoot "ReleaseTools.psm1") -Force
+$releaseConfiguration = Import-ReleaseConfiguration -Path $ConfigPath -ProjectRoot $projectRoot
+$tauriConfigPath = $releaseConfiguration.TauriConfigPath
 $manifestTemplatePath = Join-Path $projectRoot "packaging\msix\AppxManifest.xml.in"
-$stagingRoot = Join-Path $tauriRoot "target\msix\x64\layout"
+$architecture = $releaseConfiguration.Raw.application.architecture
+$identityName = $releaseConfiguration.Raw.application.identityName
+$artifactBaseName = $releaseConfiguration.Raw.application.artifactBaseName
+$publisherDisplayName = $releaseConfiguration.Raw.application.displayName
+$stagingRoot = Join-Path $tauriRoot "target\msix\$architecture\layout"
 $releaseExecutable = Join-Path $tauriRoot "target\release\markdown-viewer.exe"
 
+if ([string]::IsNullOrWhiteSpace($Publisher)) {
+    $Publisher = $releaseConfiguration.Raw.application.publisher
+}
+if ([string]::IsNullOrWhiteSpace($PersistentCertificateFriendlyName)) {
+    $PersistentCertificateFriendlyName = $releaseConfiguration.Raw.application.certificateFriendlyName
+}
+
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
-    $OutputDirectory = Join-Path $projectRoot "release\msix"
+    $OutputDirectory = $releaseConfiguration.ReleaseDirectory
 }
 
 function Invoke-CheckedCommand {
@@ -70,7 +84,8 @@ function Convert-ToMsixVersion {
         [string]$Version
     )
 
-    $parts = $Version.Split(".")
+    $numericVersion = ($Version -split "-", 2)[0]
+    $parts = $numericVersion.Split(".")
     if ($parts.Count -lt 1 -or $parts.Count -gt 4) {
         throw "The application version must contain between one and four numeric parts: $Version"
     }
@@ -166,7 +181,7 @@ function Get-PersistentSigningCertificate {
 
 $tauriConfig = Get-Content -LiteralPath $tauriConfigPath -Raw | ConvertFrom-Json
 $packageVersion = Convert-ToMsixVersion -Version $tauriConfig.version
-$packageName = "MarkdownViewer_${packageVersion}_x64"
+$packageName = "${artifactBaseName}_${packageVersion}_${architecture}"
 $outputDirectoryFullPath = [System.IO.Path]::GetFullPath($OutputDirectory)
 $msixPath = Join-Path $outputDirectoryFullPath "${packageName}.msix"
 $certificatePath = Join-Path $outputDirectoryFullPath "${packageName}.cer"
@@ -253,14 +268,14 @@ try {
     }
 
     $manifest = Get-Content -LiteralPath $manifestTemplatePath -Raw
-    $manifest = $manifest.Replace("@@IDENTITY_NAME@@", "com.markdownviewer.viewer")
+    $manifest = $manifest.Replace("@@IDENTITY_NAME@@", $identityName)
     $manifest = $manifest.Replace(
         "@@PUBLISHER@@",
         [System.Security.SecurityElement]::Escape($Publisher)
     )
     $manifest = $manifest.Replace("@@PACKAGE_VERSION@@", $packageVersion)
-    $manifest = $manifest.Replace("@@ARCHITECTURE@@", "x64")
-    $manifest = $manifest.Replace("@@PUBLISHER_DISPLAY_NAME@@", "KotorinChunChun")
+    $manifest = $manifest.Replace("@@ARCHITECTURE@@", $architecture)
+    $manifest = $manifest.Replace("@@PUBLISHER_DISPLAY_NAME@@", $publisherDisplayName)
     $manifestPath = Join-Path $safeStagingRoot "AppxManifest.xml"
     [System.IO.File]::WriteAllText(
         $manifestPath,
