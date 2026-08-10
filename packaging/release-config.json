@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "application": {
+    "displayName": "MarkdownViewer",
+    "artifactBaseName": "MarkdownViewer",
+    "identityName": "com.markdownviewer.viewer",
+    "publisher": "CN=KotorinChunChun",
+    "architecture": "x64",
+    "certificateFriendlyName": "MarkdownViewer Self-Signed Code Signing"
+  },
+  "build": {
+    "tauriConfig": "src-tauri\\tauri.conf.json",
+    "releaseDirectory": "release\\msix",
+    "siteSourceDirectory": "packaging\\site"
+  },
+  "distribution": {
+    "websiteProjectDirectory": "C:\\develop\\excel-chunchun",
+    "siteRelativeDirectory": "www\\download",
+    "ftpUploadScript": "scripts\\upload_ftp.py",
+    "publicDownloadPage": "https://excel-chunchun.sakura.ne.jp/download/"
+  },
+  "channels": {
+    "beta": {
+      "relativeDirectory": "beta",
+      "baseUri": "https://excel-chunchun.sakura.ne.jp/download/beta/",
+      "appInstallerFileName": "MarkdownViewer.appinstaller"
+    },
+    "stable": {
+      "relativeDirectory": "stable",
+      "baseUri": "https://excel-chunchun.sakura.ne.jp/download/stable/",
+      "appInstallerFileName": "MarkdownViewer.appinstaller"
+    }
+  }
+}
