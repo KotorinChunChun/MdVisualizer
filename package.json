@@ -10,6 +10,8 @@
     "build": "tsc && vite build",
     "build:msix": "pwsh -NoProfile -File ./scripts/build-msix.ps1",
     "build:appinstaller": "pwsh -NoProfile -File ./scripts/build-appinstaller.ps1",
+    "release:plan": "pwsh -NoProfile -File ./scripts/publish-msix-release.ps1 -Mode Plan",
+    "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
     "test": "vitest run",
     "preview": "vite preview",
     "tauri": "tauri"
