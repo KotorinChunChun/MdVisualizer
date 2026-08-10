@@ -25,6 +25,13 @@
       }
     }
   },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["spmd"]
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

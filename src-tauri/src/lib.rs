@@ -7,11 +7,13 @@ pub mod image_ops;
 pub mod image_references;
 pub mod markdown;
 pub mod settings;
+pub mod sharepoint;
 pub mod watcher;
 
 use app_state::AppState;
 use commands::*;
 use markdown::is_supported_document;
+use sharepoint::{is_spmd_uri, parse_spmd_uri};
 use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 use tauri::{Emitter, EventTarget, Manager};
@@ -50,14 +52,27 @@ fn path_deduplication_key(path: &Path) -> String {
     value
 }
 
-fn document_file_arguments(arguments: impl IntoIterator<Item = String>, cwd: &Path) -> Vec<String> {
+fn document_launch_arguments(arguments: impl IntoIterator<Item = String>, cwd: &Path) -> Vec<String> {
     let mut seen = HashSet::new();
     arguments
         .into_iter()
         .filter(|argument| !argument.starts_with('-'))
-        .filter_map(|argument| normalize_document_path(&argument, cwd))
-        .filter(|path| seen.insert(path_deduplication_key(path)))
-        .map(|path| path.to_string_lossy().into_owned())
+        .filter_map(|argument| {
+            if is_spmd_uri(&argument) {
+                parse_spmd_uri(&argument).ok().map(|parsed| parsed.canonical_uri)
+            } else {
+                normalize_document_path(&argument, cwd)
+                    .map(|path| path.to_string_lossy().into_owned())
+            }
+        })
+        .filter(|source| {
+            let key = if is_spmd_uri(source) {
+                source.to_ascii_lowercase()
+            } else {
+                path_deduplication_key(Path::new(source))
+            };
+            seen.insert(key)
+        })
         .collect()
 }
 
@@ -74,7 +89,7 @@ fn launch_owner_label(labels: impl IntoIterator<Item = String>) -> Option<String
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let args: Vec<String> = std::env::args().collect();
-    let initial_files = document_file_arguments(
+    let initial_files = document_launch_arguments(
         args.into_iter().skip(1),
         &std::env::current_dir().expect("Could not determine the current directory"),
     );
@@ -86,7 +101,7 @@ pub fn run() {
         // delivered to the existing app instead of becoming an overlapping
         // second process.
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
-            let files = document_file_arguments(args, Path::new(&cwd));
+            let files = document_launch_arguments(args, Path::new(&cwd));
             if !files.is_empty() {
                 let labels = app.webview_windows().into_keys();
                 if let Some(label) = launch_owner_label(labels) {
@@ -104,6 +119,7 @@ pub fn run() {
                 }
             }
         }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .on_window_event(|window, event| {
@@ -158,13 +174,13 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{document_file_arguments, launch_owner_label};
+    use super::{document_launch_arguments, launch_owner_label};
     use std::path::Path;
 
     #[test]
     fn keeps_only_supported_document_arguments() {
         assert_eq!(
-            document_file_arguments(
+            document_launch_arguments(
                 [
                     "MarkdownViewer.exe".into(),
                     "--flag".into(),
@@ -190,7 +206,7 @@ mod tests {
     #[test]
     fn normalizes_and_deduplicates_paths_in_one_launch_request() {
         assert_eq!(
-            document_file_arguments(
+            document_launch_arguments(
                 [
                     "docs/./guide.md".into(),
                     "docs/section/../guide.md".into(),
@@ -203,6 +219,20 @@ mod tests {
                 "C:\\workspace\\docs\\other.md"
             ],
         );
+    }
+
+    #[test]
+    fn accepts_and_deduplicates_valid_spmd_launches() {
+        let source = "spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/README.md";
+        assert_eq!(
+            document_launch_arguments([source.into(), source.to_ascii_uppercase()], Path::new("C:/")),
+            vec![source]
+        );
+        assert!(document_launch_arguments(
+            ["spmd://example.com/sites/a/docs/readme.md".into()],
+            Path::new("C:/")
+        )
+        .is_empty());
     }
 
     #[test]

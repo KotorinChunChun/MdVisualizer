@@ -16,6 +16,7 @@ use crate::settings::{
     load_application_settings, load_settings as load_settings_file, merge_external_app_settings,
     merge_fold_state, merge_settings, SettingsLoadResult,
 };
+use crate::sharepoint::{is_spmd_uri, parse_spmd_uri};
 use crate::watcher::FileWatcher;
 use serde::Deserialize;
 use serde::Serialize;
@@ -473,10 +474,13 @@ pub async fn open_in_new_window(
     window: WebviewWindow,
     path: String,
 ) -> Result<(), String> {
-    if !is_supported_document(Path::new(&path)) {
+    let remote = is_spmd_uri(&path);
+    if remote {
+        parse_spmd_uri(&path).map_err(|error| error.to_string())?;
+    } else if !is_supported_document(Path::new(&path)) {
         return Err(AppError::UnsupportedDocument(path).to_string());
     }
-    if !Path::new(&path).exists() {
+    if !remote && !Path::new(&path).exists() {
         return Err(AppError::FileNotFound(path).to_string());
     }
     let sequence = state.window_sequence.fetch_add(1, Ordering::Relaxed);
