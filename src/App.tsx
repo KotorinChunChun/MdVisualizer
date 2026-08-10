@@ -25,23 +25,24 @@ import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
-import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openExternalUrl, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateExternalAppSettings, updateImageCaption } from "./lib/commands";
+import { useApplicationSettings } from "./hooks/useApplicationSettings";
+import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
+import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
-import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
+import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
 import { resolveImageSrc } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
-import { normalizeDocumentViewModes, type ViewMode } from "./lib/viewMode";
+import type { ViewMode } from "./lib/viewMode";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
-import { applySyntaxHighlightSettings, DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, normalizeSyntaxHighlightSettings, type SyntaxHighlightSettings } from "./lib/syntaxHighlight";
-import { applyPrintStyleSettings, DEFAULT_PRINT_STYLE_SETTINGS, normalizePrintStyleSettings, type PrintStyleSettings } from "./lib/printStyle";
-import { isSharePointDocument, listenForSharePointAuthentication, type SharePointAuthPrompt } from "./lib/sharePoint";
+import { isSharePointDocument } from "./lib/sharePoint";
+import { moveZoomLevel } from "./lib/zoom";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -51,19 +52,7 @@ import "./styles/syntax-highlight.css";
 // Keep this list in sync with StatusBar's fixed zoom choices.  Normalizing at
 // the state boundary also repairs legacy persisted values that were not a
 // selectable option.
-export const ZOOM_LEVELS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200] as const;
-export type ZoomLevel = typeof ZOOM_LEVELS[number];
-
-export function normalizeZoom(value: number): ZoomLevel {
-  return ZOOM_LEVELS.reduce((nearest, candidate) =>
-    Math.abs(candidate - value) < Math.abs(nearest - value) ? candidate : nearest,
-  ZOOM_LEVELS[0]);
-}
-
-export function moveZoomLevel(current: number, direction: 1 | -1): number {
-  const index = ZOOM_LEVELS.indexOf(normalizeZoom(current));
-  return ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length - 1, index + direction))];
-}
+export { moveZoomLevel, normalizeZoom, ZOOM_LEVELS, type ZoomLevel } from "./lib/zoom";
 
 export function focusAndSelectSearchInput(input: HTMLInputElement | null): void {
   input?.focus();
@@ -98,23 +87,35 @@ export function App() {
   const wasPresentationMode = useRef(false);
   const presentationRestorePending = useRef(false);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [theme, setTheme] = useState("system");
-  const [zoom, setZoom] = useState(100);
   const [viewMode, setViewMode] = useState<ViewMode>("auto");
-  const [documentViewModes, setDocumentViewModes] = useState<Record<string, ViewMode>>({});
-  const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
-  const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
   const [codeHighlightRevision, setCodeHighlightRevision] = useState(0);
   const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
-  const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
-  const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
-  const [imageA4TargetWidth, setImageA4TargetWidth] = useState(DEFAULT_IMAGE_A4_TARGET_WIDTH);
-  const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
-  const [syntaxHighlight, setSyntaxHighlight] = useState<SyntaxHighlightSettings>(DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS);
-  const [printStyle, setPrintStyle] = useState<PrintStyleSettings>(DEFAULT_PRINT_STYLE_SETTINGS);
-  const [sharePointAuthPrompt, setSharePointAuthPrompt] = useState<SharePointAuthPrompt | null>(null);
+  const {
+    theme,
+    zoom,
+    documentViewModes,
+    setDocumentViewModes,
+    autoReload,
+    foldStates,
+    setFoldStates,
+    externalApps,
+    presentationLineThreshold,
+    imageA4TargetWidth,
+    imageEqualPadding,
+    syntaxHighlight,
+    printStyle,
+    updateTheme,
+    updateZoom,
+    updateAutoReload,
+    saveExternalAppSettings,
+  } = useApplicationSettings(setToast);
+  const {
+    sharePointAuthPrompt,
+    openAuthenticationPage,
+    dismissAuthentication,
+  } = useSharePointAuthentication(setToast);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
@@ -133,116 +134,11 @@ export function App() {
   const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
   const navigationHistoryRef = useRef(emptyNavigationHistory());
   const auxiliaryNavigationRef = useRef<AuxiliaryNavigationStamp>({ button: -1, timestamp: 0 });
-  const themeRef = useRef(theme);
-  const zoomRef = useRef(zoom);
   const viewModeRef = useRef(viewMode);
   const documentViewModesRef = useRef(documentViewModes);
-  const autoReloadRef = useRef(autoReload);
   const windowLabel = getCurrentWindow().label;
   documentPanelsRef.current = documentPanels;
   documentViewModesRef.current = documentViewModes;
-
-  const persistSetting = useCallback((key: "theme" | "zoom" | "autoReload", value: string | number) => {
-    void saveSettings({ [key]: value }).catch((error) => {
-      setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
-    });
-  }, []);
-
-  const updateTheme = useCallback((value: string) => {
-    if (themeRef.current === value) return;
-    themeRef.current = value;
-    setTheme(value);
-    persistSetting("theme", value);
-  }, [persistSetting]);
-
-  const updateZoom = useCallback((value: number | ((current: number) => number)) => {
-    const requested = typeof value === "function" ? value(zoomRef.current) : value;
-    const next = normalizeZoom(requested);
-    if (zoomRef.current === next) return;
-    zoomRef.current = next;
-    setZoom(next);
-    persistSetting("zoom", next);
-  }, [persistSetting]);
-
-  const updateAutoReload = useCallback((value: "on" | "off" | "manual") => {
-    if (autoReloadRef.current === value) return;
-    autoReloadRef.current = value;
-    setAutoReload(value);
-    persistSetting("autoReload", value);
-  }, [persistSetting]);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const applyTheme = () => {
-      document.documentElement.dataset.theme = theme === "system" ? (media.matches ? "dark" : "light") : theme;
-    };
-
-    applyTheme();
-    media.addEventListener("change", applyTheme);
-    return () => media.removeEventListener("change", applyTheme);
-  }, [theme]);
-
-  useEffect(() => {
-    applySyntaxHighlightSettings(document.documentElement, syntaxHighlight);
-  }, [syntaxHighlight]);
-
-  useEffect(() => {
-    applyPrintStyleSettings(document.documentElement, printStyle);
-  }, [printStyle]);
-
-  useEffect(() => {
-    void loadSettingsStatus().then(({ settings, recoveredFiles }) => {
-      if (typeof settings.theme === "string") { themeRef.current = settings.theme; setTheme(settings.theme); }
-      if (typeof settings.zoom === "number") { const value = normalizeZoom(settings.zoom); zoomRef.current = value; setZoom(value); }
-      const normalizedDocumentViewModes = normalizeDocumentViewModes(settings.documentViewModes);
-      setDocumentViewModes(normalizedDocumentViewModes);
-      if (["on", "off", "manual"].includes(String(settings.autoReload))) { const value = settings.autoReload as "on" | "off" | "manual"; autoReloadRef.current = value; setAutoReload(value); }
-      else if (typeof settings.autoReload === "boolean") { const value = settings.autoReload ? "on" : "off"; autoReloadRef.current = value; setAutoReload(value); }
-      if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
-      const apps = normalizeExternalApps(settings.externalApps);
-      setExternalApps(apps);
-      const lineThreshold = normalizePresentationLineThreshold(settings.presentationLineThreshold);
-      setPresentationLineThreshold(lineThreshold);
-      const a4TargetWidth = normalizeImageA4TargetWidth(settings.imageA4TargetWidth);
-      const equalPadding = normalizeImageEqualPadding(settings.imageEqualPadding);
-      const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(settings.syntaxHighlight);
-      const normalizedPrintStyle = normalizePrintStyleSettings(settings.printStyle);
-      setImageA4TargetWidth(a4TargetWidth);
-      setImageEqualPadding(equalPadding);
-      setSyntaxHighlight(normalizedSyntaxHighlight);
-      setPrintStyle(normalizedPrintStyle);
-      const needsSettingsMigration = !Array.isArray(settings.externalApps)
-        || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
-        || settings.imageA4TargetWidth === undefined
-        || settings.imageEqualPadding === undefined
-        || settings.syntaxHighlight === undefined
-        || settings.printStyle === undefined
-        || JSON.stringify(settings.documentViewModes) !== JSON.stringify(normalizedDocumentViewModes);
-      if (needsSettingsMigration) {
-        void saveSettings({ schemaVersion: 5, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, documentViewModes: normalizedDocumentViewModes }).catch((error) => {
-          setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
-        });
-      }
-      if (recoveredFiles.length > 0) {
-        setToast({
-          id: String(Date.now()),
-          message: `破損した設定ファイルを退避し、初期設定で起動しました（${recoveredFiles.length}件）`,
-          type: "info",
-        });
-      }
-    }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" }));
-  }, []);
-
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void listenForSharePointAuthentication((event) => {
-      setSharePointAuthPrompt(event.payload);
-      void openExternalUrl(event.payload.verificationUri).catch((error) => {
-        setToast({ id: String(Date.now()), message: `サインインページを開けません: ${String(error)}`, type: "error" });
-      });
-    }).then((dispose) => { unlisten = dispose; });
-    return () => { unlisten?.(); };
-  }, []);
 
   useEffect(() => subscribeMermaidStatus(setMermaidStatus), []);
 
@@ -456,10 +352,10 @@ export function App() {
     } catch (error) {
       dispatch({ type: "FAILED", id, generation, error: String(error) });
     } finally {
-      if (path.toLowerCase().startsWith("spmd://")) setSharePointAuthPrompt(null);
+      if (path.toLowerCase().startsWith("spmd://")) dismissAuthentication();
       inFlightLoads.current.delete(loadKey);
     }
-  }, []);
+  }, [dismissAuthentication]);
 
   useEffect(() => {
     void (async () => {
@@ -886,29 +782,6 @@ export function App() {
     recordNavigationPoint();
     dispatch({ type: "OPEN_SETTINGS" });
   }, [recordNavigationPoint]);
-
-  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number, nextSyntaxHighlight: SyntaxHighlightSettings, nextPrintStyle: PrintStyleSettings) => {
-    try {
-      const previousById = new Map(externalApps.map((app) => [app.id, app]));
-      const upserts = apps.filter((app) => JSON.stringify(previousById.get(app.id)) !== JSON.stringify(app));
-      const nextIds = new Set(apps.map((app) => app.id));
-      const removedIds = externalApps.filter((app) => !nextIds.has(app.id)).map((app) => app.id);
-      const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold, a4TargetWidth, equalPadding);
-      const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(nextSyntaxHighlight);
-      const normalizedPrintStyle = normalizePrintStyleSettings(nextPrintStyle);
-      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle });
-      setExternalApps(normalizeExternalApps(saved.externalApps));
-      setPresentationLineThreshold(lineThreshold);
-      setImageA4TargetWidth(a4TargetWidth);
-      setImageEqualPadding(equalPadding);
-      setSyntaxHighlight(normalizedSyntaxHighlight);
-      setPrintStyle(normalizedPrintStyle);
-      setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
-    } catch (error) {
-      setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
-      throw error;
-    }
-  }, [externalApps]);
 
   const closeTab = useCallback((id: string) => {
     const tab = tabsState.tabs.find((candidate) => candidate.id === id);
@@ -1389,8 +1262,8 @@ export function App() {
       {shortcutHelpOpen && <ShortcutHelpModal onClose={() => setShortcutHelpOpen(false)} />}
       {sharePointAuthPrompt && <SharePointAuthDialog
         prompt={sharePointAuthPrompt}
-        onOpenBrowser={() => void openExternalUrl(sharePointAuthPrompt.verificationUri).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }))}
-        onDismiss={() => setSharePointAuthPrompt(null)}
+        onOpenBrowser={() => openAuthenticationPage()}
+        onDismiss={dismissAuthentication}
       />}
       <StatusBar
         document={activeTab?.document ?? null}
