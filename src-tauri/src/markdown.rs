@@ -15,6 +15,13 @@ pub enum DocumentKind {
     Mermaid,
 }
 
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DocumentSourceKind {
+    Local,
+    SharePoint,
+}
+
 #[derive(Serialize, Debug, Clone)]
 pub struct MarkdownLoadResult {
     pub path: String,
@@ -25,6 +32,9 @@ pub struct MarkdownLoadResult {
     pub encoding: String,
     pub size_bytes: u64,
     pub modified_at: String,
+    pub source: DocumentSourceKind,
+    pub web_url: Option<String>,
+    pub etag: Option<String>,
 }
 
 pub fn document_kind(path: &Path) -> Option<DocumentKind> {
@@ -99,10 +109,13 @@ pub fn load_markdown(path_str: &str) -> AppResult<MarkdownLoadResult> {
         encoding,
         size_bytes: metadata.len(),
         modified_at,
+        source: DocumentSourceKind::Local,
+        web_url: None,
+        etag: None,
     })
 }
 
-fn decode_markdown(bytes: &[u8]) -> (String, String) {
+pub(crate) fn decode_markdown(bytes: &[u8]) -> (String, String) {
     let (encoding, label, payload): (&'static Encoding, &str, &[u8]) = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
         (UTF_8, "UTF-8 BOM", &bytes[3..])
     } else if bytes.starts_with(&[0xFF, 0xFE]) {

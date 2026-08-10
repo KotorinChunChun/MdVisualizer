@@ -1,5 +1,6 @@
 use crate::backup::BackupManager;
 use crate::watcher::FileWatcher;
+use crate::sharepoint::SharePointClient;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicU64;
 use std::sync::Mutex;
@@ -8,6 +9,7 @@ pub struct AppState {
     pub watcher: Mutex<Option<FileWatcher>>,
     pub window_sequence: AtomicU64,
     pub backup_mgr: BackupManager,
+    pub sharepoint: SharePointClient,
 }
 
 impl AppState {
@@ -17,6 +19,8 @@ impl AppState {
             watcher: Mutex::new(None),
             window_sequence: AtomicU64::new(1),
             backup_mgr: BackupManager::new()?,
+            sharepoint: SharePointClient::new()
+                .map_err(|error| crate::errors::AppError::Unknown(error.to_string()))?,
         })
     }
 }

@@ -16,7 +16,7 @@ use crate::settings::{
     load_application_settings, load_settings as load_settings_file, merge_external_app_settings,
     merge_fold_state, merge_settings, SettingsLoadResult,
 };
-use crate::sharepoint::{is_spmd_uri, parse_spmd_uri};
+use crate::sharepoint::{is_spmd_uri, parse_spmd_uri, SharePointAuthConfig, SharePointError};
 use crate::watcher::FileWatcher;
 use serde::Deserialize;
 use serde::Serialize;
@@ -27,7 +27,7 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{
-    AppHandle, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindow,
+    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindow,
     WebviewWindowBuilder,
 };
 use tauri_plugin_opener::OpenerExt;
@@ -537,8 +537,28 @@ pub async fn open_in_new_window(
 }
 
 #[tauri::command]
-pub fn load_markdown(path: String) -> Result<MarkdownLoadResult, String> {
-    do_load_markdown(&path).map_err(|e| e.to_string())
+pub async fn load_markdown(
+    app_handle: AppHandle,
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<MarkdownLoadResult, String> {
+    if !is_spmd_uri(&path) {
+        return do_load_markdown(&path).map_err(|error| error.to_string());
+    }
+    let source = parse_spmd_uri(&path).map_err(|error| error.to_string())?;
+    let settings = load_settings_file(&settings_path(&app_handle)?)
+        .map_err(|error| error.to_string())?;
+    let config = SharePointAuthConfig::from_settings(&settings).map_err(|error| error.to_string())?;
+    state
+        .sharepoint
+        .load_markdown(&source, &config, |prompt| {
+            window
+                .emit("sharepoint-authentication-required", prompt)
+                .map_err(|error| SharePointError::Authentication(error.to_string()))
+        })
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[derive(Serialize)]

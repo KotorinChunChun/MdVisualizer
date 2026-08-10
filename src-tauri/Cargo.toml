@@ -34,3 +34,5 @@ fs4 = "1.1.0"
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Ole", "Win32_UI_Shell"] }
 url = "2"
 percent-encoding = "2"
+reqwest = { version = "0.13", features = ["json", "form"] }
+tokio = { version = "1", features = ["sync", "time"] }
