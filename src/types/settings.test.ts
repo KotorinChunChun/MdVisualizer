@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, validateExternalApp } from "./settings";
+import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, normalizeSharePointSettings, validateExternalApp, validateSharePointSettings } from "./settings";
 
 describe("external app settings", () => {
   it("provides document defaults and a direct Paint image action", () => {
@@ -62,5 +62,13 @@ describe("external app settings", () => {
     expect(normalizeImageEqualPadding(0)).toBe(0);
     expect(normalizeImageEqualPadding(48)).toBe(48);
     expect(normalizeImageEqualPadding(-1)).toBe(DEFAULT_IMAGE_EQUAL_PADDING);
+  });
+
+  it("normalizes and validates SharePoint public-client settings", () => {
+    expect(normalizeSharePointSettings(null)).toEqual({ clientId: "", tenant: "organizations" });
+    const value = normalizeSharePointSettings({ clientId: " 12345678-1234-abcd-9876-1234567890ab ", tenant: " contoso.onmicrosoft.com " });
+    expect(value).toEqual({ clientId: "12345678-1234-abcd-9876-1234567890ab", tenant: "contoso.onmicrosoft.com" });
+    expect(validateSharePointSettings(value)).toBeNull();
+    expect(validateSharePointSettings({ clientId: "invalid", tenant: "organizations" })).toContain("GUID");
   });
 });

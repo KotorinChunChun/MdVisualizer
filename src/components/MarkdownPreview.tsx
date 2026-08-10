@@ -13,7 +13,7 @@ import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
 import { CodeBlock } from "./CodeBlock";
 import { MermaidBlock } from "./MermaidBlock";
 import { openExternalUrl } from "../lib/commands";
-import { resolveLocalDocumentPath } from "../lib/path";
+import { resolveLocalDocumentPath, resolveSharePointDocumentPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { imageOccurrenceId } from "../lib/imageOccurrences";
@@ -62,6 +62,7 @@ interface MarkdownPreviewProps {
   presentationMode?: boolean;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   documentPath?: string;
+  sourcePath?: string;
   onCodeHighlightComplete?: () => void;
 }
 
@@ -86,6 +87,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   presentationMode = false,
   onMediaOpen,
   documentPath,
+  sourcePath,
   onCodeHighlightComplete,
 }) => {
   const mermaidCount = countMermaidFences(content);
@@ -125,10 +127,10 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
           a: ({ href, children, ...props }) => <a {...props} href={href} onClick={(event) => {
             event.preventDefault();
             if (!href) return;
-            const localPath = resolveLocalDocumentPath(href, baseDir);
-            if (localPath) {
-              if (event.ctrlKey) onOpenDocumentWindow?.(localPath);
-              else onOpenDocument?.(localPath);
+            const documentTarget = resolveSharePointDocumentPath(href, sourcePath ?? documentPath) ?? resolveLocalDocumentPath(href, baseDir);
+            if (documentTarget) {
+              if (event.ctrlKey) onOpenDocumentWindow?.(documentTarget);
+              else onOpenDocument?.(documentTarget);
               return;
             }
             if (href.startsWith("#")) {

@@ -23,7 +23,7 @@ export const markdownSanitizeSchema = {
   },
   protocols: {
     ...defaultSchema.protocols,
-    href: ["http", "https", "mailto"],
+    href: ["http", "https", "mailto", "spmd"],
     src: ["http", "https", "data"],
   },
 };

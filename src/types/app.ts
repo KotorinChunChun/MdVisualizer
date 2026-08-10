@@ -7,6 +7,9 @@ export interface MarkdownLoadResult {
   encoding: string;
   size_bytes: number;
   modified_at: string;
+  source?: "local" | "sharepoint";
+  web_url?: string | null;
+  etag?: string | null;
 }
 
 export interface CropImageRequest {

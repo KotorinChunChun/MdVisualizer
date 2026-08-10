@@ -16,6 +16,35 @@ export interface ExternalAppConfig {
   builtinKind?: BuiltinExternalKind;
 }
 
+export interface SharePointSettings {
+  clientId: string;
+  tenant: string;
+}
+
+export const DEFAULT_SHAREPOINT_SETTINGS: SharePointSettings = {
+  clientId: "",
+  tenant: "organizations",
+};
+
+export function normalizeSharePointSettings(value: unknown): SharePointSettings {
+  if (!value || typeof value !== "object") return { ...DEFAULT_SHAREPOINT_SETTINGS };
+  const candidate = value as Partial<SharePointSettings>;
+  return {
+    clientId: typeof candidate.clientId === "string" ? candidate.clientId.trim() : "",
+    tenant: typeof candidate.tenant === "string" && candidate.tenant.trim() ? candidate.tenant.trim() : "organizations",
+  };
+}
+
+export function validateSharePointSettings(value: SharePointSettings): string | null {
+  if (value.clientId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.clientId.trim())) {
+    return "SharePointのクライアントIDはGUID形式で入力してください。";
+  }
+  if (!/^(?:organizations|common|[0-9a-f]{8}-[0-9a-f-]{27}|[a-z0-9.-]+\.[a-z0-9.-]+)$/i.test(value.tenant.trim())) {
+    return "SharePointのテナント指定が正しくありません。";
+  }
+  return null;
+}
+
 export const DEFAULT_EXTERNAL_APPS: ExternalAppConfig[] = [
   {
     id: "builtin-folder",

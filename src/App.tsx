@@ -10,6 +10,7 @@ import { Toast } from "./components/Toast";
 import { SearchBar } from "./components/SearchBar";
 import { SearchResults } from "./components/SearchResults";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { SharePointAuthDialog } from "./components/SharePointAuthDialog";
 import { ExternalActions } from "./components/ExternalActions";
 import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget } from "./components/MediaPreviewModal";
@@ -24,15 +25,15 @@ import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
-import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateExternalAppSettings, updateImageCaption } from "./lib/commands";
+import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openExternalUrl, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateExternalAppSettings, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
-import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
+import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, DEFAULT_SHAREPOINT_SETTINGS, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, normalizeSharePointSettings, type ExternalAppConfig, type SharePointSettings } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
-import { localPathIdentity } from "./lib/pathIdentity";
+import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
 import { resolveImageSrc } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
@@ -40,6 +41,7 @@ import { normalizeDocumentViewModes, type ViewMode } from "./lib/viewMode";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { applySyntaxHighlightSettings, DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, normalizeSyntaxHighlightSettings, type SyntaxHighlightSettings } from "./lib/syntaxHighlight";
 import { applyPrintStyleSettings, DEFAULT_PRINT_STYLE_SETTINGS, normalizePrintStyleSettings, type PrintStyleSettings } from "./lib/printStyle";
+import { isSharePointDocument, listenForSharePointAuthentication, type SharePointAuthPrompt } from "./lib/sharePoint";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -105,6 +107,8 @@ export function App() {
   const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
   const [syntaxHighlight, setSyntaxHighlight] = useState<SyntaxHighlightSettings>(DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS);
   const [printStyle, setPrintStyle] = useState<PrintStyleSettings>(DEFAULT_PRINT_STYLE_SETTINGS);
+  const [sharePointSettings, setSharePointSettings] = useState<SharePointSettings>(DEFAULT_SHAREPOINT_SETTINGS);
+  const [sharePointAuthPrompt, setSharePointAuthPrompt] = useState<SharePointAuthPrompt | null>(null);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
@@ -196,19 +200,22 @@ export function App() {
       const equalPadding = normalizeImageEqualPadding(settings.imageEqualPadding);
       const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(settings.syntaxHighlight);
       const normalizedPrintStyle = normalizePrintStyleSettings(settings.printStyle);
+      const normalizedSharePoint = normalizeSharePointSettings(settings.sharePoint);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
       setSyntaxHighlight(normalizedSyntaxHighlight);
       setPrintStyle(normalizedPrintStyle);
+      setSharePointSettings(normalizedSharePoint);
       const needsSettingsMigration = !Array.isArray(settings.externalApps)
         || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
         || settings.imageA4TargetWidth === undefined
         || settings.imageEqualPadding === undefined
         || settings.syntaxHighlight === undefined
         || settings.printStyle === undefined
+        || settings.sharePoint === undefined
         || JSON.stringify(settings.documentViewModes) !== JSON.stringify(normalizedDocumentViewModes);
       if (needsSettingsMigration) {
-        void saveSettings({ schemaVersion: 4, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, documentViewModes: normalizedDocumentViewModes }).catch((error) => {
+        void saveSettings({ schemaVersion: 5, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding, syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, sharePoint: normalizedSharePoint, documentViewModes: normalizedDocumentViewModes }).catch((error) => {
           setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
         });
       }
@@ -220,6 +227,17 @@ export function App() {
         });
       }
     }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" }));
+  }, []);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    void listenForSharePointAuthentication((event) => {
+      setSharePointAuthPrompt(event.payload);
+      void openExternalUrl(event.payload.verificationUri).catch((error) => {
+        setToast({ id: String(Date.now()), message: `サインインページを開けません: ${String(error)}`, type: "error" });
+      });
+    }).then((dispose) => { unlisten = dispose; });
+    return () => { unlisten?.(); };
   }, []);
 
   useEffect(() => subscribeMermaidStatus(setMermaidStatus), []);
@@ -241,6 +259,7 @@ export function App() {
   mediaPreviewRef.current = mediaPreview;
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
+  const activeSharePoint = isSharePointDocument(activeTab?.document ?? activeTab);
 
   useEffect(() => {
     const next = activeTab?.document ? documentViewModes[activeTab.document.path] ?? "auto" : "auto";
@@ -261,9 +280,9 @@ export function App() {
   }, [activeTab?.document, updateZoom, viewMode]);
 
   const imageOccurrenceGroups = useMemo(() => {
-    if (!activeTab?.document || viewMode === "presentation") return [];
+    if (!activeTab?.document || activeSharePoint || viewMode === "presentation") return [];
     return groupImageOccurrences(collectImageOccurrences(activeTab.document.content, activeTab.document.base_dir));
-  }, [activeTab?.document, viewMode]);
+  }, [activeSharePoint, activeTab?.document, viewMode]);
   const imageGalleryItems = useMemo<ImageGalleryItem[]>(() => {
     const baseDir = activeTab?.document?.base_dir;
     if (!baseDir) return [];
@@ -347,13 +366,13 @@ export function App() {
   const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey, activeTab?.document?.content ?? "");
   const { cropTarget, startCrop, cancelCrop } = useCropEditor();
   useEffect(() => {
-    if (!activeTab?.document) { setDiagnostics([]); return; }
+    if (!activeTab?.document || activeSharePoint) { setDiagnostics([]); return; }
     let disposed = false;
     void diagnoseDocument(activeTab.document.path).then((items) => { if (!disposed) setDiagnostics(items); }).catch((error) => {
       if (!disposed) setDiagnostics([{ severity: "warning", kind: "診断", line: 1, reference: activeTab.document!.path, message: `診断を完了できません: ${String(error)}` }]);
     });
     return () => { disposed = true; };
-  }, [activeTab?.document?.path, activeTab?.generation]);
+  }, [activeSharePoint, activeTab?.document?.path, activeTab?.generation]);
   const restoringSearchFor = useRef<string | null>(null);
 
   useLayoutEffect(() => {
@@ -433,6 +452,7 @@ export function App() {
     } catch (error) {
       dispatch({ type: "FAILED", id, generation, error: String(error) });
     } finally {
+      if (path.toLowerCase().startsWith("spmd://")) setSharePointAuthPrompt(null);
       inFlightLoads.current.delete(loadKey);
     }
   }, []);
@@ -451,7 +471,7 @@ export function App() {
   }, [tabsState.tabs, loadTab]);
 
   const watchTargetKey = JSON.stringify(
-    [...new Set(tabsState.tabs.flatMap((tab) => tab.document ? [tab.document.path, ...tab.document.image_paths] : []))].sort(),
+    [...new Set(tabsState.tabs.flatMap((tab) => tab.document && !isSharePointDocument(tab.document) ? [tab.document.path, ...tab.document.image_paths] : []))].sort(),
   );
 
   useEffect(() => {
@@ -760,8 +780,8 @@ export function App() {
   }, [captureNavigationSnapshot, restoreNavigationSnapshot]);
 
   const handleOpenDocument = useCallback((path: string) => {
-    const identity = localPathIdentity(path);
-    const existing = tabsStateRef.current.tabs.find((tab) => tab.kind !== "settings" && localPathIdentity(tab.path) === identity);
+    const identity = documentSourceIdentity(path);
+    const existing = tabsStateRef.current.tabs.find((tab) => tab.kind !== "settings" && documentSourceIdentity(tab.path) === identity);
     if (existing?.id === tabsStateRef.current.activeId) return;
     recordNavigationPoint();
     dispatch({ type: "OPEN", path });
@@ -860,7 +880,7 @@ export function App() {
     dispatch({ type: "OPEN_SETTINGS" });
   }, [recordNavigationPoint]);
 
-  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number, nextSyntaxHighlight: SyntaxHighlightSettings, nextPrintStyle: PrintStyleSettings) => {
+  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number, nextSyntaxHighlight: SyntaxHighlightSettings, nextPrintStyle: PrintStyleSettings, nextSharePoint: SharePointSettings) => {
     try {
       const previousById = new Map(externalApps.map((app) => [app.id, app]));
       const upserts = apps.filter((app) => JSON.stringify(previousById.get(app.id)) !== JSON.stringify(app));
@@ -869,13 +889,15 @@ export function App() {
       const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold, a4TargetWidth, equalPadding);
       const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(nextSyntaxHighlight);
       const normalizedPrintStyle = normalizePrintStyleSettings(nextPrintStyle);
-      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle });
+      const normalizedSharePoint = normalizeSharePointSettings(nextSharePoint);
+      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, sharePoint: normalizedSharePoint });
       setExternalApps(normalizeExternalApps(saved.externalApps));
       setPresentationLineThreshold(lineThreshold);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
       setSyntaxHighlight(normalizedSyntaxHighlight);
       setPrintStyle(normalizedPrintStyle);
+      setSharePointSettings(normalizedSharePoint);
       setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
     } catch (error) {
       setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
@@ -1162,7 +1184,7 @@ export function App() {
           </select>
         </div>}
         <ExternalActions
-          apps={externalApps.filter((app) => app.target === "document")}
+          apps={activeSharePoint ? [] : externalApps.filter((app) => app.target === "document")}
           disabled={!activeTab?.document}
           onExecute={executeExternalApp}
           onOpenInNewWindow={() => {
@@ -1211,6 +1233,7 @@ export function App() {
             imageEqualPadding={imageEqualPadding}
             syntaxHighlight={syntaxHighlight}
             printStyle={printStyle}
+            sharePoint={sharePointSettings}
             onSave={saveExternalAppSettings}
           />
         ) : activeTab?.loading ? (
@@ -1236,8 +1259,9 @@ export function App() {
           />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
-            content={activeTab.document.content}
-            baseDir={activeTab.document.base_dir}
+           content={activeTab.document.content}
+           baseDir={activeTab.document.base_dir}
+            sourcePath={activeTab.path}
             imageVersions={imageVersions}
             theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             onError={handlePreviewError}
@@ -1277,7 +1301,8 @@ export function App() {
             onOpenDocument={handleOpenDocument}
             onOpenDocumentWindow={(path) => void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }))}
             onMediaOpen={openMediaPreview}
-            documentPath={activeTab.path}
+            documentPath={activeSharePoint ? undefined : activeTab.path}
+            sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
           />
         ) : (
@@ -1350,6 +1375,11 @@ export function App() {
         } : undefined}
       />}
       {shortcutHelpOpen && <ShortcutHelpModal onClose={() => setShortcutHelpOpen(false)} />}
+      {sharePointAuthPrompt && <SharePointAuthDialog
+        prompt={sharePointAuthPrompt}
+        onOpenBrowser={() => void openExternalUrl(sharePointAuthPrompt.verificationUri).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }))}
+        onDismiss={() => setSharePointAuthPrompt(null)}
+      />}
       <StatusBar
         document={activeTab?.document ?? null}
         autoReload={autoReload}

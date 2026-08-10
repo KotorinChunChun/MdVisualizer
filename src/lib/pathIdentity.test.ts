@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMarkdownPath, isSupportedDocumentPath, localPathIdentity } from "./pathIdentity";
+import { documentSourceIdentity, isMarkdownPath, isSupportedDocumentPath, localPathIdentity } from "./pathIdentity";
 
 describe("local path identity", () => {
   it("normalizes Windows separators, dot segments, and case", () => {
@@ -18,5 +18,10 @@ describe("local path identity", () => {
       expect(isSupportedDocumentPath(path)).toBe(true);
     }
     expect(isSupportedDocumentPath("image.png")).toBe(false);
+  });
+
+  it("deduplicates spmd hosts and paths case-insensitively", () => {
+    expect(documentSourceIdentity("SPMD://CONTOSO.sharepoint.com/sites/Docs/Shared/README.md"))
+      .toBe(documentSourceIdentity("spmd://contoso.sharepoint.com/sites/docs/shared/readme.md"));
   });
 });

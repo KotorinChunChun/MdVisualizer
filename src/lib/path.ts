@@ -127,6 +127,8 @@ export function resolveLocalDocumentPath(href: string, baseDir: string): string 
     } catch {
       return null;
     }
+  } else if (/^[a-z][a-z0-9+.-]*:/i.test(href) && !isWindowsAbsolutePath(href)) {
+    return null;
   }
 
   candidate = decodePath(candidate.split(/[?#]/, 1)[0])
@@ -134,6 +136,24 @@ export function resolveLocalDocumentPath(href: string, baseDir: string): string 
   if (!isSupportedLocalDocumentPath(candidate)) return null;
   if (isAbsoluteLocalPath(candidate)) return normalizeLocalPath(candidate);
   return normalizeLocalPath(`${baseDir.replace(/[\\/]$/, "")}/${candidate}`);
+}
+
+/** Resolves a Markdown document reference relative to an spmd source. */
+export function resolveSharePointDocumentPath(href: string, documentPath?: string): string | null {
+  if (!href || href.startsWith("#")) return null;
+  const directSpmd = href.toLowerCase().startsWith("spmd://");
+  if (!directSpmd && !documentPath?.toLowerCase().startsWith("spmd://")) return null;
+  try {
+    const resolved = directSpmd ? new URL(href) : new URL(href, documentPath);
+    if (resolved.protocol !== "spmd:" || !resolved.hostname.toLowerCase().endsWith(".sharepoint.com")) return null;
+    if (resolved.username || resolved.password || resolved.port || resolved.search) return null;
+    if (!/^\/(?:sites|teams)\/[^/]+\//i.test(resolved.pathname)) return null;
+    if (!isSupportedDocumentPath(resolved.pathname)) return null;
+    resolved.hash = "";
+    return resolved.toString();
+  } catch {
+    return null;
+  }
 }
 
 /** Compatibility alias for callers that still use the original Markdown-only name. */

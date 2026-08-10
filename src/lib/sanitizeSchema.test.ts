@@ -3,7 +3,7 @@ import { markdownSanitizeSchema } from "./sanitizeSchema";
 
 describe("markdownSanitizeSchema", () => {
   it("allows only explicit link protocols", () => {
-    expect(markdownSanitizeSchema.protocols.href).toEqual(["http", "https", "mailto"]);
+    expect(markdownSanitizeSchema.protocols.href).toEqual(["http", "https", "mailto", "spmd"]);
     expect(markdownSanitizeSchema.attributes["*"]).not.toContain("onClick");
     expect(markdownSanitizeSchema.attributes["*"]).not.toContain("style");
   });

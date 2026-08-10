@@ -1,6 +1,6 @@
 import { MarkdownLoadResult } from "../types/app";
 import type { ImageSize } from "../hooks/useInlineImageResize";
-import { localPathIdentity } from "../lib/pathIdentity";
+import { documentSourceIdentity } from "../lib/pathIdentity";
 
 export interface TabState {
   id: string;
@@ -100,7 +100,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         const duplicate = state.tabs.find((tab) =>
           tab.id !== action.id
           && tab.kind !== "settings"
-          && localPathIdentity(tab.document?.path ?? tab.path) === localPathIdentity(action.document.path));
+          && documentSourceIdentity(tab.document?.path ?? tab.path) === documentSourceIdentity(action.document.path));
         if (duplicate) {
           return {
             ...state,
@@ -147,10 +147,10 @@ function updateTab(state: TabsState, id: string, update: (tab: TabState) => TabS
 }
 
 function openTab(state: TabsState, tab: ClosedTabState): TabsState {
-  const identity = localPathIdentity(tab.path);
+  const identity = documentSourceIdentity(tab.path);
   const existing = state.tabs.find((candidate) =>
     candidate.kind !== "settings"
-    && localPathIdentity(candidate.document?.path ?? candidate.path) === identity);
+    && documentSourceIdentity(candidate.document?.path ?? candidate.path) === identity);
   if (existing) return { ...state, activeId: existing.id };
   const id = `tab-${state.nextId}`;
   return {

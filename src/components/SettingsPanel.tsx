@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { ExternalAppConfig, ExternalAppTarget } from "../types/settings";
-import { DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, validateExternalApp } from "../types/settings";
+import type { ExternalAppConfig, ExternalAppTarget, SharePointSettings } from "../types/settings";
+import { DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_SHAREPOINT_SETTINGS, validateExternalApp, validateSharePointSettings } from "../types/settings";
 import { DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, SYNTAX_HIGHLIGHT_THEMES, type SyntaxHighlightSettings, type SyntaxHighlightTheme } from "../lib/syntaxHighlight";
 import { DEFAULT_PRINT_STYLE_SETTINGS, PRINT_FONT_FAMILIES, type PrintFontFamily, type PrintStyleSettings } from "../lib/printStyle";
 import "../styles/settings.css";
@@ -12,6 +12,7 @@ export function SettingsPanel({
   imageEqualPadding = DEFAULT_IMAGE_EQUAL_PADDING,
   syntaxHighlight = DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS,
   printStyle = DEFAULT_PRINT_STYLE_SETTINGS,
+  sharePoint = DEFAULT_SHAREPOINT_SETTINGS,
   onSave,
 }: {
   apps: ExternalAppConfig[];
@@ -20,7 +21,8 @@ export function SettingsPanel({
   imageEqualPadding?: number;
   syntaxHighlight?: SyntaxHighlightSettings;
   printStyle?: PrintStyleSettings;
-  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings) => Promise<void>;
+  sharePoint?: SharePointSettings;
+  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings, sharePoint: SharePointSettings) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => apps.map((app) => ({ ...app, args: [...app.args] })));
   const [lineThreshold, setLineThreshold] = useState(presentationLineThreshold);
@@ -28,6 +30,7 @@ export function SettingsPanel({
   const [equalPadding, setEqualPadding] = useState(imageEqualPadding);
   const [syntaxDraft, setSyntaxDraft] = useState<SyntaxHighlightSettings>(() => ({ ...syntaxHighlight }));
   const [printDraft, setPrintDraft] = useState<PrintStyleSettings>(() => ({ ...printStyle }));
+  const [sharePointDraft, setSharePointDraft] = useState<SharePointSettings>(() => ({ ...sharePoint }));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   useEffect(() => setDraft(apps.map((app) => ({ ...app, args: [...app.args] }))), [apps]);
@@ -36,6 +39,7 @@ export function SettingsPanel({
   useEffect(() => setEqualPadding(imageEqualPadding), [imageEqualPadding]);
   useEffect(() => setSyntaxDraft({ ...syntaxHighlight }), [syntaxHighlight]);
   useEffect(() => setPrintDraft({ ...printStyle }), [printStyle]);
+  useEffect(() => setSharePointDraft({ ...sharePoint }), [sharePoint]);
 
   const update = (id: string, patch: Partial<ExternalAppConfig>) => {
     setDraft((current) => current.map((app) => app.id === id ? { ...app, ...patch } : app));
@@ -65,10 +69,12 @@ export function SettingsPanel({
   const save = async () => {
     const validation = draft.map(validateExternalApp).find(Boolean);
     if (validation) { setError(validation); return; }
+    const sharePointValidation = validateSharePointSettings(sharePointDraft);
+    if (sharePointValidation) { setError(sharePointValidation); return; }
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, printDraft);
+      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, printDraft, { clientId: sharePointDraft.clientId.trim(), tenant: sharePointDraft.tenant.trim() || "organizations" });
     } catch (reason) {
       setError(String(reason));
     } finally {
@@ -82,6 +88,16 @@ export function SettingsPanel({
       <button type="button" className="settings-save" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
     </header>
     {error && <p role="alert" className="settings-error">{error}</p>}
+    <fieldset className="settings-section sharepoint-settings">
+      <legend>SharePoint Markdown</legend>
+      <p><code>spmd:</code> で開くためのMicrosoft Entra公開クライアント設定です。APIのアクセス許可には委任された <code>Sites.Read.All</code> を追加し、デバイスコードフローを許可してください。</p>
+      <label>アプリケーション（クライアント）ID
+        <input aria-label="SharePointクライアントID" value={sharePointDraft.clientId} onChange={(event) => setSharePointDraft((current) => ({ ...current, clientId: event.target.value }))} placeholder="00000000-0000-0000-0000-000000000000" />
+      </label>
+      <label>テナント
+        <input aria-label="SharePointテナント" value={sharePointDraft.tenant} onChange={(event) => setSharePointDraft((current) => ({ ...current, tenant: event.target.value }))} placeholder="organizations または contoso.onmicrosoft.com" />
+      </label>
+    </fieldset>
     <fieldset className="settings-section">
       <legend>プレゼンテーション</legend>
       <label>短い子見出しを親へ含める最大ソース行数
