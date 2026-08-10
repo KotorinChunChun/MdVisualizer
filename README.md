@@ -4,7 +4,7 @@ Windows 向けの閲覧専用 Markdown ビューアです。複数の Markdown �
 
 ## beta版ダウンロード
 
-[MarkdownViewer v0.0.7-beta ダウンロード](https://excel-chunchun.sakura.ne.jp/download/)から、
+[MarkdownViewer v0.0.7-beta ダウンロード](https://excel-chunchun.sakura.ne.jp/download/MakdownViewer.html)から、
 初回インストール用のApp Installer、MSIX、自己署名証明書を取得できます。自己署名証明書を
 「信頼されたユーザー」へ登録してからApp Installerを開いてください。導入後はアプリ起動時に
 betaチャネルの更新を確認します。
