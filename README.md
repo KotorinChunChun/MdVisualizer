@@ -44,6 +44,25 @@ npm.cmd run tauri -- dev -- -- C:\Project\README.md C:\Project\design.markdown
 
 リリース版は `.md`、`.markdown`、`.svg`、`.mmd`、`.mermaid` の関連付けを登録します。ファイルをダブルクリックすると、Markdown、SVG、Mermaid文書として開きます。
 
+### SharePoint Markdown（spmd）
+
+インストール版は`spmd:`プロトコルを登録し、SharePoint OnlineのドキュメントライブラリにあるMarkdownを開けます。
+
+```text
+spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/README.md
+```
+
+利用前にMicrosoft Entra管理センターでデスクトップ用のアプリ登録を作成します。
+
+1. 「認証」でパブリッククライアントフローを許可します。
+2. Microsoft Graphの委任されたアクセス許可`Sites.Read.All`を追加し、組織の運用に応じて同意を与えます。
+3. MarkdownViewerの設定を開き、「SharePoint Markdown」にアプリケーション（クライアント）IDを入力します。
+4. テナントは通常`organizations`のまま使用できます。単一テナント登録ではテナントIDまたは`contoso.onmicrosoft.com`形式のドメインを指定します。
+
+初回アクセス時は既定ブラウザーにMicrosoftのサインインページを開き、MarkdownViewerに表示されたデバイスコードを入力します。アクセストークンと更新トークンはアプリのプロセス内だけに保持し、設定ファイルには保存しません。そのため、アプリを終了した後は再度サインインが必要です。
+
+`spmd:` URIにはアクセストークン、共有トークン、クエリ文字列を含めないでください。SharePoint文書では再読み込み、印刷、別窓、同じSharePoint内の相対Markdownリンクを使用できます。ローカルファイル監視、診断、外部エディター、相対画像の取得・画像編集は対象外です。
+
 ### MSIXインストーラー
 
 Windows SDKが導入済みのx64 Windows環境では、次のコマンドで署名済みMSIXを生成できます。
@@ -66,6 +85,7 @@ pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 
 - Chrome ライクな複数タブ、ドラッグ並び替え、右クリック操作、閉じたタブの復元
 - Markdownファイルのウィンドウ内ドロップ。同じファイルが既に開いている場合は既存タブを選択
+- `spmd:`からSharePoint OnlineのMarkdownをMicrosoft Graph経由で閲覧し、同じライブラリ内の相対Markdownリンクを開く
 - Markdown 内のローカル Markdown リンクをアプリ内の新しいタブで開く
 - H1〜H6 のネスト折りたたみと、ファイル単位の状態保存。`Ctrl+Alt+T`はH1を残してH2以下を一括開閉
 - 目次・検索・画像を切り替える単一サイドパネル。検索入力、条件、前後移動、結果一覧（最大500件・一致文字強調）を検索タブに集約し、画像タブはaltとサムネイルから本文へジャンプ
@@ -147,7 +167,7 @@ release EXEで10,000行のMarkdownを5回起動した測定では、起動時間
 
 ## セキュリティとデータ
 
-Markdown 内の HTML は許可リストで処理し、イベント属性・任意 style・危険な URL スキームを除去します。外部リンクは HTTP(S) と `mailto:` のみを OS へ渡します。
+Markdown 内の HTML は許可リストで処理し、イベント属性・任意 style・危険な URL スキームを除去します。外部リンクは HTTP(S) と `mailto:` のみを OS へ渡します。`spmd:`はMarkdownViewer内の文書移動としてだけ処理し、SharePoint Onlineのホスト、`/sites/`または`/teams/`パス、Markdown拡張子をRust側でも検証します。
 
 PowerShellコードは`powershell`、`pwsh`、`ps1`と明示されたフェンスだけが対象です。コードと作業フォルダーを表示する確認操作なしには実行せず、Markdown所在フォルダー固定、非対話、30秒、入力256KiB、出力1MiBの上限をbackendでも検証します。
 
