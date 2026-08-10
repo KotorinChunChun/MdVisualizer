@@ -33,4 +33,24 @@ describe("MarkdownPreview image navigation anchors", () => {
       "images/photo.jpg",
     ]);
   });
+
+  it("preserves the loaded image DOM node when its persisted display size changes", () => {
+    const imageVersions = {};
+    const content = "![diagram](images/diagram.png)";
+    const view = render(
+      <MarkdownPreview content={content} baseDir="C:\\docs" imageVersions={imageVersions} imageDisplaySizes={{}} />,
+    );
+    const image = view.container.querySelector("img");
+
+    view.rerender(
+      <MarkdownPreview
+        content={content}
+        baseDir="C:\\docs"
+        imageVersions={imageVersions}
+        imageDisplaySizes={{ "images/diagram.png": { width: 320, height: 180 } }}
+      />,
+    );
+
+    expect(view.container.querySelector("img")).toBe(image);
+  });
 });

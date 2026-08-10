@@ -70,6 +70,23 @@ describe("MarkdownPreview sanitization", () => {
     render(<MarkdownPreview content={"```pwsh\nWrite-Output safe\n```\n\n```bash\necho no\n```"} baseDir="C:\\docs" documentPath="C:\\docs\\sample.md" imageVersions={{}} />);
     expect(screen.getAllByRole("button", { name: "PowerShellを実行" })).toHaveLength(1);
   });
+
+  it("preserves a Mermaid block DOM node when surrounding render context changes", () => {
+    const imageVersions = {};
+    const content = "```mermaid\nflowchart LR\nA --> B\n```";
+    const view = render(<MarkdownPreview content={content} baseDir="" imageVersions={imageVersions} mermaidMode="off" imageDisplaySizes={{}} />);
+    const block = view.container.querySelector(".mermaid-source");
+
+    view.rerender(<MarkdownPreview
+      content={content}
+      baseDir=""
+      imageVersions={imageVersions}
+      mermaidMode="off"
+      imageDisplaySizes={{ "image.png": { width: 200, height: 100 } }}
+    />);
+
+    expect(view.container.querySelector(".mermaid-source")).toBe(block);
+  });
 });
 
 describe("countMermaidFences", () => {

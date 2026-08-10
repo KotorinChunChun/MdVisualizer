@@ -26,6 +26,18 @@ describe("StatusBar", () => {
     expect(screen.getByText("画像バックアップあり")).toBeTruthy();
   });
 
+  it("temporarily replaces document details with the focused link target", () => {
+    const view = render(<StatusBar document={document} mermaidStatus="描画済み" linkTarget="../guide/next.md" />);
+
+    expect(screen.getByText("リンク先: ../guide/next.md")).toBeTruthy();
+    expect(screen.queryByText("1.5 KB")).toBeNull();
+    expect(screen.queryByText("Mermaid: 描画済み")).toBeNull();
+
+    view.rerender(<StatusBar document={document} mermaidStatus="描画済み" />);
+    expect(screen.getByText("1.5 KB")).toBeTruthy();
+    expect(screen.getByText("Mermaid: 描画済み")).toBeTruthy();
+  });
+
   it("uses controlled callbacks for all status-bar selects", () => {
     const onAutoReloadChange = vi.fn();
     const onZoomChange = vi.fn();

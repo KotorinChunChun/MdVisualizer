@@ -70,6 +70,13 @@ export function focusAndSelectSearchInput(input: HTMLInputElement | null): void 
   input?.select();
 }
 
+export function documentLinkTarget(target: EventTarget | null): string | null {
+  if (!(target instanceof Element)) return null;
+  const link = target.closest("a[href]");
+  if (!(link instanceof HTMLAnchorElement) || !link.closest(".markdown-body")) return null;
+  return link.getAttribute("href");
+}
+
 export function resolveDocumentSidePanel(searchOpen: boolean, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): DocumentSidePanelTab | null {
   if (searchOpen) return "search";
   return requestedPanel;
@@ -121,6 +128,7 @@ export function App() {
   const [printing, setPrinting] = useState(false);
   const [activeTocHeadingId, setActiveTocHeadingId] = useState<string | null>(null);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
+  const [focusedLinkTarget, setFocusedLinkTarget] = useState<string | null>(null);
   const tocPointerFrame = useRef(0);
   const pendingTocHeadingId = useRef<string | null>(null);
   const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
@@ -786,6 +794,9 @@ export function App() {
     recordNavigationPoint();
     dispatch({ type: "OPEN", path });
   }, [recordNavigationPoint]);
+  const handleOpenDocumentWindow = useCallback((path: string) => {
+    void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
+  }, []);
   useFileDrop((paths) => paths.forEach(handleOpenDocument));
 
   const openMediaPreview = useCallback((target: MediaPreviewTarget) => {
@@ -1224,7 +1235,15 @@ export function App() {
           onOpenChange={() => undefined}
         />}
       />}
-      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => handlePreviewScroll(event.currentTarget)} onPointerMove={handlePreviewPointerMove} style={{ zoom: viewMode === "presentation" && activeTab?.document?.kind === "markdown" ? 1 : zoom / 100 }}>
+      <main
+        className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`}
+        ref={containerRef}
+        onScroll={(event) => handlePreviewScroll(event.currentTarget)}
+        onPointerMove={handlePreviewPointerMove}
+        onFocusCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.target))}
+        onBlurCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.relatedTarget))}
+        style={{ zoom: viewMode === "presentation" && activeTab?.document?.kind === "markdown" ? 1 : zoom / 100 }}
+      >
         {activeTab?.kind === "settings" ? (
           <SettingsPanel
             apps={externalApps}
@@ -1270,7 +1289,7 @@ export function App() {
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
             onOpenDocument={handleOpenDocument}
-            onOpenDocumentWindow={(path) => void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }))}
+            onOpenDocumentWindow={handleOpenDocumentWindow}
             lineThreshold={presentationLineThreshold}
             initialHeadingId={presentationPositions[activeTab.id]}
             onPageChange={(headingId, sourceLine) => {
@@ -1299,7 +1318,7 @@ export function App() {
             searchExpandedIds={searchExpandedIds}
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
             onOpenDocument={handleOpenDocument}
-            onOpenDocumentWindow={(path) => void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }))}
+            onOpenDocumentWindow={handleOpenDocumentWindow}
             onMediaOpen={openMediaPreview}
             documentPath={activeSharePoint ? undefined : activeTab.path}
             sourcePath={activeTab.path}
@@ -1397,6 +1416,7 @@ export function App() {
         onOpenSettings={openSettings}
         onOpenShortcutHelp={() => setShortcutHelpOpen(true)}
         statusText={activeTab?.kind === "settings" ? "アプリケーション設定" : undefined}
+        linkTarget={focusedLinkTarget ?? undefined}
       />
       {contextTab && (() => {
         const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);

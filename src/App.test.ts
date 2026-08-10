@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, ZOOM_LEVELS } from "./App";
+import { documentLinkTarget, focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, ZOOM_LEVELS } from "./App";
 
 describe("zoom level selection", () => {
   it("normalizes persisted values to a selectable status-bar option", () => {
@@ -29,6 +29,21 @@ describe("search input focus", () => {
     expect(document.activeElement).toBe(input);
     expect(select).toHaveBeenCalledOnce();
     input.remove();
+  });
+});
+
+describe("document link focus", () => {
+  it("returns the authored href only for links inside the Markdown body", () => {
+    const body = document.createElement("div");
+    body.className = "markdown-body";
+    body.innerHTML = '<a href="../guide/next.md"><span>next</span></a>';
+    const nested = body.querySelector("span");
+    const outside = document.createElement("a");
+    outside.href = "https://example.com";
+
+    expect(documentLinkTarget(nested)).toBe("../guide/next.md");
+    expect(documentLinkTarget(outside)).toBeNull();
+    expect(documentLinkTarget(null)).toBeNull();
   });
 });
 

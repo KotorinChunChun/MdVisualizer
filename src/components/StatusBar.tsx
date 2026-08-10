@@ -25,6 +25,7 @@ export interface StatusBarProps {
   onOpenSettings?: () => void;
   onOpenShortcutHelp?: () => void;
   statusText?: string;
+  linkTarget?: string;
 }
 
 const zoomOptions = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
@@ -52,6 +53,7 @@ export function StatusBar({
   onOpenSettings,
   onOpenShortcutHelp,
   statusText,
+  linkTarget,
 }: StatusBarProps) {
   const updateAutoReload = onAutoReloadChange ?? setAutoReload;
   const updateZoom = onZoomChange ?? setZoom;
@@ -64,14 +66,14 @@ export function StatusBar({
   return (
     <footer className="status-bar" aria-label="ドキュメントの状態と表示設定">
       <div className="status-bar__details" aria-live="polite">
-        {document ? <>
+        {linkTarget ? <span className="status-bar__link-target" title={linkTarget}>リンク先: {linkTarget}</span> : document ? <>
           <span>{document.encoding}</span>
           <span>{formatSize(document.size_bytes)}</span>
           <span>更新 {document.modified_at}</span>
           {changed && <span className="status-bar__changed">変更あり</span>}
         </> : <span>{statusText ?? "Markdownファイル未選択"}</span>}
-        {mermaidSummary && <span>{mermaidSummary}</span>}
-        {imageBackupAvailable && <span>画像バックアップあり</span>}
+        {!linkTarget && mermaidSummary && <span>{mermaidSummary}</span>}
+        {!linkTarget && imageBackupAvailable && <span>画像バックアップあり</span>}
       </div>
       <div className="status-bar__controls" aria-label="表示設定">
         <label>

@@ -127,10 +127,14 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "EXTERNAL_CHANGED":
       return updateTab(state, action.id, (tab) => ({ ...tab, externalChanged: action.changed }));
     case "IMAGE_DISPLAY_SIZE":
-      return updateTab(state, action.id, (tab) => ({
-        ...tab,
-        imageDisplaySizes: { ...tab.imageDisplaySizes, [action.source]: action.size },
-      }));
+      return updateTab(state, action.id, (tab) => {
+        const current = tab.imageDisplaySizes[action.source];
+        if (current?.width === action.size.width && current.height === action.size.height) return tab;
+        return {
+          ...tab,
+          imageDisplaySizes: { ...tab.imageDisplaySizes, [action.source]: action.size },
+        };
+      });
     case "MOVE": {
       const from = state.tabs.findIndex((tab) => tab.id === action.id);
       if (from < 0 || action.toIndex < 0 || action.toIndex >= state.tabs.length || from === action.toIndex) return state;
@@ -143,7 +147,13 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
 }
 
 function updateTab(state: TabsState, id: string, update: (tab: TabState) => TabState): TabsState {
-  return { ...state, tabs: state.tabs.map((tab) => tab.id === id ? update(tab) : tab) };
+  const index = state.tabs.findIndex((tab) => tab.id === id);
+  if (index < 0) return state;
+  const nextTab = update(state.tabs[index]);
+  if (nextTab === state.tabs[index]) return state;
+  const tabs = [...state.tabs];
+  tabs[index] = nextTab;
+  return { ...state, tabs };
 }
 
 function openTab(state: TabsState, tab: ClosedTabState): TabsState {
