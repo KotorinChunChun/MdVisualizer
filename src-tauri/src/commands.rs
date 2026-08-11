@@ -1,5 +1,8 @@
 use crate::app_state::AppState;
-use crate::document_edit::{save_markdown as do_save_markdown, SaveMarkdownRequest};
+use crate::asset_staging::{
+    read_document_asset as do_read_document_asset, DocumentAssetData, StagedAssetResult,
+};
+use crate::document_edit::{save_markdown_with_assets as do_save_markdown, SaveMarkdownRequest};
 use crate::errors::AppError;
 use crate::image_ops::{
     crop_image as do_crop_image, save_rendered_image as do_save_rendered_image, CropImageRequest,
@@ -200,8 +203,54 @@ pub async fn load_markdown(
 }
 
 #[tauri::command]
-pub fn save_markdown(request: SaveMarkdownRequest) -> Result<MarkdownLoadResult, String> {
-    do_save_markdown(request).map_err(|error| error.to_string())
+pub fn save_markdown(
+    state: State<'_, AppState>,
+    request: SaveMarkdownRequest,
+) -> Result<MarkdownLoadResult, String> {
+    do_save_markdown(request, &state.asset_staging).map_err(|error| error.to_string())
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StageDocumentAssetRequest {
+    document_path: String,
+    preferred_filename: String,
+    base64: Option<String>,
+    text: Option<String>,
+}
+
+#[tauri::command]
+pub fn stage_document_asset(
+    state: State<'_, AppState>,
+    request: StageDocumentAssetRequest,
+) -> Result<StagedAssetResult, String> {
+    let bytes = if let Some(text) = request.text {
+        text.into_bytes()
+    } else {
+        base64::Engine::decode(
+            &base64::engine::general_purpose::STANDARD,
+            request.base64.unwrap_or_default(),
+        )
+        .map_err(|_| "Base64 asset data is invalid.".to_string())?
+    };
+    state
+        .asset_staging
+        .stage(
+            &request.document_path,
+            &request.preferred_filename,
+            &bytes,
+        )
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn discard_staged_assets(state: State<'_, AppState>, ids: Vec<String>) {
+    state.asset_staging.discard(&ids);
+}
+
+#[tauri::command]
+pub fn read_document_asset(document_path: String, source: String) -> Result<DocumentAssetData, String> {
+    do_read_document_asset(&document_path, &source).map_err(|error| error.to_string())
 }
 
 #[derive(Serialize)]

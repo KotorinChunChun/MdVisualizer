@@ -17,6 +17,16 @@ export interface SaveMarkdownRequest {
   path: string;
   content: string;
   expectedRevision: string;
+  stagedAssetIds?: string[];
+}
+
+export interface StagedDocumentAsset { id: string; filename: string; mediaType?: string; base64?: string; text?: string; previewSource?: string }
+
+export interface DocumentAssetData {
+  filename: string;
+  mediaType: string;
+  base64: string;
+  text?: string | null;
 }
 
 export interface CropImageRequest {

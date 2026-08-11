@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MediaPreviewModal } from "./MediaPreviewModal";
 
@@ -78,5 +78,13 @@ describe("MediaPreviewModal", () => {
     expect(viewport.scrollTop).toBeCloseTo(511.07, 1);
     expect(screen.getByText(/244%/)).toBeTruthy();
     vi.unstubAllGlobals();
+  });
+
+  it("offers the storage conversion matching the current asset form", async () => {
+    const onConvertAsset = vi.fn().mockResolvedValue(undefined);
+    const context = { documentPath: "C:/docs/note.md", occurrence: { kind: "inline-svg", id: "inline-svg-0-6", start: 0, end: 6, sourceLine: 1, expected: "<svg/>", svg: "<svg/>" }, assetKind: "svg", storage: "embedded" } as const;
+    render(<MediaPreviewModal content={{ kind: "svg", svg: "<svg/>", alt: "図" }} conversionContext={context} onConvertAsset={onConvertAsset} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "同フォルダのファイルへ変換" }));
+    await waitFor(() => expect(onConvertAsset).toHaveBeenCalledWith(context));
   });
 });

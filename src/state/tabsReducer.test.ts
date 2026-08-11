@@ -199,4 +199,15 @@ describe("tabsReducer", () => {
 
     expect(state.tabs[0]).toMatchObject({ draft: "# Edited", dirty: true, saving: false, saveError: "Conflict" });
   });
+
+  it("keeps staged assets through edits and removes only those committed by a save", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:/docs/a.md" });
+    state = tabsReducer(state, { type: "LOADED", id: "tab-1", generation: 1, document: { ...loadedDocument("C:/docs/a.md"), content: "old" } });
+    state = tabsReducer(state, { type: "STAGED_ASSET_ADDED", id: "tab-1", content: "![x](image.png)", asset: { id: "stage-1", filename: "image.png" } });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id: "tab-1", content: "# title\n![x](image.png)" });
+    expect(state.tabs[0].pendingAssets?.map((asset) => asset.id)).toEqual(["stage-1"]);
+    state = tabsReducer(state, { type: "SAVED", id: "tab-1", document: { ...loadedDocument("C:/docs/a.md"), content: "![x](image.png)", revision: "revision-2" }, committedAssetIds: ["stage-1"] });
+    expect(state.tabs[0].pendingAssets).toEqual([]);
+    expect(state.tabs[0].dirty).toBe(true);
+  });
 });

@@ -32,3 +32,5 @@
     padding: 6px 8px;
   }
 }
+.inline-svg-preview { display: inline-block; max-width: 100%; cursor: zoom-in; }
+.inline-svg-preview > svg { display: block; max-width: 100%; height: auto; }

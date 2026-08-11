@@ -27,13 +27,15 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
-import { replaceCodeFenceBody, type CodeFenceOccurrence } from "./lib/markdownOccurrences";
+import { replaceCodeFenceBody, replaceMarkdownOccurrence, type CodeFenceOccurrence } from "./lib/markdownOccurrences";
+import { parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./lib/assetConversion";
+import { sanitizeSvgXml } from "./lib/svgSafety";
 import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
@@ -444,6 +446,7 @@ export function App() {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
     if (!tab) return false;
     if (confirmDiscard && tab.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄して再読み込みしますか？`)) return false;
+    if (tab.pendingAssets?.length) void discardStagedAssets(tab.pendingAssets.map((asset) => asset.id));
     if (id === tabsStateRef.current.activeId && containerRef.current && markdownRef.current) {
       const anchor = captureScrollAnchor(containerRef.current, markdownRef.current);
       if (anchor) reloadAnchors.current[id] = anchor;
@@ -471,12 +474,14 @@ export function App() {
       if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
     }, 2100);
     try {
+      const stagedAssetIds = (tab.pendingAssets ?? []).map((asset) => asset.id);
       const document = await saveMarkdown({
         path: tab.document.path,
         content: tab.draft,
         expectedRevision: tab.document.revision,
+        stagedAssetIds,
       });
-      dispatch({ type: "SAVED", id, document });
+      dispatch({ type: "SAVED", id, document, committedAssetIds: stagedAssetIds });
       setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
     } catch (error) {
       recentSelfSaves.current.delete(identity);
@@ -861,6 +866,7 @@ export function App() {
   const closeTab = useCallback((id: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
     if (tab?.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄してタブを閉じますか？`)) return false;
+    if (tab?.pendingAssets?.length) void discardStagedAssets(tab.pendingAssets.map((asset) => asset.id));
     if (tab && tab.kind !== "settings") setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
     dispatch({ type: "CLOSE", id });
     return true;
@@ -917,6 +923,57 @@ export function App() {
       setToast({ id: crypto.randomUUID(), message: error instanceof Error ? error.message : String(error), type: "error" });
       return false;
     }
+  }, []);
+
+  const convertDocumentAsset = useCallback(async (context: AssetConversionContext) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) throw new Error("この文書は閲覧専用です。");
+    if (context.storage === "embedded") {
+      let extension: string;
+      let mediaType: string;
+      let base64: string | undefined;
+      let text: string | undefined;
+      let previewSource: string;
+      if (context.assetKind === "raster" && context.occurrence.kind === "image") {
+        const parsed = parseRasterDataUri(context.occurrence.source);
+        if (!parsed) throw new Error("未対応のBase64ラスタ画像です。");
+        ({ extension, mediaType, base64 } = parsed);
+        previewSource = context.occurrence.source;
+      } else if (context.assetKind === "svg" && context.occurrence.kind === "inline-svg") {
+        extension = "svg"; mediaType = "image/svg+xml"; text = sanitizeSvgXml(context.occurrence.svg);
+        previewSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(text)}`;
+      } else throw new Error("この埋め込み形式は外部ファイルへ変換できません。");
+      const staged = await stageDocumentAsset({ documentPath: tab.document.path, preferredFilename: preferredAssetFilename(context, extension), base64, text });
+      const content = context.occurrence.kind === "image"
+        ? replaceImageOccurrenceSource(tab.draft, context.occurrence, staged.filename)
+        : replaceMarkdownOccurrence(tab.draft, context.occurrence, `![SVG](${staged.filename})`);
+      dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, mediaType, base64, text, previewSource } });
+      setMediaPreview(null);
+      setToast({ id: String(Date.now()), message: `${staged.filename} を一時ステージしました。Markdown保存時に確定します。`, type: "success" });
+      return;
+    }
+
+    if (context.occurrence.kind !== "image") throw new Error("外部アセットの参照形式が不正です。");
+    const occurrence = context.occurrence;
+    const pending = (tab.pendingAssets ?? []).find((asset) => asset.filename === occurrence.source);
+    const loaded = pending ? null : await readDocumentAsset(tab.document.path, occurrence.source);
+    let content: string;
+    if (context.assetKind === "raster") {
+      const mediaType = pending?.mediaType ?? loaded?.mediaType;
+      const base64 = pending?.base64 ?? loaded?.base64;
+      if (!mediaType || !base64) throw new Error("ラスタ画像データを読み込めませんでした。");
+      content = replaceImageOccurrenceSource(tab.draft, occurrence, `data:${mediaType};base64,${base64}`);
+    } else {
+      const text = pending?.text ?? loaded?.text;
+      if (!text) throw new Error("SVG XMLを読み込めませんでした。");
+      content = replaceMarkdownOccurrence(tab.draft, occurrence, sanitizeSvgXml(text));
+    }
+    if (pending) {
+      await discardStagedAssets([pending.id]);
+      dispatch({ type: "STAGED_ASSET_REMOVED", id: tab.id, content, stagingId: pending.id });
+    } else dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+    setMediaPreview(null);
+    setToast({ id: String(Date.now()), message: "埋め込み形式へ変換しました。", type: "success" });
   }, []);
 
   const openSearch = useCallback(() => {
@@ -1315,6 +1372,7 @@ export function App() {
             sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
             onCodeFenceBodyChange={activeSharePoint ? undefined : updateCodeFenceBody}
+            stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
           />
         ) : (
           <div className="empty-state">
@@ -1370,6 +1428,8 @@ export function App() {
         content={mediaPreview.content}
         mermaidSource={mediaPreview.mermaidSource}
         imageContext={mediaPreview.imageContext}
+        conversionContext={mediaPreview.conversionContext}
+        onConvertAsset={convertDocumentAsset}
         onSaveCaption={saveImageCaption}
         onRenameImage={renamePreviewImage}
         imageApps={externalApps.filter((app) => app.target === "image")}

@@ -1,4 +1,5 @@
 pub mod app_state;
+pub mod asset_staging;
 pub mod backup;
 pub mod commands;
 pub mod document_edit;
@@ -152,6 +153,9 @@ pub fn run() {
             open_in_new_window,
             load_markdown,
             save_markdown,
+            stage_document_asset,
+            discard_staged_assets,
+            read_document_asset,
             diagnose_document,
             start_watch,
             stop_watch,

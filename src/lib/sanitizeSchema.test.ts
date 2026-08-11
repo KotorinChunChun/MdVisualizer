@@ -20,4 +20,11 @@ describe("markdownSanitizeSchema", () => {
   it("keeps only the renderer marker required for Obsidian image embeds", () => {
     expect(markdownSanitizeSchema.attributes.img).toContain("data-obsidian-image");
   });
+
+  it("allows SVG drawing tags without allowing event handlers or style", () => {
+    expect(markdownSanitizeSchema.tagNames).toContain("svg");
+    expect(markdownSanitizeSchema.tagNames).toContain("path");
+    expect(markdownSanitizeSchema.attributes.svg).not.toContain("onload");
+    expect(markdownSanitizeSchema.attributes.path).not.toContain("style");
+  });
 });

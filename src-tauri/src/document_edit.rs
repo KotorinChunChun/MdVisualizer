@@ -17,6 +17,8 @@ pub struct SaveMarkdownRequest {
     pub path: String,
     pub content: String,
     pub expected_revision: String,
+    #[serde(default)]
+    pub staged_asset_ids: Vec<String>,
 }
 
 struct OriginalDocument {
@@ -38,6 +40,27 @@ pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResu
     })?;
     let loaded = with_lock(&path, || save_locked(&path, &request))?;
     Ok(loaded)
+}
+
+pub fn save_markdown_with_assets(
+    request: SaveMarkdownRequest,
+    staging: &crate::asset_staging::AssetStagingManager,
+) -> AppResult<MarkdownLoadResult> {
+    let requested = PathBuf::from(&request.path);
+    if document_kind(&requested) != Some(DocumentKind::Markdown) {
+        return Err(AppError::UnsupportedDocument(request.path));
+    }
+    if !requested.exists() {
+        return Err(AppError::FileNotFound(request.path));
+    }
+    let path = requested.canonicalize().map_err(|error| {
+        AppError::IoError(format!("canonicalize {}: {error}", requested.display()))
+    })?;
+    with_lock(&path, || {
+        staging.commit_with(&path, &request.staged_asset_ids, || {
+            save_locked(&path, &request)
+        })
+    })
 }
 
 fn save_locked(path: &Path, request: &SaveMarkdownRequest) -> AppResult<MarkdownLoadResult> {
@@ -154,6 +177,7 @@ mod tests {
             path: path.to_string_lossy().into_owned(),
             content: content.into(),
             expected_revision: content_revision(&bytes),
+            staged_asset_ids: vec![],
         }
     }
 
@@ -218,5 +242,41 @@ mod tests {
             matches!(result, Err(AppError::IoError(message)) if message.contains("unsupported characters"))
         );
         assert_eq!(fs::read(&path).unwrap(), encoded.as_ref());
+    }
+
+    #[test]
+    fn commits_staged_assets_together_with_the_markdown_save() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("note.md");
+        fs::write(&path, "old").unwrap();
+        let staging = crate::asset_staging::AssetStagingManager::new().unwrap();
+        let staged = staging
+            .stage(&path.to_string_lossy(), "image.png", b"png-data")
+            .unwrap();
+        let mut save = request(&path, "![image](image.png)");
+        save.staged_asset_ids = vec![staged.id];
+
+        save_markdown_with_assets(save, &staging).unwrap();
+
+        assert_eq!(fs::read_to_string(&path).unwrap(), "![image](image.png)");
+        assert_eq!(fs::read(dir.path().join("image.png")).unwrap(), b"png-data");
+    }
+
+    #[test]
+    fn rolls_back_staged_assets_when_the_document_revision_is_stale() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("note.md");
+        fs::write(&path, "old").unwrap();
+        let staging = crate::asset_staging::AssetStagingManager::new().unwrap();
+        let staged = staging
+            .stage(&path.to_string_lossy(), "image.png", b"png-data")
+            .unwrap();
+        let mut save = request(&path, "![image](image.png)");
+        save.staged_asset_ids = vec![staged.id];
+        fs::write(&path, "external").unwrap();
+
+        assert!(save_markdown_with_assets(save, &staging).is_err());
+        assert_eq!(fs::read_to_string(&path).unwrap(), "external");
+        assert!(!dir.path().join("image.png").exists());
     }
 }

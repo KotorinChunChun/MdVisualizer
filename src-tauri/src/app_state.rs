@@ -1,3 +1,4 @@
+use crate::asset_staging::AssetStagingManager;
 use crate::backup::BackupManager;
 use crate::watcher::FileWatcher;
 use crate::sharepoint::SharePointClient;
@@ -9,6 +10,7 @@ pub struct AppState {
     pub watcher: Mutex<Option<FileWatcher>>,
     pub window_sequence: AtomicU64,
     pub backup_mgr: BackupManager,
+    pub asset_staging: AssetStagingManager,
     pub sharepoint: SharePointClient,
 }
 
@@ -19,6 +21,7 @@ impl AppState {
             watcher: Mutex::new(None),
             window_sequence: AtomicU64::new(1),
             backup_mgr: BackupManager::new()?,
+            asset_staging: AssetStagingManager::new()?,
             sharepoint: SharePointClient::new()
                 .map_err(|error| crate::errors::AppError::Unknown(error.to_string()))?,
         })

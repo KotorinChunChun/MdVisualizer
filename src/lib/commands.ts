@@ -46,6 +46,13 @@ export async function loadMarkdown(path: string): Promise<MarkdownLoadResult> {
 export async function saveMarkdown(request: SaveMarkdownRequest): Promise<MarkdownLoadResult> {
   return await invoke<MarkdownLoadResult>("save_markdown", { request });
 }
+export async function stageDocumentAsset(request: { documentPath: string; preferredFilename: string; base64?: string; text?: string }): Promise<import("../types/app").StagedDocumentAsset> {
+  return await invoke("stage_document_asset", { request });
+}
+export async function discardStagedAssets(ids: string[]): Promise<void> { await invoke("discard_staged_assets", { ids }); }
+export async function readDocumentAsset(documentPath: string, source: string): Promise<import("../types/app").DocumentAssetData> {
+  return await invoke("read_document_asset", { documentPath, source });
+}
 export async function diagnoseDocument(path: string): Promise<DiagnosticItem[]> {
   return await invoke<DiagnosticItem[]>("diagnose_document", { path });
 }

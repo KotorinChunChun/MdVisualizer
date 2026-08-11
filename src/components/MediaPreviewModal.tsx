@@ -4,6 +4,7 @@ import { MermaidToolbar } from "./MermaidToolbar";
 import { ImageMetadataEditor } from "./ImageMetadataEditor";
 import { ExternalActions } from "./ExternalActions";
 import type { ExternalAppConfig } from "../types/settings";
+import type { AssetConversionContext } from "../lib/assetConversion";
 
 export type MediaPreviewContent =
   | { kind: "image"; src: string; alt: string }
@@ -22,6 +23,7 @@ export interface MediaPreviewTarget {
   cropTarget?: import("../hooks/useCropEditor").CropTarget | null;
   mermaidSource?: string;
   imageContext?: ImageEditContext;
+  conversionContext?: AssetConversionContext;
 }
 
 interface ZoomAnchor {
@@ -58,6 +60,8 @@ export function MediaPreviewModal({
   onRenameImage,
   imageApps = [],
   onOpenImageApp,
+  conversionContext,
+  onConvertAsset,
 }: {
   content: MediaPreviewContent;
   onClose: () => void;
@@ -69,6 +73,8 @@ export function MediaPreviewModal({
   onRenameImage?: (context: ImageEditContext, filename: string) => Promise<void>;
   imageApps?: ExternalAppConfig[];
   onOpenImageApp?: (app: ExternalAppConfig, context: ImageEditContext) => void;
+  conversionContext?: AssetConversionContext;
+  onConvertAsset?: (context: AssetConversionContext) => Promise<void>;
 }) {
   const svgSize = useMemo(
     () => content.kind === "svg" ? svgIntrinsicSize(content.svg) : null,
@@ -79,6 +85,8 @@ export function MediaPreviewModal({
   const [imageSize, setImageSize] = useState({ width: 1000, height: 600 });
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
   const [metadataOpen, setMetadataOpen] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [conversionError, setConversionError] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   const scaleRef = useRef(1);
@@ -166,12 +174,17 @@ export function MediaPreviewModal({
       />}
       {onCrop && <button type="button" onClick={onCrop}>クロップ</button>}
       {onActivate && <button type="button" onClick={onActivate}>画像編集</button>}
+      {conversionContext && onConvertAsset && <button type="button" disabled={converting} onClick={() => {
+        setConverting(true); setConversionError(null);
+        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));
+      }}>{converting ? "変換中…" : conversionContext.storage === "embedded" ? "同フォルダのファイルへ変換" : "埋め込みへ変換"}</button>}
       {imageContext && onSaveCaption && onRenameImage && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
       <button type="button" className="media-preview__mode" onClick={toggleMode}>
         {mode === "fit" ? "1:1表示" : "全体表示"}
       </button>
       <button type="button" className="media-preview__close" aria-label="拡大表示を閉じる" onClick={onClose}>×</button>
     </div>
+    {conversionError && <p className="media-preview__conversion-error" role="alert" onClick={(event) => event.stopPropagation()}>{conversionError}</p>}
     {metadataOpen && imageContext && onSaveCaption && onRenameImage && <div onClick={(event) => event.stopPropagation()}>
       <ImageMetadataEditor context={imageContext} onSaveCaption={onSaveCaption} onRename={onRenameImage} />
     </div>}

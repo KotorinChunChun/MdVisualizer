@@ -5,6 +5,7 @@ import type { CropTarget } from "../hooks/useCropEditor";
 import { InlineImageResizeOverlay } from "./InlineImageResizeOverlay";
 import { ImageSize, useInlineImageResize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
+import type { AssetConversionContext } from "../lib/assetConversion";
 import "../styles/inline-image-resize.css";
 
 interface ImageRendererProps {
@@ -22,6 +23,8 @@ interface ImageRendererProps {
   sourceLine?: number;
   markdownPath?: string;
   sourceOffset?: number;
+  conversionContext?: AssetConversionContext;
+  previewSrc?: string;
 }
 
 export interface PresentationImageTarget {
@@ -44,6 +47,8 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   sourceLine,
   markdownPath,
   sourceOffset,
+  conversionContext,
+  previewSrc,
 }) => {
   const [loadError, setLoadError] = useState(false);
   const {
@@ -58,7 +63,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
 
   if (!src) return null;
 
-  const resolvedSrc = resolveImageSrc(src, baseDir);
+  const resolvedSrc = previewSrc ?? resolveImageSrc(src, baseDir);
   const isRemote =
     src.toLowerCase().startsWith("http://") ||
     src.toLowerCase().startsWith("https://") ||
@@ -67,7 +72,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     src.startsWith("//");
   const isSupportedRaster = /\.(?:png|jpe?g|gif|webp|bmp)(?:[?#]|$)/i.test(src);
   // SVG is display-only until a dedicated vector editing design is approved.
-  const isEditableLocalImage = !isRemote && isSupportedRaster;
+  const isEditableLocalImage = !previewSrc && !isRemote && isSupportedRaster;
   const canInlineResize = isEditableLocalImage && !presentationMode && !headingMode;
   const hasDisplaySize = !headingMode && Boolean(size);
 
@@ -113,6 +118,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         sourceOffset,
         caption: alt,
       } : undefined,
+      conversionContext,
     });
   };
 
