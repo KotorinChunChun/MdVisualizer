@@ -12,6 +12,10 @@ export interface TabState {
   scrollTop: number;
   generation: number;
   externalChanged?: boolean;
+  draft: string;
+  dirty: boolean;
+  saving: boolean;
+  saveError: string | null;
   searchOpen?: boolean;
   imageDisplaySizes: Record<string, ImageSize>;
   search: { query: string; regex: boolean; caseSensitive: boolean; activeIndex: number };
@@ -44,6 +48,10 @@ export type TabsAction =
   | { type: "SEARCH"; id: string; search: TabState["search"] }
   | { type: "SEARCH_VISIBILITY"; id: string; open: boolean }
   | { type: "EXTERNAL_CHANGED"; id: string; changed: boolean }
+  | { type: "DRAFT_CHANGED"; id: string; content: string }
+  | { type: "SAVE_STARTED"; id: string }
+  | { type: "SAVED"; id: string; document: MarkdownLoadResult }
+  | { type: "SAVE_FAILED"; id: string; error: string }
   | { type: "IMAGE_DISPLAY_SIZE"; id: string; source: string; size: ImageSize }
   | { type: "MOVE"; id: string; toIndex: number };
 
@@ -69,6 +77,10 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
           scrollTop: 0,
           generation: 1,
           externalChanged: false,
+          draft: "",
+          dirty: false,
+          saving: false,
+          saveError: null,
           searchOpen: false,
           imageDisplaySizes: {},
           search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 },
@@ -112,6 +124,11 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         ...tab,
         path: action.document.path,
         document: action.document,
+        draft: action.document.content,
+        dirty: false,
+        saving: false,
+        saveError: null,
+        externalChanged: false,
         loading: false,
         error: null,
         }));
@@ -126,6 +143,36 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       return updateTab(state, action.id, (tab) => ({ ...tab, searchOpen: action.open }));
     case "EXTERNAL_CHANGED":
       return updateTab(state, action.id, (tab) => ({ ...tab, externalChanged: action.changed }));
+    case "DRAFT_CHANGED":
+      return updateTab(state, action.id, (tab) => {
+        if (!tab.document || tab.draft === action.content) return tab;
+        return {
+          ...tab,
+          draft: action.content,
+          dirty: action.content !== tab.document.content,
+          saveError: null,
+        };
+      });
+    case "SAVE_STARTED":
+      return updateTab(state, action.id, (tab) => tab.document && tab.dirty
+        ? { ...tab, saving: true, saveError: null }
+        : tab);
+    case "SAVED":
+      return updateTab(state, action.id, (tab) => {
+        const draft = tab.draft === action.document.content ? action.document.content : tab.draft;
+        return {
+          ...tab,
+          path: action.document.path,
+          document: action.document,
+          draft,
+          dirty: draft !== action.document.content,
+          saving: false,
+          saveError: null,
+          externalChanged: false,
+        };
+      });
+    case "SAVE_FAILED":
+      return updateTab(state, action.id, (tab) => ({ ...tab, saving: false, saveError: action.error }));
     case "IMAGE_DISPLAY_SIZE":
       return updateTab(state, action.id, (tab) => {
         const current = tab.imageDisplaySizes[action.source];
@@ -164,7 +211,7 @@ function openTab(state: TabsState, tab: ClosedTabState): TabsState {
   if (existing) return { ...state, activeId: existing.id };
   const id = `tab-${state.nextId}`;
   return {
-    tabs: [...state.tabs, { id, kind: "document", path: tab.path, document: null, error: null, loading: true, scrollTop: tab.scrollTop, generation: 1, externalChanged: false, searchOpen: tab.searchOpen ?? false, imageDisplaySizes: tab.imageDisplaySizes ?? {}, search: tab.search }],
+    tabs: [...state.tabs, { id, kind: "document", path: tab.path, document: null, error: null, loading: true, scrollTop: tab.scrollTop, generation: 1, externalChanged: false, draft: "", dirty: false, saving: false, saveError: null, searchOpen: tab.searchOpen ?? false, imageDisplaySizes: tab.imageDisplaySizes ?? {}, search: tab.search }],
     activeId: id,
     nextId: state.nextId + 1,
   };

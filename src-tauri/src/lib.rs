@@ -1,6 +1,7 @@
 pub mod app_state;
 pub mod backup;
 pub mod commands;
+pub mod document_edit;
 pub mod errors;
 pub mod file_lock;
 pub mod image_ops;
@@ -150,6 +151,7 @@ pub fn run() {
             get_initial_files,
             open_in_new_window,
             load_markdown,
+            save_markdown,
             diagnose_document,
             start_watch,
             stop_watch,

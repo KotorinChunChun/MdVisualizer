@@ -1,4 +1,6 @@
-use crate::markdown::{decode_markdown, DocumentKind, DocumentSourceKind, MarkdownLoadResult};
+use crate::markdown::{
+    content_revision, decode_markdown, DocumentKind, DocumentSourceKind, MarkdownLoadResult,
+};
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 use reqwest::{Client, Response, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -290,6 +292,10 @@ impl SharePointClient {
             encode_segment(&item.id)
         );
         let bytes = self.graph_bytes(&content_url, &token).await?;
+        let revision = item
+            .e_tag
+            .clone()
+            .unwrap_or_else(|| content_revision(&bytes));
         let (content, encoding) = decode_markdown(&bytes);
         let base_dir = source
             .canonical_uri
@@ -305,6 +311,7 @@ impl SharePointClient {
             encoding,
             size_bytes: item.size,
             modified_at: format_modified_at(&item.last_modified_date_time),
+            revision,
             source: DocumentSourceKind::SharePoint,
             web_url: Some(item.web_url),
             etag: item.e_tag,

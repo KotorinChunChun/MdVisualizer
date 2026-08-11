@@ -4,6 +4,7 @@ use chrono::{DateTime, Local};
 use encoding_rs::{Encoding, SHIFT_JIS, UTF_16BE, UTF_16LE, UTF_8};
 use regex::Regex;
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -32,9 +33,14 @@ pub struct MarkdownLoadResult {
     pub encoding: String,
     pub size_bytes: u64,
     pub modified_at: String,
+    pub revision: String,
     pub source: DocumentSourceKind,
     pub web_url: Option<String>,
     pub etag: Option<String>,
+}
+
+pub(crate) fn content_revision(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
 }
 
 pub fn document_kind(path: &Path) -> Option<DocumentKind> {
@@ -109,6 +115,7 @@ pub fn load_markdown(path_str: &str) -> AppResult<MarkdownLoadResult> {
         encoding,
         size_bytes: metadata.len(),
         modified_at,
+        revision: content_revision(&bytes),
         source: DocumentSourceKind::Local,
         web_url: None,
         etag: None,

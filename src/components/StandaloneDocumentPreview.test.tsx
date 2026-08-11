@@ -24,6 +24,7 @@ function document(kind: MarkdownLoadResult["kind"], path: string, content: strin
     encoding: "UTF-8",
     size_bytes: content.length,
     modified_at: "2026-08-09 12:00",
+    revision: "revision-1",
   };
 }
 

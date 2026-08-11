@@ -27,7 +27,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -87,6 +87,7 @@ export function App() {
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
+  const recentSelfSaves = useRef(new Map<string, number>());
   const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
   const [presentationPositions, setPresentationPositions] = useState<Record<string, string>>({});
   const presentationPositionsRef = useRef<Record<string, string>>({});
@@ -167,6 +168,28 @@ export function App() {
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
   const activeSharePoint = isSharePointDocument(activeTab?.document ?? activeTab);
+
+  useEffect(() => {
+    const hasUnsavedChanges = () => tabsStateRef.current.tabs.some((tab) => tab.dirty);
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges()) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    let unlisten: (() => void) | undefined;
+    void getCurrentWindow().onCloseRequested((event) => {
+      if (hasUnsavedChanges() && !window.confirm("未保存の編集内容があります。破棄してアプリを終了しますか？")) {
+        event.preventDefault();
+      }
+    }).then((dispose) => { unlisten = dispose; }).catch(() => {
+      // Browser and unit-test hosts do not provide the Tauri window event API.
+    });
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      unlisten?.();
+    };
+  }, []);
 
   useEffect(() => {
     const next = activeTab?.document ? documentViewModes[activeTab.document.path] ?? "auto" : "auto";
@@ -410,17 +433,52 @@ export function App() {
     return () => { document.removeEventListener("pointerdown", dismissOnOutsidePointer, true); window.removeEventListener("keydown", dismissOnEscape); };
   }, [contextTab]);
 
-  const reloadTab = useCallback((id: string) => {
-    if (id === activeTab?.id && containerRef.current && markdownRef.current) {
+  const reloadTab = useCallback((id: string, confirmDiscard = true) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
+    if (!tab) return false;
+    if (confirmDiscard && tab.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄して再読み込みしますか？`)) return false;
+    if (id === tabsStateRef.current.activeId && containerRef.current && markdownRef.current) {
       const anchor = captureScrollAnchor(containerRef.current, markdownRef.current);
       if (anchor) reloadAnchors.current[id] = anchor;
     }
     dispatch({ type: "RELOAD", id });
-  }, [activeTab?.id]);
+    return true;
+  }, []);
 
   const reload = useCallback(() => {
     if (activeTab?.document) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
+
+  const saveTab = useCallback(async (id: string) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
+    if (!tab?.document || !tab.dirty || tab.saving) return;
+    if (tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) {
+      setToast({ id: String(Date.now()), message: "この文書は閲覧専用です。", type: "error" });
+      return;
+    }
+    dispatch({ type: "SAVE_STARTED", id });
+    const identity = localPathIdentity(tab.document.path);
+    const selfSaveUntil = Date.now() + 2000;
+    recentSelfSaves.current.set(identity, selfSaveUntil);
+    window.setTimeout(() => {
+      if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
+    }, 2100);
+    try {
+      const document = await saveMarkdown({
+        path: tab.document.path,
+        content: tab.draft,
+        expectedRevision: tab.document.revision,
+      });
+      dispatch({ type: "SAVED", id, document });
+      setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
+    } catch (error) {
+      recentSelfSaves.current.delete(identity);
+      const message = String(error);
+      dispatch({ type: "SAVE_FAILED", id, error: message });
+      if (message.toLowerCase().includes("conflict")) dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
+      setToast({ id: String(Date.now()), message: `保存に失敗しました: ${message}`, type: "error" });
+    }
+  }, []);
 
   const applyFoldPreset = useCallback((preset: "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset") => {
     if (!activeTab?.document) return;
@@ -705,6 +763,9 @@ export function App() {
   }, []);
 
   const saveImageCaption = useCallback(async (context: ImageEditContext, caption: string) => {
+    if (tabsStateRef.current.tabs.some((tab) => localPathIdentity(tab.path) === localPathIdentity(context.markdownPath) && tab.dirty)) {
+      throw new Error("未保存のMarkdown編集があります。先に文書を保存してから画像情報を変更してください。");
+    }
     await updateImageCaption({
       markdownPath: context.markdownPath,
       sourceOffset: context.sourceOffset,
@@ -722,6 +783,9 @@ export function App() {
   }, []);
 
   const renamePreviewImage = useCallback(async (context: ImageEditContext, filename: string) => {
+    if (tabsStateRef.current.tabs.some((tab) => localPathIdentity(tab.path) === localPathIdentity(context.markdownPath) && tab.dirty)) {
+      throw new Error("未保存のMarkdown編集があります。先に文書を保存してから画像名を変更してください。");
+    }
     const result = await renameImageAndReferences({
       markdownPath: context.markdownPath,
       imagePath: context.imagePath,
@@ -788,10 +852,12 @@ export function App() {
   }, [recordNavigationPoint]);
 
   const closeTab = useCallback((id: string) => {
-    const tab = tabsState.tabs.find((candidate) => candidate.id === id);
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
+    if (tab?.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄してタブを閉じますか？`)) return false;
     if (tab && tab.kind !== "settings") setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
     dispatch({ type: "CLOSE", id });
-  }, [tabsState.tabs]);
+    return true;
+  }, []);
 
   const closeActiveTab = useCallback(() => {
     if (!activeTab) return;
@@ -907,6 +973,12 @@ export function App() {
         return;
       }
 
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        if (activeTab) void saveTab(activeTab.id);
+        return;
+      }
+
       if (event.key === "F5") {
         event.preventDefault();
         reload();
@@ -955,7 +1027,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab?.searchOpen, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, printDocument, reload, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
+  }, [activeTab, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, printDocument, reload, saveTab, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
 
   useEffect(() => {
     const onMouseUp = (event: MouseEvent) => {
@@ -978,11 +1050,16 @@ export function App() {
   const handleMarkdownChanged = useCallback(
     ({ path, changeKind }: { path: string; changeKind: string }) => {
       const identity = localPathIdentity(path);
+      const selfSaveUntil = recentSelfSaves.current.get(identity);
+      if (selfSaveUntil && selfSaveUntil >= Date.now()) return;
+      if (selfSaveUntil) recentSelfSaves.current.delete(identity);
       const tabs = tabsState.tabs.filter((candidate) => localPathIdentity(candidate.path) === identity);
       if (!tabs.length) return;
       const canReload = changeKind !== "deleted" && changeKind !== "renamed";
-      if (autoReload === "on" && canReload) tabs.forEach((tab) => reloadTab(tab.id));
-      else tabs.forEach((tab) => dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true }));
+      tabs.forEach((tab) => {
+        if (autoReload === "on" && canReload && !tab.dirty && !tab.saving) reloadTab(tab.id, false);
+        else dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true });
+      });
     },
     [tabsState.tabs, autoReload, reloadTab]
   );

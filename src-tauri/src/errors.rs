@@ -21,6 +21,9 @@ pub enum AppError {
     #[error("Watch error: {0}")]
     WatchError(String),
 
+    #[error("Conflict: {0}")]
+    Conflict(String),
+
     #[error("IO error: {0}")]
     IoError(String),
 

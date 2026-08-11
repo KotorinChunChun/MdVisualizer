@@ -1,4 +1,5 @@
 use crate::app_state::AppState;
+use crate::document_edit::{save_markdown as do_save_markdown, SaveMarkdownRequest};
 use crate::errors::AppError;
 use crate::image_ops::{
     crop_image as do_crop_image, save_rendered_image as do_save_rendered_image, CropImageRequest,
@@ -196,6 +197,11 @@ pub async fn load_markdown(
         })
         .await
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn save_markdown(request: SaveMarkdownRequest) -> Result<MarkdownLoadResult, String> {
+    do_save_markdown(request).map_err(|error| error.to_string())
 }
 
 #[derive(Serialize)]

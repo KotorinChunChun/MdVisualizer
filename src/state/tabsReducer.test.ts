@@ -10,6 +10,7 @@ const loadedDocument = (path: string) => ({
   encoding: "UTF-8",
   size_bytes: 7,
   modified_at: "2026-07-29T00:00:00Z",
+  revision: "revision-1",
 });
 
 describe("tabsReducer", () => {
@@ -147,5 +148,45 @@ describe("tabsReducer", () => {
     state = tabsReducer(state, { type: "OPEN_SETTINGS" });
     expect(state.tabs.filter((tab) => tab.kind === "settings")).toHaveLength(1);
     expect(state.activeId).toBe(settingsId);
+  });
+
+  it("tracks a Markdown draft independently from the saved document", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id, content: "# Edited" });
+
+    expect(state.tabs[0]).toMatchObject({ draft: "# Edited", dirty: true, saving: false });
+    expect(state.tabs[0].document?.content).toBe("# Test");
+  });
+
+  it("keeps edits made while an earlier draft is being saved", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id, content: "# First edit" });
+    state = tabsReducer(state, { type: "SAVE_STARTED", id });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id, content: "# Second edit" });
+
+    state = tabsReducer(state, {
+      type: "SAVED",
+      id,
+      document: { ...loadedDocument("C:\\docs\\a.md"), content: "# First edit", revision: "revision-2" },
+    });
+
+    expect(state.tabs[0]).toMatchObject({ draft: "# Second edit", dirty: true, saving: false });
+    expect(state.tabs[0].document).toMatchObject({ content: "# First edit", revision: "revision-2" });
+  });
+
+  it("retains a dirty draft when saving fails", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id, content: "# Edited" });
+    state = tabsReducer(state, { type: "SAVE_STARTED", id });
+    state = tabsReducer(state, { type: "SAVE_FAILED", id, error: "Conflict" });
+
+    expect(state.tabs[0]).toMatchObject({ draft: "# Edited", dirty: true, saving: false, saveError: "Conflict" });
   });
 });
