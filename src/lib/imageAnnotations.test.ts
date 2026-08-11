@@ -153,6 +153,8 @@ class FakeContext {
   lineWidth = 1;
   lineCap: CanvasLineCap = "butt";
   lineJoin: CanvasLineJoin = "miter";
+  globalAlpha = 1;
+  globalCompositeOperation: GlobalCompositeOperation = "source-over";
   font = "";
   textBaseline: CanvasTextBaseline = "alphabetic";
   calls: string[] = [];
@@ -203,6 +205,24 @@ describe("image annotation drawing", () => {
     drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [arrow()]);
     expect(ctx.calls.filter((call) => call === "lineTo")).toHaveLength(3);
     expect(ctx.calls).toEqual(expect.arrayContaining(["beginPath", "moveTo", "stroke"]));
+  });
+
+  it("draws lines and freehand strokes", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [
+      { id: "line", type: "line", x: 0, y: 0, width: 3, height: 1, color: "#f00", lineWidth: 2, reverse: false },
+      { id: "stroke", type: "stroke", mode: "brush", x: 0, y: 0, width: 3, height: 1, color: "#0f0", lineWidth: 3, points: [{ x: 0, y: 0 }, { x: 3, y: 1 }] },
+    ]);
+    expect(ctx.calls.filter((call) => call === "stroke")).toHaveLength(2);
+  });
+
+  it("flood fills only the connected matching colour", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [
+      { id: "fill", type: "fill", x: 0, y: 0, width: 1, height: 1, color: "#112233", tolerance: 0 },
+    ]);
+    expect(Array.from(ctx.pixels.slice(0, 4))).toEqual([17, 34, 51, 255]);
+    expect(Array.from(ctx.pixels.slice(4, 8))).toEqual([0, 0, 255, 255]);
   });
 
   it("blurs image pixels inside a mask", () => {

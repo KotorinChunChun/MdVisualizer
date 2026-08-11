@@ -20,7 +20,7 @@ import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
-import { useCropEditor } from "./hooks/useCropEditor";
+import { useCropEditor, type ImageEditTarget } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
@@ -130,7 +130,7 @@ export function App() {
     dismissAuthentication,
   } = useSharePointAuthentication(setToast);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
-  const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
+  const [annotationTarget, setAnnotationTarget] = useState<ImageEditTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [documentPanels, setDocumentPanels] = useState<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
@@ -1398,15 +1398,31 @@ export function App() {
       )}
       {annotationTarget && <ImageAnnotationEditor
         target={annotationTarget}
-        imageVersion={imageVersions[annotationTarget.fullPath] ?? 0}
-        onApply={(filename, backupAvailable) => {
-          updateImageVersion(annotationTarget.fullPath);
-          setImageBackups((current) => ({ ...current, [annotationTarget.fullPath]: backupAvailable }));
+        imageVersion={annotationTarget.fullPath ? imageVersions[annotationTarget.fullPath] ?? 0 : 0}
+        onApply={({ filename, backupAvailable, dataUri }) => {
+          if (annotationTarget.storage === "embedded" && dataUri && annotationTarget.conversionContext) {
+            const context = annotationTarget.conversionContext;
+            const tab = tabsState.tabs.find((candidate) => candidate.document?.path === context.documentPath);
+            if (!tab || context.occurrence.kind !== "image") {
+              handleCropError("Base64画像の反映先が見つかりません。");
+              return;
+            }
+            try {
+              const content = replaceImageOccurrenceSource(tab.draft, context.occurrence, dataUri);
+              dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+            } catch (error) {
+              handleCropError(`Base64画像の反映に失敗しました: ${String(error)}`);
+              return;
+            }
+          } else if (annotationTarget.fullPath) {
+            updateImageVersion(annotationTarget.fullPath);
+            setImageBackups((current) => ({ ...current, [annotationTarget.fullPath!]: backupAvailable }));
+          }
           setAnnotationTarget(null);
           setAnnotationReturnPreview(null);
           setToast({
             id: String(Date.now()),
-            message: `${filename} の注釈を保存しました`,
+            message: `${filename} の画像編集を反映しました`,
             type: "success",
             restorePath: backupAvailable ? annotationTarget.fullPath : undefined,
           });
@@ -1435,10 +1451,10 @@ export function App() {
         imageApps={externalApps.filter((app) => app.target === "image")}
         onOpenImageApp={executeImageApp}
         onClose={closeMediaPreview}
-        onActivate={mediaPreview.cropTarget ? () => {
+        onActivate={mediaPreview.editTarget ? () => {
           setAnnotationReturnPreview(mediaPreview);
           setMediaPreview(null);
-          setAnnotationTarget(mediaPreview.cropTarget!);
+          setAnnotationTarget(mediaPreview.editTarget!);
         } : undefined}
         onCrop={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);

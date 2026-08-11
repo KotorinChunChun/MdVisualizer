@@ -24,7 +24,7 @@ vi.mock("@tauri-apps/api/webview", () => ({
 }));
 
 const props = {
-  target: { rawSrc: "asset://sample.png", fullPath: "C:\\docs\\sample.png", filename: "sample.png" },
+  target: { rawSrc: "asset://sample.png", fullPath: "C:\\docs\\sample.png", filename: "sample.png", storage: "external" as const },
   imageVersion: 0,
   onApply: vi.fn(),
   onCancel: vi.fn(),
@@ -63,8 +63,11 @@ describe("ImageAnnotationEditor", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     loadEditorImage(container);
     expect(screen.getByRole("dialog", { name: "画像編集: sample.png" })).toBeTruthy();
-    for (const tool of ["選択", "四角", "楕円", "矢印", "マスク", "ラベル"]) {
+    for (const tool of ["選択", "鉛筆", "ブラシ", "消しゴム", "塗りつぶし", "スポイト", "線", "四角", "楕円", "矢印", "マスク", "ラベル", "切り抜き"]) {
       expect(screen.getByRole("button", { name: new RegExp(`^${tool}$`) })).toBeTruthy();
+    }
+    for (const action of ["左へ90°回転", "右へ90°回転", "左右反転", "上下反転", "画像をリサイズ"]) {
+      expect(screen.getByRole("button", { name: action })).toBeTruthy();
     }
     expect(container.querySelectorAll(".annotation-editor__palette > button")).toHaveLength(4);
     expect((screen.getByLabelText("幅 (dot)") as HTMLInputElement).value).toBe("320");
@@ -190,6 +193,61 @@ describe("ImageAnnotationEditor", () => {
     expect(apply.disabled).toBe(false);
     fireEvent.keyDown(window, { key: "Delete" });
     expect(apply.disabled).toBe(true);
+  });
+
+  it("records a freehand pencil stroke in undo history", () => {
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    const canvas = editorCanvas(container);
+    fireEvent.click(screen.getByRole("button", { name: /^鉛筆$/ }));
+    fireEvent.pointerDown(canvas, { button: 0, pointerId: 31, clientX: 30, clientY: 20 });
+    fireEvent.pointerMove(canvas, { pointerId: 31, clientX: 80, clientY: 60 });
+    fireEvent.pointerUp(canvas, { pointerId: 31, clientX: 120, clientY: 80 });
+    expect((screen.getByRole("button", { name: "元に戻す" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole("button", { name: "適用" }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
+    expect((screen.getByRole("button", { name: "適用" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("returns edited embedded images as a PNG data URI without calling the file saver", async () => {
+    const context = { drawImage: vi.fn(), canvas: { width: 0, height: 0 } };
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => callback(new Blob(["png"], { type: "image/png" })));
+    const onApply = vi.fn();
+    const { container } = render(<ImageAnnotationEditor
+      {...props}
+      target={{ rawSrc: "data:image/png;base64,AAAA", filename: "embedded.png", storage: "embedded" }}
+      onApply={onApply}
+    />);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,AAAA");
+    loadEditorImage(container);
+    fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "321" } });
+    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(expect.objectContaining({
+      filename: "embedded.png",
+      backupAvailable: false,
+      dataUri: "data:image/png;base64,cG5n",
+    })));
+    const { saveRenderedImage } = await import("../lib/commands");
+    expect(saveRenderedImage).not.toHaveBeenCalled();
+  });
+
+  it("undoes and redoes a rotation together with its canvas dimensions", async () => {
+    const context = { drawImage: vi.fn(), translate: vi.fn(), rotate: vi.fn(), scale: vi.fn(), canvas: { width: 0, height: 0 } };
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,ROTATED");
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    loadEditorImage(container, 320, 240);
+    const canvas = container.querySelector("canvas")!;
+    canvas.width = 320;
+    canvas.height = 240;
+    fireEvent.click(screen.getByRole("button", { name: "右へ90°回転" }));
+    expect((screen.getByLabelText("幅 (dot)") as HTMLInputElement).value).toBe("240");
+    expect((screen.getByLabelText("高さ (dot)") as HTMLInputElement).value).toBe("320");
+    fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
+    expect((screen.getByLabelText("幅 (dot)") as HTMLInputElement).value).toBe("320");
+    expect((screen.getByLabelText("高さ (dot)") as HTMLInputElement).value).toBe("240");
+    fireEvent.click(screen.getByRole("button", { name: "やり直す" }));
+    expect((screen.getByLabelText("幅 (dot)") as HTMLInputElement).value).toBe("240");
   });
 
   it("opens the custom menu and enables paste after copying", () => {

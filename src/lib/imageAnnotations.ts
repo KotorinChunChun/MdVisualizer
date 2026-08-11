@@ -55,7 +55,33 @@ export interface LabelAnnotation extends AnnotationRect {
   fontSize: number;
 }
 
-export type ImageAnnotation = FrameAnnotation | EllipseAnnotation | ArrowAnnotation | MaskAnnotation | LabelAnnotation;
+export interface LineAnnotation extends AnnotationRect {
+  id: string;
+  type: "line";
+  color: string;
+  lineWidth: number;
+  reverse: boolean;
+}
+
+export interface StrokePoint { x: number; y: number }
+
+export interface StrokeAnnotation extends AnnotationRect {
+  id: string;
+  type: "stroke";
+  mode: "pencil" | "brush" | "eraser";
+  color: string;
+  lineWidth: number;
+  points: StrokePoint[];
+}
+
+export interface FillAnnotation extends AnnotationRect {
+  id: string;
+  type: "fill";
+  color: string;
+  tolerance: number;
+}
+
+export type ImageAnnotation = FrameAnnotation | EllipseAnnotation | ArrowAnnotation | MaskAnnotation | LabelAnnotation | LineAnnotation | StrokeAnnotation | FillAnnotation;
 
 export interface ImageAnnotationState {
   annotations: ImageAnnotation[];
@@ -87,6 +113,7 @@ export type ImageAnnotationAction =
   | { type: "commitSelection" }
   | { type: "undo" }
   | { type: "redo" }
+  | { type: "restore"; annotations: ImageAnnotation[] }
   | { type: "reset" };
 
 const finite = (value: number, fallback = 0) => Number.isFinite(value) ? value : fallback;
@@ -121,7 +148,7 @@ export function clampRect(rect: AnnotationRect, bounds: ImageBounds): Annotation
 /** Clamp geometry and type-specific numeric fields while retaining annotation data. */
 export function clampAnnotation(annotation: ImageAnnotation, bounds: ImageBounds): ImageAnnotation {
   const rect = clampRect(annotation, bounds);
-  if (annotation.type === "frame" || annotation.type === "ellipse" || annotation.type === "arrow") {
+  if (annotation.type === "frame" || annotation.type === "ellipse" || annotation.type === "arrow" || annotation.type === "line" || annotation.type === "stroke") {
     return { ...annotation, ...rect, lineWidth: Math.max(1, finite(annotation.lineWidth, 1)) };
   }
   if (annotation.type === "label") {
@@ -137,7 +164,9 @@ export function createImageAnnotationState(
 }
 
 function snapshot(annotations: ImageAnnotation[]): ImageAnnotation[] {
-  return annotations.map((annotation) => ({ ...annotation }));
+  return annotations.map((annotation) => annotation.type === "stroke"
+    ? { ...annotation, points: annotation.points.map((point) => ({ ...point })) }
+    : { ...annotation });
 }
 
 function withHistory(state: ImageAnnotationState, annotations: ImageAnnotation[], selectedId = state.selectedId): ImageAnnotationState {
@@ -156,6 +185,19 @@ function selectedAnnotation(state: ImageAnnotationState, requestedId?: string): 
 
 function updateAnnotation(annotation: ImageAnnotation, changes: AnnotationChanges): ImageAnnotation {
   // id and type intentionally cannot be changed through an update action.
+  if (annotation.type === "stroke" && (changes.x !== undefined || changes.y !== undefined)) {
+    const x = changes.x ?? annotation.x;
+    const y = changes.y ?? annotation.y;
+    const deltaX = x - annotation.x;
+    const deltaY = y - annotation.y;
+    return {
+      ...annotation,
+      ...changes,
+      id: annotation.id,
+      type: annotation.type,
+      points: annotation.points.map((point) => ({ x: point.x + deltaX, y: point.y + deltaY })),
+    } as ImageAnnotation;
+  }
   return { ...annotation, ...changes, id: annotation.id, type: annotation.type } as ImageAnnotation;
 }
 
@@ -167,6 +209,8 @@ export function imageAnnotationReducer(
   switch (action.type) {
     case "reset":
       return createImageAnnotationState();
+    case "restore":
+      return createImageAnnotationState(snapshot(action.annotations));
     case "place": {
       const annotation = action.bounds ? clampAnnotation(action.annotation, action.bounds) : action.annotation;
       const annotations = [...state.annotations.filter((item) => item.id !== annotation.id), annotation];
@@ -238,7 +282,9 @@ export function imageAnnotationReducer(
       if ((!Number.isFinite(action.x) || action.x === 0) && (!Number.isFinite(action.y) || action.y === 0)) return state;
       const x = finite(action.x);
       const y = finite(action.y);
-      const translate = (items: ImageAnnotation[]) => items.map((item) => ({ ...item, x: item.x + x, y: item.y + y }));
+      const translate = (items: ImageAnnotation[]) => items.map((item) => item.type === "stroke"
+        ? { ...item, x: item.x + x, y: item.y + y, points: item.points.map((point) => ({ x: point.x + x, y: point.y + y })) }
+        : { ...item, x: item.x + x, y: item.y + y }) as ImageAnnotation[];
       return {
         ...state,
         annotations: translate(state.annotations),
@@ -286,14 +332,29 @@ export function containsPoint(annotation: AnnotationRect, x: number, y: number):
 }
 
 export function containsAnnotationPoint(annotation: ImageAnnotation, x: number, y: number): boolean {
+  if (annotation.type === "fill") return Math.hypot(x - annotation.x, y - annotation.y) <= 8;
+  if (annotation.type === "stroke") {
+    return annotation.points.some((point, index) => {
+      const previous = annotation.points[index - 1] ?? point;
+      const dx = point.x - previous.x;
+      const dy = point.y - previous.y;
+      const lengthSquared = dx * dx + dy * dy;
+      const ratio = lengthSquared === 0 ? 0 : clamp(((x - previous.x) * dx + (y - previous.y) * dy) / lengthSquared, 0, 1);
+      return Math.hypot(x - (previous.x + dx * ratio), y - (previous.y + dy * ratio)) <= annotation.lineWidth + 4;
+    });
+  }
   if (annotation.type === "ellipse") {
     if (annotation.width <= 0 || annotation.height <= 0) return false;
     const normalizedX = (x - (annotation.x + annotation.width / 2)) / (annotation.width / 2);
     const normalizedY = (y - (annotation.y + annotation.height / 2)) / (annotation.height / 2);
     return normalizedX * normalizedX + normalizedY * normalizedY <= 1;
   }
-  if (annotation.type === "arrow") {
-    const [start, end] = arrowEndpoints(annotation, annotation.direction);
+  if (annotation.type === "arrow" || annotation.type === "line") {
+    const [start, end] = annotation.type === "line"
+      ? annotation.reverse
+        ? [{ x: annotation.x + annotation.width, y: annotation.y }, { x: annotation.x, y: annotation.y + annotation.height }]
+        : [{ x: annotation.x, y: annotation.y }, { x: annotation.x + annotation.width, y: annotation.y + annotation.height }]
+      : arrowEndpoints(annotation, annotation.direction);
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const lengthSquared = dx * dx + dy * dy;
@@ -467,6 +528,52 @@ function applyPixelMosaic(ctx: CanvasRenderingContext2D, rect: AnnotationRect): 
   ctx.putImageData(source, Math.floor(rect.x), Math.floor(rect.y));
 }
 
+function floodFill(ctx: CanvasRenderingContext2D, annotation: FillAnnotation): void {
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
+  const startX = Math.floor(annotation.x);
+  const startY = Math.floor(annotation.y);
+  if (startX < 0 || startY < 0 || startX >= width || startY >= height) return;
+  const image = ctx.getImageData(0, 0, width, height);
+  const data = image.data;
+  const startOffset = (startY * width + startX) * 4;
+  const target = [data[startOffset], data[startOffset + 1], data[startOffset + 2], data[startOffset + 3]];
+  const color = /^#([0-9a-f]{6})$/i.exec(annotation.color);
+  if (!color) return;
+  const packed = Number.parseInt(color[1], 16);
+  const replacement = [(packed >> 16) & 255, (packed >> 8) & 255, packed & 255, 255];
+  if (target.every((value, index) => value === replacement[index])) return;
+  const visited = new Uint8Array(width * height);
+  const startPixel = startY * width + startX;
+  const queue = [startPixel];
+  visited[startPixel] = 1;
+  const tolerance = Math.max(0, annotation.tolerance);
+  for (let cursor = 0; cursor < queue.length; cursor += 1) {
+    const pixel = queue[cursor];
+    const offset = pixel * 4;
+    if (Math.max(
+      Math.abs(data[offset] - target[0]),
+      Math.abs(data[offset + 1] - target[1]),
+      Math.abs(data[offset + 2] - target[2]),
+      Math.abs(data[offset + 3] - target[3]),
+    ) > tolerance) continue;
+    data[offset] = replacement[0]; data[offset + 1] = replacement[1];
+    data[offset + 2] = replacement[2]; data[offset + 3] = replacement[3];
+    const x = pixel % width;
+    const y = Math.floor(pixel / width);
+    const enqueue = (candidate: number) => {
+      if (visited[candidate]) return;
+      visited[candidate] = 1;
+      queue.push(candidate);
+    };
+    if (x > 0) enqueue(pixel - 1);
+    if (x + 1 < width) enqueue(pixel + 1);
+    if (y > 0) enqueue(pixel - width);
+    if (y + 1 < height) enqueue(pixel + width);
+  }
+  ctx.putImageData(image, 0, 0);
+}
+
 /**
  * Paint annotations onto an already-rendered image canvas. Masks read and alter
  * only their own image pixels; frames and labels are then drawn above them.
@@ -478,8 +585,20 @@ export function drawImageAnnotations(
   const bounds = { width: ctx.canvas.width, height: ctx.canvas.height };
   for (const annotation of annotations) {
     const rect = canvasRect(annotation, bounds);
-    if (annotation.type !== "mask") continue;
-    if (annotation.style === "solid") {
+    if (annotation.type === "fill") {
+      floodFill(ctx, annotation);
+    } else if (annotation.type === "stroke" && annotation.mode === "eraser") {
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.lineWidth = annotation.lineWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      annotation.points.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y));
+      ctx.stroke();
+      ctx.restore();
+    } else if (annotation.type !== "mask") continue;
+    else if (annotation.style === "solid") {
       ctx.save();
       ctx.fillStyle = annotation.color;
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
@@ -495,7 +614,28 @@ export function drawImageAnnotations(
 
   for (const annotation of annotations) {
     const rect = canvasRect(annotation, bounds);
-    if (annotation.type === "frame") {
+    if (annotation.type === "stroke" && annotation.mode !== "eraser") {
+      ctx.save();
+      ctx.strokeStyle = annotation.color;
+      ctx.globalAlpha = annotation.mode === "pencil" ? 0.82 : 1;
+      ctx.lineWidth = annotation.lineWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      annotation.points.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y));
+      ctx.stroke();
+      ctx.restore();
+    } else if (annotation.type === "line") {
+      ctx.save();
+      ctx.strokeStyle = annotation.color;
+      ctx.lineWidth = annotation.lineWidth;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(annotation.reverse ? annotation.x + annotation.width : annotation.x, annotation.y);
+      ctx.lineTo(annotation.reverse ? annotation.x : annotation.x + annotation.width, annotation.y + annotation.height);
+      ctx.stroke();
+      ctx.restore();
+    } else if (annotation.type === "frame") {
       ctx.save();
       ctx.strokeStyle = annotation.color;
       ctx.lineWidth = annotation.lineWidth;

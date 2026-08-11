@@ -11,6 +11,7 @@ describe("MarkdownPreview convertible assets", () => {
     fireEvent.click(screen.getByAltText("base"));
     fireEvent.click(screen.getByAltText("vector"));
     expect(onMediaOpen.mock.calls[0][0].conversionContext).toMatchObject({ assetKind: "raster", storage: "embedded" });
+    expect(onMediaOpen.mock.calls[0][0].editTarget).toMatchObject({ storage: "embedded", rawSrc: "data:image/png;base64,AAAA" });
     expect(onMediaOpen.mock.calls[1][0].conversionContext).toMatchObject({ assetKind: "svg", storage: "external" });
   });
 

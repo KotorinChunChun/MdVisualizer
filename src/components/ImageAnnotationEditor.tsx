@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import type { CropTarget } from "../hooks/useCropEditor";
+import type { ImageEditTarget } from "../hooks/useCropEditor";
 import { saveRenderedImage } from "../lib/commands";
 import {
   resizeImageCanvasCentered,
@@ -21,10 +21,18 @@ import {
   type ArrowDirection,
   type ImageAnnotation,
   type MaskStyle,
+  type StrokePoint,
 } from "../lib/imageAnnotations";
 import "../styles/image-annotation.css";
 
-type Tool = "select" | AnnotationKind;
+type Tool = "select" | AnnotationKind | "pencil" | "brush" | "eraser" | "line" | "fill" | "eyedropper" | "crop";
+
+interface DrawingGesture {
+  tool: "pencil" | "brush" | "eraser" | "line" | "crop";
+  pointerId: number;
+  start: StrokePoint;
+  points: StrokePoint[];
+}
 
 interface ContextMenuState {
   clientX: number;
@@ -51,6 +59,13 @@ interface CanvasResizeDragState {
   startGeometry: ImageCanvasGeometry;
 }
 
+interface EditorSnapshot {
+  annotations: ImageAnnotation[];
+  geometry: ImageCanvasGeometry;
+  replacementSource: string | null;
+  replacementLabel: string | null;
+}
+
 const RECOMMENDED_COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6"];
 const IMAGE_PATH_PATTERN = /\.(?:avif|bmp|gif|jpe?g|png|svg|tiff?|webp)$/i;
 const DEFAULT_STAMP_SIZES: Record<AnnotationKind, { width: number; height: number }> = {
@@ -70,9 +85,9 @@ export function ImageAnnotationEditor({
   onCancel,
   onError,
 }: {
-  target: CropTarget;
+  target: ImageEditTarget;
   imageVersion: number;
-  onApply: (filename: string, backupAvailable: boolean) => void;
+  onApply: (result: { filename: string; backupAvailable: boolean; dataUri?: string }) => void;
   onCancel: () => void;
   onError: (message: string) => void;
 }) {
@@ -84,6 +99,7 @@ export function ImageAnnotationEditor({
   const replacementObjectUrlRef = useRef<string | null>(null);
   const displayedImageSizeRef = useRef<{ width: number; height: number } | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const drawingRef = useRef<DrawingGesture | null>(null);
   const canvasResizeDragRef = useRef<CanvasResizeDragState | null>(null);
   const canvasResizePreviewRef = useRef<ImageCanvasResize | null>(null);
   const originalSourceSizeRef = useRef<{ width: number; height: number } | null>(null);
@@ -102,6 +118,7 @@ export function ImageAnnotationEditor({
   const [canvasResizePreview, setCanvasResizePreview] = useState<ImageCanvasResize | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [dragPreview, setDragPreview] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [drawingPreview, setDrawingPreview] = useState<ImageAnnotation | null>(null);
   const [clipboard, setClipboard] = useState<ImageAnnotation | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [loadedVersion, setLoadedVersion] = useState(imageVersion);
@@ -110,12 +127,15 @@ export function ImageAnnotationEditor({
   const [replacementPath, setReplacementPath] = useState("");
   const [replacementSource, setReplacementSource] = useState<string | null>(null);
   const [replacementLabel, setReplacementLabel] = useState<string | null>(null);
+  const [resizeDimensions, setResizeDimensions] = useState({ width: 0, height: 0 });
+  const [undoSnapshots, setUndoSnapshots] = useState<EditorSnapshot[]>([]);
+  const [redoSnapshots, setRedoSnapshots] = useState<EditorSnapshot[]>([]);
   const lastRenderError = useRef<string | null>(null);
   const selected = useMemo(
     () => state.annotations.find((annotation) => annotation.id === state.selectedId),
     [state.annotations, state.selectedId],
   );
-  const activeKind = selected?.type ?? (tool === "select" ? null : tool);
+  const activeKind = selected?.type ?? (["frame", "ellipse", "arrow", "mask", "label"].includes(tool) ? tool : null);
   const sourceSize = originalSourceSizeRef.current;
   const canvasDirty = sourceSize !== null && (
     canvasGeometry.width !== sourceSize.width
@@ -123,9 +143,9 @@ export function ImageAnnotationEditor({
     || canvasGeometry.imageX !== 0
     || canvasGeometry.imageY !== 0
   );
-  const dirty = state.undoStack.length > 0 || canvasDirty || replacementSource !== null;
+  const dirty = undoSnapshots.length > 0 || canvasDirty || replacementSource !== null;
   const hasOutputChanges = state.annotations.length > 0 || canvasDirty || replacementSource !== null;
-  const stampKind: AnnotationKind = tool === "select" ? "frame" : tool;
+  const stampKind: AnnotationKind = (["frame", "ellipse", "arrow", "mask", "label"] as Tool[]).includes(tool) ? tool as AnnotationKind : "frame";
   const { width, height } = stampSizes[stampKind];
   const updateStampDimension = (dimension: "width" | "height", updater: React.SetStateAction<number>) => {
     setStampSizes((current) => {
@@ -137,6 +157,41 @@ export function ImageAnnotationEditor({
   const setWidth = (updater: React.SetStateAction<number>) => updateStampDimension("width", updater);
   const setHeight = (updater: React.SetStateAction<number>) => updateStampDimension("height", updater);
 
+  const currentSnapshot = (): EditorSnapshot => ({
+    annotations: state.annotations.map((annotation) => annotation.type === "stroke"
+      ? { ...annotation, points: annotation.points.map((point) => ({ ...point })) }
+      : { ...annotation }),
+    geometry: { ...canvasGeometry },
+    replacementSource,
+    replacementLabel,
+  });
+  const recordEdit = () => {
+    setUndoSnapshots((current) => [...current, currentSnapshot()]);
+    setRedoSnapshots([]);
+  };
+  const restoreSnapshot = (snapshot: EditorSnapshot) => {
+    setCanvasGeometry(snapshot.geometry);
+    setResizeDimensions({ width: snapshot.geometry.width, height: snapshot.geometry.height });
+    displayedImageSizeRef.current = { width: snapshot.geometry.width, height: snapshot.geometry.height };
+    setReplacementSource(snapshot.replacementSource);
+    setReplacementLabel(snapshot.replacementLabel);
+    dispatch({ type: "restore", annotations: snapshot.annotations });
+  };
+  const undoEdit = () => {
+    const previous = undoSnapshots[undoSnapshots.length - 1];
+    if (!previous) return;
+    setRedoSnapshots((current) => [...current, currentSnapshot()]);
+    setUndoSnapshots((current) => current.slice(0, -1));
+    restoreSnapshot(previous);
+  };
+  const redoEdit = () => {
+    const next = redoSnapshots[redoSnapshots.length - 1];
+    if (!next) return;
+    setUndoSnapshots((current) => [...current, currentSnapshot()]);
+    setRedoSnapshots((current) => current.slice(0, -1));
+    restoreSnapshot(next);
+  };
+
   const releaseReplacementObjectUrl = () => {
     if (replacementObjectUrlRef.current) URL.revokeObjectURL(replacementObjectUrlRef.current);
     replacementObjectUrlRef.current = null;
@@ -147,6 +202,7 @@ export function ImageAnnotationEditor({
       onError("元画像の読み込みが完了してから差し替えてください。");
       return;
     }
+    recordEdit();
     releaseReplacementObjectUrl();
     replacementObjectUrlRef.current = objectUrl;
     setReplacementSource(source);
@@ -207,11 +263,14 @@ export function ImageAnnotationEditor({
       y: annotation.y + canvasResizePreview.annotationShiftY,
     })) as ImageAnnotation[]
     : state.annotations;
-  const effectiveAnnotations = dragPreview
+  const movedAnnotations = dragPreview
     ? positionedAnnotations.map((annotation) => annotation.id === dragPreview.id
       ? { ...annotation, x: dragPreview.x, y: dragPreview.y }
       : annotation) as ImageAnnotation[]
     : positionedAnnotations;
+  const effectiveAnnotations = drawingPreview && drawingRef.current?.tool !== "crop"
+    ? [...movedAnnotations, drawingPreview]
+    : movedAnnotations;
   const positionedSelected = selected && canvasResizePreview
     ? { ...selected, x: selected.x + canvasResizePreview.annotationShiftX, y: selected.y + canvasResizePreview.annotationShiftY }
     : selected;
@@ -232,7 +291,7 @@ export function ImageAnnotationEditor({
       if (!context) return;
       context.drawImage(image, displayGeometry.imageX, displayGeometry.imageY);
       drawImageAnnotations(context, effectiveAnnotations);
-      if (!selected && tool !== "select" && cursor) {
+      if (!selected && (["frame", "ellipse", "arrow", "mask", "label"] as Tool[]).includes(tool) && cursor) {
         context.save();
         context.globalAlpha = 0.62;
         drawImageAnnotations(context, [makeAnnotation(cursor.x, cursor.y)]);
@@ -246,6 +305,14 @@ export function ImageAnnotationEditor({
         context.strokeRect(effectiveSelected.x, effectiveSelected.y, effectiveSelected.width, effectiveSelected.height);
         context.restore();
       }
+      if (drawingPreview && drawingRef.current?.tool === "crop") {
+        context.save();
+        context.strokeStyle = "#38bdf8";
+        context.lineWidth = Math.max(2, canvas.width / 500);
+        context.setLineDash([10, 6]);
+        context.strokeRect(drawingPreview.x, drawingPreview.y, drawingPreview.width, drawingPreview.height);
+        context.restore();
+      }
       lastRenderError.current = null;
     } catch (error) {
       const message = String(error);
@@ -256,7 +323,7 @@ export function ImageAnnotationEditor({
     }
   };
 
-  useEffect(render, [state.annotations, state.selectedId, loadedVersion, canvasGeometry, canvasResizePreview, cursor, dragPreview, tool, width, height, lineWidth, color, arrowDirection, maskStyle, labelText, textColor, backgroundColor, fontSize]);
+  useEffect(render, [state.annotations, state.selectedId, loadedVersion, canvasGeometry, canvasResizePreview, cursor, dragPreview, drawingPreview, tool, width, height, lineWidth, color, arrowDirection, maskStyle, labelText, textColor, backgroundColor, fontSize]);
 
   useEffect(() => {
     if (imageVersion === acceptedVersionRef.current) return;
@@ -330,22 +397,24 @@ export function ImageAnnotationEditor({
         dispatch({ type: "commitSelection" });
       } else if (event.key === "Delete" && !editingText) {
         event.preventDefault();
+        if (selected) recordEdit();
         dispatch({ type: "delete" });
       } else if (event.ctrlKey && event.key.toLowerCase() === "x" && !editingText && selected) {
         event.preventDefault();
         setClipboard({ ...selected });
+        recordEdit();
         dispatch({ type: "delete" });
       } else if (event.ctrlKey && event.key.toLowerCase() === "z") {
         event.preventDefault();
-        dispatch({ type: event.shiftKey ? "redo" : "undo" });
+        if (event.shiftKey) redoEdit(); else undoEdit();
       } else if (event.ctrlKey && event.key.toLowerCase() === "y") {
         event.preventDefault();
-        dispatch({ type: "redo" });
+        redoEdit();
       }
     };
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
-  }, [contextMenu, onCancel, selected, state.selectedId]);
+  }, [canvasGeometry, contextMenu, onCancel, redoSnapshots, replacementLabel, replacementSource, selected, state.annotations, state.selectedId, undoSnapshots]);
 
   const imagePoint = (event: Pick<React.PointerEvent<HTMLCanvasElement>, "clientX" | "clientY" | "currentTarget">) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -355,10 +424,54 @@ export function ImageAnnotationEditor({
     };
   };
 
+  const gestureAnnotation = (gesture: DrawingGesture, point: StrokePoint): ImageAnnotation => {
+    const points = gesture.tool === "line" || gesture.tool === "crop" ? [gesture.start, point] : [...gesture.points, point];
+    const xs = points.map((candidate) => candidate.x);
+    const ys = points.map((candidate) => candidate.y);
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    const gestureWidth = Math.max(1, Math.max(...xs) - x);
+    const gestureHeight = Math.max(1, Math.max(...ys) - y);
+    if (gesture.tool === "line") return {
+      id: newAnnotationId(), type: "line", x, y, width: gestureWidth, height: gestureHeight,
+      color, lineWidth, reverse: (point.x - gesture.start.x) * (point.y - gesture.start.y) < 0,
+    };
+    if (gesture.tool === "crop") return {
+      id: "crop-preview", type: "frame", x, y, width: gestureWidth, height: gestureHeight,
+      color: "#38bdf8", lineWidth: 2,
+    };
+    return {
+      id: newAnnotationId(), type: "stroke", mode: gesture.tool, x, y,
+      width: gestureWidth, height: gestureHeight, color,
+      lineWidth: gesture.tool === "pencil" ? Math.max(1, Math.min(4, lineWidth)) : lineWidth,
+      points,
+    };
+  };
+
   const beginCanvasInteraction = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (event.button !== 0) return;
     setContextMenu(null);
     const point = imagePoint(event);
+    if (tool === "eyedropper") {
+      const pixel = event.currentTarget.getContext("2d")?.getImageData(Math.floor(point.x), Math.floor(point.y), 1, 1).data;
+      if (pixel) setColor(`#${[pixel[0], pixel[1], pixel[2]].map((value) => value.toString(16).padStart(2, "0")).join("")}`);
+      return;
+    }
+    if (tool === "fill") {
+      recordEdit();
+      dispatch({
+        type: "place",
+        annotation: { id: newAnnotationId(), type: "fill", x: point.x, y: point.y, width: 1, height: 1, color, tolerance: 24 },
+        bounds: imageBounds(),
+      });
+      return;
+    }
+    if (tool === "pencil" || tool === "brush" || tool === "eraser" || tool === "line" || tool === "crop") {
+      drawingRef.current = { tool, pointerId: event.pointerId, start: point, points: [point] };
+      setDrawingPreview(gestureAnnotation(drawingRef.current, point));
+      event.currentTarget.setPointerCapture(event.pointerId);
+      return;
+    }
     const hit = hitTestAnnotation(state.annotations, point.x, point.y);
     const beginDrag = (annotation: ImageAnnotation) => {
       dragRef.current = {
@@ -388,6 +501,7 @@ export function ImageAnnotationEditor({
       dispatch({ type: "commitSelection" });
       return;
     }
+    recordEdit();
     dispatch({
       type: "place",
       annotation: makeAnnotation(point.x, point.y),
@@ -398,6 +512,12 @@ export function ImageAnnotationEditor({
   const moveCanvasPointer = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const point = imagePoint(event);
     setCursor(point);
+    const drawing = drawingRef.current;
+    if (drawing?.pointerId === event.pointerId) {
+      if (drawing.tool === "pencil" || drawing.tool === "brush" || drawing.tool === "eraser") drawing.points.push(point);
+      setDrawingPreview(gestureAnnotation(drawing, point));
+      return;
+    }
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     const annotation = state.annotations.find((item) => item.id === drag.id);
@@ -410,9 +530,32 @@ export function ImageAnnotationEditor({
   };
 
   const finishCanvasInteraction = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const drawing = drawingRef.current;
+    if (drawing?.pointerId === event.pointerId) {
+      const point = imagePoint(event);
+      const annotation = gestureAnnotation(drawing, point);
+      recordEdit();
+      if (drawing.tool === "crop") {
+        const next = {
+          width: Math.max(1, Math.round(annotation.width)),
+          height: Math.max(1, Math.round(annotation.height)),
+          imageX: canvasGeometry.imageX - annotation.x,
+          imageY: canvasGeometry.imageY - annotation.y,
+        };
+        setCanvasGeometry(next);
+        dispatch({ type: "translateAll", x: -annotation.x, y: -annotation.y });
+      } else {
+        dispatch({ type: "place", annotation, bounds: imageBounds() });
+      }
+      drawingRef.current = null;
+      setDrawingPreview(null);
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+      return;
+    }
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (dragPreview) {
+      recordEdit();
       dispatch({
         type: "update",
         id: drag.id,
@@ -440,13 +583,24 @@ export function ImageAnnotationEditor({
       const blob = await new Promise<Blob>((resolve, reject) =>
         output.toBlob((value) => value ? resolve(value) : reject(new Error("画像をPNGへ変換できません。")), "image/png"),
       );
-      const result = await saveRenderedImage({
-        path: target.fullPath,
-        pngBytes: [...new Uint8Array(await blob.arrayBuffer())],
-        expectedSourceWidth: originalSourceSizeRef.current?.width ?? image.naturalWidth,
-        expectedSourceHeight: originalSourceSizeRef.current?.height ?? image.naturalHeight,
-      });
-      onApply(target.filename, result.backup_available);
+      if (target.storage === "embedded") {
+        const dataUri = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Data URIを生成できません。"));
+          reader.onerror = () => reject(reader.error ?? new Error("Data URIを生成できません。"));
+          reader.readAsDataURL(blob);
+        });
+        onApply({ filename: target.filename, backupAvailable: false, dataUri });
+      } else {
+        if (!target.fullPath) throw new Error("外部画像のパスがありません。");
+        const result = await saveRenderedImage({
+          path: target.fullPath,
+          pngBytes: [...new Uint8Array(await blob.arrayBuffer())],
+          expectedSourceWidth: originalSourceSizeRef.current?.width ?? image.naturalWidth,
+          expectedSourceHeight: originalSourceSizeRef.current?.height ?? image.naturalHeight,
+        });
+        onApply({ filename: target.filename, backupAvailable: result.backup_available });
+      }
     } catch (error) {
       onError(`画像編集の保存に失敗しました: ${String(error)}`);
     } finally {
@@ -455,7 +609,15 @@ export function ImageAnnotationEditor({
   };
 
   const updateSelected = (changes: Record<string, string | number>) => {
-    if (selected) dispatch({ type: "update", changes, bounds: imageBounds() });
+    if (selected) {
+      recordEdit();
+      dispatch({ type: "update", changes, bounds: imageBounds() });
+    }
+  };
+  const resizeSelected = (axis: "width" | "height", delta: number) => {
+    if (!selected || !Number.isFinite(delta) || delta === 0) return;
+    recordEdit();
+    dispatch({ type: "resizeSelected", axis, delta, bounds: imageBounds() });
   };
 
   const updateFontSize = (value: number) => {
@@ -472,7 +634,7 @@ export function ImageAnnotationEditor({
   };
 
   const setActiveColor = (nextColor: string) => {
-    if (selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "arrow" || selected?.type === "mask") {
+    if (selected && "color" in selected) {
       updateSelected({ color: nextColor });
     } else if (selected?.type === "label") {
       updateSelected({ backgroundColor: nextColor });
@@ -499,6 +661,7 @@ export function ImageAnnotationEditor({
     const annotation = state.annotations.find((item) => item.id === contextMenu?.targetId);
     if (annotation) {
       setClipboard({ ...annotation });
+      recordEdit();
       dispatch({ type: "delete", id: annotation.id });
     }
     setContextMenu(null);
@@ -511,6 +674,7 @@ export function ImageAnnotationEditor({
       x: contextMenu.imageX - clipboard.width / 2,
       y: contextMenu.imageY - clipboard.height / 2,
     } as ImageAnnotation;
+    recordEdit();
     dispatch({
       type: "place",
       annotation: duplicateImageAnnotation(positioned, newAnnotationId(), 0, imageBounds()),
@@ -520,6 +684,7 @@ export function ImageAnnotationEditor({
   };
 
   const commitCanvasResize = (resize: ImageCanvasResize) => {
+    recordEdit();
     setCanvasGeometry(resize.geometry);
     if (resize.annotationShiftX !== 0 || resize.annotationShiftY !== 0) {
       dispatch({ type: "translateAll", x: resize.annotationShiftX, y: resize.annotationShiftY });
@@ -567,7 +732,50 @@ export function ImageAnnotationEditor({
     if (resize) commitCanvasResize(resize);
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
-  const originalImageSource = `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`;
+  const bakeCanvas = (kind: "rotate-left" | "rotate-right" | "flip-horizontal" | "flip-vertical" | "resize") => {
+    const source = canvasRef.current;
+    if (!source || source.width < 1 || source.height < 1) return;
+    const rotated = kind === "rotate-left" || kind === "rotate-right";
+    const output = document.createElement("canvas");
+    output.width = kind === "resize" ? Math.max(1, Math.round(resizeDimensions.width)) : rotated ? source.height : source.width;
+    output.height = kind === "resize" ? Math.max(1, Math.round(resizeDimensions.height)) : rotated ? source.width : source.height;
+    const context = output.getContext("2d");
+    if (!context) return;
+    recordEdit();
+    if (kind === "resize") context.drawImage(source, 0, 0, output.width, output.height);
+    else {
+      context.translate(output.width / 2, output.height / 2);
+      if (kind === "rotate-left") context.rotate(-Math.PI / 2);
+      if (kind === "rotate-right") context.rotate(Math.PI / 2);
+      if (kind === "flip-horizontal") context.scale(-1, 1);
+      if (kind === "flip-vertical") context.scale(1, -1);
+      context.drawImage(source, -source.width / 2, -source.height / 2);
+    }
+    const sourceUrl = output.toDataURL("image/png");
+    releaseReplacementObjectUrl();
+    displayedImageSizeRef.current = { width: output.width, height: output.height };
+    setCanvasGeometry({ width: output.width, height: output.height, imageX: 0, imageY: 0 });
+    setResizeDimensions({ width: output.width, height: output.height });
+    setReplacementSource(sourceUrl);
+    setReplacementLabel("編集済み画像");
+    dispatch({ type: "reset" });
+  };
+  const resetEdits = () => {
+    recordEdit();
+    releaseReplacementObjectUrl();
+    setReplacementSource(null);
+    setReplacementLabel(null);
+    const original = originalSourceSizeRef.current;
+    if (original) {
+      displayedImageSizeRef.current = original;
+      setCanvasGeometry({ ...original, imageX: 0, imageY: 0 });
+      setResizeDimensions(original);
+    }
+    dispatch({ type: "reset" });
+  };
+  const originalImageSource = target.storage === "embedded"
+    ? target.rawSrc
+    : `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`;
   const imageSource = replacementSource ?? originalImageSource;
   const canvasStyle = displayGeometry.width > 0
     ? { width: `${displayGeometry.width}px`, height: `${displayGeometry.height}px` }
@@ -577,8 +785,9 @@ export function ImageAnnotationEditor({
     <header className="annotation-editor__header">
       <strong>画像編集: {target.filename}</strong>
       <div className="annotation-editor__header-actions">
-        <button type="button" disabled={state.undoStack.length === 0} onClick={() => dispatch({ type: "undo" })}>元に戻す</button>
-        <button type="button" disabled={state.redoStack.length === 0} onClick={() => dispatch({ type: "redo" })}>やり直す</button>
+        <button type="button" disabled={undoSnapshots.length === 0} onClick={undoEdit}>元に戻す</button>
+        <button type="button" disabled={redoSnapshots.length === 0} onClick={redoEdit}>やり直す</button>
+        <button type="button" disabled={saving || !dirty} onClick={resetEdits}>編集をリセット</button>
         <button type="button" disabled={saving || !hasOutputChanges} onClick={() => void apply()}>{saving ? "保存中…" : "適用"}</button>
         <button type="button" disabled={saving} onClick={onCancel}>閉じる</button>
       </div>
@@ -587,11 +796,18 @@ export function ImageAnnotationEditor({
     <nav className="annotation-editor__toolbar" aria-label="画像編集ツール">
       {([
         ["select", "選択"],
+        ["pencil", "鉛筆"],
+        ["brush", "ブラシ"],
+        ["eraser", "消しゴム"],
+        ["fill", "塗りつぶし"],
+        ["eyedropper", "スポイト"],
+        ["line", "線"],
         ["frame", "四角"],
         ["ellipse", "楕円"],
         ["arrow", "矢印"],
         ["mask", "マスク"],
         ["label", "ラベル"],
+        ["crop", "切り抜き"],
       ] as const).map(([value, label]) => <button
         key={value}
         type="button"
@@ -605,7 +821,7 @@ export function ImageAnnotationEditor({
           ? <svg viewBox="0 0 24 24"><path d="M5 3l13 9-6 1.4 3.8 6.1-2.7 1.6-3.7-6.2L5 19V3z" /></svg>
           : value === "arrow"
             ? <svg viewBox="0 0 24 24"><path d="M4 12h14m-5-5 5 5-5 5" /></svg>
-            : value === "frame" ? "□" : value === "ellipse" ? "○" : value === "mask" ? "▦" : "A"}</span>{label}</button>)}
+            : value === "frame" ? "□" : value === "ellipse" ? "○" : value === "mask" ? "▦" : value === "label" ? "A" : value === "pencil" ? "✎" : value === "brush" ? "▰" : value === "eraser" ? "◇" : value === "fill" ? "▾" : value === "eyedropper" ? "◉" : value === "line" ? "╱" : "⌗"}</span>{label}</button>)}
     </nav>
 
     <aside className="annotation-editor__tools">
@@ -613,18 +829,23 @@ export function ImageAnnotationEditor({
         <h2>{selected ? "選択アイテム" : "スタンプサイズ"}</h2>
         <div className="annotation-editor__fields">
           <label>幅<input type="number" min="1" step="2" value={Math.round(selected?.width ?? width)} onChange={(event) => selected
-            ? dispatch({ type: "resizeSelected", axis: "width", delta: Number(event.target.value) - selected.width, bounds: imageBounds() })
+            ? resizeSelected("width", Number(event.target.value) - selected.width)
             : setWidth(Math.max(1, Number(event.target.value)))} /></label>
           <label>高さ<input type="number" min="1" step="2" value={Math.round(selected?.height ?? height)} onChange={(event) => selected
-            ? dispatch({ type: "resizeSelected", axis: "height", delta: Number(event.target.value) - selected.height, bounds: imageBounds() })
+            ? resizeSelected("height", Number(event.target.value) - selected.height)
             : setHeight(Math.max(1, Number(event.target.value)))} /></label>
         </div>
         <p className="annotation-editor__hint">ホイール: 高さ　Shift+ホイール: 幅<br />選択中: 拡縮、ドラッグ移動</p>
       </section>
 
-      {(activeKind === "frame" || activeKind === "ellipse" || activeKind === "arrow") && <section>
+      {(activeKind === "frame" || activeKind === "ellipse" || activeKind === "arrow" || activeKind === "line" || activeKind === "stroke") && <section>
         <h2>線</h2>
-        <label>線幅<input type="number" min="1" value={selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "arrow" ? selected.lineWidth : lineWidth} onChange={(event) => selected?.type === "frame" || selected?.type === "ellipse" || selected?.type === "arrow" ? updateSelected({ lineWidth: Number(event.target.value) }) : setLineWidth(Math.max(1, Number(event.target.value)))} /></label>
+        <label>線幅<input type="number" min="1" value={selected && "lineWidth" in selected ? selected.lineWidth : lineWidth} onChange={(event) => selected && "lineWidth" in selected ? updateSelected({ lineWidth: Number(event.target.value) }) : setLineWidth(Math.max(1, Number(event.target.value)))} /></label>
+      </section>}
+
+      {(["pencil", "brush", "eraser", "line"] as Tool[]).includes(tool) && !selected && <section>
+        <h2>描画</h2>
+        <label>太さ<input type="number" min="1" max="200" value={lineWidth} onChange={(event) => setLineWidth(Math.max(1, Number(event.target.value)))} /></label>
       </section>}
 
       {activeKind === "arrow" && <section>
@@ -668,6 +889,25 @@ export function ImageAnnotationEditor({
           </label>
         </div>
       </section>}
+
+      <section>
+        <h2>回転・反転</h2>
+        <div className="annotation-editor__transform-actions">
+          <button type="button" onClick={() => bakeCanvas("rotate-left")}>左へ90°回転</button>
+          <button type="button" onClick={() => bakeCanvas("rotate-right")}>右へ90°回転</button>
+          <button type="button" onClick={() => bakeCanvas("flip-horizontal")}>左右反転</button>
+          <button type="button" onClick={() => bakeCanvas("flip-vertical")}>上下反転</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>画像サイズ変更</h2>
+        <div className="annotation-editor__fields">
+          <label>幅 (px)<input type="number" min="1" value={resizeDimensions.width} onChange={(event) => setResizeDimensions((current) => ({ ...current, width: Math.max(1, Number(event.target.value)) }))} /></label>
+          <label>高さ (px)<input type="number" min="1" value={resizeDimensions.height} onChange={(event) => setResizeDimensions((current) => ({ ...current, height: Math.max(1, Number(event.target.value)) }))} /></label>
+        </div>
+        <button type="button" onClick={() => bakeCanvas("resize")}>画像をリサイズ</button>
+      </section>
 
       <section>
         <h2>画像差し替え</h2>
@@ -737,6 +977,7 @@ export function ImageAnnotationEditor({
           if (!originalSourceSizeRef.current) {
             originalSourceSizeRef.current = size;
             displayedImageSizeRef.current = size;
+            setResizeDimensions(size);
             setCanvasGeometry({ ...size, imageX: 0, imageY: 0 });
           } else if (replacementSource) {
             const previous = displayedImageSizeRef.current ?? originalSourceSizeRef.current;
@@ -745,6 +986,7 @@ export function ImageAnnotationEditor({
             const right = canvasGeometry.width - left - previous.width;
             const bottom = canvasGeometry.height - top - previous.height;
             displayedImageSizeRef.current = size;
+            setResizeDimensions(size);
             setCanvasGeometry({
               width: Math.max(1, Math.round(size.width + left + right)),
               height: Math.max(1, Math.round(size.height + top + bottom)),
@@ -776,7 +1018,9 @@ export function ImageAnnotationEditor({
             onPointerUp={finishCanvasInteraction}
             onPointerCancel={(event) => {
               dragRef.current = null;
+              drawingRef.current = null;
               setDragPreview(null);
+              setDrawingPreview(null);
               if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
             }}
             onWheel={(event) => {
@@ -787,7 +1031,7 @@ export function ImageAnnotationEditor({
               if (deltaPixels === 0) return;
               const delta = deltaPixels < 0 ? 2 : -2;
               if (selected) {
-                dispatch({ type: "resizeSelected", axis: event.shiftKey ? "width" : "height", delta, bounds: imageBounds() });
+                resizeSelected(event.shiftKey ? "width" : "height", delta);
               } else if (event.shiftKey) {
                 setWidth((current) => Math.max(1, Math.min(maximumWidth, current + delta)));
               } else {
@@ -833,7 +1077,10 @@ export function ImageAnnotationEditor({
       <button type="button" role="menuitem" disabled={!clipboard} onClick={pasteContextTarget}>貼り付け</button>
       <div role="separator" />
       <button type="button" role="menuitem" className="is-danger" disabled={!contextMenu.targetId} onClick={() => {
-        if (contextMenu.targetId) dispatch({ type: "delete", id: contextMenu.targetId });
+        if (contextMenu.targetId) {
+          recordEdit();
+          dispatch({ type: "delete", id: contextMenu.targetId });
+        }
         setContextMenu(null);
       }}>削除</button>
     </div>}
@@ -851,6 +1098,8 @@ export function ImageAnnotationEditor({
         setCanvasGeometry({ width: 0, height: 0, imageX: 0, imageY: 0 });
         setLoadedVersion(imageVersion);
         dispatch({ type: "reset" });
+        setUndoSnapshots([]);
+        setRedoSnapshots([]);
       }}>外部変更を読み込む</button>
       <button type="button" onClick={() => {
         acceptedVersionRef.current = imageVersion;

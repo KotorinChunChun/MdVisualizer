@@ -21,6 +21,7 @@ export interface ImageEditContext {
 export interface MediaPreviewTarget {
   content: MediaPreviewContent;
   cropTarget?: import("../hooks/useCropEditor").CropTarget | null;
+  editTarget?: import("../hooks/useCropEditor").ImageEditTarget | null;
   mermaidSource?: string;
   imageContext?: ImageEditContext;
   conversionContext?: AssetConversionContext;

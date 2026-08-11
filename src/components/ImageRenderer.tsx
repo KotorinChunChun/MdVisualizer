@@ -71,6 +71,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     src.toLowerCase().startsWith("file:") ||
     src.startsWith("//");
   const isSupportedRaster = /\.(?:png|jpe?g|gif|webp|bmp)(?:[?#]|$)/i.test(src);
+  const isEmbeddedRaster = /^data:image\/(?:png|jpe?g|gif|webp|bmp);base64,/i.test(src);
   // SVG is display-only until a dedicated vector editing design is approved.
   const isEditableLocalImage = !previewSrc && !isRemote && isSupportedRaster;
   const canInlineResize = isEditableLocalImage && !presentationMode && !headingMode;
@@ -108,9 +109,20 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       fullPath,
       filename: getFileName(fullPath),
     } : null;
+    const editTarget = cropTarget
+      ? { ...cropTarget, storage: "external" as const, conversionContext }
+      : isEmbeddedRaster && conversionContext
+        ? {
+          rawSrc: displaySrc,
+          filename: `${alt.trim() || "image"}.png`,
+          storage: "embedded" as const,
+          conversionContext,
+        }
+        : null;
     onMediaOpen?.({
       content: { kind: "image", src: displaySrc, alt },
       cropTarget,
+      editTarget,
       imageContext: cropTarget && markdownPath && sourceOffset !== undefined ? {
         markdownPath,
         imagePath: fullPath,
