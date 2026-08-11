@@ -18,6 +18,9 @@ import type { ImageSize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { imageOccurrenceId } from "../lib/imageOccurrences";
 import { remarkObsidianImages } from "../lib/remarkObsidianImages";
+import { DelimitedTableBlock } from "./DelimitedTableBlock";
+import { isDelimitedTableLanguage } from "../lib/delimitedTable";
+import { collectEditableMarkdownOccurrences, type CodeFenceOccurrence } from "../lib/markdownOccurrences";
 
 type MarkdownNode = {
   type?: string;
@@ -70,6 +73,7 @@ interface MarkdownPreviewProps {
   documentPath?: string;
   sourcePath?: string;
   onCodeHighlightComplete?: () => void;
+  onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
 }
 
 interface MarkdownRenderContextValue {
@@ -95,6 +99,8 @@ interface MarkdownRenderContextValue {
   onCodeHighlightComplete?: () => void;
   mermaidFenceOffsets: number[];
   mermaidIndexByOffset: Map<number, number>;
+  codeFenceByOffset: Map<number, CodeFenceOccurrence>;
+  onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
 }
 
 const MarkdownRenderContext = React.createContext<MarkdownRenderContextValue | null>(null);
@@ -117,6 +123,16 @@ const MarkdownSection: NonNullable<Components["section"]> = ({ node, children })
 
 const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, children, ...props }) => {
   const context = useMarkdownRenderContext();
+  const language = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
+  if (isDelimitedTableLanguage(language)) {
+    const sourceOffset = node?.position?.start.offset;
+    const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
+    return <DelimitedTableBlock
+      language={language}
+      source={String(children ?? "").replace(/\n$/, "")}
+      onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
+    />;
+  }
   if (className?.toLowerCase().includes("language-mermaid")) {
     const sourceOffset = node?.position?.start.offset;
     const diagramIndex = sourceOffset === undefined ? 0 : context.mermaidIndexByOffset.get(sourceOffset) ?? 0;
@@ -211,12 +227,18 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   documentPath,
   sourcePath,
   onCodeHighlightComplete,
+  onCodeFenceBodyChange,
 }) => {
   const mermaidFenceOffsets = React.useMemo(() => collectMermaidFenceOffsets(content), [content]);
   const mermaidIndexByOffset = React.useMemo(
     () => new Map(mermaidFenceOffsets.map((offset, index) => [offset, index])),
     [mermaidFenceOffsets],
   );
+  const codeFenceByOffset = React.useMemo(() => new Map(
+    collectEditableMarkdownOccurrences(content)
+      .filter((occurrence): occurrence is CodeFenceOccurrence => occurrence.kind === "code-fence")
+      .map((occurrence) => [occurrence.start, occurrence]),
+  ), [content]);
   const renderContext = React.useMemo<MarkdownRenderContextValue>(() => ({
     baseDir,
     imageVersions,
@@ -240,10 +262,12 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     onCodeHighlightComplete,
     mermaidFenceOffsets,
     mermaidIndexByOffset,
+    codeFenceByOffset,
+    onCodeFenceBodyChange,
   }), [
-    baseDir, documentPath, foldState, imageDisplaySizes, imageVersions, mermaidFenceOffsets,
+    baseDir, codeFenceByOffset, documentPath, foldState, imageDisplaySizes, imageVersions, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onCodeFenceBodyChange, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
     onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, tabId, theme, windowId,
   ]);
 

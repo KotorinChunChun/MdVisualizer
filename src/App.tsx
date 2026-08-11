@@ -33,6 +33,7 @@ import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
+import { replaceCodeFenceBody, type CodeFenceOccurrence } from "./lib/markdownOccurrences";
 import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
@@ -904,6 +905,20 @@ export function App() {
     dispatch({ type: "EDITOR_MODE", id: tab.id, mode });
   }, []);
 
+  const updateCodeFenceBody = useCallback((occurrence: CodeFenceOccurrence, body: string): boolean => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return false;
+    try {
+      const content = replaceCodeFenceBody(tab.draft, occurrence, body);
+      dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+      setToast({ id: crypto.randomUUID(), message: "表の変更をMarkdownドラフトへ反映しました", type: "success" });
+      return true;
+    } catch (error) {
+      setToast({ id: crypto.randomUUID(), message: error instanceof Error ? error.message : String(error), type: "error" });
+      return false;
+    }
+  }, []);
+
   const openSearch = useCallback(() => {
     if (activeTab?.document) {
       panelBeforeSearchRef.current[activeTab.id] = documentPanelsRef.current[activeTab.id] ?? null;
@@ -1299,6 +1314,7 @@ export function App() {
             documentPath={activeSharePoint ? undefined : activeTab.path}
             sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
+            onCodeFenceBodyChange={activeSharePoint ? undefined : updateCodeFenceBody}
           />
         ) : (
           <div className="empty-state">
