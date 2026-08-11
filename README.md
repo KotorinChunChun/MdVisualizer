@@ -132,7 +132,7 @@ Obsidian画像は`![[images/photo.png]]`と`[[images/photo.png]]`の両方を表
 `samples/all-markdown.md`、ローカル文書リンクは `samples/local-links.md`、Mermaid
 各種は `samples/mermaid-gallery.md`、階層プレゼンは
 `samples/presentation-hierarchy.md` を開いてください。v0.0.5で追加した検索・目次・倍率・別窓・VS Code連携は
-`samples/v0.0.5-ui-workflow.md`、Obsidian画像とalt配置は`samples/v0.0.5-obsidian-images.md`で確認できます。v0.0.6の引用・印刷表示は`samples/v0.0.6-markdown-presentation.md`、v0.0.7の単一パネル・コード配色・PowerShell確認実行・印刷設定は`samples/v0.0.7-customization.md`で確認できます。
+`samples/ui-workflow.md`、Obsidian画像とalt配置は`samples/obsidian-images.md`で確認できます。v0.0.6の引用・印刷表示は`samples/markdown-presentation.md`、v0.0.7の単一パネル・コード配色・PowerShell確認実行・印刷設定は`samples/customization.md`で確認できます。
 
 ## ショートカット
 

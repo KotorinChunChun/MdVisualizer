@@ -15,10 +15,10 @@
 | [ローカルMarkdownリンク](local-links.md) | 相対リンク、URLエンコード、外部リンク |
 | [リンク先ドキュメント](linked-document.md) | ローカルリンクの遷移先とアンカー |
 | [階層型プレゼン](presentation-hierarchy.md) | 見出し階層、パンくず、画像ポップアップ |
-| [v0.0.5 UI・ウィンドウ連携](v0.0.5-ui-workflow.md) | 検索、目次、倍率、別窓、VS Code連携 |
-| [v0.0.5 Obsidian画像](v0.0.5-obsidian-images.md) | Obsidian画像記法、画像一覧、altキャプション |
-| [v0.0.6 Markdown／プレゼン印刷](v0.0.6-markdown-presentation.md) | 引用、水平線、見出し罫線、印刷 |
-| [v0.0.7 カスタマイズ](v0.0.7-customization.md) | サイドパネル、配色、確認実行、印刷設定 |
+| [v0.0.5 UI・ウィンドウ連携](ui-workflow.md) | 検索、目次、倍率、別窓、VS Code連携 |
+| [v0.0.5 Obsidian画像](obsidian-images.md) | Obsidian画像記法、画像一覧、altキャプション |
+| [v0.0.6 Markdown／プレゼン印刷](markdown-presentation.md) | 引用、水平線、見出し罫線、印刷 |
+| [v0.0.7 カスタマイズ](customization.md) | サイドパネル、配色、確認実行、印刷設定 |
 | [サンプル集README](README.md) | 各ファイルの用途一覧 |
 
 ---

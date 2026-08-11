@@ -43,7 +43,7 @@ VS Codeワークスペース推定をまとめて確認するためのサンプ�
 このファイルは`MarkdownViewer/samples`にあります。VS Code連携では上位の`.git`を探索し、
 `MarkdownViewer`をワークスペースとして開くことが期待結果です。
 
-[Obsidian画像・alt配置の確認へ](v0.0.5-obsidian-images.md)
+[Obsidian画像・alt配置の確認へ](obsidian-images.md)
 
 回帰確認キーワードの5件目です。
 

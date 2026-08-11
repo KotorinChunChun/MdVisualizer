@@ -20,7 +20,7 @@ console.log(message);
 次のボタンはクリックしただけでは実行されません。確認画面のコード、作業フォルダー、制限を確認してから実行します。
 
 ```pwsh
-Write-Output "MarkdownViewer v0.0.7"
+Write-Output "MarkdownViewer v0.0.8"
 Get-Location
 ```
 
