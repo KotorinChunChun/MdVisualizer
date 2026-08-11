@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import rehypeRaw from "rehype-raw";
 import { ImageRenderer } from "./ImageRenderer";
-import { FoldSection } from "./FoldSection";
+import { FoldSection, useIsFoldHeading } from "./FoldSection";
 import { rehypeFoldSections } from "../lib/foldSections";
 import { rehypeBlockAnchors } from "../lib/blockAnchors";
 import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
@@ -161,6 +161,7 @@ const MarkdownLink: NonNullable<Components["a"]> = ({ href, children, ...props }
 
 const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
   const context = useMarkdownRenderContext();
+  const headingMode = useIsFoldHeading();
   const isObsidianImage = node?.properties?.["data-obsidian-image"] === "true";
   return <ImageRenderer
     src={src}
@@ -170,6 +171,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
     displaySize={src ? context.imageDisplaySizes[src] : undefined}
     onDisplaySizeChange={src ? (size) => context.onImageDisplaySizeChange?.(src, size) : undefined}
     presentationMode={context.presentationMode}
+    headingMode={headingMode}
     onMediaOpen={context.onMediaOpen}
     occurrenceId={imageOccurrenceId(node?.position?.start.offset ?? 0)}
     sourceLine={node?.position?.start.line}

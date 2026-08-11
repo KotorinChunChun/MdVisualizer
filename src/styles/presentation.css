@@ -84,6 +84,32 @@
   cursor: zoom-in;
 }
 
+.presentation-stage .markdown-body :is(h1, h2, h3, h4, h5, h6) .inline-image-resize.is-presentation {
+  display: inline-flex;
+  width: auto;
+  height: 1em;
+  max-height: 1em;
+  vertical-align: -0.125em;
+}
+
+.presentation-stage .markdown-body :is(h1, h2, h3, h4, h5, h6) .inline-image-resize__stage {
+  display: inline-flex;
+  width: auto;
+  height: 1em;
+  max-height: 1em;
+}
+
+.presentation-stage .markdown-body :is(h1, h2, h3, h4, h5, h6) .markdown-img {
+  width: auto;
+  height: 1em;
+  max-height: 1em;
+  object-fit: contain;
+}
+
+.presentation-stage .markdown-body :is(h1, h2, h3, h4, h5, h6) .inline-image-resize__caption {
+  display: none;
+}
+
 .presentation-children {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));

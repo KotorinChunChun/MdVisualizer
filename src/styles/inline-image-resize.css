@@ -39,6 +39,29 @@
   object-fit: contain;
 }
 
+.markdown-body .inline-image-resize.is-heading {
+  display: inline-flex;
+  width: auto;
+  height: 1em;
+  max-height: 1em;
+  vertical-align: -0.125em;
+}
+
+.markdown-body .inline-image-resize.is-heading .inline-image-resize__stage {
+  display: inline-flex;
+  width: auto;
+  height: 1em;
+  max-height: 1em;
+}
+
+.markdown-body .inline-image-resize.is-heading .inline-image-resize__stage > img.markdown-img.inline-image-resize__image {
+  width: auto;
+  height: 1em;
+  max-width: 100%;
+  max-height: 1em;
+  object-fit: contain;
+}
+
 .markdown-img.inline-image-resize__image.croppable:hover {
   transform: none;
   box-shadow: none;

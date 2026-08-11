@@ -75,6 +75,14 @@ describe("ImageRenderer inline resize", () => {
     expect(stage.querySelector(".inline-image-resize__overlay")).not.toBeNull();
   });
 
+  it("uses compact heading presentation without a visible caption or resize controls", () => {
+    const { container } = render(<div className="markdown-body"><ImageRenderer src="logo.png" alt="ロゴ" baseDir="C:\\docs" imageVersions={{}} headingMode /></div>);
+    expect(screen.getByAltText("ロゴ")).not.toBeNull();
+    expect(container.querySelector(".inline-image-resize.is-heading")).not.toBeNull();
+    expect(container.querySelector(".inline-image-resize__caption")).toBeNull();
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+
   it("passes editable Markdown occurrence metadata to the preview", () => {
     const onMediaOpen = vi.fn();
     render(<ImageRenderer

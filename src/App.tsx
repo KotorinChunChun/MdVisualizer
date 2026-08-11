@@ -66,6 +66,13 @@ export function documentLinkTarget(target: EventTarget | null): string | null {
   return link.getAttribute("href");
 }
 
+export function tocHeadingIdAtPointer(target: Element | null, markdownRoot: HTMLElement | null): string | null {
+  if (!target || !markdownRoot || !markdownRoot.contains(target)) return null;
+  const heading = target.closest<HTMLElement>("h1, h2, h3, h4, h5, h6");
+  if (!heading || !markdownRoot.contains(heading)) return null;
+  return heading.closest<HTMLElement>("[data-fold-id]")?.dataset.foldId ?? null;
+}
+
 export function resolveDocumentSidePanel(searchOpen: boolean, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): DocumentSidePanelTab | null {
   if (searchOpen) return "search";
   return requestedPanel;
@@ -625,16 +632,13 @@ export function App() {
 
   const handlePreviewPointerMove = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (viewModeRef.current === "presentation") return;
-    const target = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
-    const section = target?.closest<HTMLElement>("[data-fold-id]");
-    const headingId = section?.dataset.foldId ?? null;
-    if (!headingId) return;
-    pendingTocHeadingId.current = headingId;
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    pendingTocHeadingId.current = tocHeadingIdAtPointer(target, markdownRef.current);
     if (tocPointerFrame.current) return;
     tocPointerFrame.current = window.requestAnimationFrame(() => {
       tocPointerFrame.current = 0;
       const pending = pendingTocHeadingId.current;
-      if (pending) setActiveTocHeadingId((previous) => previous === pending ? previous : pending);
+      setActiveTocHeadingId((previous) => previous === pending ? previous : pending);
     });
   }, []);
 

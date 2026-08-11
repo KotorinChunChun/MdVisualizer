@@ -264,7 +264,8 @@ body {
 .fold-section > .fold-heading { margin-top: 1.5em; }
 .fold-toggle { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; color: inherit; font: inherit; text-align: left; background: transparent; border: 0; cursor: pointer; }
 .fold-toggle:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; border-radius: 3px; }
-.fold-chevron { width: 1em; color: var(--text-muted); font-size: 0.7em; }
+.fold-chevron { flex: 0 0 1em; width: 1em; color: var(--text-muted); font-size: 0.7em; }
+.fold-heading__content { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .fold-content { padding-left: 4px; }
 
 .markdown-body p {

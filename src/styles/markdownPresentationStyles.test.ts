@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const appCss = readFileSync(join(process.cwd(), "src/styles/app.css"), "utf8");
 const presentationCss = readFileSync(join(process.cwd(), "src/styles/presentation.css"), "utf8");
+const inlineImageCss = readFileSync(join(process.cwd(), "src/styles/inline-image-resize.css"), "utf8");
 
 function ruleBody(css: string, selector: string) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -28,6 +29,18 @@ describe("Markdown and presentation print styles", () => {
     expect(stageRule).toContain("align-items: center");
     expect(imageRule).toContain("height: auto !important");
     expect(imageRule).toContain("object-fit: contain");
+  });
+
+  it("caps heading images at the heading text height", () => {
+    const frameRule = ruleBody(inlineImageCss, ".markdown-body .inline-image-resize.is-heading");
+    const imageRule = ruleBody(inlineImageCss, ".markdown-body .inline-image-resize.is-heading .inline-image-resize__stage > img.markdown-img.inline-image-resize__image");
+    expect(frameRule).toContain("max-height: 1em");
+    expect(imageRule).toContain("height: 1em");
+    expect(imageRule).toContain("max-height: 1em");
+    const presentationImageRule = ruleBody(presentationCss, ".presentation-stage .markdown-body :is(h1, h2, h3, h4, h5, h6) .markdown-img");
+    const presentationCaptionRule = ruleBody(presentationCss, ".presentation-stage .markdown-body :is(h1, h2, h3, h4, h5, h6) .inline-image-resize__caption");
+    expect(presentationImageRule).toContain("max-height: 1em");
+    expect(presentationCaptionRule).toContain("display: none");
   });
 
   it("keeps print colors legible and prevents printed child headings from splitting", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { documentLinkTarget, focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, ZOOM_LEVELS } from "./App";
+import { documentLinkTarget, focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
 
 describe("zoom level selection", () => {
   it("normalizes persisted values to a selectable status-bar option", () => {
@@ -44,6 +44,21 @@ describe("document link focus", () => {
     expect(documentLinkTarget(nested)).toBe("../guide/next.md");
     expect(documentLinkTarget(outside)).toBeNull();
     expect(documentLinkTarget(null)).toBeNull();
+  });
+});
+
+describe("TOC pointer focus", () => {
+  it("returns a fold id only while the pointer target is inside that section's heading", () => {
+    const root = document.createElement("div");
+    root.innerHTML = '<section data-fold-id="first"><h2><button><span>First</span></button></h2><div><p>Between headings</p></div></section><section data-fold-id="second"><h2>Second</h2></section>';
+    const headingText = root.querySelector("h2 span");
+    const betweenHeadings = root.querySelector("p");
+    const outside = document.createElement("h2");
+
+    expect(tocHeadingIdAtPointer(headingText, root)).toBe("first");
+    expect(tocHeadingIdAtPointer(betweenHeadings, root)).toBeNull();
+    expect(tocHeadingIdAtPointer(outside, root)).toBeNull();
+    expect(tocHeadingIdAtPointer(null, root)).toBeNull();
   });
 });
 

@@ -1,5 +1,11 @@
-import { Children, type ReactElement, type ReactNode, useEffect, useState } from "react";
+import { Children, createContext, type ReactElement, type ReactNode, useContext, useEffect, useState } from "react";
 import { collapsedForFoldCommand, FOLD_COMMAND_EVENT, type FoldCommand, type FoldCommandName } from "../lib/foldSections";
+
+const FoldHeadingContext = createContext(false);
+
+export function useIsFoldHeading(): boolean {
+  return useContext(FoldHeadingContext);
+}
 
 interface FoldSectionProps {
   children?: ReactNode;
@@ -40,7 +46,9 @@ export function FoldSection({ children, foldId = "", collapsed: controlledCollap
           onClick={() => { onManualOverride?.(foldId); setCollapsed(!collapsed); }}
         >
           <span aria-hidden="true" className="fold-chevron">{collapsed ? "▶" : "▼"}</span>
-          {heading?.props.children}
+          <span className="fold-heading__content">
+            <FoldHeadingContext.Provider value>{heading?.props.children}</FoldHeadingContext.Provider>
+          </span>
         </button>
       </HeadingTag>
       <div hidden={collapsed} className="fold-content">{content}</div>

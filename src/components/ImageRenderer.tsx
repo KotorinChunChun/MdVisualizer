@@ -16,6 +16,7 @@ interface ImageRendererProps {
   displaySize?: ImageSize | null;
   onDisplaySizeChange?: (size: ImageSize) => void;
   presentationMode?: boolean;
+  headingMode?: boolean;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   occurrenceId?: string;
   sourceLine?: number;
@@ -37,6 +38,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   displaySize,
   onDisplaySizeChange,
   presentationMode = false,
+  headingMode = false,
   onMediaOpen,
   occurrenceId,
   sourceLine,
@@ -66,6 +68,8 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   const isSupportedRaster = /\.(?:png|jpe?g|gif|webp|bmp)(?:[?#]|$)/i.test(src);
   // SVG is display-only until a dedicated vector editing design is approved.
   const isEditableLocalImage = !isRemote && isSupportedRaster;
+  const canInlineResize = isEditableLocalImage && !presentationMode && !headingMode;
+  const hasDisplaySize = !headingMode && Boolean(size);
 
   let fullPath = src;
   if (!isRemote && !isAbsoluteLocalPath(src)) {
@@ -117,12 +121,12 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       id={occurrenceId}
       data-image-occurrence-id={occurrenceId}
       data-source-line={sourceLine}
-      className={`inline-image-resize ${size ? "has-display-size" : ""} ${isResizing ? "is-resizing" : ""} ${presentationMode ? "is-presentation" : ""}`}
-      style={!presentationMode && size ? { width: `${size.width}px` } : undefined}
+      className={`inline-image-resize ${hasDisplaySize ? "has-display-size" : ""} ${isResizing ? "is-resizing" : ""} ${presentationMode ? "is-presentation" : ""} ${headingMode ? "is-heading" : ""}`}
+      style={!presentationMode && !headingMode && size ? { width: `${size.width}px` } : undefined}
     >
       <span
         className="inline-image-resize__stage"
-        style={!presentationMode && size ? { height: `${size.height}px` } : undefined}
+        style={!presentationMode && !headingMode && size ? { height: `${size.height}px` } : undefined}
       >
         <img
           ref={imageRef}
@@ -130,18 +134,18 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
           alt={alt}
           className={`markdown-img inline-image-resize__image ${isEditableLocalImage ? "croppable" : ""}`}
           title={isEditableLocalImage ? "クリックして拡大表示。プレビューでもう一度クリックするとクロップ編集" : "クリックして拡大表示"}
-          onLoad={setInitialSize}
+          onLoad={headingMode ? undefined : setInitialSize}
           onClick={handleClick}
           onError={() => setLoadError(true)}
         />
-        {isEditableLocalImage && !presentationMode && (
+        {canInlineResize && (
           <InlineImageResizeOverlay
             onPointerDown={startResize}
             onKeyDown={resizeFromKeyboard}
           />
         )}
       </span>
-      {alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
+      {!headingMode && alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
     </span>
   );
 };
