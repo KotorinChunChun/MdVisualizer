@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   renderMermaid: vi.fn<(...args: [string, string, string]) => Promise<string>>(),
+  copyMermaid: vi.fn(),
+  copyMermaidAsFile: vi.fn(),
 }));
 
 vi.mock("../lib/mermaidService", async (importOriginal) => ({
@@ -10,11 +12,18 @@ vi.mock("../lib/mermaidService", async (importOriginal) => ({
   renderMermaid: mocks.renderMermaid,
 }));
 
+vi.mock("../lib/mermaidClipboard", () => ({
+  copyMermaid: mocks.copyMermaid,
+  copyMermaidAsFile: mocks.copyMermaidAsFile,
+}));
+
 import { MermaidBlock } from "./MermaidBlock";
 
 afterEach(() => {
   cleanup();
   mocks.renderMermaid.mockReset();
+  mocks.copyMermaid.mockReset().mockResolvedValue(undefined);
+  mocks.copyMermaidAsFile.mockReset().mockResolvedValue(undefined);
 });
 
 describe("MermaidBlock", () => {
@@ -72,7 +81,16 @@ describe("MermaidBlock", () => {
     expect(screen.getByText(/flowchart LR/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "図を拡大" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "図" }));
+    fireEvent.click(screen.getByRole("button", { name: "プレビュー" }));
     expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy();
+  });
+
+  it("keeps code copy available when Mermaid is configured as source-only", async () => {
+    const source = "flowchart LR\nA --> B";
+    render(<MermaidBlock source={source} theme="dark" mode="always-code" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "コードをコピー" }));
+    await waitFor(() => expect(mocks.copyMermaid).toHaveBeenCalledWith("code", source, ""));
+    expect(screen.getByRole("toolbar", { name: "Mermaid操作" })).toBeTruthy();
   });
 });

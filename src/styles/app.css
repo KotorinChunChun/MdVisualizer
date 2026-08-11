@@ -398,11 +398,12 @@ body {
 .mermaid-error button { margin: 8px 6px 0 0; }
 .mermaid-error > pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
 .mermaid-source { overflow-x: auto; padding: 12px; background: var(--panel-bg); }
-.mermaid-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; }
+.mermaid-toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; align-items: center; padding: 6px 0; }
 .mermaid-toolbar button { padding: 5px 9px; color: inherit; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 7px; cursor: pointer; }
 .mermaid-toolbar button[aria-pressed="true"] { color: var(--accent-contrast, #fff); background: var(--accent-color); border-color: var(--accent-color); }
-.mermaid-toolbar__view { display: flex; }
-.mermaid-toolbar__copy { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
+.mermaid-toolbar button:disabled { cursor: not-allowed; opacity: 0.55; }
+.mermaid-toolbar__view { display: flex; order: 2; }
+.mermaid-toolbar__copy { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; order: 1; }
 .mermaid-toolbar__view button { border-radius: 0; }
 .mermaid-toolbar__view button:first-child { border-radius: 7px 0 0 7px; }
 .mermaid-toolbar__view button:last-child { margin-left: -1px; border-radius: 0 7px 7px 0; }
