@@ -23,6 +23,7 @@ import { isDelimitedTableLanguage } from "../lib/delimitedTable";
 import { collectEditableMarkdownOccurrences, type CodeFenceOccurrence, type ImageMarkdownOccurrence, type InlineSvgOccurrence } from "../lib/markdownOccurrences";
 import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
 import { sanitizeSvgXml } from "../lib/svgSafety";
+import { DrawioBlock } from "./DrawioBlock";
 
 type MarkdownNode = {
   type?: string;
@@ -135,6 +136,16 @@ const MarkdownSection: NonNullable<Components["section"]> = ({ node, children })
 const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, children, ...props }) => {
   const context = useMarkdownRenderContext();
   const language = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
+  if (language === "drawio") {
+    const sourceOffset = node?.position?.start.offset;
+    const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
+    return <DrawioBlock
+      source={String(children ?? "").replace(/\n$/, "")}
+      theme={context.theme}
+      blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
+      onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
+    />;
+  }
   if (isDelimitedTableLanguage(language)) {
     const sourceOffset = node?.position?.start.offset;
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
