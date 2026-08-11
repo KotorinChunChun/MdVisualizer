@@ -100,6 +100,9 @@ body {
 .external-more__menu { position: absolute; z-index: 50; top: calc(100% + 4px); right: 0; display: grid; min-width: max-content; padding: 4px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 8px 24px #0008; }
 .external-more__menu button { text-align: left; white-space: nowrap; }
 .document-actions button { padding: 2px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 3px; cursor: pointer; }
+.editor-mode-controls button { padding: 2px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 3px; cursor: pointer; }
+.editor-mode-controls button.is-active { color: #fff; background: var(--accent-color); border-color: var(--accent-color); }
+.editor-mode-controls button:disabled { cursor: not-allowed; opacity: .5; }
 .external-actions button:disabled,
 .document-actions button:disabled { cursor: not-allowed; opacity: .5; }
 @media (max-width: 760px) {
@@ -206,6 +209,17 @@ body {
 }
 
 .document-workspace > .preview-container { flex: 1; }
+.editor-workspace-split > .markdown-editor { flex-basis: 50%; border-right: 1px solid var(--border-color); }
+.editor-workspace-split > .preview-container { flex-basis: 50%; }
+.editor-workspace-edit > .markdown-editor { flex-basis: 100%; }
+.markdown-editor-loading { display: grid; flex: 1 1 0; place-items: center; min-width: 0; color: var(--text-muted); background: var(--bg-color); }
+
+@media (max-width: 900px) {
+  .editor-workspace-split { flex-direction: column; }
+  .editor-workspace-split > .markdown-editor,
+  .editor-workspace-split > .preview-container { flex-basis: 50%; min-height: 0; }
+  .editor-workspace-split > .markdown-editor { border-right: 0; border-bottom: 1px solid var(--border-color); }
+}
 
 .markdown-body {
   max-width: 900px;
@@ -675,7 +689,7 @@ body {
     --table-header-color: #1f2328;
   }
   html, body, #root, .app-container { height: auto; overflow: visible; background: var(--print-effective-background) !important; color: var(--print-effective-heading) !important; }
-  .tab-bar, .view-controls, .status-bar, .document-side-panel-root, .document-toc-root, .image-gallery-root, .presentation-topbar, .presentation-navigation, .search-results, .diagnostics-root { display: none !important; }
+  .tab-bar, .view-controls, .status-bar, .markdown-editor, .document-side-panel-root, .document-toc-root, .image-gallery-root, .presentation-topbar, .presentation-navigation, .search-results, .diagnostics-root { display: none !important; }
   .document-workspace, .preview-container { display: block; overflow: visible; padding: 0; background: var(--print-effective-background) !important; }
   .markdown-body { max-width: none !important; color: var(--print-effective-heading) !important; font-family: var(--print-font-family, system-ui, sans-serif) !important; font-size: 11pt !important; }
   .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 { color: var(--print-effective-heading) !important; border-bottom-color: var(--print-effective-border); break-after: avoid; }

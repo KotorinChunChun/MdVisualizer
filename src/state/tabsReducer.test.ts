@@ -161,6 +161,16 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].document?.content).toBe("# Test");
   });
 
+  it("keeps the editor workspace mode independently in each tab", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const first = state.activeId!;
+    state = tabsReducer(state, { type: "EDITOR_MODE", id: first, mode: "split" });
+    state = tabsReducer(state, { type: "OPEN", path: "b.md" });
+
+    expect(state.tabs.find((tab) => tab.id === first)?.editorMode).toBe("split");
+    expect(state.tabs.find((tab) => tab.id === state.activeId)?.editorMode).toBe("preview");
+  });
+
   it("keeps edits made while an earlier draft is being saved", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const id = state.activeId!;

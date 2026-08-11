@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
@@ -29,7 +29,7 @@ import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
 import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
-import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
+import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
@@ -53,6 +53,8 @@ import "./styles/syntax-highlight.css";
 // the state boundary also repairs legacy persisted values that were not a
 // selectable option.
 export { moveZoomLevel, normalizeZoom, ZOOM_LEVELS, type ZoomLevel } from "./lib/zoom";
+
+const MarkdownEditor = lazy(() => import("./components/MarkdownEditor").then((module) => ({ default: module.MarkdownEditor })));
 
 export function focusAndSelectSearchInput(input: HTMLInputElement | null): void {
   input?.focus();
@@ -168,6 +170,10 @@ export function App() {
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
   const activeSharePoint = isSharePointDocument(activeTab?.document ?? activeTab);
+  const canEditActive = Boolean(activeTab?.document?.kind === "markdown" && !activeSharePoint);
+  const editorMode: EditorWorkspaceMode = canEditActive ? activeTab?.editorMode ?? "preview" : "preview";
+  const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
+  const previewContent = useDeferredValue(activeMarkdownContent);
 
   useEffect(() => {
     const hasUnsavedChanges = () => tabsStateRef.current.tabs.some((tab) => tab.dirty);
@@ -211,8 +217,8 @@ export function App() {
 
   const imageOccurrenceGroups = useMemo(() => {
     if (!activeTab?.document || activeSharePoint || viewMode === "presentation") return [];
-    return groupImageOccurrences(collectImageOccurrences(activeTab.document.content, activeTab.document.base_dir));
-  }, [activeSharePoint, activeTab?.document, viewMode]);
+    return groupImageOccurrences(collectImageOccurrences(previewContent, activeTab.document.base_dir));
+  }, [activeSharePoint, activeTab?.document, previewContent, viewMode]);
   const imageGalleryItems = useMemo<ImageGalleryItem[]>(() => {
     const baseDir = activeTab?.document?.base_dir;
     if (!baseDir) return [];
@@ -293,7 +299,7 @@ export function App() {
     setCodeHighlightRevision((revision) => revision + 1);
   }, []);
   const searchRefreshKey = `${tabsState.activeId ?? "empty"}:${activeTab?.generation ?? 0}:${searchExpandedIds.join("|")}:${codeHighlightRevision}`;
-  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey, activeTab?.document?.content ?? "");
+  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey, previewContent);
   const { cropTarget, startCrop, cancelCrop } = useCropEditor();
   useEffect(() => {
     if (!activeTab?.document || activeSharePoint) { setDiagnostics([]); return; }
@@ -892,6 +898,12 @@ export function App() {
     });
   }, [activeTab?.document?.path, recordNavigationPoint]);
 
+  const changeEditorMode = useCallback((mode: EditorWorkspaceMode) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return;
+    dispatch({ type: "EDITOR_MODE", id: tab.id, mode });
+  }, []);
+
   const openSearch = useCallback(() => {
     if (activeTab?.document) {
       panelBeforeSearchRef.current[activeTab.id] = documentPanelsRef.current[activeTab.id] ?? null;
@@ -1128,11 +1140,18 @@ export function App() {
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
-          <button type="button" disabled={!activeTab?.document || printing} onClick={() => void printDocument()}>印刷/PDF</button>
+          <button type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷/PDF</button>
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
+          <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
         </div>
-        {viewMode !== "presentation" && <div className="control-group fold-controls">
+        <div className="control-group editor-mode-controls" aria-label="編集画面">
+          <span className="control-group__title">画面</span>
+          <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("edit")}>編集のみ</button>
+          <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
+          <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
+        </div>
+        {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>
           <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
             const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset";
@@ -1154,14 +1173,14 @@ export function App() {
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
       </div>}
 
-      <div className="document-workspace">
-      {activeTab?.document && <DocumentSidePanel
+      <div className={`document-workspace editor-workspace-${editorMode}`}>
+      {editorMode === "preview" && activeTab?.document && <DocumentSidePanel
         activeTab={documentSidePanel}
         onTabChange={changeDocumentSidePanel}
         onClose={documentSidePanel === "search" ? closeSearch : closeDocumentSidePanel}
         disabledTabs={viewMode === "presentation" ? ["images"] : []}
         toc={<DocumentToc
-          markdown={activeTab.document.content}
+          markdown={previewContent}
           isOpen
           embedded
           activeHeadingId={viewMode === "presentation" ? presentationPositions[activeTab.id] : activeTocHeadingId ?? undefined}
@@ -1183,7 +1202,17 @@ export function App() {
           onOpenChange={() => undefined}
         />}
       />}
-      <main
+      {canEditActive && editorMode !== "preview" && activeTab?.document && <Suspense fallback={<div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
+        <MarkdownEditor
+          documentId={`${activeTab.id}:${activeTab.generation}`}
+          value={activeTab.draft}
+          dirty={activeTab.dirty}
+          saving={activeTab.saving}
+          onChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
+          onSave={() => void saveTab(activeTab.id)}
+        />
+      </Suspense>}
+      {(editorMode !== "edit" || !canEditActive) && <main
         className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`}
         ref={containerRef}
         onScroll={(event) => handlePreviewScroll(event.currentTarget)}
@@ -1225,7 +1254,7 @@ export function App() {
           />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
-           content={activeTab.document.content}
+           content={previewContent}
            baseDir={activeTab.document.base_dir}
             sourcePath={activeTab.path}
             imageVersions={imageVersions}
@@ -1249,7 +1278,7 @@ export function App() {
           />
         ) : activeTab?.document ? (
           <MarkdownPreview
-            content={activeTab.document.content}
+            content={previewContent}
             baseDir={activeTab.document.base_dir}
             imageVersions={imageVersions}
             contentRef={markdownRef}
@@ -1280,7 +1309,7 @@ export function App() {
             </div>
           </div>
         )}
-      </main>
+      </main>}
       </div>
 
       {cropTarget && (

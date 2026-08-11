@@ -2,6 +2,8 @@ import { MarkdownLoadResult } from "../types/app";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import { documentSourceIdentity } from "../lib/pathIdentity";
 
+export type EditorWorkspaceMode = "edit" | "split" | "preview";
+
 export interface TabState {
   id: string;
   kind?: "document" | "settings";
@@ -16,6 +18,7 @@ export interface TabState {
   dirty: boolean;
   saving: boolean;
   saveError: string | null;
+  editorMode: EditorWorkspaceMode;
   searchOpen?: boolean;
   imageDisplaySizes: Record<string, ImageSize>;
   search: { query: string; regex: boolean; caseSensitive: boolean; activeIndex: number };
@@ -52,6 +55,7 @@ export type TabsAction =
   | { type: "SAVE_STARTED"; id: string }
   | { type: "SAVED"; id: string; document: MarkdownLoadResult }
   | { type: "SAVE_FAILED"; id: string; error: string }
+  | { type: "EDITOR_MODE"; id: string; mode: EditorWorkspaceMode }
   | { type: "IMAGE_DISPLAY_SIZE"; id: string; source: string; size: ImageSize }
   | { type: "MOVE"; id: string; toIndex: number };
 
@@ -81,6 +85,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
           dirty: false,
           saving: false,
           saveError: null,
+          editorMode: "preview",
           searchOpen: false,
           imageDisplaySizes: {},
           search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 },
@@ -173,6 +178,8 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       });
     case "SAVE_FAILED":
       return updateTab(state, action.id, (tab) => ({ ...tab, saving: false, saveError: action.error }));
+    case "EDITOR_MODE":
+      return updateTab(state, action.id, (tab) => tab.editorMode === action.mode ? tab : { ...tab, editorMode: action.mode });
     case "IMAGE_DISPLAY_SIZE":
       return updateTab(state, action.id, (tab) => {
         const current = tab.imageDisplaySizes[action.source];
@@ -211,7 +218,7 @@ function openTab(state: TabsState, tab: ClosedTabState): TabsState {
   if (existing) return { ...state, activeId: existing.id };
   const id = `tab-${state.nextId}`;
   return {
-    tabs: [...state.tabs, { id, kind: "document", path: tab.path, document: null, error: null, loading: true, scrollTop: tab.scrollTop, generation: 1, externalChanged: false, draft: "", dirty: false, saving: false, saveError: null, searchOpen: tab.searchOpen ?? false, imageDisplaySizes: tab.imageDisplaySizes ?? {}, search: tab.search }],
+    tabs: [...state.tabs, { id, kind: "document", path: tab.path, document: null, error: null, loading: true, scrollTop: tab.scrollTop, generation: 1, externalChanged: false, draft: "", dirty: false, saving: false, saveError: null, editorMode: "preview", searchOpen: tab.searchOpen ?? false, imageDisplaySizes: tab.imageDisplaySizes ?? {}, search: tab.search }],
     activeId: id,
     nextId: state.nextId + 1,
   };

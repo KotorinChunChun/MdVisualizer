@@ -1,0 +1,38 @@
+.markdown-editor {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-color);
+}
+
+.markdown-editor__toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--panel-bg);
+}
+
+.markdown-editor__toolbar button {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  color: var(--text-primary);
+  background: var(--btn-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.markdown-editor__toolbar button:hover:not(:disabled) { background: var(--btn-hover); }
+.markdown-editor__toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
+.markdown-editor__toolbar .markdown-editor__save { color: var(--accent-contrast, #fff); background: var(--accent-color); border-color: var(--accent-color); }
+.markdown-editor__toolbar-spacer { flex: 1 1 auto; }
+.markdown-editor__surface { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.markdown-editor__surface > .cm-editor { height: 100%; }

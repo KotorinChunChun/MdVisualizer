@@ -149,7 +149,7 @@ export function useSearch(
       nativeHighlightNamesRef.current = null;
       highlightStyle?.remove();
     };
-  }, [rootRef, pattern, caseSensitive, scopeId, refreshKey]);
+  }, [rootRef, pattern, caseSensitive, scopeId, refreshKey, content]);
 
   useEffect(() => {
     const marks = rootRef.current?.querySelectorAll<HTMLElement>("mark[data-markdown-search]") ?? [];
