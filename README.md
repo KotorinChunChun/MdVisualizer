@@ -1,6 +1,6 @@
 # MarkdownViewer
 
-Windows 向けの閲覧専用 Markdown ビューアです。複数の Markdown をタブで開き、画像クロップ、Mermaid、コード、表を軽快に表示します。
+Windows向けのMarkdownビューア／エディターです。複数の文書をタブで開き、ローカルMarkdownの編集・安全な保存に加えて、画像、Mermaid、draw.io、コード、対話型CSV／TSV表を表示できます。
 
 ## beta版ダウンロード
 
@@ -85,6 +85,8 @@ pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 
 ## 主な機能
 
+- ローカルMarkdownを「編集のみ」「編集／閲覧」「閲覧のみ」で切り替え。編集中のライブプレビュー、Markdownツールバー、構文強調、折りたたみ、`Ctrl+S`保存
+- UTF-8 BOM、UTF-16、Shift_JIS等の文字コードと改行形式を可能な限り維持し、外部更新との競合、再読み込み、タブ／ウィンドウ終了から未保存内容を保護
 - Chrome ライクな複数タブ、ドラッグ並び替え、右クリック操作、閉じたタブの復元
 - Markdownファイルのウィンドウ内ドロップ。同じファイルが既に開いている場合は既存タブを選択
 - `spmd:`からSharePoint OnlineのMarkdownをMicrosoft Graph経由で閲覧し、同じライブラリ内の相対Markdownリンクを開く
@@ -94,8 +96,11 @@ pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 - 文書診断（欠落したローカルMarkdown／画像参照、同一文書の見出しアンカー、空の画像alt）と該当位置へのジャンプ
 - `Ctrl+P`または「印刷/PDF」によるOS印刷。通常表示は連続ページ、プレゼンは1スライド1ページとして出力し、アプリの操作UIは印刷しない
 - Markdown 内 HTML の許可リストサニタイズ、入れ子引用、水平線、GFM 表、コピー可能なコードブロック。PowerShell系フェンスは確認後に限り30秒・出力1MiB制限で実行
+- `csv`、`tsv`、`csv-h`、`tsv-h`コードフェンスの検索、並べ替え、列表示、ページング、コピー、CSV出力、印刷、表編集。SearchPanesは初期OFF
 - Mermaid の遅延描画、テーマ反映、図／コード切替、コード・PNG・SVGコピー、fit／1:1／ホイール対応の拡大表示
-- PNG・JPEG・GIF・WebP・SVG の表示と共通拡大プレビュー（SVG は表示のみで編集対象外）
+- `drawio`コードフェンスの表示、新規作成、再編集。SVG／Mermaidからdraw.io図への変換
+- PNG・JPEG・GIF・WebP・BMP・SVGの表示と共通拡大プレビュー。Markdown内のラスタ画像とSVGを埋め込み／同フォルダの別ファイルへ相互変換
+- 外部画像とBase64画像の注釈編集、自由描画、消去、塗りつぶし、スポイト、図形、文字、切り抜き、回転、反転、サイズ変更、Undo／Redo
 - Shift_JIS / UTF-8 BOM / UTF-16 を含む文字コード検出とステータス表示
 - ステータスバーまたはプレビュー上の `Ctrl` + マウスホイールで10%単位に変更できるテーマ、Auto／A4縦／A3縦レイアウト、Auto Reload（ON / 手動のみ / OFF）、Mermaid、ズーム
 - 見出し階層をページ化するプレゼンモード（再帰的な短文統合、パンくず、目次ツリー、前後移動、子見出し一覧、画像拡大）
@@ -107,6 +112,14 @@ pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 - プレビューの2回目クリックから開く画像クロップ、透明／白／黒／自動色の余白追加、起動中のバックアップ復元
 - `Alt+←`／`Alt+→` またはマウス第4／第5ボタンによる、タブ・プレゼンページ・メディアプレビューの履歴移動
 - テーマ、表示モード、ズーム、Mermaid、Auto Reload の安全な永続化
+
+## Markdown編集
+
+ローカルMarkdownを開くと、ツールバーの「編集のみ」「編集／閲覧」「閲覧のみ」で画面を切り替えられます。起動時と文書を開いた直後は「閲覧のみ」です。「編集／閲覧」では、保存前のドラフトを右側のプレビューへ即時反映します。
+
+保存は画面内の保存ボタンまたは`Ctrl+S`で行います。タブ名の`*`は未保存状態です。読込み後に外部アプリが元ファイルを更新していた場合は上書きを拒否します。未保存のまま再読み込み、タブ終了、ウィンドウ終了を行う場合は確認を表示します。SharePoint文書、単体SVG、単体Mermaidは閲覧専用です。
+
+Markdown編集ツールバーから、見出し、文字装飾、引用、各種リスト、リンク、コード、表、Mermaid、水平線、画像、draw.io図を挿入できます。CSV／TSV表、Markdown内の画像・SVG、draw.io図はプレビュー側の編集操作から、選択した箇所だけをドラフトへ反映します。
 
 ## 検索・診断・印刷
 
@@ -133,6 +146,7 @@ Obsidian画像は`![[images/photo.png]]`と`[[images/photo.png]]`の両方を表
 各種は `samples/mermaid-gallery.md`、階層プレゼンは
 `samples/presentation-hierarchy.md` を開いてください。v0.0.5で追加した検索・目次・倍率・別窓・VS Code連携は
 `samples/ui-workflow.md`、Obsidian画像とalt配置は`samples/obsidian-images.md`で確認できます。v0.0.6の引用・印刷表示は`samples/markdown-presentation.md`、v0.0.7の単一パネル・コード配色・PowerShell確認実行・印刷設定は`samples/customization.md`で確認できます。
+v0.0.9の編集モード、CSV／TSV、draw.io、Base64画像は`dev/drawio_markdown_sample.md`で確認できます。
 
 ## ショートカット
 
@@ -141,6 +155,7 @@ Obsidian画像は`![[images/photo.png]]`と`[[images/photo.png]]`の両方を表
 
 | 操作 | キー |
 | --- | --- |
+| 編集中のローカルMarkdownを保存 | `Ctrl+S` |
 | 検索 | `Ctrl+F` |
 | 印刷／PDF | `Ctrl+P` |
 | 検索を閉じる | `Esc` |

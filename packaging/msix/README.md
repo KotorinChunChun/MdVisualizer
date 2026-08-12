@@ -38,7 +38,7 @@ MSIX生成後、beta更新チャネルの`.appinstaller`を生成する。
 
 ```powershell
 pwsh -NoProfile -File .\scripts\build-appinstaller.ps1 `
-  -MsixPath .\release\msix\MarkdownViewer_0.0.8.0_x64.msix `
+  -MsixPath .\release\msix\MarkdownViewer_0.0.9.0_x64.msix `
   -ChannelBaseUri "https://excel-chunchun.sakura.ne.jp/download/beta/"
 ```
 
