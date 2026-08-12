@@ -184,7 +184,7 @@ $packageVersion = Convert-ToMsixVersion -Version $tauriConfig.version
 $packageName = "${artifactBaseName}_${packageVersion}_${architecture}"
 $outputDirectoryFullPath = [System.IO.Path]::GetFullPath($OutputDirectory)
 $msixPath = Join-Path $outputDirectoryFullPath "${packageName}.msix"
-$certificatePath = Join-Path $outputDirectoryFullPath "${packageName}.cer"
+$certificatePath = Join-Path $outputDirectoryFullPath $releaseConfiguration.Raw.application.certificateFileName
 $usingPfx = -not [string]::IsNullOrWhiteSpace($PfxPath)
 $signingCertificate = $null
 $signingPassword = $PfxPassword
@@ -221,12 +221,15 @@ else {
         -ValidityYears $PersistentCertificateValidityYears
 }
 
-[System.IO.File]::WriteAllBytes(
-    $certificatePath,
-    $signingCertificate.Export(
-        [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert
-    )
+$certificateBytes = $signingCertificate.Export(
+    [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert
 )
+if (Set-FileBytesIfChanged -Path $certificatePath -Bytes $certificateBytes) {
+    Write-Host "Updated public certificate: $certificatePath"
+}
+else {
+    Write-Host "Reusing unchanged public certificate file: $certificatePath"
+}
 
 try {
     if (-not $SkipTauriBuild) {

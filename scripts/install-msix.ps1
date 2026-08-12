@@ -2,6 +2,7 @@
 param(
     [string]$MsixPath,
     [string]$CertificatePath,
+    [string]$ConfigPath,
     [switch]$TrustDevelopmentCertificate
 )
 
@@ -10,6 +11,8 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $defaultOutputDirectory = Join-Path $projectRoot "release\msix"
+Import-Module (Join-Path $PSScriptRoot "ReleaseTools.psm1") -Force
+$releaseConfiguration = Import-ReleaseConfiguration -Path $ConfigPath -ProjectRoot $projectRoot
 
 if ([string]::IsNullOrWhiteSpace($MsixPath)) {
     $latestPackage = Get-ChildItem -LiteralPath $defaultOutputDirectory -Filter "*.msix" -File |
@@ -29,7 +32,9 @@ if (-not (Test-Path -LiteralPath $MsixPath)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($CertificatePath)) {
-    $CertificatePath = [System.IO.Path]::ChangeExtension($MsixPath, ".cer")
+    $CertificatePath = Join-Path `
+        (Split-Path -Parent $MsixPath) `
+        $releaseConfiguration.Raw.application.certificateFileName
 }
 else {
     $CertificatePath = [System.IO.Path]::GetFullPath($CertificatePath)

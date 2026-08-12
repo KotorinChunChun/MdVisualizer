@@ -6,7 +6,8 @@
     "identityName": "com.markdownviewer.viewer",
     "publisher": "CN=KotorinChunChun",
     "architecture": "x64",
-    "certificateFriendlyName": "MarkdownViewer Self-Signed Code Signing"
+    "certificateFriendlyName": "MarkdownViewer Self-Signed Code Signing",
+    "certificateFileName": "MarkdownViewer.cer"
   },
   "build": {
     "tauriConfig": "src-tauri\\tauri.conf.json",
