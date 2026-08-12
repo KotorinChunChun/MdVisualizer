@@ -1,0 +1,2356 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Markdown + draw.io + Paint Editor</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/fold/foldgutter.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/xml/xml.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/markdown/markdown.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/fold/foldcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/fold/foldgutter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@18.0.9/lib/marked.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/github.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/powershell.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/dockerfile.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.min.js"></script>
+  <script id="drawio-viewer-script" src="https://viewer.diagrams.net/js/viewer-static.min.js" async></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1f2328; background: #fff; }
+    button, input, select { font: inherit; }
+
+    .app { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+    .pane { min-width: 0; height: 100vh; display: flex; flex-direction: column; }
+    .pane + .pane { border-left: 1px solid #d0d7de; }
+    .pane-header { height: 42px; padding: 0 14px; display: flex; align-items: center; font-size: 13px; font-weight: 600; background: #f6f8fa; border-bottom: 1px solid #d0d7de; flex: 0 0 auto; }
+    .md-toolbar { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 6px 8px; border-bottom: 1px solid #d0d7de; background: #fff; }
+    .md-toolbar button { appearance: none; min-width: 32px; height: 30px; padding: 0 8px; border: 1px solid #d0d7de; border-radius: 5px; background: #fff; color: #1f2328; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .md-toolbar button:hover { background: #f3f4f6; border-color: #8c959f; }
+    .md-toolbar button:active { background: #eaeef2; }
+    .md-toolbar button.primary-action { border-color: #0969da; color: #0969da; }
+    .md-toolbar .separator { width: 1px; height: 24px; margin: 0 2px; background: #d0d7de; }
+    .md-toolbar .grow { flex: 1 1 auto; }
+    .md-toolbar button[title] { position: relative; }
+    #image-file-input { display: none; }
+    #markdown { flex: 1 1 auto; width: 100%; min-height: 0; resize: none; border: 0; outline: 0; padding: 16px; font: 14px/1.55 Consolas, "Cascadia Code", monospace; tab-size: 2; }
+    .CodeMirror { flex: 1 1 auto; min-height: 0; height: auto; border: 0; font: 14px/1.55 Consolas, "Cascadia Code", monospace; }
+    .CodeMirror-scroll { min-height: 0; }
+    .CodeMirror-gutters { border-right: 1px solid #e5e7eb; background: #f8fafc; }
+    .CodeMirror-foldgutter { width: 18px; }
+    .CodeMirror-foldmarker { color: #59636e; text-shadow: none; font-family: system-ui, sans-serif; padding: 0 4px; border-radius: 4px; background: #eaeef2; }
+    .svg-drawio-view { display: flex; align-items: center; justify-content: center; min-height: 180px; padding: 12px; overflow: auto; background: #fff; }
+    .svg-drawio-view img { display: block; max-width: 100%; height: auto; }
+    #preview { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 24px 28px 60px; line-height: 1.65; }
+    #preview h1, #preview h2, #preview h3 { line-height: 1.25; margin-top: 1.5em; margin-bottom: .6em; }
+    #preview h1 { border-bottom: 1px solid #d8dee4; padding-bottom: .3em; }
+    #preview h2 { border-bottom: 1px solid #d8dee4; padding-bottom: .25em; }
+    #preview pre { overflow: auto; padding: 14px; border-radius: 6px; background: #f6f8fa; }
+    #preview code { font-family: Consolas, "Cascadia Code", monospace; }
+    #preview blockquote { margin-left: 0; padding-left: 1em; border-left: 4px solid #d0d7de; color: #59636e; }
+    #preview table { border-collapse: collapse; }
+    #preview th, #preview td { border: 1px solid #d0d7de; padding: 6px 10px; }
+
+    /* Syntax-highlighted code blocks */
+    .code-card { margin: 16px 0; border: 1px solid #d0d7de; border-radius: 8px; overflow: hidden; background: #fff; }
+    .code-card-header { min-height: 34px; padding: 5px 8px 5px 12px; display: flex; align-items: center; gap: 8px; background: #f6f8fa; border-bottom: 1px solid #d0d7de; font-size: 12px; color: #59636e; }
+    .code-card-header .code-label { font-weight: 600; color: #1f2328; }
+    .code-card-header .code-filename { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .code-card-header .spacer { flex: 1 1 auto; }
+    .code-copy-button { appearance: none; border: 1px solid #d0d7de; border-radius: 5px; padding: 3px 8px; background: #fff; color: #1f2328; cursor: pointer; font-size: 12px; }
+    .code-copy-button:hover { background: #f3f4f6; }
+    #preview .code-card pre { margin: 0; border-radius: 0; background: #fff; }
+    #preview .code-card pre code.hljs { padding: 0; background: transparent; }
+
+    /* CSV / TSV interactive tables (GROWI-like controls) */
+    .data-grid-card { margin: 18px 0; border: 1px solid #d0d7de; border-radius: 8px; background: #fff; overflow: hidden; }
+    .data-grid-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px; background: #f6f8fa; border-bottom: 1px solid #d0d7de; }
+    .data-grid-search { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: #59636e; }
+    .data-grid-search input { width: min(240px, 36vw); height: 30px; padding: 4px 8px; border: 1px solid #8c959f; border-radius: 5px; background: #fff; }
+    .data-grid-button { appearance: none; min-height: 30px; padding: 4px 9px; border: 1px solid #8c959f; border-radius: 5px; background: #fff; color: #1f2328; font-size: 12px; cursor: pointer; }
+    .data-grid-button:hover { background: #f3f4f6; }
+    .data-grid-button.active { border-color: #0969da; color: #0969da; background: #eef6ff; }
+    .data-grid-button:disabled { opacity: .45; cursor: default; }
+    .data-grid-panel { padding: 10px; border-bottom: 1px solid #d0d7de; background: #fff; }
+    .column-visibility-list { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .column-visibility-list label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+
+    .search-panes-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .search-panes-head .filters-active { margin-right: auto; font-size: 12px; color: #57606a; font-weight: 600; }
+    .search-panes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; align-items: start; }
+    .search-pane { min-width: 0; border: 1px solid #d0d7de; border-radius: 6px; overflow: hidden; background: #fff; }
+    .search-pane.collapsed .search-pane-values { display: none; }
+    .search-pane-title { padding: 5px 7px; background: #f6f8fa; border-bottom: 1px solid #d0d7de; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .search-pane-tools { display: grid; grid-template-columns: minmax(0,1fr) repeat(4, 34px); gap: 0; padding: 6px; background: #fff; }
+    .search-pane-tools input[type="search"] { min-width: 0; height: 32px; padding: 4px 8px; border: 1px solid #c7ced6; border-radius: 5px 0 0 5px; font-size: 12px; }
+    .search-pane-tool { height: 32px; border: 1px solid #c7ced6; border-left: 0; background: #f6f8fa; color: #57606a; cursor: pointer; font-size: 11px; padding: 0; }
+    .search-pane-tool:last-child { border-radius: 0 5px 5px 0; }
+    .search-pane-tool:hover, .search-pane-tool.active { background: #eef6ff; color: #0969da; }
+    .search-pane-values { max-height: 210px; overflow: auto; padding: 5px 7px; }
+    .search-pane-values label { display: flex; align-items: center; gap: 5px; padding: 3px 0; font-size: 12px; min-width: 0; cursor: pointer; }
+    .search-pane-values .pane-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+    .search-pane-values .pane-count { color: #fff; background: #7a7f85; border-radius: 999px; padding: 1px 7px; min-width: 24px; text-align: center; flex: 0 0 auto; font-size: 10px; }
+    .search-pane-no-values { padding: 10px 4px; color: #6e7781; font-size: 11px; text-align: center; }
+
+    .data-grid-table-wrap { overflow: auto; max-width: 100%; }
+    #preview table.data-grid-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 13px; }
+    #preview table.data-grid-table th, #preview table.data-grid-table td { border: 0; border-right: 1px solid #d8dee4; border-bottom: 1px solid #d8dee4; padding: 6px 9px; text-align: left; vertical-align: top; white-space: pre-wrap; overflow-wrap: anywhere; }
+    #preview table.data-grid-table th:last-child, #preview table.data-grid-table td:last-child { border-right: 0; }
+    #preview table.data-grid-table th { position: sticky; top: 0; z-index: 1; background: #f6f8fa; font-weight: 600; }
+    .data-grid-sort { appearance: none; display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 6px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
+    .data-grid-sort-indicator { color: #59636e; font-size: 10px; }
+    .data-grid-empty { padding: 20px !important; text-align: center !important; color: #59636e; }
+    .data-grid-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 42px; padding: 6px 8px; background: #f6f8fa; font-size: 12px; color: #59636e; }
+    .data-grid-footer .spacer { flex: 1 1 auto; }
+    .data-grid-footer select { height: 28px; border: 1px solid #8c959f; border-radius: 5px; background: #fff; }
+    .data-grid-error { padding: 12px; color: #b42318; white-space: pre-wrap; }
+
+    /* CSV/TSV WYSIWYG-ish table editor */
+    .table-editor-overlay { position: fixed; inset: 0; z-index: 12000; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(0,0,0,.45); }
+    .table-editor-dialog { width: min(1200px, 96vw); max-height: 92vh; display: flex; flex-direction: column; background: #fff; border-radius: 10px; box-shadow: 0 18px 60px rgba(0,0,0,.28); overflow: hidden; }
+    .table-editor-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 9px 10px; border-bottom: 1px solid #d0d7de; background: #f6f8fa; }
+    .table-editor-toolbar strong { margin-right: auto; font-size: 13px; }
+    .table-editor-note { padding: 7px 10px; border-bottom: 1px solid #d0d7de; color: #57606a; font-size: 11px; }
+    .table-editor-scroll { overflow: auto; padding: 10px; flex: 1 1 auto; }
+    .table-editor-grid { border-collapse: collapse; min-width: 100%; table-layout: auto; font-size: 13px; }
+    .table-editor-grid th, .table-editor-grid td { min-width: 120px; border: 1px solid #c7ced6; padding: 6px 8px; vertical-align: top; white-space: pre-wrap; outline: none; }
+    .table-editor-grid th { position: sticky; top: 0; z-index: 2; background: #eef6ff; font-weight: 700; }
+    .table-editor-grid th:focus, .table-editor-grid td:focus { box-shadow: inset 0 0 0 2px #0969da; background: #fff8c5; }
+    .table-editor-grid .row-number { min-width: 64px; width: 64px; text-align: right; color: #6e7781; background: #f6f8fa; user-select: none; white-space: nowrap; }
+    .table-editor-col-head { display: flex; align-items: center; gap: 6px; min-width: 120px; }
+    .table-editor-col-name { flex: 1 1 auto; min-width: 60px; outline: none; }
+    .table-editor-col-name:focus { background: #fff8c5; box-shadow: inset 0 0 0 2px #0969da; }
+    .table-editor-delete { flex: 0 0 auto; appearance: none; width: 22px; height: 22px; border: 1px solid #cf222e; border-radius: 5px; background: #fff; color: #cf222e; line-height: 18px; cursor: pointer; font-weight: 700; }
+    .table-editor-delete:hover { background: #ffebe9; }
+    .table-insert-format-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #57606a; }
+    .table-insert-format-label select { height: 30px; padding: 0 8px; border: 1px solid #8c959f; border-radius: 6px; background: #fff; color: #24292f; font: inherit; }
+
+    /* Mermaid preview */
+    .mermaid-card { margin: 18px 0; border: 1px solid #d0d7de; border-radius: 8px; background: #fff; overflow: hidden; }
+    .mermaid-toolbar { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 5px 8px 5px 12px; border-bottom: 1px solid #d0d7de; background: #f6f8fa; }
+    .mermaid-toolbar .title { font-size: 12px; font-weight: 600; }
+    .mermaid-toolbar .spacer { flex: 1 1 auto; }
+    .mermaid-view { min-height: 100px; padding: 14px; overflow: auto; display: flex; justify-content: center; align-items: flex-start; background: #fff; }
+    .mermaid-view svg { max-width: 100%; height: auto; }
+    .mermaid-error { width: 100%; padding: 12px; color: #b42318; white-space: pre-wrap; overflow-wrap: anywhere; background: #fff1f0; border: 1px solid #ffccc7; border-radius: 6px; }
+    .mermaid-source-details { border-top: 1px solid #d0d7de; }
+    .mermaid-source-details > summary { padding: 7px 10px; cursor: pointer; background: #f6f8fa; font-size: 12px; font-weight: 600; }
+    #preview .mermaid-source-details pre { margin: 0; border-radius: 0; max-height: 360px; }
+    .table-editor-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 9px 10px; border-top: 1px solid #d0d7de; background: #f6f8fa; }
+
+    /* Executable single-HTML preview */
+    .html-preview-card { margin: 18px 0; border: 1px solid #d0d7de; border-radius: 8px; background: #fff; overflow: hidden; }
+    .html-preview-toolbar { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 5px 8px 5px 12px; background: #f6f8fa; border-bottom: 1px solid #d0d7de; }
+    .html-preview-toolbar .title { font-size: 12px; font-weight: 600; }
+    .html-preview-toolbar .note { font-size: 11px; color: #59636e; }
+    .html-preview-toolbar .spacer { flex: 1 1 auto; }
+    .html-preview-surface { display: block; width: 100%; min-height: 420px; max-height: 70vh; overflow: auto; background: #fff; }
+    .html-preview-warning { padding: 8px 12px; font-size: 11px; color: #7a4b00; background: #fff8c5; border-top: 1px solid #d0d7de; }
+    .html-source-details { border-top: 1px solid #d0d7de; }
+    .html-source-details > summary { padding: 7px 10px; cursor: pointer; background: #f6f8fa; font-size: 12px; font-weight: 600; }
+    #preview .html-source-details pre { margin: 0; border-radius: 0; max-height: 360px; }
+    #preview .html-source-details pre code.hljs { padding: 0; background: transparent; }
+
+    .editable-card { margin: 20px 0; border: 1px solid #d0d7de; border-radius: 8px; overflow: hidden; background: #fff; }
+    .card-toolbar { display: flex; justify-content: flex-end; align-items: center; min-height: 42px; padding: 6px 8px; border-bottom: 1px solid #d0d7de; background: #f6f8fa; }
+    .card-toolbar-label { margin-right: auto; font-size: 11px; font-weight: 600; color: #57606a; }
+    .edit-button, .toolbar-button { appearance: none; border: 1px solid #0969da; border-radius: 6px; background: #0969da; color: #fff; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; }
+    .edit-button:hover, .toolbar-button:hover { background: #0860ca; }
+    .toolbar-button.secondary { background: #fff; border-color: #8c959f; color: #1f2328; }
+    .toolbar-button.secondary:hover { background: #f3f4f6; }
+    .toolbar-button.active { background: #0969da; border-color: #0969da; color: #fff; box-shadow: 0 0 0 2px rgba(9,105,218,.18); }
+    .toolbar-button:disabled { opacity: .45; cursor: default; }
+    .drawio-view { min-height: 180px; padding: 12px; }
+    .drawio-error { margin: 0; padding: 16px; color: #b42318; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .raster-view { display: flex; justify-content: center; align-items: center; padding: 12px; overflow: auto; background: #fff; }
+    .raster-view img { display: block; max-width: 100%; height: auto; }
+
+    #paint-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: #fff; }
+    #paint-overlay.open { display: block; }
+
+    #paint-overlay { flex-direction: column; background: #f6f8fa; }
+    #paint-overlay.open { display: flex; }
+    .paint-toolbar { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-bottom: 1px solid #d0d7de; background: #fff; overflow-x: auto; white-space: nowrap; }
+    .paint-toolbar.tools { min-height: 48px; }
+    .paint-toolbar.options { min-height: 46px; background: #f6f8fa; }
+    .paint-toolbar .spacer { flex: 1 1 auto; }
+    .paint-separator { width: 1px; height: 30px; background: #d0d7de; margin: 0 3px; flex: 0 0 auto; }
+    .paint-field { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+    #paint-color { width: 36px; height: 31px; padding: 2px; border: 1px solid #8c959f; border-radius: 5px; background: #fff; }
+    #paint-size { width: 100px; }
+    #paint-font-size { width: 64px; }
+    #paint-status { font-size: 12px; color: #59636e; min-width: 120px; }
+    #paint-stage { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 24px; background-color: #dfe3e8; background-image: linear-gradient(45deg, #cfd4da 25%, transparent 25%), linear-gradient(-45deg, #cfd4da 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cfd4da 75%), linear-gradient(-45deg, transparent 75%, #cfd4da 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0; }
+    #paint-canvas { display: block; max-width: none; background: transparent; box-shadow: 0 2px 10px rgba(31, 35, 40, .25); touch-action: none; cursor: crosshair; }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+      .pane { height: 50vh; }
+      .pane + .pane { border-left: 0; border-top: 1px solid #d0d7de; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="pane">
+      <div class="pane-header">Markdown</div>
+      <div class="md-toolbar" id="md-toolbar" aria-label="Markdown toolbar">
+        <button type="button" data-md-action="heading" title="見出し">H</button>
+        <button type="button" data-md-action="bold" title="太字"><strong>B</strong></button>
+        <button type="button" data-md-action="italic" title="斜体"><em>I</em></button>
+        <button type="button" data-md-action="strike" title="取り消し線"><s>S</s></button>
+        <span class="separator"></span>
+        <button type="button" data-md-action="quote" title="引用">❯</button>
+        <button type="button" data-md-action="ul" title="箇条書き">•</button>
+        <button type="button" data-md-action="ol" title="番号付きリスト">1.</button>
+        <button type="button" data-md-action="task" title="チェックリスト">☑</button>
+        <span class="separator"></span>
+        <button type="button" data-md-action="link" title="リンク">🔗</button>
+        <button type="button" data-md-action="inline-code" title="インラインコード">&lt;/&gt;</button>
+        <button type="button" data-md-action="code-block" title="コードブロック">```</button>
+        <button type="button" data-md-action="table" title="表を挿入">表</button>
+        <button type="button" data-md-action="mermaid" title="Mermaid図を挿入">Mermaid</button>
+        <button type="button" data-md-action="hr" title="水平線">―</button>
+        <span class="separator"></span>
+        <button type="button" id="new-drawio" class="primary-action" title="draw.io図を新規作成">＋ draw.io</button>
+        <button type="button" id="clipboard-image" class="primary-action" title="クリップボード画像をBase64で挿入">📋 画像</button>
+        <button type="button" id="upload-image" class="primary-action" title="画像ファイルをBase64で挿入">↑ 画像</button>
+        <span class="separator"></span>
+        <button type="button" id="fold-all" title="見出し・コードブロック・Base64をすべて折り畳む">▸ 全折畳</button>
+        <button type="button" id="unfold-all" title="すべて展開">▾ 全展開</button>
+        <input id="image-file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif" multiple>
+      </div>
+      <textarea id="markdown" spellcheck="false">
+       <!-- ここに ロードした md ファイルの内容が入る //-->
+      </textarea>
+    </section>
+
+    <section class="pane">
+      <div class="pane-header">Preview</div>
+      <article id="preview"></article>
+    </section>
+  </main>
+
+
+  <div id="paint-overlay" aria-hidden="true">
+    <div class="paint-toolbar tools">
+      <button type="button" class="toolbar-button tool-button active" data-paint-tool="pencil">鉛筆</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="brush">ブラシ</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="eraser">消しゴム</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="fill">塗りつぶし</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="picker">スポイト</button>
+      <div class="paint-separator"></div>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="line">直線</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="arrow">矢印</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="rect">四角形</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="roundrect">角丸</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="ellipse">楕円</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="triangle">三角形</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="text">テキスト</button>
+      <button type="button" class="toolbar-button tool-button secondary" data-paint-tool="crop">トリミング</button>
+      <span class="spacer"></span>
+      <button type="button" id="paint-cancel" class="toolbar-button secondary">キャンセル</button>
+      <button type="button" id="paint-save" class="toolbar-button">保存</button>
+    </div>
+
+    <div class="paint-toolbar options">
+      <button type="button" id="paint-undo" class="toolbar-button secondary">↶ 元に戻す</button>
+      <button type="button" id="paint-redo" class="toolbar-button secondary">↷ やり直し</button>
+      <div class="paint-separator"></div>
+      <label class="paint-field">色 <input id="paint-color" type="color" value="#000000"></label>
+      <label class="paint-field">太さ <input id="paint-size" type="range" min="1" max="60" value="4"><span id="paint-size-value">4 px</span></label>
+      <label class="paint-field">図形を塗る <input id="paint-fill-shape" type="checkbox"></label>
+      <label class="paint-field">文字 <input id="paint-font-size" type="number" min="6" max="300" value="24">px</label>
+      <div class="paint-separator"></div>
+      <button type="button" id="paint-rotate-left" class="toolbar-button secondary">↶ 90°</button>
+      <button type="button" id="paint-rotate-right" class="toolbar-button secondary">↷ 90°</button>
+      <button type="button" id="paint-flip-h" class="toolbar-button secondary">左右反転</button>
+      <button type="button" id="paint-flip-v" class="toolbar-button secondary">上下反転</button>
+      <button type="button" id="paint-resize" class="toolbar-button secondary">サイズ変更</button>
+      <button type="button" id="paint-clear" class="toolbar-button secondary">全消去</button>
+      <button type="button" id="paint-reset" class="toolbar-button secondary">元画像</button>
+      <span class="spacer"></span>
+      <span id="paint-status"></span>
+    </div>
+
+    <div id="paint-stage">
+      <canvas id="paint-canvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const markdownTextarea = document.getElementById('markdown');
+
+      function markdownFoldRange(cm, start) {
+        const line = cm.getLine(start.line) || '';
+
+        // ATX heading: 現在の見出しから、次の同レベル以上の見出し直前まで。
+        const heading = line.match(/^\s*(#{1,6})\s+\S/);
+        if (heading) {
+          const level = heading[1].length;
+          let endLine = cm.lineCount() - 1;
+          for (let i = start.line + 1; i < cm.lineCount(); i++) {
+            const next = (cm.getLine(i) || '').match(/^\s*(#{1,6})\s+\S/);
+            if (next && next[1].length <= level) { endLine = i - 1; break; }
+          }
+          if (endLine > start.line) {
+            return { from: CodeMirror.Pos(start.line, line.length), to: CodeMirror.Pos(endLine, (cm.getLine(endLine) || '').length) };
+          }
+        }
+
+        // fenced code block: ``` / ~~~ の開始行から終了フェンスまで。
+        const fence = line.match(/^\s*(`{3,}|~{3,})[^`~]*$/);
+        if (fence) {
+          const marker = fence[1][0];
+          const minLength = fence[1].length;
+          const closeRe = new RegExp('^\\s*' + (marker === '`' ? '`' : '~') + '{' + minLength + ',}\\s*$');
+          for (let i = start.line + 1; i < cm.lineCount(); i++) {
+            const candidate = cm.getLine(i) || '';
+            if (closeRe.test(candidate)) {
+              return { from: CodeMirror.Pos(start.line, line.length), to: CodeMirror.Pos(i, candidate.length) };
+            }
+          }
+        }
+
+        // Base64 Data URI: 長いBase64本体だけを1行内で折り畳む。
+        const data = line.match(/data:image\/(?:png|jpe?g|webp|gif|bmp|avif)(?:;[a-z0-9=._+-]+)*;base64,([a-z0-9+/=]{48,})/i);
+        if (data) {
+          const bodyStart = line.indexOf(data[1]);
+          const fromCh = bodyStart + Math.min(16, data[1].length);
+          const toCh = bodyStart + data[1].length - Math.min(12, Math.max(0, data[1].length - 17));
+          if (toCh > fromCh + 8) return { from: CodeMirror.Pos(start.line, fromCh), to: CodeMirror.Pos(start.line, toCh) };
+        }
+        return null;
+      }
+
+      const cm = CodeMirror.fromTextArea(markdownTextarea, {
+        mode: 'markdown',
+        lineWrapping: true,
+        viewportMargin: 20,
+        foldGutter: true,
+        gutters: ['CodeMirror-foldgutter'],
+        foldOptions: { rangeFinder: markdownFoldRange, widget: '…' },
+        extraKeys: { 'Ctrl-Q': editor => editor.foldCode(editor.getCursor(), { rangeFinder: markdownFoldRange }) }
+      });
+
+      // 既存処理を壊さないため、textareaに似た最小アダプターを用意する。
+      const markdown = {
+        get value() { return cm.getValue(); },
+        set value(value) { cm.setValue(String(value)); },
+        get selectionStart() { return cm.indexFromPos(cm.getCursor('from')); },
+        get selectionEnd() { return cm.indexFromPos(cm.getCursor('to')); },
+        focus() { cm.focus(); },
+        setSelectionRange(start, end = start) { cm.setSelection(cm.posFromIndex(start), cm.posFromIndex(end)); },
+        setRangeText(replacement, start, end, mode = 'preserve') {
+          const from = cm.posFromIndex(start);
+          const to = cm.posFromIndex(end);
+          cm.replaceRange(replacement, from, to, '+input');
+          const insertedEnd = start + replacement.length;
+          if (mode === 'select') cm.setSelection(cm.posFromIndex(start), cm.posFromIndex(insertedEnd));
+          else if (mode === 'start') cm.setCursor(cm.posFromIndex(start));
+          else cm.setCursor(cm.posFromIndex(insertedEnd));
+        }
+      };
+
+      const preview = document.getElementById('preview');
+      const viewerScript = document.getElementById('drawio-viewer-script');
+      const mdToolbar = document.getElementById('md-toolbar');
+      const newDrawioButton = document.getElementById('new-drawio');
+      const clipboardImageButton = document.getElementById('clipboard-image');
+      const uploadImageButton = document.getElementById('upload-image');
+      const imageFileInput = document.getElementById('image-file-input');
+      const foldAllButton = document.getElementById('fold-all');
+      const unfoldAllButton = document.getElementById('unfold-all');
+
+      const paintOverlay = document.getElementById('paint-overlay');
+      const paintCanvas = document.getElementById('paint-canvas');
+      const ctx = paintCanvas.getContext('2d', { willReadFrequently: true });
+      const paintColor = document.getElementById('paint-color');
+      const paintSize = document.getElementById('paint-size');
+      const paintSizeValue = document.getElementById('paint-size-value');
+      const paintFillShape = document.getElementById('paint-fill-shape');
+      const paintFontSize = document.getElementById('paint-font-size');
+      const paintUndo = document.getElementById('paint-undo');
+      const paintRedo = document.getElementById('paint-redo');
+      const paintRotateLeft = document.getElementById('paint-rotate-left');
+      const paintRotateRight = document.getElementById('paint-rotate-right');
+      const paintFlipH = document.getElementById('paint-flip-h');
+      const paintFlipV = document.getElementById('paint-flip-v');
+      const paintResize = document.getElementById('paint-resize');
+      const paintClear = document.getElementById('paint-clear');
+      const paintReset = document.getElementById('paint-reset');
+      const paintCancel = document.getElementById('paint-cancel');
+      const paintSave = document.getElementById('paint-save');
+      const paintStatus = document.getElementById('paint-status');
+      const toolButtons = Array.from(document.querySelectorAll('[data-paint-tool]'));
+
+      const DRAWIO_ORIGIN = 'https://embed.diagrams.net';
+      const EDITOR_URL = DRAWIO_ORIGIN + '/?embed=1&proto=json&spin=1&libraries=1&noSaveBtn=1';
+
+      let editingDrawioIndex = null;
+      let editingXml = null;
+      let editingDrawioDescriptor = null;
+      let drawioWindow = null;
+      let drawioWindowWatch = null;
+      let editingRasterIndex = null;
+      let editingRasterOriginal = null;
+      let renderTimer = null;
+      let drawioRenderIndex = 0;
+      let codeRenderBlocks = [];
+      let dataGridRenderBlocks = [];
+      let htmlPreviewBlocks = [];
+      let mermaidRenderBlocks = [];
+
+      let paintTool = 'pencil';
+      let painting = false;
+      let startPoint = null;
+      let lastPoint = null;
+      let dragSnapshot = null;
+      let history = [];
+      let redoStack = [];
+      const HISTORY_LIMIT = 20;
+
+      marked.use({
+        renderer: {
+          code(token) {
+            const info = parseFenceInfo(token.lang || '');
+            const lang = info.lang;
+            const raw = token.text || '';
+
+            if (lang === 'drawio') {
+              const index = drawioRenderIndex++;
+              const drawioRaw = raw.trim();
+              if (isSvgMarkup(drawioRaw)) {
+                const uri = escapeAttribute(svgToDataUri(drawioRaw));
+                return `<div class="editable-card" data-drawio-index="${index}"><div class="card-toolbar"><span class="card-toolbar-label">SVG → draw.io</span><button type="button" class="edit-button" data-edit-drawio="${index}">編集</button></div><div class="svg-drawio-view"><img src="${uri}" alt="SVG diagram"></div></div>`;
+              }
+              if (isMermaidSource(drawioRaw)) {
+                const mermaidIndex = mermaidRenderBlocks.push(drawioRaw) - 1;
+                return `<div class="editable-card" data-drawio-index="${index}"><div class="card-toolbar"><span class="card-toolbar-label">Mermaid → draw.io</span><button type="button" class="edit-button" data-edit-drawio="${index}">編集</button></div><div class="mermaid-view" data-mermaid-index="${mermaidIndex}"></div></div>`;
+              }
+              const xml = normalizeDrawioXml(drawioRaw);
+              const config = escapeAttribute(JSON.stringify({ highlight: '#0000ff', nav: true, resize: true, toolbar: 'zoom layers lightbox', xml }));
+              return `<div class="editable-card" data-drawio-index="${index}"><div class="card-toolbar"><button type="button" class="edit-button" data-edit-drawio="${index}">編集</button></div><div class="drawio-view mxgraph" data-mxgraph="${config}"></div></div>`;
+            }
+
+            if (lang === 'mermaid') {
+              const index = mermaidRenderBlocks.push(String(raw ?? '')) - 1;
+              const copyIndex = codeRenderBlocks.push(String(raw ?? '')) - 1;
+              const source = escapeHtml(raw);
+              return `<div class="mermaid-card"><div class="mermaid-toolbar"><span class="title">Mermaid</span><span class="spacer"></span><button type="button" class="code-copy-button" data-copy-code="${copyIndex}">コピー</button></div><div class="mermaid-view" data-mermaid-index="${index}"></div><details class="mermaid-source-details"><summary>Mermaidソース</summary><pre><code class="hljs">${source}</code></pre></details></div>`;
+            }
+
+            if (['csv', 'csv-h', 'tsv', 'tsv-h'].includes(lang)) {
+              const index = dataGridRenderBlocks.push({ lang, raw }) - 1;
+              return `<div class="data-grid-host" data-grid-index="${index}"></div>`;
+            }
+
+            if (lang === 'html' && isStandaloneHtmlDocument(raw)) {
+              const index = htmlPreviewBlocks.push({ raw, filename: info.filename }) - 1;
+              const source = highlightCode(raw, 'html');
+              const label = info.filename ? escapeHtml(info.filename) : 'HTML Preview';
+              return `<div class="html-preview-card" data-html-preview-index="${index}"><div class="html-preview-toolbar"><span class="title">${label}</span><span class="note">Shadow DOM preview</span><span class="spacer"></span><button type="button" class="data-grid-button" data-open-html="${index}">別ウィンドウで実行</button><button type="button" class="data-grid-button" data-reload-html="${index}">再読み込み</button></div><div class="html-preview-surface" data-html-shadow="${index}"></div><details class="html-source-details"><summary>HTMLソース</summary><pre><code class="hljs language-html">${source}</code></pre></details></div>`;
+            }
+
+            return renderHighlightedCode(raw, info);
+          }
+        }
+      });
+
+      function escapeAttribute(value) {
+        return String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+      }
+      function escapeHtml(value) {
+        return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+      }
+
+      function parseFenceInfo(value) {
+        const raw = String(value || '').trim();
+        const first = raw.split(/\s+/)[0] || '';
+        const colon = first.indexOf(':');
+        const langPart = colon >= 0 ? first.slice(0, colon) : first;
+        const filename = colon >= 0 ? first.slice(colon + 1) : '';
+        const aliases = {
+          js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript', py: 'python', rb: 'ruby',
+          sh: 'bash', shell: 'bash', ps1: 'powershell', yml: 'yaml', md: 'markdown', cs: 'csharp', csharp: 'csharp',
+          vb: 'vbnet', html5: 'html', htm: 'html'
+        };
+        const lower = langPart.toLowerCase();
+        return { lang: aliases[lower] || lower, filename };
+      }
+
+      function isStandaloneHtmlDocument(value) {
+        const text = String(value || '').trim();
+        if (/^<!doctype\s+html/i.test(text) || /<html(?:\s|>)/i.test(text)) return true;
+        return /<style(?:\s|>)/i.test(text) && /<script(?:\s|>)/i.test(text) && /<body(?:\s|>)|<main(?:\s|>)|<div(?:\s|>)/i.test(text);
+      }
+
+      function highlightCode(code, language) {
+        const text = String(code ?? '');
+        if (!window.hljs) return escapeHtml(text);
+        try {
+          if (language && window.hljs.getLanguage(language)) return window.hljs.highlight(text, { language, ignoreIllegals: true }).value;
+          if (!language) return window.hljs.highlightAuto(text).value;
+        } catch (error) {
+          console.warn('highlight.js:', error);
+        }
+        return escapeHtml(text);
+      }
+
+      function renderHighlightedCode(raw, info) {
+        const index = codeRenderBlocks.push(String(raw ?? '')) - 1;
+        const language = info.lang || '';
+        const highlighted = highlightCode(raw, language);
+        const label = language || 'text';
+        const filename = info.filename ? `<span class="code-filename">${escapeHtml(info.filename)}</span>` : '';
+        const langClass = language ? ` language-${escapeAttribute(language)}` : '';
+        return `<div class="code-card"><div class="code-card-header"><span class="code-label">${escapeHtml(label)}</span>${filename}<span class="spacer"></span><button type="button" class="code-copy-button" data-copy-code="${index}">コピー</button></div><pre><code class="hljs${langClass}">${highlighted}</code></pre></div>`;
+      }
+
+      async function copyTextToClipboard(text) {
+        const value = String(text ?? '');
+        if (navigator.clipboard?.writeText) {
+          try { await navigator.clipboard.writeText(value); return true; } catch {}
+        }
+        const area = document.createElement('textarea');
+        area.value = value;
+        area.style.position = 'fixed';
+        area.style.left = '-9999px';
+        document.body.appendChild(area);
+        area.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch {}
+        area.remove();
+        return ok;
+      }
+
+      function escapeXmlText(value) { return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+      function isBase64RasterUri(value) { return /^data:image\/(?:png|jpe?g|webp|gif|bmp|avif)(?:;[a-z0-9=._+-]+)*;base64,[a-z0-9+/=\r\n]+$/i.test((value || '').trim()); }
+
+      function injectRasterPlaceholders(source) {
+        const blocks = getRasterImageBlocks(source);
+        let result = source;
+        for (let i = blocks.length - 1; i >= 0; i--) {
+          const block = blocks[i];
+          result = result.slice(0, block.start) + `<span data-raster-placeholder="${i}"></span>` + result.slice(block.end);
+        }
+        return result;
+      }
+
+      function decorateRasterPlaceholders() {
+        const blocks = getRasterImageBlocks(markdown.value);
+        for (const placeholder of preview.querySelectorAll('[data-raster-placeholder]')) {
+          const index = Number(placeholder.dataset.rasterPlaceholder);
+          const block = blocks[index];
+          if (!block || !isBase64RasterUri(block.dataUri)) continue;
+          const card = document.createElement('div');
+          card.className = 'editable-card';
+          card.dataset.rasterIndex = String(index);
+          card.innerHTML = `<div class="card-toolbar"><button type="button" class="edit-button" data-edit-raster="${index}">編集</button></div><div class="raster-view"></div>`;
+          const img = document.createElement('img');
+          img.src = block.dataUri;
+          img.alt = 'Base64 image';
+          card.querySelector('.raster-view').appendChild(img);
+          placeholder.replaceWith(card);
+        }
+      }
+
+      function fallbackParseDelimited(text, delimiter) {
+        const rows = [];
+        let row = [];
+        let field = '';
+        let quoted = false;
+        const src = String(text ?? '').replace(/^\uFEFF/, '');
+        for (let i = 0; i < src.length; i++) {
+          const ch = src[i];
+          if (quoted) {
+            if (ch === '"') {
+              if (src[i + 1] === '"') { field += '"'; i++; }
+              else quoted = false;
+            } else field += ch;
+          } else if (ch === '"' && field.length === 0) {
+            quoted = true;
+          } else if (ch === delimiter) {
+            row.push(field); field = '';
+          } else if (ch === '\n' || ch === '\r') {
+            if (ch === '\r' && src[i + 1] === '\n') i++;
+            row.push(field); field = '';
+            if (row.some(cell => cell !== '')) rows.push(row);
+            row = [];
+          } else field += ch;
+        }
+        row.push(field);
+        if (row.some(cell => cell !== '') || rows.length === 0) rows.push(row);
+        return rows;
+      }
+
+      function parseDelimitedBlock(raw, lang) {
+        const delimiter = lang.startsWith('tsv') ? '\t' : ',';
+        let rows;
+        let errors = [];
+        if (window.Papa?.parse) {
+          const result = window.Papa.parse(String(raw ?? ''), { delimiter, skipEmptyLines: 'greedy' });
+          rows = result.data;
+          errors = result.errors || [];
+        } else rows = fallbackParseDelimited(raw, delimiter);
+        rows = (rows || []).map(row => (Array.isArray(row) ? row : [row]).map(cell => String(cell ?? '')));
+        const width = Math.max(1, ...rows.map(row => row.length));
+        rows = rows.map(row => Array.from({ length: width }, (_, i) => row[i] ?? ''));
+
+        // csv / csv-h / tsv / tsv-h の全てで1行目をヘッダーとして扱う。
+        // -h は既存Markdown互換のため言語名として残すが、表示上の意味は同じ。
+        let headers;
+        if (rows.length) headers = rows.shift().map((v, i) => v || `列 ${i + 1}`);
+        else headers = Array.from({ length: width }, (_, i) => `列 ${i + 1}`);
+        return { delimiter, headers, rows, errors };
+      }
+
+      function compareGridValues(a, b) {
+        const aa = String(a ?? '').trim();
+        const bb = String(b ?? '').trim();
+        const na = Number(aa.replaceAll(',', ''));
+        const nb = Number(bb.replaceAll(',', ''));
+        if (aa !== '' && bb !== '' && Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+        return aa.localeCompare(bb, 'ja', { numeric: true, sensitivity: 'base' });
+      }
+
+      function makeCsvText(matrix, delimiter = ',') {
+        if (window.Papa?.unparse) return window.Papa.unparse(matrix, { delimiter, newline: '\r\n' });
+        return matrix.map(row => row.map(value => {
+          const s = String(value ?? '');
+          return (s.includes(delimiter) || /["\r\n]/.test(s)) ? `"${s.replaceAll('"', '""')}"` : s;
+        }).join(delimiter)).join('\r\n');
+      }
+
+      function downloadTextFile(filename, text, type = 'text/plain;charset=utf-8') {
+        const blob = new Blob([text], { type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      function getDelimitedBlocks(source) {
+        const blocks = [];
+        const re = /^(`{3,}|~{3,})[ \t]*(csv(?:-h)?|tsv(?:-h)?)(?:[ \t]+[^\r\n]*)?\r?\n([\s\S]*?)\r?\n\1[ \t]*$/gmi;
+        let match;
+        while ((match = re.exec(source)) !== null) {
+          blocks.push({ start: match.index, end: re.lastIndex, fence: match[1], lang: match[2].toLowerCase(), raw: match[3] });
+        }
+        return blocks;
+      }
+
+      function replaceDelimitedBlock(source, targetIndex, headers, rows) {
+        const block = getDelimitedBlocks(source)[targetIndex];
+        if (!block) return source;
+        const delimiter = block.lang.startsWith('tsv') ? '\t' : ',';
+        const body = makeCsvText([headers, ...rows], delimiter);
+        const replacement = `${block.fence}${block.lang}\n${body}\n${block.fence}`;
+        return source.slice(0, block.start) + replacement + source.slice(block.end);
+      }
+
+      function editableCellText(cell) {
+        return String(cell?.innerText ?? cell?.textContent ?? '').replace(/\r?\n/g, ' ').trimEnd();
+      }
+
+      function openDataGridEditor(gridIndex) {
+        const block = dataGridRenderBlocks[gridIndex];
+        if (!block) return;
+        let parsed;
+        try { parsed = parseDelimitedBlock(block.raw, block.lang); }
+        catch (error) { alert(`表を編集できません: ${error.message}`); return; }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'table-editor-overlay';
+        overlay.innerHTML = `<div class="table-editor-dialog" role="dialog" aria-modal="true" aria-label="CSV TSV table editor">
+          <div class="table-editor-toolbar"><strong>表を編集 — ${escapeHtml(block.lang.toUpperCase())}</strong>
+            <button type="button" class="data-grid-button" data-table-edit-action="add-row">行を追加</button>
+            <button type="button" class="data-grid-button" data-table-edit-action="add-col">列を追加</button>
+          </div>
+          <div class="table-editor-note">先頭行はヘッダーです。ヘッダー名・セル値を直接編集できます。各行・各列の × で任意の行・列を削除できます。保存すると元のMarkdownコードブロックを書き換えます。</div>
+          <div class="table-editor-scroll"><table class="table-editor-grid"><thead></thead><tbody></tbody></table></div>
+          <div class="table-editor-footer"><button type="button" class="data-grid-button" data-table-edit-action="cancel">キャンセル</button><button type="button" class="edit-button" data-table-edit-action="save">保存</button></div>
+        </div>`;
+        document.body.appendChild(overlay);
+        const table = overlay.querySelector('.table-editor-grid');
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+        let editorHeaders = [...parsed.headers];
+        let editorRows = parsed.rows.map(row => [...row]);
+
+        function normalizeRows() {
+          const width = Math.max(1, editorHeaders.length);
+          editorRows = editorRows.map(row => Array.from({ length: width }, (_, i) => row[i] ?? ''));
+        }
+        function collectFromDom() {
+          const headCells = Array.from(thead.querySelectorAll('[data-edit-header]'));
+          if (headCells.length) editorHeaders = headCells.map((cell, i) => editableCellText(cell) || `列 ${i + 1}`);
+          editorRows = Array.from(tbody.querySelectorAll('tr')).map(tr => Array.from(tr.querySelectorAll('td[data-edit-cell]')).map(editableCellText));
+          normalizeRows();
+        }
+        function renderEditor() {
+          normalizeRows();
+          thead.innerHTML = `<tr><th class="row-number">#</th>${editorHeaders.map((value, i) => `<th><div class="table-editor-col-head"><span class="table-editor-col-name" contenteditable="true" spellcheck="false" data-edit-header="${i}">${escapeHtml(value)}</span><button type="button" class="table-editor-delete" data-delete-col="${i}" title="この列を削除" aria-label="列 ${i + 1} を削除">×</button></div></th>`).join('')}</tr>`;
+          tbody.innerHTML = editorRows.map((row, r) => `<tr><td class="row-number"><span>${r + 1}</span> <button type="button" class="table-editor-delete" data-delete-row="${r}" title="この行を削除" aria-label="行 ${r + 1} を削除">×</button></td>${row.map((value, c) => `<td contenteditable="true" spellcheck="false" data-edit-cell="${r}:${c}">${escapeHtml(value)}</td>`).join('')}</tr>`).join('');
+        }
+        function close() { overlay.remove(); }
+        renderEditor();
+        overlay.addEventListener('click', event => {
+          if (event.target === overlay) { close(); return; }
+
+          const deleteRowButton = event.target.closest('[data-delete-row]');
+          if (deleteRowButton) {
+            collectFromDom();
+            const rowIndex = Number(deleteRowButton.dataset.deleteRow);
+            if (Number.isInteger(rowIndex) && rowIndex >= 0 && rowIndex < editorRows.length) editorRows.splice(rowIndex, 1);
+            renderEditor();
+            return;
+          }
+
+          const deleteColButton = event.target.closest('[data-delete-col]');
+          if (deleteColButton) {
+            if (editorHeaders.length <= 1) { alert('列は1つ以上必要です。'); return; }
+            collectFromDom();
+            const colIndex = Number(deleteColButton.dataset.deleteCol);
+            if (Number.isInteger(colIndex) && colIndex >= 0 && colIndex < editorHeaders.length) {
+              editorHeaders.splice(colIndex, 1);
+              editorRows.forEach(row => row.splice(colIndex, 1));
+            }
+            renderEditor();
+            return;
+          }
+
+          const button = event.target.closest('[data-table-edit-action]');
+          if (!button) return;
+          const action = button.dataset.tableEditAction;
+          if (action === 'cancel') { close(); return; }
+          collectFromDom();
+          if (action === 'add-row') {
+            editorRows.push(editorHeaders.map(() => ''));
+            renderEditor();
+          } else if (action === 'add-col') {
+            editorHeaders.push(`新しい列 ${editorHeaders.length + 1}`);
+            editorRows.forEach(row => row.push(''));
+            renderEditor();
+          } else if (action === 'save') {
+            markdown.value = replaceDelimitedBlock(markdown.value, gridIndex, editorHeaders, editorRows);
+            close();
+            renderPreview();
+          }
+        });
+        overlay.addEventListener('keydown', event => {
+          if (event.key === 'Escape') { event.preventDefault(); close(); }
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+            event.preventDefault();
+            collectFromDom();
+            markdown.value = replaceDelimitedBlock(markdown.value, gridIndex, editorHeaders, editorRows);
+            close(); renderPreview();
+          }
+        });
+        overlay.querySelector('[contenteditable="true"]')?.focus();
+      }
+
+      function initDataGrid(host, block, gridIndex) {
+        let parsed;
+        try { parsed = parseDelimitedBlock(block.raw, block.lang); }
+        catch (error) { host.innerHTML = `<div class="data-grid-card"><div class="data-grid-error">${escapeHtml(error.message)}</div></div>`; return; }
+        const { headers, rows } = parsed;
+        const state = {
+          query: '', visible: headers.map(() => true), selected: headers.map(() => new Set()),
+          paneQueries: headers.map(() => ''), paneCollapsed: headers.map(() => false),
+          paneSortMode: headers.map(() => 'alpha'), paneSortDir: headers.map(() => 1),
+          sortCol: null, sortDir: 1, page: 0, pageSize: 10, panesOpen: true, columnsOpen: false
+        };
+
+        function filterRows(ignorePaneColumn = null) {
+          const q = state.query.trim().toLocaleLowerCase('ja');
+          let result = rows.map((row, sourceIndex) => ({ row, sourceIndex }));
+          if (q) result = result.filter(({ row }) => row.some(cell => String(cell).toLocaleLowerCase('ja').includes(q)));
+          result = result.filter(({ row }) => state.selected.every((set, col) => col === ignorePaneColumn || set.size === 0 || set.has(String(row[col] ?? ''))));
+          if (state.sortCol !== null) {
+            const col = state.sortCol, dir = state.sortDir;
+            result.sort((a, b) => {
+              const cmp = compareGridValues(a.row[col], b.row[col]);
+              return cmp === 0 ? a.sourceIndex - b.sourceIndex : cmp * dir;
+            });
+          }
+          return result;
+        }
+
+        function paneCounts(col) {
+          const counts = new Map();
+          for (const { row } of filterRows(col)) {
+            const value = String(row[col] ?? '');
+            counts.set(value, (counts.get(value) || 0) + 1);
+          }
+          for (const value of state.selected[col]) if (!counts.has(value)) counts.set(value, 0);
+          const paneQ = state.paneQueries[col].trim().toLocaleLowerCase('ja');
+          let values = [...counts.entries()];
+          if (paneQ) values = values.filter(([value]) => value.toLocaleLowerCase('ja').includes(paneQ));
+          const dir = state.paneSortDir[col];
+          if (state.paneSortMode[col] === 'count') {
+            values.sort((a, b) => ((a[1] - b[1]) * dir) || compareGridValues(a[0], b[0]));
+          } else values.sort((a, b) => compareGridValues(a[0], b[0]) * dir);
+          return values;
+        }
+
+        function visibleIndexes() { return state.visible.map((v, i) => v ? i : -1).filter(i => i >= 0); }
+
+        function exportMatrix() {
+          const cols = visibleIndexes();
+          const filtered = filterRows();
+          return [cols.map(i => headers[i]), ...filtered.map(({ row }) => cols.map(i => row[i] ?? ''))];
+        }
+
+        async function copyFiltered() {
+          const matrix = exportMatrix();
+          const tsv = matrix.map(row => row.map(v => String(v ?? '').replace(/[\t\r\n]+/g, ' ')).join('\t')).join('\r\n');
+          const ok = await copyTextToClipboard(tsv);
+          if (!ok) alert('クリップボードへのコピーに失敗しました。');
+        }
+
+        function exportCsv() {
+          const csv = '\uFEFF' + makeCsvText(exportMatrix(), ',');
+          downloadTextFile(`table-${gridIndex + 1}.csv`, csv, 'text/csv;charset=utf-8');
+        }
+
+        function printFiltered() {
+          const matrix = exportMatrix();
+          const popup = window.open('', '_blank');
+          if (!popup) { alert('印刷ウィンドウを開けませんでした。ポップアップを許可してください。'); return; }
+          try { popup.opener = null; } catch {}
+          const head = matrix[0] || [];
+          const body = matrix.slice(1);
+          popup.document.open();
+          popup.document.write(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>Table</title><style>body{font-family:system-ui,sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:5px 8px;text-align:left;vertical-align:top;white-space:pre-wrap}th{background:#eee}@media print{body{padding:0}}</style></head><body><table><thead><tr>${head.map(v => `<th>${escapeHtml(v)}</th>`).join('')}</tr></thead><tbody>${body.map(row => `<tr>${row.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('')}</tbody></table><script>window.onload=()=>{window.print();};<\/script></body></html>`);
+          popup.document.close();
+        }
+
+        function render(options = {}) {
+          const filtered = filterRows();
+          const pageSize = state.pageSize === Infinity ? Math.max(1, filtered.length) : state.pageSize;
+          const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+          state.page = Math.min(state.page, pageCount - 1);
+          const start = state.page * pageSize;
+          const pageRows = filtered.slice(start, start + pageSize);
+          const cols = visibleIndexes();
+          const status = filtered.length === 0 ? '0 件' : `${start + 1} ～ ${Math.min(start + pageRows.length, filtered.length)} / ${filtered.length} 件`;
+          const sortHeader = cols.map(i => {
+            const indicator = state.sortCol === i ? (state.sortDir > 0 ? '▲' : '▼') : '↕';
+            const aria = state.sortCol === i ? (state.sortDir > 0 ? 'ascending' : 'descending') : 'none';
+            return `<th aria-sort="${aria}"><button type="button" class="data-grid-sort" data-grid-sort="${i}"><span>${escapeHtml(headers[i])}</span><span class="data-grid-sort-indicator">${indicator}</span></button></th>`;
+          }).join('');
+          const tableBody = pageRows.length
+            ? pageRows.map(({ row }) => `<tr>${cols.map(i => `<td>${escapeHtml(row[i] ?? '')}</td>`).join('')}</tr>`).join('')
+            : `<tr><td class="data-grid-empty" colspan="${Math.max(1, cols.length)}">該当するデータがありません</td></tr>`;
+
+          const colPanel = state.columnsOpen ? `<div class="data-grid-panel"><div class="column-visibility-list">${headers.map((h, i) => `<label><input type="checkbox" data-grid-visible="${i}" ${state.visible[i] ? 'checked' : ''} ${state.visible[i] && state.visible.filter(Boolean).length === 1 ? 'disabled' : ''}> ${escapeHtml(h)}</label>`).join('')}</div></div>` : '';
+          const activePaneFilters = state.selected.reduce((n, set) => n + (set.size ? 1 : 0), 0);
+          const panes = state.panesOpen ? `<div class="data-grid-panel"><div class="search-panes-head"><span class="filters-active">Filters Active - ${activePaneFilters}</span><button type="button" class="data-grid-button" data-grid-panes-action="collapse-all">Collapse All</button><button type="button" class="data-grid-button" data-grid-panes-action="show-all">Show All</button><button type="button" class="data-grid-button" data-grid-panes-action="clear-all" ${activePaneFilters === 0 && state.paneQueries.every(q => !q) ? 'disabled' : ''}>Clear All</button></div><div class="search-panes-grid">${headers.map((h, col) => {
+            const values = paneCounts(col);
+            const shown = values.slice(0, 250);
+            const alphaLabel = state.paneSortMode[col] === 'alpha' ? `Aa${state.paneSortDir[col] > 0 ? '↑' : '↓'}` : 'Aa↕';
+            const countLabel = state.paneSortMode[col] === 'count' ? `#${state.paneSortDir[col] > 0 ? '↑' : '↓'}` : '#↕';
+            return `<section class="search-pane ${state.paneCollapsed[col] ? 'collapsed' : ''}"><div class="search-pane-title" title="${escapeAttribute(h)}">${escapeHtml(h)}</div><div class="search-pane-tools"><input type="search" data-grid-pane-search="${col}" value="${escapeAttribute(state.paneQueries[col])}" placeholder="${escapeAttribute(h)} を検索"><button type="button" class="search-pane-tool" data-grid-pane-clear="${col}" title="この列の検索・選択を解除">×</button><button type="button" class="search-pane-tool ${state.paneSortMode[col] === 'alpha' ? 'active' : ''}" data-grid-pane-sort-alpha="${col}" title="候補を文字順に並べる">${alphaLabel}</button><button type="button" class="search-pane-tool ${state.paneSortMode[col] === 'count' ? 'active' : ''}" data-grid-pane-sort-count="${col}" title="候補を件数順に並べる">${countLabel}</button><button type="button" class="search-pane-tool" data-grid-pane-collapse="${col}" title="折り畳み">${state.paneCollapsed[col] ? '⌄' : '⌃'}</button></div><div class="search-pane-values">${shown.length ? shown.map(([value, count]) => `<label><input type="checkbox" data-grid-pane-col="${col}" data-grid-pane-value="${escapeAttribute(encodeURIComponent(value))}" ${state.selected[col].has(value) ? 'checked' : ''}><span class="pane-value" title="${escapeAttribute(value || '(空白)')}">${escapeHtml(value || '(空白)')}</span><span class="pane-count">${count}</span></label>`).join('') : '<div class="search-pane-no-values">候補なし</div>'}${values.length > shown.length ? `<div class="search-pane-no-values">ほか ${values.length - shown.length} 候補</div>` : ''}</div></section>`;
+          }).join('')}</div></div>` : '';
+
+          const hasActiveFilter = state.query.trim() !== '' || state.selected.some(set => set.size > 0);
+          host.innerHTML = `<div class="data-grid-card"><div class="data-grid-toolbar"><button type="button" class="data-grid-button ${state.columnsOpen ? 'active' : ''}" data-grid-action="columns">列表示</button><button type="button" class="data-grid-button ${state.panesOpen ? 'active' : ''}" data-grid-action="panes">SearchPanes</button><button type="button" class="data-grid-button" data-grid-action="clear" ${hasActiveFilter ? '' : 'disabled'}>フィルタ解除</button><button type="button" class="data-grid-button" data-grid-action="edit">表を編集</button><button type="button" class="data-grid-button" data-grid-action="copy">コピー</button><button type="button" class="data-grid-button" data-grid-action="csv">CSV</button><button type="button" class="data-grid-button" data-grid-action="print">印刷</button><label class="data-grid-search">検索 <input type="search" data-grid-search value="${escapeAttribute(state.query)}" placeholder="全列を検索"></label></div>${colPanel}${panes}<div class="data-grid-table-wrap"><table class="data-grid-table"><thead><tr>${sortHeader}</tr></thead><tbody>${tableBody}</tbody></table></div><div class="data-grid-footer"><span>${status}</span><span class="spacer"></span><label>表示件数 <select data-grid-page-size><option value="10" ${state.pageSize === 10 ? 'selected' : ''}>10</option><option value="25" ${state.pageSize === 25 ? 'selected' : ''}>25</option><option value="50" ${state.pageSize === 50 ? 'selected' : ''}>50</option><option value="all" ${state.pageSize === Infinity ? 'selected' : ''}>すべて</option></select></label><button type="button" class="data-grid-button" data-grid-action="prev" ${state.page <= 0 ? 'disabled' : ''}>前へ</button><span>${state.page + 1} / ${pageCount}</span><button type="button" class="data-grid-button" data-grid-action="next" ${state.page >= pageCount - 1 ? 'disabled' : ''}>次へ</button></div></div>`;
+          bind();
+          if (options.focusSearch) {
+            const input = host.querySelector('[data-grid-search]');
+            input?.focus();
+            try { input?.setSelectionRange(input.value.length, input.value.length); } catch {}
+          } else if (Number.isInteger(options.focusPaneSearch)) {
+            const input = host.querySelector(`[data-grid-pane-search="${options.focusPaneSearch}"]`);
+            input?.focus();
+            try { input?.setSelectionRange(input.value.length, input.value.length); } catch {}
+          }
+        }
+
+        function bind() {
+          const searchInput = host.querySelector('[data-grid-search]');
+          searchInput?.addEventListener('input', event => {
+            if (event.isComposing) return;
+            state.query = event.target.value; state.page = 0; render({ focusSearch: true });
+          });
+          searchInput?.addEventListener('compositionend', event => {
+            state.query = event.target.value; state.page = 0; render({ focusSearch: true });
+          });
+          host.querySelector('[data-grid-page-size]')?.addEventListener('change', event => {
+            state.pageSize = event.target.value === 'all' ? Infinity : Number(event.target.value); state.page = 0; render();
+          });
+          host.querySelectorAll('[data-grid-sort]').forEach(button => button.addEventListener('click', () => {
+            const col = Number(button.dataset.gridSort);
+            if (state.sortCol === col) state.sortDir *= -1; else { state.sortCol = col; state.sortDir = 1; }
+            state.page = 0; render();
+          }));
+          host.querySelectorAll('[data-grid-visible]').forEach(input => input.addEventListener('change', () => {
+            state.visible[Number(input.dataset.gridVisible)] = input.checked;
+            if (!state.visible.some(Boolean)) state.visible[Number(input.dataset.gridVisible)] = true;
+            render();
+          }));
+          host.querySelectorAll('[data-grid-pane-search]').forEach(input => {
+            const apply = event => {
+              const col = Number(event.target.dataset.gridPaneSearch);
+              state.paneQueries[col] = event.target.value;
+              render({ focusPaneSearch: col });
+            };
+            input.addEventListener('input', event => { if (!event.isComposing) apply(event); });
+            input.addEventListener('compositionend', apply);
+          });
+          host.querySelectorAll('[data-grid-pane-col]').forEach(input => input.addEventListener('change', () => {
+            const col = Number(input.dataset.gridPaneCol);
+            const value = decodeURIComponent(input.dataset.gridPaneValue || '');
+            if (input.checked) state.selected[col].add(value); else state.selected[col].delete(value);
+            state.page = 0; render();
+          }));
+          host.querySelectorAll('[data-grid-pane-clear]').forEach(button => button.addEventListener('click', () => {
+            const col = Number(button.dataset.gridPaneClear);
+            state.selected[col].clear(); state.paneQueries[col] = ''; state.page = 0; render();
+          }));
+          host.querySelectorAll('[data-grid-pane-sort-alpha]').forEach(button => button.addEventListener('click', () => {
+            const col = Number(button.dataset.gridPaneSortAlpha);
+            if (state.paneSortMode[col] === 'alpha') state.paneSortDir[col] *= -1;
+            else { state.paneSortMode[col] = 'alpha'; state.paneSortDir[col] = 1; }
+            render();
+          }));
+          host.querySelectorAll('[data-grid-pane-sort-count]').forEach(button => button.addEventListener('click', () => {
+            const col = Number(button.dataset.gridPaneSortCount);
+            if (state.paneSortMode[col] === 'count') state.paneSortDir[col] *= -1;
+            else { state.paneSortMode[col] = 'count'; state.paneSortDir[col] = -1; }
+            render();
+          }));
+          host.querySelectorAll('[data-grid-pane-collapse]').forEach(button => button.addEventListener('click', () => {
+            const col = Number(button.dataset.gridPaneCollapse); state.paneCollapsed[col] = !state.paneCollapsed[col]; render();
+          }));
+          host.querySelectorAll('[data-grid-panes-action]').forEach(button => button.addEventListener('click', () => {
+            const action = button.dataset.gridPanesAction;
+            if (action === 'collapse-all') state.paneCollapsed.fill(true);
+            else if (action === 'show-all') state.paneCollapsed.fill(false);
+            else if (action === 'clear-all') { state.selected.forEach(set => set.clear()); state.paneQueries.fill(''); state.page = 0; }
+            render();
+          }));
+          host.querySelectorAll('[data-grid-action]').forEach(button => button.addEventListener('click', async () => {
+            switch (button.dataset.gridAction) {
+              case 'columns': state.columnsOpen = !state.columnsOpen; render(); break;
+              case 'panes': state.panesOpen = !state.panesOpen; render(); break;
+              case 'clear': state.query = ''; state.selected.forEach(set => set.clear()); state.page = 0; render(); break;
+              case 'edit': openDataGridEditor(gridIndex); break;
+              case 'copy': await copyFiltered(); break;
+              case 'csv': exportCsv(); break;
+              case 'print': printFiltered(); break;
+              case 'prev': state.page = Math.max(0, state.page - 1); render(); break;
+              case 'next': state.page += 1; render(); break;
+            }
+          }));
+        }
+        render();
+      }
+
+      function decorateDataGridHosts() {
+        for (const host of preview.querySelectorAll('[data-grid-index]')) {
+          const index = Number(host.dataset.gridIndex);
+          const block = dataGridRenderBlocks[index];
+          if (block) initDataGrid(host, block, index);
+        }
+      }
+
+      function createScopedPreviewDocument(root, shadow) {
+        const overrides = {
+          body: root,
+          head: shadow,
+          documentElement: root,
+          readyState: 'complete',
+          querySelector: selector => root.querySelector(selector),
+          querySelectorAll: selector => root.querySelectorAll(selector),
+          getElementById: id => Array.from(root.querySelectorAll('[id]')).find(element => element.id === id) || null,
+          getElementsByClassName: name => root.getElementsByClassName(name),
+          getElementsByTagName: name => root.getElementsByTagName(name),
+          createElement: (...args) => document.createElement(...args),
+          createElementNS: (...args) => document.createElementNS(...args),
+          createTextNode: (...args) => document.createTextNode(...args),
+          createDocumentFragment: () => document.createDocumentFragment(),
+          addEventListener: (type, listener, options) => {
+            if (type === 'DOMContentLoaded' || type === 'readystatechange') queueMicrotask(() => listener.call(overrides, new Event(type)));
+            else root.addEventListener(type, listener, options);
+          },
+          removeEventListener: (...args) => root.removeEventListener(...args)
+        };
+        return new Proxy(document, {
+          get(target, prop) {
+            if (prop in overrides) return overrides[prop];
+            const value = Reflect.get(target, prop, target);
+            return typeof value === 'function' ? value.bind(target) : value;
+          }
+        });
+      }
+
+      function createScopedPreviewWindow(scopedDocument) {
+        const locals = Object.create(null);
+        let proxy;
+        proxy = new Proxy(window, {
+          get(target, prop) {
+            if (prop === 'document') return scopedDocument;
+            if (prop === 'window' || prop === 'self' || prop === 'globalThis') return proxy;
+            if (Object.prototype.hasOwnProperty.call(locals, prop)) return locals[prop];
+            const value = Reflect.get(target, prop, target);
+            return typeof value === 'function' ? value.bind(target) : value;
+          },
+          set(target, prop, value) { locals[prop] = value; return true; },
+          has(target, prop) { return prop in locals || prop in target; }
+        });
+        return proxy;
+      }
+
+      function resolvePreviewUrl(url, parsed) {
+        const base = parsed.querySelector('base[href]')?.getAttribute('href') || location.href;
+        try { return new URL(url, base).href; } catch { return url; }
+      }
+
+      async function collectPreviewScriptCode(parsed) {
+        const chunks = [];
+        for (const script of parsed.querySelectorAll('script')) {
+          const type = (script.getAttribute('type') || '').trim().toLowerCase();
+          if (type === 'module' || (type && !['text/javascript', 'application/javascript'].includes(type))) {
+            chunks.push(`console.warn(${JSON.stringify('HTML preview: module/non-classic script was skipped.')});`);
+            continue;
+          }
+          const src = script.getAttribute('src');
+          if (src) {
+            const resolved = resolvePreviewUrl(src, parsed);
+            try {
+              const response = await fetch(resolved);
+              if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+              chunks.push(`\n/* external: ${resolved.replace(/\*\//g, '* /')} */\n${await response.text()}\n`);
+            } catch (error) {
+              chunks.push(`console.warn(${JSON.stringify('HTML preview: external script could not be loaded: ' + resolved)}, ${JSON.stringify(String(error))});`);
+            }
+          } else {
+            chunks.push(script.textContent || '');
+          }
+        }
+        return chunks.join('\n;\n');
+      }
+
+      async function renderHtmlShadowPreview(host, raw) {
+        const shadow = host.shadowRoot || host.attachShadow({ mode: 'open' });
+        shadow.replaceChildren();
+        const parsed = new DOMParser().parseFromString(raw, 'text/html');
+        const baseStyle = document.createElement('style');
+        baseStyle.textContent = `:host{display:block;min-height:420px;background:#fff;color:#1f2328}*{box-sizing:border-box}.preview-document{min-height:420px;padding:0;overflow:auto}`;
+        shadow.appendChild(baseStyle);
+
+        for (const node of parsed.head.querySelectorAll('style, link[rel="stylesheet"]')) {
+          if (node.tagName === 'LINK') {
+            const clone = node.cloneNode(true);
+            const href = clone.getAttribute('href');
+            if (href) clone.setAttribute('href', resolvePreviewUrl(href, parsed));
+            shadow.appendChild(clone);
+          } else {
+            shadow.appendChild(node.cloneNode(true));
+          }
+        }
+
+        const root = document.createElement('div');
+        root.className = `preview-document ${parsed.body.className || ''}`.trim();
+        if (parsed.body.getAttribute('style')) root.setAttribute('style', parsed.body.getAttribute('style'));
+        for (const attr of ['dir', 'lang']) if (parsed.body.hasAttribute(attr)) root.setAttribute(attr, parsed.body.getAttribute(attr));
+
+        for (const child of Array.from(parsed.body.childNodes)) {
+          if (child.nodeType === Node.ELEMENT_NODE && child.tagName === 'SCRIPT') continue;
+          root.appendChild(child.cloneNode(true));
+        }
+        shadow.appendChild(root);
+
+        const handlers = [];
+        let handlerId = 0;
+        for (const element of root.querySelectorAll('*')) {
+          for (const attr of Array.from(element.attributes)) {
+            if (!/^on/i.test(attr.name)) continue;
+            const eventType = attr.name.slice(2).toLowerCase();
+            const id = `hp-${handlerId++}`;
+            element.setAttribute('data-html-handler-id', id);
+            handlers.push({ id, eventType, code: attr.value });
+            element.removeAttribute(attr.name);
+          }
+        }
+
+        const scopedDocument = createScopedPreviewDocument(root, shadow);
+        const scopedWindow = createScopedPreviewWindow(scopedDocument);
+        try {
+          const scripts = await collectPreviewScriptCode(parsed);
+          const handlerCode = handlers.map(h => `document.querySelector('[data-html-handler-id="${h.id}"]')?.addEventListener(${JSON.stringify(h.eventType)}, function(event){\n${h.code}\n});`).join('\n');
+          const runner = new Function('document', 'window', 'self', 'globalThis', `'use strict';\n${scripts}\n${handlerCode}\n//# sourceURL=markdown-html-preview.js`);
+          runner(scopedDocument, scopedWindow, scopedWindow, scopedWindow);
+        } catch (error) {
+          console.error('HTML Shadow DOM preview error:', error);
+          const warning = document.createElement('div');
+          warning.className = 'html-preview-warning';
+          warning.textContent = 'JavaScript実行エラー: ' + (error?.message || error);
+          shadow.appendChild(warning);
+        }
+      }
+
+      async function decorateMermaidPreviews() {
+        const hosts = Array.from(preview.querySelectorAll('[data-mermaid-index]'));
+        if (!hosts.length) return;
+        if (!window.mermaid || typeof window.mermaid.render !== 'function') {
+          for (const host of hosts) host.innerHTML = '<div class="mermaid-error">Mermaidライブラリを読み込めませんでした。CDNへの接続を確認してください。</div>';
+          return;
+        }
+        try {
+          window.mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default' });
+        } catch (error) {
+          console.warn('Mermaid initialize:', error);
+        }
+        for (const host of hosts) {
+          const index = Number(host.dataset.mermaidIndex);
+          const raw = mermaidRenderBlocks[index];
+          if (raw == null) continue;
+          try {
+            const id = `mermaid-${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`;
+            const result = await window.mermaid.render(id, raw);
+            if (!host.isConnected) continue;
+            host.innerHTML = result.svg;
+            if (typeof result.bindFunctions === 'function') result.bindFunctions(host);
+          } catch (error) {
+            if (!host.isConnected) continue;
+            host.innerHTML = `<div class="mermaid-error">Mermaid構文エラー:
+${escapeHtml(error?.message || String(error))}</div>`;
+          }
+        }
+      }
+
+      function decorateHtmlPreviews() {
+        for (const host of preview.querySelectorAll('[data-html-shadow]')) {
+          const index = Number(host.dataset.htmlShadow);
+          const block = htmlPreviewBlocks[index];
+          if (block) renderHtmlShadowPreview(host, block.raw);
+        }
+      }
+
+      function openHtmlPreviewWindow(index) {
+        const block = htmlPreviewBlocks[index];
+        if (!block) return;
+        const blob = new Blob([block.raw], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const popup = window.open(url, '_blank');
+        if (!popup) {
+          URL.revokeObjectURL(url);
+          alert('プレビュー用の新しいウィンドウ/タブを開けませんでした。ポップアップ許可を確認してください。');
+          return;
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      }
+
+      function isSvgMarkup(value) { return /^<svg(?:\s|>)/i.test((value || '').trim()); }
+
+      function stripMermaidFrontMatter(value) {
+        const text = String(value || '').replace(/^\uFEFF/, '').trim();
+        return text.replace(/^---\s*\r?\n[\s\S]*?\r?\n---\s*\r?\n/, '').trim();
+      }
+
+      function isMermaidSource(value) {
+        const text = stripMermaidFrontMatter(value);
+        if (!text || text.startsWith('<')) return false;
+        try {
+          if (window.mermaid && typeof window.mermaid.detectType === 'function') {
+            window.mermaid.detectType(text);
+            return true;
+          }
+        } catch {}
+        // CDN未読込時のフォールバック。Mermaid 11系の主要diagram宣言を対象にする。
+        return /^(?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram(?:-v2)?|erDiagram|journey|gantt|pie|gitGraph|mindmap|timeline|quadrantChart|requirementDiagram|C4(?:Context|Container|Component|Dynamic|Deployment)|architecture-beta|block-beta|packet-beta|xychart-beta|sankey-beta|kanban|radar-beta)\b/i.test(text);
+      }
+
+      function svgToDataUri(svg) {
+        const bytes = new TextEncoder().encode(svg);
+        let binary = '';
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+        return 'data:image/svg+xml;base64,' + btoa(binary);
+      }
+
+      function escapeXmlAttribute(value) {
+        return String(value ?? '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('"', '&quot;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;');
+      }
+
+      const SVG_STYLE_KEYS = [
+        'fill', 'stroke', 'stroke-width', 'stroke-opacity', 'fill-opacity', 'opacity',
+        'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'font-family',
+        'font-size', 'font-weight', 'font-style', 'text-anchor', 'dominant-baseline',
+        'marker-start', 'marker-end'
+      ];
+
+      const colorProbe = document.createElement('canvas').getContext('2d');
+
+      function parseCssDeclarations(text) {
+        const result = {};
+        for (const part of String(text || '').split(';')) {
+          const colon = part.indexOf(':');
+          if (colon < 0) continue;
+          const key = part.slice(0, colon).trim().toLowerCase();
+          const value = part.slice(colon + 1).trim();
+          if (key) result[key] = value;
+        }
+        return result;
+      }
+
+      function parseSvgCssRules(doc) {
+        const rules = [];
+        for (const style of doc.querySelectorAll('style')) {
+          const css = (style.textContent || '').replace(/\/\*[\s\S]*?\*\//g, '');
+          const re = /([^{}]+)\{([^{}]*)\}/g;
+          let m;
+          while ((m = re.exec(css))) {
+            const decl = parseCssDeclarations(m[2]);
+            for (const selector of m[1].split(',')) {
+              const sel = selector.trim();
+              if (/^(?:[a-z][\w-]*|\.[\w-]+|#[\w-]+)$/i.test(sel)) rules.push({ selector: sel, decl });
+            }
+          }
+        }
+        return rules;
+      }
+
+      function selectorMatchesSvgElement(el, selector) {
+        if (selector.startsWith('#')) return el.getAttribute('id') === selector.slice(1);
+        if (selector.startsWith('.')) return (el.getAttribute('class') || '').split(/\s+/).includes(selector.slice(1));
+        return el.localName?.toLowerCase() === selector.toLowerCase();
+      }
+
+      function resolveSvgStyle(el, inherited, cssRules) {
+        const result = { ...(inherited || {}) };
+        for (const rule of cssRules) if (selectorMatchesSvgElement(el, rule.selector)) Object.assign(result, rule.decl);
+        for (const key of SVG_STYLE_KEYS) if (el.hasAttribute(key)) result[key] = el.getAttribute(key);
+        Object.assign(result, parseCssDeclarations(el.getAttribute('style')));
+
+        const parentOpacity = Number(inherited?.__opacity ?? 1);
+        const ownOpacity = Number.parseFloat(result.opacity ?? '1');
+        result.__opacity = parentOpacity * (Number.isFinite(ownOpacity) ? ownOpacity : 1);
+        return result;
+      }
+
+      function svgColor(value, fallback = 'none') {
+        let raw = String(value ?? '').trim();
+        if (!raw) return fallback;
+        if (/^(none|transparent)$/i.test(raw)) return 'none';
+        if (/^url\(/i.test(raw)) return fallback;
+        if (/^#[0-9a-f]{3}$/i.test(raw)) return '#' + [...raw.slice(1)].map(c => c + c).join('').toUpperCase();
+        if (/^#[0-9a-f]{6}$/i.test(raw)) return raw.toUpperCase();
+        const rgb = raw.match(/^rgba?\(\s*([\d.]+)%?\s*[, ]\s*([\d.]+)%?\s*[, ]\s*([\d.]+)%?/i);
+        if (rgb) {
+          const values = rgb.slice(1, 4).map(v => Math.max(0, Math.min(255, Math.round(Number(v)))));
+          return '#' + values.map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+        }
+        if (colorProbe) {
+          const sentinel = '#010203';
+          colorProbe.fillStyle = sentinel;
+          try { colorProbe.fillStyle = raw; } catch {}
+          const normalized = colorProbe.fillStyle;
+          if (normalized !== sentinel || /^#010203$/i.test(raw)) {
+            if (/^#[0-9a-f]{6}$/i.test(normalized)) return normalized.toUpperCase();
+            const m = normalized.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+            if (m) return '#' + m.slice(1, 4).map(v => Number(v).toString(16).padStart(2, '0')).join('').toUpperCase();
+          }
+        }
+        return fallback;
+      }
+
+      function clamp100(value, fallback = 100) {
+        const n = Number.parseFloat(value);
+        return Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n * 100))) : fallback;
+      }
+
+      function svgPaintStyle(style, kind = 'shape', rotation = 0) {
+        const fillDefault = kind === 'shape' ? '#000000' : 'none';
+        const strokeDefault = kind === 'shape' ? 'none' : '#000000';
+        const fill = svgColor(style.fill, fillDefault);
+        const stroke = svgColor(style.stroke, strokeDefault);
+        const strokeWidth = Math.max(0, Number.parseFloat(style['stroke-width'] || '1') || 1);
+        const opacity = Math.max(0, Math.min(100, Math.round((style.__opacity ?? 1) * 100)));
+        const fillOpacity = clamp100(style['fill-opacity'], 100);
+        const strokeOpacity = clamp100(style['stroke-opacity'], 100);
+        let out = `fillColor=${fill};strokeColor=${stroke};strokeWidth=${strokeWidth};opacity=${opacity};fillOpacity=${fillOpacity};strokeOpacity=${strokeOpacity};`;
+        const dash = String(style['stroke-dasharray'] || '').trim();
+        if (dash && dash.toLowerCase() !== 'none') out += `dashed=1;dashPattern=${dash.replace(/,/g, ' ')};`;
+        if (style['stroke-linecap'] === 'round') out += 'lineCap=round;';
+        if (style['stroke-linejoin'] === 'round') out += 'rounded=1;';
+        if (Math.abs(rotation) > 0.01) out += `rotation=${Number(rotation.toFixed(3))};`;
+        return out;
+      }
+
+      function identityMatrix() { return [1, 0, 0, 1, 0, 0]; }
+      function multiplyMatrix(a, b) {
+        return [
+          a[0] * b[0] + a[2] * b[1],
+          a[1] * b[0] + a[3] * b[1],
+          a[0] * b[2] + a[2] * b[3],
+          a[1] * b[2] + a[3] * b[3],
+          a[0] * b[4] + a[2] * b[5] + a[4],
+          a[1] * b[4] + a[3] * b[5] + a[5]
+        ];
+      }
+      function translationMatrix(x, y) { return [1, 0, 0, 1, x, y]; }
+      function scaleMatrix(x, y = x) { return [x, 0, 0, y, 0, 0]; }
+      function rotationMatrix(deg) {
+        const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+        return [c, s, -s, c, 0, 0];
+      }
+      function applyMatrix(m, p) { return { x: m[0] * p.x + m[2] * p.y + m[4], y: m[1] * p.x + m[3] * p.y + m[5] }; }
+
+      function parseSvgTransform(text) {
+        let matrix = identityMatrix();
+        const re = /([a-zA-Z]+)\s*\(([^)]*)\)/g;
+        let m;
+        while ((m = re.exec(String(text || '')))) {
+          const name = m[1].toLowerCase();
+          const n = m[2].trim().split(/[\s,]+/).filter(Boolean).map(Number);
+          let op = identityMatrix();
+          if (name === 'matrix' && n.length >= 6) op = n.slice(0, 6);
+          else if (name === 'translate') op = translationMatrix(n[0] || 0, n.length > 1 ? n[1] || 0 : 0);
+          else if (name === 'scale') op = scaleMatrix(n[0] ?? 1, n.length > 1 ? n[1] ?? 1 : n[0] ?? 1);
+          else if (name === 'rotate') {
+            const r = rotationMatrix(n[0] || 0);
+            op = n.length >= 3
+              ? multiplyMatrix(translationMatrix(n[1], n[2]), multiplyMatrix(r, translationMatrix(-n[1], -n[2])))
+              : r;
+          }
+          else if (name === 'skewx') op = [1, 0, Math.tan((n[0] || 0) * Math.PI / 180), 1, 0, 0];
+          else if (name === 'skewy') op = [1, Math.tan((n[0] || 0) * Math.PI / 180), 0, 1, 0, 0];
+          matrix = multiplyMatrix(matrix, op);
+        }
+        return matrix;
+      }
+
+      function svgNumber(value, fallback = 0) {
+        const n = Number.parseFloat(String(value ?? '').trim());
+        return Number.isFinite(n) ? n : fallback;
+      }
+
+      function svgRootGeometry(root) {
+        const viewBox = (root.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+        let minX = 0, minY = 0;
+        let width = svgNumber(root.getAttribute('width'), NaN);
+        let height = svgNumber(root.getAttribute('height'), NaN);
+        if (viewBox.length === 4 && viewBox.every(Number.isFinite) && viewBox[2] > 0 && viewBox[3] > 0) {
+          [minX, minY] = viewBox;
+          if (!Number.isFinite(width) || width <= 0) width = viewBox[2];
+          if (!Number.isFinite(height) || height <= 0) height = viewBox[3];
+        }
+        if (!Number.isFinite(width) || width <= 0) width = viewBox[2] || 640;
+        if (!Number.isFinite(height) || height <= 0) height = viewBox[3] || 360;
+        const maxDimension = 1000;
+        const scale = Math.min(1, maxDimension / Math.max(width, height));
+        return { minX, minY, width, height, scale };
+      }
+
+      function transformedBox(x, y, width, height, matrix) {
+        const center = applyMatrix(matrix, { x: x + width / 2, y: y + height / 2 });
+        const sx = Math.hypot(matrix[0], matrix[1]);
+        const sy = Math.hypot(matrix[2], matrix[3]);
+        const w = Math.max(1, Math.abs(width * sx));
+        const h = Math.max(1, Math.abs(height * sy));
+        const rotation = Math.atan2(matrix[1], matrix[0]) * 180 / Math.PI;
+        return { x: center.x - w / 2, y: center.y - h / 2, width: w, height: h, rotation };
+      }
+
+      function pointsBounds(points) {
+        if (!points.length) return null;
+        const xs = points.map(p => p.x), ys = points.map(p => p.y);
+        const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+        return { x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+      }
+
+      function parseSvgPoints(text) {
+        const nums = String(text || '').trim().split(/[\s,]+/).filter(Boolean).map(Number).filter(Number.isFinite);
+        const points = [];
+        for (let i = 0; i + 1 < nums.length; i += 2) points.push({ x: nums[i], y: nums[i + 1] });
+        return points;
+      }
+
+      function svgPolygonCell(id, points, style) {
+        const bounds = pointsBounds(points);
+        if (!bounds || points.length < 3) return '';
+        const normalized = points.map(p => [
+          Number(((p.x - bounds.x) / bounds.width).toFixed(5)),
+          Number(((p.y - bounds.y) / bounds.height).toFixed(5))
+        ]);
+        const cellStyle = `shape=mxgraph.basic.polygon;polyCoords=${JSON.stringify(normalized)};polyline=0;whiteSpace=wrap;html=1;${svgPaintStyle(style, 'shape')}`;
+        return `<mxCell id="${id}" value="" style="${escapeXmlAttribute(cellStyle)}" vertex="1" parent="1"><mxGeometry x="${bounds.x.toFixed(2)}" y="${bounds.y.toFixed(2)}" width="${bounds.width.toFixed(2)}" height="${bounds.height.toFixed(2)}" as="geometry"/></mxCell>`;
+      }
+
+      function svgPolylineEdgeCell(id, points, style, closed = false) {
+        if (points.length < 2) return '';
+        const pts = closed ? [...points, points[0]] : points;
+        const source = pts[0], target = pts[pts.length - 1], middle = pts.slice(1, -1);
+        const markerStart = String(style['marker-start'] || '').toLowerCase();
+        const markerEnd = String(style['marker-end'] || '').toLowerCase();
+        let cellStyle = `edgeStyle=none;html=1;rounded=0;${svgPaintStyle(style, 'edge')}startArrow=${markerStart && markerStart !== 'none' ? 'classic' : 'none'};endArrow=${markerEnd && markerEnd !== 'none' ? 'classic' : 'none'};`;
+        let geometry = `<mxGeometry relative="1" as="geometry"><mxPoint x="${source.x.toFixed(2)}" y="${source.y.toFixed(2)}" as="sourcePoint"/><mxPoint x="${target.x.toFixed(2)}" y="${target.y.toFixed(2)}" as="targetPoint"/>`;
+        if (middle.length) geometry += `<Array as="points">${middle.map(p => `<mxPoint x="${p.x.toFixed(2)}" y="${p.y.toFixed(2)}"/>`).join('')}</Array>`;
+        geometry += '</mxGeometry>';
+        return `<mxCell id="${id}" value="" style="${escapeXmlAttribute(cellStyle)}" edge="1" parent="1">${geometry}</mxCell>`;
+      }
+
+      function sampleSvgPathData(d, transform) {
+        const chunks = String(d || '').match(/[Mm][^Mm]*/g) || [];
+        const results = [];
+        for (const chunk of chunks) {
+          const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          tempSvg.setAttribute('width', '1'); tempSvg.setAttribute('height', '1');
+          tempSvg.style.cssText = 'position:absolute;left:-10000px;top:-10000px;width:1px;height:1px;overflow:hidden;';
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', chunk);
+          tempSvg.appendChild(path);
+          document.body.appendChild(tempSvg);
+          try {
+            const length = path.getTotalLength();
+            if (!Number.isFinite(length) || length <= 0) continue;
+            const count = Math.max(8, Math.min(80, Math.ceil(length / 18)));
+            const points = [];
+            for (let i = 0; i <= count; i++) {
+              const p = path.getPointAtLength(length * i / count);
+              points.push(applyMatrix(transform, { x: p.x, y: p.y }));
+            }
+            results.push({ points, closed: /[zZ]\s*$/.test(chunk.trim()) });
+          } catch (error) {
+            console.warn('SVG path sampling failed', error);
+          } finally {
+            tempSvg.remove();
+          }
+        }
+        return results;
+      }
+
+      function svgToDrawioXml(svg) {
+        const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+        if (doc.querySelector('parsererror') || doc.documentElement.localName?.toLowerCase() !== 'svg') {
+          throw new Error('SVGを解析できません。');
+        }
+
+        const root = doc.documentElement;
+        const cssRules = parseSvgCssRules(doc);
+        const geom = svgRootGeometry(root);
+        const rootMatrix = multiplyMatrix(
+          translationMatrix(20 - geom.minX * geom.scale, 20 - geom.minY * geom.scale),
+          scaleMatrix(geom.scale)
+        );
+        const cells = [];
+        let idCounter = 2;
+        let converted = 0;
+        let skipped = 0;
+        const nextId = () => `svg-${idCounter++}`;
+        const defaultStyle = { fill: '#000000', stroke: 'none', 'stroke-width': '1', __opacity: 1 };
+
+        const visit = (el, parentMatrix, inheritedStyle, useGuard = new Set()) => {
+          if (!el || el.nodeType !== 1) return;
+          const tag = el.localName?.toLowerCase();
+          if (!tag || ['defs', 'style', 'title', 'desc', 'metadata', 'clippath', 'mask', 'lineargradient', 'radialgradient', 'marker'].includes(tag)) return;
+
+          const transform = multiplyMatrix(parentMatrix, parseSvgTransform(el.getAttribute('transform')));
+          const style = resolveSvgStyle(el, inheritedStyle, cssRules);
+          if (String(style.display || '').toLowerCase() === 'none' || String(style.visibility || '').toLowerCase() === 'hidden') return;
+
+          if (tag === 'svg' || tag === 'g' || tag === 'a' || tag === 'symbol') {
+            for (const child of el.children) visit(child, transform, style, useGuard);
+            return;
+          }
+
+          if (tag === 'use') {
+            const href = el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '';
+            if (href.startsWith('#') && !useGuard.has(href)) {
+              const ref = doc.getElementById(href.slice(1));
+              if (ref) {
+                const nextGuard = new Set(useGuard); nextGuard.add(href);
+                const useTransform = multiplyMatrix(transform, translationMatrix(svgNumber(el.getAttribute('x')), svgNumber(el.getAttribute('y'))));
+                visit(ref, useTransform, style, nextGuard);
+                return;
+              }
+            }
+            skipped++;
+            return;
+          }
+
+          if (tag === 'rect') {
+            const x = svgNumber(el.getAttribute('x')), y = svgNumber(el.getAttribute('y'));
+            const w = svgNumber(el.getAttribute('width')), h = svgNumber(el.getAttribute('height'));
+            if (w <= 0 || h <= 0) return;
+            const box = transformedBox(x, y, w, h, transform);
+            const rx = svgNumber(el.getAttribute('rx'));
+            const rounded = rx > 0;
+            const arcSize = rounded ? Math.max(1, Math.min(50, rx / Math.max(1, Math.min(w, h)) * 200)) : 0;
+            const cellStyle = `shape=rectangle;whiteSpace=wrap;html=1;rounded=${rounded ? 1 : 0};${rounded ? `arcSize=${arcSize.toFixed(1)};` : ''}${svgPaintStyle(style, 'shape', box.rotation)}`;
+            cells.push(`<mxCell id="${nextId()}" value="" style="${escapeXmlAttribute(cellStyle)}" vertex="1" parent="1"><mxGeometry x="${box.x.toFixed(2)}" y="${box.y.toFixed(2)}" width="${box.width.toFixed(2)}" height="${box.height.toFixed(2)}" as="geometry"/></mxCell>`);
+            converted++;
+            return;
+          }
+
+          if (tag === 'circle' || tag === 'ellipse') {
+            const cx = svgNumber(el.getAttribute('cx')), cy = svgNumber(el.getAttribute('cy'));
+            const rx = tag === 'circle' ? svgNumber(el.getAttribute('r')) : svgNumber(el.getAttribute('rx'));
+            const ry = tag === 'circle' ? rx : svgNumber(el.getAttribute('ry'));
+            if (rx <= 0 || ry <= 0) return;
+            const box = transformedBox(cx - rx, cy - ry, rx * 2, ry * 2, transform);
+            const cellStyle = `shape=ellipse;whiteSpace=wrap;html=1;${tag === 'circle' ? 'aspect=fixed;' : ''}${svgPaintStyle(style, 'shape', box.rotation)}`;
+            cells.push(`<mxCell id="${nextId()}" value="" style="${escapeXmlAttribute(cellStyle)}" vertex="1" parent="1"><mxGeometry x="${box.x.toFixed(2)}" y="${box.y.toFixed(2)}" width="${box.width.toFixed(2)}" height="${box.height.toFixed(2)}" as="geometry"/></mxCell>`);
+            converted++;
+            return;
+          }
+
+          if (tag === 'line') {
+            const p1 = applyMatrix(transform, { x: svgNumber(el.getAttribute('x1')), y: svgNumber(el.getAttribute('y1')) });
+            const p2 = applyMatrix(transform, { x: svgNumber(el.getAttribute('x2')), y: svgNumber(el.getAttribute('y2')) });
+            cells.push(svgPolylineEdgeCell(nextId(), [p1, p2], style)); converted++;
+            return;
+          }
+
+          if (tag === 'polyline' || tag === 'polygon') {
+            const points = parseSvgPoints(el.getAttribute('points')).map(p => applyMatrix(transform, p));
+            if (points.length < 2) return;
+            if (tag === 'polygon' && points.length >= 3 && svgColor(style.fill, '#000000') !== 'none') cells.push(svgPolygonCell(nextId(), points, style));
+            else cells.push(svgPolylineEdgeCell(nextId(), points, style, tag === 'polygon'));
+            converted++;
+            return;
+          }
+
+          if (tag === 'text') {
+            const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!text) return;
+            const point = applyMatrix(transform, { x: svgNumber(el.getAttribute('x')), y: svgNumber(el.getAttribute('y')) });
+            const matrixScale = (Math.hypot(transform[0], transform[1]) + Math.hypot(transform[2], transform[3])) / 2;
+            const fontSize = Math.max(6, svgNumber(style['font-size'], 16) * matrixScale);
+            const width = Math.max(20, text.length * fontSize * 0.62);
+            const height = Math.max(fontSize * 1.35, 18);
+            const anchor = String(style['text-anchor'] || 'start').toLowerCase();
+            let x = point.x;
+            if (anchor === 'middle') x -= width / 2;
+            else if (anchor === 'end') x -= width;
+            const y = point.y - fontSize;
+            const align = anchor === 'middle' ? 'center' : anchor === 'end' ? 'right' : 'left';
+            const fontColor = svgColor(style.fill, '#000000');
+            const fontStyle = `${String(style['font-weight'] || '').toLowerCase() === 'bold' || Number(style['font-weight']) >= 600 ? 1 : 0}${String(style['font-style'] || '').toLowerCase() === 'italic' ? 2 : 0}`;
+            const rotation = Math.atan2(transform[1], transform[0]) * 180 / Math.PI;
+            let cellStyle = `shape=rectangle;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=${align};verticalAlign=middle;fontColor=${fontColor};fontSize=${fontSize.toFixed(1)};fontFamily=${String(style['font-family'] || 'Arial').replace(/[;,]/g, ' ')};`;
+            if (fontStyle !== '00') cellStyle += `fontStyle=${Number(fontStyle[0]) + Number(fontStyle[1])};`;
+            if (Math.abs(rotation) > 0.01) cellStyle += `rotation=${rotation.toFixed(3)};`;
+            cells.push(`<mxCell id="${nextId()}" value="${escapeXmlAttribute(text)}" style="${escapeXmlAttribute(cellStyle)}" vertex="1" parent="1"><mxGeometry x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${width.toFixed(2)}" height="${height.toFixed(2)}" as="geometry"/></mxCell>`);
+            converted++;
+            return;
+          }
+
+          if (tag === 'path') {
+            const paths = sampleSvgPathData(el.getAttribute('d'), transform);
+            if (!paths.length) { skipped++; return; }
+            for (const path of paths) {
+              if (path.closed && path.points.length >= 3 && svgColor(style.fill, '#000000') !== 'none') cells.push(svgPolygonCell(nextId(), path.points, style));
+              else cells.push(svgPolylineEdgeCell(nextId(), path.points, style, path.closed));
+              converted++;
+            }
+            return;
+          }
+
+          skipped++;
+        };
+
+        // root自体のtransformとCSSを反映してから子要素を変換する。
+        const rootStyle = resolveSvgStyle(root, defaultStyle, cssRules);
+        const rootTransform = multiplyMatrix(rootMatrix, parseSvgTransform(root.getAttribute('transform')));
+        for (const child of root.children) visit(child, rootTransform, rootStyle);
+
+        if (!converted) throw new Error('変換可能なSVG要素が見つかりませんでした。');
+        if (skipped) console.info(`SVG→draw.io: ${converted}要素を変換、${skipped}要素をスキップしました。`);
+
+        return `<mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}</root></mxGraphModel>`;
+      }
+
+      function normalizeDrawioXml(data) {
+        const value = (data || '').trim();
+        if (!value) return '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>';
+        if (value.startsWith('<')) return value;
+        return `<mxfile host="embed.diagrams.net"><diagram name="Page-1">${escapeXmlText(value)}</diagram></mxfile>`;
+      }
+
+      function getDrawioBlocks(source) {
+        const blocks = [];
+        const re = /^(`{3,}|~{3,})[ \t]*drawio(?:[ \t]+[^\r\n]*)?\r?\n([\s\S]*?)\r?\n\1[ \t]*$/gmi;
+        let match;
+        while ((match = re.exec(source)) !== null) blocks.push({ start: match.index, end: re.lastIndex, fence: match[1], data: match[2] });
+        return blocks;
+      }
+
+      function replaceDrawioBlock(source, targetIndex, newData) {
+        let index = 0;
+        const re = /^(`{3,}|~{3,})[ \t]*drawio(?:[ \t]+[^\r\n]*)?\r?\n([\s\S]*?)\r?\n\1[ \t]*$/gmi;
+        return source.replace(re, (whole, fence) => index++ !== targetIndex ? whole : `${fence}drawio\n${newData.trim()}\n${fence}`);
+      }
+
+      function extractFenceData(xml) {
+        const text = (xml || '').trim();
+        if (!text.startsWith('<')) return text;
+        try {
+          const doc = new DOMParser().parseFromString(text, 'application/xml');
+          if (doc.querySelector('parsererror')) return text;
+          const root = doc.documentElement;
+          if (root.tagName !== 'mxfile') return text;
+          const diagram = root.querySelector('diagram');
+          if (!diagram) return text;
+          const elementChild = Array.from(diagram.childNodes).find(node => node.nodeType === Node.ELEMENT_NODE);
+          return elementChild ? new XMLSerializer().serializeToString(elementChild) : (diagram.textContent || '').trim();
+        } catch { return text; }
+      }
+
+      function getRasterImageBlocks(source) {
+        const blocks = [];
+        const markdownImageRe = /!\[([^\]]*)\]\(\s*<?(data:image\/(?:png|jpe?g|webp|gif|bmp|avif)(?:;[a-z0-9=._+-]+)*;base64,[a-z0-9+/=]+)>?(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/gi;
+        let match;
+        while ((match = markdownImageRe.exec(source)) !== null) blocks.push({ start: match.index, end: markdownImageRe.lastIndex, whole: match[0], dataUri: match[2], kind: 'markdown' });
+        const standaloneRe = /^[ \t]*(data:image\/(?:png|jpe?g|webp|gif|bmp|avif)(?:;[a-z0-9=._+-]+)*;base64,[a-z0-9+/=]+)[ \t]*$/gmi;
+        while ((match = standaloneRe.exec(source)) !== null) blocks.push({ start: match.index, end: standaloneRe.lastIndex, whole: match[0], dataUri: match[1], kind: 'standalone' });
+        blocks.sort((a, b) => a.start - b.start);
+        return blocks;
+      }
+
+      function replaceRasterImage(source, targetIndex, newDataUri) {
+        const block = getRasterImageBlocks(source)[targetIndex];
+        if (!block) return source;
+        const relativeStart = block.whole.indexOf(block.dataUri);
+        if (relativeStart < 0) return source;
+        const uriStart = block.start + relativeStart;
+        return source.slice(0, uriStart) + newDataUri + source.slice(uriStart + block.dataUri.length);
+      }
+
+      function foldAllMarkdown() {
+        cm.operation(() => {
+          for (let i = cm.firstLine(); i <= cm.lastLine(); i++) {
+            if (markdownFoldRange(cm, CodeMirror.Pos(i, 0))) cm.foldCode(CodeMirror.Pos(i, 0), { rangeFinder: markdownFoldRange }, 'fold');
+          }
+        });
+      }
+      function unfoldAllMarkdown() {
+        cm.operation(() => {
+          for (const mark of cm.getAllMarks()) if (mark.__isFold) mark.clear();
+        });
+      }
+      function autoFoldBase64() {
+        cm.operation(() => {
+          for (let i = cm.firstLine(); i <= cm.lastLine(); i++) {
+            const line = cm.getLine(i) || '';
+            if (/data:image\/(?:png|jpe?g|webp|gif|bmp|avif).*;base64,/i.test(line)) {
+              cm.foldCode(CodeMirror.Pos(i, 0), { rangeFinder: markdownFoldRange }, 'fold');
+            }
+          }
+        });
+      }
+
+      function renderPreview() {
+        drawioRenderIndex = 0;
+        codeRenderBlocks = [];
+        dataGridRenderBlocks = [];
+        htmlPreviewBlocks = [];
+        mermaidRenderBlocks = [];
+        preview.innerHTML = marked.parse(injectRasterPlaceholders(markdown.value), { gfm: true, breaks: true });
+        decorateRasterPlaceholders();
+        decorateDataGridHosts();
+        decorateHtmlPreviews();
+        decorateMermaidPreviews().catch(error => console.error('Mermaid preview error:', error));
+        if (window.GraphViewer && typeof window.GraphViewer.processElements === 'function') {
+          try { window.GraphViewer.processElements(); } catch (error) { console.error('draw.io viewer error:', error); }
+        }
+      }
+      function scheduleRender() { clearTimeout(renderTimer); renderTimer = setTimeout(renderPreview, 180); }
+
+      function focusMarkdown(start, end = start) {
+        markdown.focus();
+        markdown.setSelectionRange(start, end);
+      }
+
+      function replaceSelection(replacement, selectStartOffset = null, selectEndOffset = null) {
+        const start = markdown.selectionStart;
+        const end = markdown.selectionEnd;
+        markdown.setRangeText(replacement, start, end, 'end');
+        const insertedStart = start;
+        const insertedEnd = start + replacement.length;
+        if (selectStartOffset !== null) {
+          focusMarkdown(insertedStart + selectStartOffset, insertedStart + (selectEndOffset ?? selectStartOffset));
+        } else {
+          focusMarkdown(insertedEnd);
+        }
+        renderPreview();
+        return { start: insertedStart, end: insertedEnd };
+      }
+
+      function wrapSelection(before, after = before, placeholder = 'テキスト') {
+        const selected = markdown.value.slice(markdown.selectionStart, markdown.selectionEnd) || placeholder;
+        const replacement = before + selected + after;
+        const startOffset = before.length;
+        replaceSelection(replacement, startOffset, startOffset + selected.length);
+      }
+
+      function prefixSelectedLines(prefix, fallback = '項目') {
+        const value = markdown.value;
+        let start = markdown.selectionStart;
+        let end = markdown.selectionEnd;
+        start = value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+        const nextNl = value.indexOf('\n', end);
+        end = nextNl === -1 ? value.length : nextNl;
+        let text = value.slice(start, end) || fallback;
+        text = text.split('\n').map((line, i) => typeof prefix === 'function' ? prefix(line, i) : prefix + line).join('\n');
+        markdown.setRangeText(text, start, end, 'select');
+        renderPreview();
+      }
+
+      function insertHeading() {
+        const value = markdown.value;
+        let start = markdown.selectionStart;
+        start = value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+        let lineEnd = value.indexOf('\n', markdown.selectionEnd);
+        if (lineEnd === -1) lineEnd = value.length;
+        let text = value.slice(start, lineEnd);
+        if (!text.trim()) text = '見出し';
+        const match = text.match(/^(#{1,6})\s+/);
+        let replacement;
+        if (!match) replacement = '## ' + text;
+        else if (match[1].length < 6) replacement = '#'.repeat(match[1].length + 1) + ' ' + text.slice(match[0].length);
+        else replacement = text.slice(match[0].length);
+        markdown.setRangeText(replacement, start, lineEnd, 'select');
+        renderPreview();
+      }
+
+      function insertLink() {
+        const selected = markdown.value.slice(markdown.selectionStart, markdown.selectionEnd) || 'リンク文字列';
+        const url = window.prompt('リンク先URLを入力してください。', 'https://');
+        if (!url) return;
+        const replacement = `[${selected}](${url})`;
+        replaceSelection(replacement);
+      }
+
+      function insertCodeBlock() {
+        const selected = markdown.value.slice(markdown.selectionStart, markdown.selectionEnd) || 'コード';
+        const lang = window.prompt('言語名を入力してください（省略可）。', '') ?? '';
+        const replacement = `\n\n\`\`\`${lang.trim()}\n${selected}\n\`\`\`\n\n`;
+        const contentOffset = replacement.indexOf(selected);
+        replaceSelection(replacement, contentOffset, contentOffset + selected.length);
+      }
+
+      function markdownTableCell(value) {
+        return String(value ?? '')
+          .replace(/\r?\n/g, '<br>')
+          .replace(/\|/g, '\\|')
+          .trim();
+      }
+
+      function makeMarkdownTable(headers, rows) {
+        const head = `| ${headers.map(markdownTableCell).join(' | ')} |`;
+        const separator = `| ${headers.map(() => '---').join(' | ')} |`;
+        const body = rows.map(row => `| ${headers.map((_, i) => markdownTableCell(row[i] ?? '')).join(' | ')} |`).join('\n');
+        return [head, separator, body].filter(Boolean).join('\n');
+      }
+
+      function insertTable() {
+        // 挿入位置はモーダルを開いた時点で固定する。
+        const selectionStart = markdown.selectionStart;
+        const selectionEnd = markdown.selectionEnd;
+        let editorHeaders = ['列1', '列2', '列3'];
+        let editorRows = [['', '', ''], ['', '', '']];
+
+        const overlay = document.createElement('div');
+        overlay.className = 'table-editor-overlay';
+        overlay.innerHTML = `<div class="table-editor-dialog" role="dialog" aria-modal="true" aria-label="table insert editor">
+          <div class="table-editor-toolbar"><strong>表を挿入</strong>
+            <label class="table-insert-format-label">挿入形式
+              <select data-table-insert-format>
+                <option value="markdown">Markdown表（直書き）</option>
+                <option value="tsv">TSVコードブロック</option>
+              </select>
+            </label>
+            <button type="button" class="data-grid-button" data-table-insert-action="add-row">行を追加</button>
+            <button type="button" class="data-grid-button" data-table-insert-action="add-col">列を追加</button>
+          </div>
+          <div class="table-editor-note">TSV/CSVの「表を編集」と同じ操作です。ヘッダー・セルを直接編集し、各行・各列の × で削除できます。最後に Markdown直書き / TSVコードブロックを選んで挿入します。</div>
+          <div class="table-editor-scroll"><table class="table-editor-grid"><thead></thead><tbody></tbody></table></div>
+          <div class="table-editor-footer"><button type="button" class="data-grid-button" data-table-insert-action="cancel">キャンセル</button><button type="button" class="edit-button" data-table-insert-action="insert">挿入</button></div>
+        </div>`;
+        document.body.appendChild(overlay);
+
+        const thead = overlay.querySelector('thead');
+        const tbody = overlay.querySelector('tbody');
+        const formatSelect = overlay.querySelector('[data-table-insert-format]');
+
+        function normalizeRows() {
+          const width = Math.max(1, editorHeaders.length);
+          editorRows = editorRows.map(row => Array.from({ length: width }, (_, i) => row[i] ?? ''));
+        }
+        function collectFromDom() {
+          const headCells = Array.from(thead.querySelectorAll('[data-edit-header]'));
+          if (headCells.length) editorHeaders = headCells.map((cell, i) => editableCellText(cell) || `列${i + 1}`);
+          editorRows = Array.from(tbody.querySelectorAll('tr')).map(tr => Array.from(tr.querySelectorAll('td[data-edit-cell]')).map(editableCellText));
+          normalizeRows();
+        }
+        function renderEditor() {
+          normalizeRows();
+          thead.innerHTML = `<tr><th class="row-number">#</th>${editorHeaders.map((value, i) => `<th><div class="table-editor-col-head"><span class="table-editor-col-name" contenteditable="true" spellcheck="false" data-edit-header="${i}">${escapeHtml(value)}</span><button type="button" class="table-editor-delete" data-delete-insert-col="${i}" title="この列を削除" aria-label="列 ${i + 1} を削除">×</button></div></th>`).join('')}</tr>`;
+          tbody.innerHTML = editorRows.map((row, r) => `<tr><td class="row-number"><span>${r + 1}</span> <button type="button" class="table-editor-delete" data-delete-insert-row="${r}" title="この行を削除" aria-label="行 ${r + 1} を削除">×</button></td>${row.map((value, c) => `<td contenteditable="true" spellcheck="false" data-edit-cell="${r}:${c}">${escapeHtml(value)}</td>`).join('')}</tr>`).join('');
+        }
+        function close() { overlay.remove(); }
+        function commitInsert() {
+          collectFromDom();
+          const format = formatSelect.value;
+          let text;
+          if (format === 'tsv') {
+            text = `\n\n\`\`\`tsv\n${makeCsvText([editorHeaders, ...editorRows], '\t')}\n\`\`\`\n\n`;
+          } else {
+            text = `\n\n${makeMarkdownTable(editorHeaders, editorRows)}\n\n`;
+          }
+          markdown.setRangeText(text, selectionStart, selectionEnd, 'end');
+          close();
+          renderPreview();
+          markdown.focus();
+        }
+
+        renderEditor();
+        overlay.addEventListener('click', event => {
+          if (event.target === overlay) { close(); return; }
+
+          const deleteRowButton = event.target.closest('[data-delete-insert-row]');
+          if (deleteRowButton) {
+            collectFromDom();
+            const index = Number(deleteRowButton.dataset.deleteInsertRow);
+            if (Number.isInteger(index) && index >= 0 && index < editorRows.length) editorRows.splice(index, 1);
+            renderEditor();
+            return;
+          }
+
+          const deleteColButton = event.target.closest('[data-delete-insert-col]');
+          if (deleteColButton) {
+            if (editorHeaders.length <= 1) { alert('列は1つ以上必要です。'); return; }
+            collectFromDom();
+            const index = Number(deleteColButton.dataset.deleteInsertCol);
+            if (Number.isInteger(index) && index >= 0 && index < editorHeaders.length) {
+              editorHeaders.splice(index, 1);
+              editorRows.forEach(row => row.splice(index, 1));
+            }
+            renderEditor();
+            return;
+          }
+
+          const button = event.target.closest('[data-table-insert-action]');
+          if (!button) return;
+          const action = button.dataset.tableInsertAction;
+          if (action === 'cancel') { close(); return; }
+          collectFromDom();
+          if (action === 'add-row') {
+            editorRows.push(editorHeaders.map(() => ''));
+            renderEditor();
+          } else if (action === 'add-col') {
+            editorHeaders.push(`列${editorHeaders.length + 1}`);
+            editorRows.forEach(row => row.push(''));
+            renderEditor();
+          } else if (action === 'insert') commitInsert();
+        });
+        overlay.addEventListener('keydown', event => {
+          if (event.key === 'Escape') { event.preventDefault(); close(); }
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+            event.preventDefault();
+            commitInsert();
+          }
+        });
+        overlay.querySelector('[contenteditable="true"]')?.focus();
+      }
+
+      function insertMermaidBlock() {
+        const selected = markdown.value.slice(markdown.selectionStart, markdown.selectionEnd).trim();
+        const starter = selected || 'flowchart LR\n  A[開始] --> B[終了]';
+        const replacement = `\n\n\`\`\`mermaid\n${starter}\n\`\`\`\n\n`;
+        const contentOffset = replacement.indexOf(starter);
+        replaceSelection(replacement, contentOffset, contentOffset + starter.length);
+      }
+
+      function handleMarkdownAction(action) {
+        if (action === 'heading') insertHeading();
+        else if (action === 'bold') wrapSelection('**', '**');
+        else if (action === 'italic') wrapSelection('*', '*');
+        else if (action === 'strike') wrapSelection('~~', '~~');
+        else if (action === 'quote') prefixSelectedLines('> ', '引用');
+        else if (action === 'ul') prefixSelectedLines('- ', '項目');
+        else if (action === 'ol') prefixSelectedLines((line, i) => `${i + 1}. ${line}`, '項目');
+        else if (action === 'task') prefixSelectedLines('- [ ] ', 'タスク');
+        else if (action === 'link') insertLink();
+        else if (action === 'inline-code') wrapSelection('`', '`', 'code');
+        else if (action === 'code-block') insertCodeBlock();
+        else if (action === 'table') insertTable();
+        else if (action === 'mermaid') insertMermaidBlock();
+        else if (action === 'hr') replaceSelection('\n\n---\n\n');
+      }
+
+      function getDrawioBlockIndexAtPosition(position) {
+        const blocks = getDrawioBlocks(markdown.value);
+        let candidate = blocks.findIndex(block => block.start <= position && block.end >= position);
+        if (candidate >= 0) return candidate;
+        candidate = blocks.findIndex(block => block.start >= position);
+        return candidate >= 0 ? candidate : blocks.length - 1;
+      }
+
+      function createNewDrawio() {
+        const starter = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>';
+        const insertion = `\n\n\`\`\`drawio\n${starter}\n\`\`\`\n\n`;
+        const range = replaceSelection(insertion);
+        const index = getDrawioBlockIndexAtPosition(range.start + 2);
+        openDrawioEditor(index);
+      }
+
+      function isSupportedRasterFile(file) { return !!file && /^image\/(?:png|jpeg|webp|gif|bmp|avif)$/i.test(file.type || ''); }
+
+      function fileToDataUri(file) {
+        return new Promise((resolve, reject) => {
+          if (!isSupportedRasterFile(file)) { reject(new Error('対応するラスター画像ではありません。')); return; }
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error('画像を読み込めませんでした。'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function escapeAltText(text) { return String(text || '画像').replace(/[\[\]\\]/g, '\\$&'); }
+
+      function insertDataUriImage(dataUri, alt = '画像') {
+        replaceSelection(`![${escapeAltText(alt)}](${dataUri})`);
+      }
+
+      async function insertImageFiles(files) {
+        const imageFiles = Array.from(files || []).filter(isSupportedRasterFile);
+        if (!imageFiles.length) { alert('画像ファイルがありません。'); return; }
+        const chunks = [];
+        for (const file of imageFiles) {
+          try { chunks.push(`![${escapeAltText(file.name || '画像')}](${await fileToDataUri(file)})`); }
+          catch (error) { console.error(error); }
+        }
+        if (chunks.length) { replaceSelection(chunks.join('\n\n')); requestAnimationFrame(autoFoldBase64); }
+      }
+
+      async function insertClipboardImage() {
+        if (!navigator.clipboard?.read) {
+          alert('このブラウザではボタンからクリップボード画像を取得できません。左のMarkdown欄にフォーカスして Ctrl+V してください。画像の貼り付けには対応しています。');
+          markdown.focus();
+          return;
+        }
+        try {
+          const items = await navigator.clipboard.read();
+          for (const item of items) {
+            const type = item.types.find(type => type.startsWith('image/'));
+            if (!type) continue;
+            const blob = await item.getType(type);
+            const file = new File([blob], 'clipboard-image.' + (type.split('/')[1] || 'png'), { type });
+            await insertImageFiles([file]);
+            return;
+          }
+          alert('クリップボードに画像がありません。');
+        } catch (error) {
+          console.error(error);
+          alert('クリップボード画像を取得できませんでした。左のMarkdown欄で Ctrl+V すると画像をBase64で挿入できます。');
+          markdown.focus();
+        }
+      }
+
+      function resetDrawioEditorState() {
+        if (drawioWindowWatch) { clearInterval(drawioWindowWatch); drawioWindowWatch = null; }
+        drawioWindow = null;
+        editingDrawioIndex = null;
+        editingXml = null;
+        editingDrawioDescriptor = null;
+      }
+
+      async function openDrawioEditor(index) {
+        const block = getDrawioBlocks(markdown.value)[index];
+        if (!block) return;
+        editingDrawioIndex = index;
+
+        if (drawioWindow && !drawioWindow.closed) { try { drawioWindow.close(); } catch {} }
+
+        // ユーザー操作の直後にabout:blankを先に開き、ポップアップブロックを避ける。
+        drawioWindow = window.open('', 'markdown-drawio-editor', 'popup=yes,width=1400,height=900,resizable=yes,scrollbars=yes');
+        if (!drawioWindow) {
+          resetDrawioEditorState();
+          alert('draw.io編集ウィンドウを開けませんでした。ポップアップ許可を確認してください。');
+          return;
+        }
+        try {
+          drawioWindow.document.title = 'draw.ioを準備中';
+          drawioWindow.document.body.innerHTML = '<p style="font:14px system-ui;padding:24px">draw.ioを準備しています…</p>';
+        } catch {}
+
+        try {
+          const data = String(block.data || '').trim();
+          editingDrawioDescriptor = null;
+          if (isSvgMarkup(data)) {
+            // 一般SVGはHTML側のSVG→mxGraph変換器でネイティブ図形へ変換する。
+            editingXml = svgToDrawioXml(data);
+          } else if (isMermaidSource(data)) {
+            // MermaidはSVG経由で変換しない。draw.io公式Embed APIのmermaid descriptorを
+            // そのまま渡し、draw.io自身のネイティブMermaidパーサ/レイアウトを使う。
+            // wrap:false により保存結果は通常の編集可能なdraw.ioセル群になる。
+            editingXml = null;
+            editingDrawioDescriptor = { format: 'mermaid', data, wrap: false };
+          } else {
+            editingXml = normalizeDrawioXml(data);
+          }
+        } catch (error) {
+          console.error(error);
+          const popup = drawioWindow;
+          resetDrawioEditorState();
+          if (popup && !popup.closed) { try { popup.close(); } catch {} }
+          alert('draw.io形式へ変換できませんでした。\n' + (error?.message || error));
+          return;
+        }
+
+        try { drawioWindow.location.replace(EDITOR_URL); }
+        catch { drawioWindow.location.href = EDITOR_URL; }
+        try { drawioWindow.focus(); } catch {}
+        drawioWindowWatch = setInterval(() => {
+          if (!drawioWindow || drawioWindow.closed) resetDrawioEditorState();
+        }, 500);
+      }
+      function closeDrawioEditor() {
+        const popup = drawioWindow;
+        resetDrawioEditorState();
+        if (popup && !popup.closed) { try { popup.close(); } catch {} }
+      }
+
+      function loadRasterIntoCanvas(dataUri, resetHistory = true) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => {
+            paintCanvas.width = image.naturalWidth;
+            paintCanvas.height = image.naturalHeight;
+            ctx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(image, 0, 0);
+            if (resetHistory) { history = [captureState()]; redoStack = []; updateHistoryButtons(); }
+            updatePaintStatus();
+            resolve();
+          };
+          image.onerror = () => reject(new Error('画像を読み込めませんでした。'));
+          image.src = dataUri;
+        });
+      }
+
+      function captureState() {
+        return { width: paintCanvas.width, height: paintCanvas.height, imageData: ctx.getImageData(0, 0, paintCanvas.width, paintCanvas.height) };
+      }
+      function restoreState(state) {
+        if (!state) return;
+        paintCanvas.width = state.width;
+        paintCanvas.height = state.height;
+        ctx.putImageData(state.imageData, 0, 0);
+        updatePaintStatus();
+      }
+      function commitHistory() {
+        history.push(captureState());
+        if (history.length > HISTORY_LIMIT) history.shift();
+        redoStack = [];
+        updateHistoryButtons();
+      }
+      function updateHistoryButtons() {
+        paintUndo.disabled = history.length <= 1;
+        paintRedo.disabled = redoStack.length === 0;
+      }
+      function undo() {
+        if (history.length <= 1) return;
+        redoStack.push(history.pop());
+        restoreState(history[history.length - 1]);
+        updateHistoryButtons();
+      }
+      function redo() {
+        if (!redoStack.length) return;
+        const state = redoStack.pop();
+        history.push(state);
+        restoreState(state);
+        updateHistoryButtons();
+      }
+
+      async function openRasterEditor(index) {
+        const block = getRasterImageBlocks(markdown.value)[index];
+        if (!block) return;
+        editingRasterIndex = index;
+        editingRasterOriginal = block.dataUri;
+        try { await loadRasterIntoCanvas(block.dataUri, true); }
+        catch (error) { alert(error.message); editingRasterIndex = null; editingRasterOriginal = null; return; }
+        setPaintTool('pencil');
+        paintOverlay.classList.add('open');
+        paintOverlay.setAttribute('aria-hidden', 'false');
+      }
+      function closeRasterEditor() {
+        paintOverlay.classList.remove('open');
+        paintOverlay.setAttribute('aria-hidden', 'true');
+        painting = false; startPoint = null; lastPoint = null; dragSnapshot = null;
+        editingRasterIndex = null; editingRasterOriginal = null; history = []; redoStack = [];
+      }
+
+      function setPaintTool(tool) {
+        paintTool = tool;
+        for (const button of toolButtons) {
+          const active = button.dataset.paintTool === tool;
+          button.classList.toggle('active', active);
+          button.classList.toggle('secondary', !active);
+        }
+        const cursors = { fill: 'cell', picker: 'copy', text: 'text', crop: 'crosshair', eraser: 'crosshair' };
+        paintCanvas.style.cursor = cursors[tool] || 'crosshair';
+      }
+      function updatePaintStatus(extra = '') {
+        paintStatus.textContent = `${paintCanvas.width} × ${paintCanvas.height}px${extra ? ' / ' + extra : ''}`;
+      }
+      function canvasPoint(event) {
+        const rect = paintCanvas.getBoundingClientRect();
+        return { x: Math.max(0, Math.min(paintCanvas.width, (event.clientX - rect.left) * (paintCanvas.width / rect.width))), y: Math.max(0, Math.min(paintCanvas.height, (event.clientY - rect.top) * (paintCanvas.height / rect.height))) };
+      }
+      function isDragTool(tool) { return ['line', 'arrow', 'rect', 'roundrect', 'ellipse', 'triangle', 'crop'].includes(tool); }
+      function isFreehandTool(tool) { return ['pencil', 'brush', 'eraser'].includes(tool); }
+
+      function applyStrokeSettings(tool = paintTool) {
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.lineWidth = tool === 'brush' ? Math.max(3, Number(paintSize.value) * 2) : Number(paintSize.value);
+        ctx.strokeStyle = paintColor.value;
+        ctx.fillStyle = paintColor.value;
+        ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+      }
+      function drawDot(point) {
+        ctx.save(); applyStrokeSettings();
+        const radius = (paintTool === 'brush' ? Math.max(3, Number(paintSize.value) * 2) : Number(paintSize.value)) / 2;
+        ctx.beginPath(); ctx.arc(point.x, point.y, radius, 0, Math.PI * 2); ctx.fillStyle = paintTool === 'eraser' ? '#000' : paintColor.value; ctx.fill(); ctx.restore();
+      }
+      function drawFreehand(from, to) {
+        ctx.save(); applyStrokeSettings();
+        ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke(); ctx.restore();
+      }
+
+      function normalizedRect(a, b) { return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) }; }
+      function roundRectPath(x, y, w, h, radius) {
+        const r = Math.min(radius, Math.abs(w) / 2, Math.abs(h) / 2);
+        ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+      }
+      function drawArrow(a, b) {
+        const angle = Math.atan2(b.y - a.y, b.x - a.x);
+        const head = Math.max(10, Number(paintSize.value) * 4);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - head * Math.cos(angle - Math.PI / 6), b.y - head * Math.sin(angle - Math.PI / 6)); ctx.lineTo(b.x - head * Math.cos(angle + Math.PI / 6), b.y - head * Math.sin(angle + Math.PI / 6)); ctx.closePath();
+        if (paintFillShape.checked) ctx.fill(); else ctx.stroke();
+      }
+      function drawShape(tool, a, b, previewMode = false) {
+        ctx.save(); applyStrokeSettings(tool); ctx.globalCompositeOperation = 'source-over';
+        const r = normalizedRect(a, b);
+        if (tool === 'line') { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+        else if (tool === 'arrow') drawArrow(a, b);
+        else if (tool === 'rect') { if (paintFillShape.checked) ctx.fillRect(r.x, r.y, r.w, r.h); else ctx.strokeRect(r.x, r.y, r.w, r.h); }
+        else if (tool === 'roundrect') { roundRectPath(r.x, r.y, r.w, r.h, Math.max(6, Math.min(r.w, r.h) * .12)); paintFillShape.checked ? ctx.fill() : ctx.stroke(); }
+        else if (tool === 'ellipse') { ctx.beginPath(); ctx.ellipse(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, r.h / 2, 0, 0, Math.PI * 2); paintFillShape.checked ? ctx.fill() : ctx.stroke(); }
+        else if (tool === 'triangle') { ctx.beginPath(); ctx.moveTo(r.x + r.w / 2, r.y); ctx.lineTo(r.x + r.w, r.y + r.h); ctx.lineTo(r.x, r.y + r.h); ctx.closePath(); paintFillShape.checked ? ctx.fill() : ctx.stroke(); }
+        else if (tool === 'crop') { ctx.setLineDash([6, 4]); ctx.lineWidth = 1; ctx.strokeStyle = '#0969da'; ctx.strokeRect(r.x + .5, r.y + .5, r.w, r.h); }
+        ctx.restore();
+      }
+
+      function colorsMatch(data, index, target) { return data[index] === target[0] && data[index+1] === target[1] && data[index+2] === target[2] && data[index+3] === target[3]; }
+      function hexToRgba(hex) { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255]; }
+      function floodFill(point) {
+        const x = Math.floor(point.x), y = Math.floor(point.y);
+        if (x < 0 || y < 0 || x >= paintCanvas.width || y >= paintCanvas.height) return false;
+        const image = ctx.getImageData(0, 0, paintCanvas.width, paintCanvas.height); const data = image.data; const width = image.width; const height = image.height;
+        const start = (y * width + x) * 4; const target = [data[start], data[start+1], data[start+2], data[start+3]]; const replacement = hexToRgba(paintColor.value);
+        if (target.every((v, i) => v === replacement[i])) return false;
+        // Scanline flood fill: 大きな単色領域でも4近傍を大量pushしない。
+        const stack = [[x, y]];
+        const seen = new Uint8Array(width * height);
+        while (stack.length) {
+          const [sx, sy] = stack.pop();
+          if (sx < 0 || sy < 0 || sx >= width || sy >= height) continue;
+          let left = sx;
+          while (left >= 0) {
+            const i = (sy * width + left) * 4;
+            if (!colorsMatch(data, i, target)) break;
+            left--;
+          }
+          left++;
+          let spanUp = false, spanDown = false;
+          for (let cx = left; cx < width; cx++) {
+            const p = sy * width + cx;
+            const i = p * 4;
+            if (!colorsMatch(data, i, target)) break;
+            if (!seen[p]) {
+              seen[p] = 1;
+              data[i] = replacement[0]; data[i+1] = replacement[1]; data[i+2] = replacement[2]; data[i+3] = replacement[3];
+            }
+            if (sy > 0) {
+              const up = ((sy - 1) * width + cx) * 4;
+              const matchUp = colorsMatch(data, up, target);
+              if (matchUp && !spanUp) { stack.push([cx, sy - 1]); spanUp = true; }
+              else if (!matchUp) spanUp = false;
+            }
+            if (sy < height - 1) {
+              const down = ((sy + 1) * width + cx) * 4;
+              const matchDown = colorsMatch(data, down, target);
+              if (matchDown && !spanDown) { stack.push([cx, sy + 1]); spanDown = true; }
+              else if (!matchDown) spanDown = false;
+            }
+          }
+        }
+        ctx.putImageData(image, 0, 0); return true;
+      }
+      function pickColor(point) {
+        const x = Math.min(paintCanvas.width - 1, Math.max(0, Math.floor(point.x))); const y = Math.min(paintCanvas.height - 1, Math.max(0, Math.floor(point.y)));
+        const d = ctx.getImageData(x, y, 1, 1).data;
+        paintColor.value = '#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+        updatePaintStatus(`RGB ${d[0]}, ${d[1]}, ${d[2]}`);
+      }
+      function drawText(point) {
+        const text = window.prompt('入力する文字を入力してください。'); if (!text) return false;
+        ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = paintColor.value; ctx.font = `${Math.max(6, Number(paintFontSize.value) || 24)}px "Segoe UI", sans-serif`; ctx.textBaseline = 'top';
+        const lineHeight = Math.max(8, (Number(paintFontSize.value) || 24) * 1.25);
+        text.split(/\r?\n/).forEach((line, i) => ctx.fillText(line, point.x, point.y + i * lineHeight)); ctx.restore(); return true;
+      }
+      function cropTo(a, b) {
+        const r = normalizedRect(a, b); const x = Math.round(r.x), y = Math.round(r.y), w = Math.round(r.w), h = Math.round(r.h); if (w < 2 || h < 2) return false;
+        const temp = document.createElement('canvas'); temp.width = w; temp.height = h; temp.getContext('2d').drawImage(paintCanvas, x, y, w, h, 0, 0, w, h);
+        paintCanvas.width = w; paintCanvas.height = h; ctx.drawImage(temp, 0, 0); updatePaintStatus(); return true;
+      }
+      function transformCanvas(kind) {
+        const src = document.createElement('canvas'); src.width = paintCanvas.width; src.height = paintCanvas.height; src.getContext('2d').drawImage(paintCanvas, 0, 0);
+        let w = src.width, h = src.height; if (kind === 'left' || kind === 'right') [w, h] = [h, w]; paintCanvas.width = w; paintCanvas.height = h; ctx.save();
+        if (kind === 'right') { ctx.translate(w, 0); ctx.rotate(Math.PI / 2); }
+        else if (kind === 'left') { ctx.translate(0, h); ctx.rotate(-Math.PI / 2); }
+        else if (kind === 'flipH') { ctx.translate(w, 0); ctx.scale(-1, 1); }
+        else if (kind === 'flipV') { ctx.translate(0, h); ctx.scale(1, -1); }
+        ctx.drawImage(src, 0, 0); ctx.restore(); updatePaintStatus(); commitHistory();
+      }
+      function resizeCanvas() {
+        const answer = window.prompt('新しいサイズを「幅x高さ」で入力してください。', `${paintCanvas.width}x${paintCanvas.height}`); if (!answer) return;
+        const match = answer.trim().match(/^(\d+)\s*[x×,]\s*(\d+)$/i); if (!match) { alert('例: 640x480 の形式で入力してください。'); return; }
+        const w = Math.max(1, Math.min(10000, Number(match[1]))), h = Math.max(1, Math.min(10000, Number(match[2])));
+        const src = document.createElement('canvas'); src.width = paintCanvas.width; src.height = paintCanvas.height; src.getContext('2d').drawImage(paintCanvas, 0, 0);
+        paintCanvas.width = w; paintCanvas.height = h; ctx.imageSmoothingEnabled = true; ctx.drawImage(src, 0, 0, w, h); updatePaintStatus(); commitHistory();
+      }
+
+      function beginPaint(event) {
+        if (event.button !== undefined && event.button !== 0) return;
+        const p = canvasPoint(event); event.preventDefault();
+        if (paintTool === 'fill') { if (floodFill(p)) commitHistory(); return; }
+        if (paintTool === 'picker') { pickColor(p); return; }
+        if (paintTool === 'text') { if (drawText(p)) commitHistory(); return; }
+        painting = true; startPoint = p; lastPoint = p; paintCanvas.setPointerCapture?.(event.pointerId);
+        if (isDragTool(paintTool)) dragSnapshot = ctx.getImageData(0, 0, paintCanvas.width, paintCanvas.height);
+        else if (isFreehandTool(paintTool)) drawDot(p);
+      }
+      function movePaint(event) {
+        if (!painting) return; const p = canvasPoint(event); event.preventDefault();
+        if (isFreehandTool(paintTool)) { drawFreehand(lastPoint, p); lastPoint = p; }
+        else if (isDragTool(paintTool) && dragSnapshot) { ctx.putImageData(dragSnapshot, 0, 0); drawShape(paintTool, startPoint, p, true); }
+        updatePaintStatus(`${Math.round(p.x)}, ${Math.round(p.y)}`);
+      }
+      function endPaint(event) {
+        if (!painting) return; const p = event ? canvasPoint(event) : lastPoint; event?.preventDefault();
+        if (isDragTool(paintTool) && dragSnapshot) {
+          ctx.putImageData(dragSnapshot, 0, 0);
+          if (paintTool === 'crop') { if (cropTo(startPoint, p)) commitHistory(); }
+          else { drawShape(paintTool, startPoint, p); commitHistory(); }
+        } else if (isFreehandTool(paintTool)) commitHistory();
+        painting = false; startPoint = null; lastPoint = null; dragSnapshot = null;
+        if (event?.pointerId !== undefined) { try { paintCanvas.releasePointerCapture?.(event.pointerId); } catch {} }
+        updatePaintStatus();
+      }
+
+      preview.addEventListener('click', async event => {
+        const d = event.target.closest('[data-edit-drawio]'); if (d) { openDrawioEditor(Number(d.dataset.editDrawio)); return; }
+        const r = event.target.closest('[data-edit-raster]'); if (r) { openRasterEditor(Number(r.dataset.editRaster)); return; }
+        const copy = event.target.closest('[data-copy-code]');
+        if (copy) {
+          const text = codeRenderBlocks[Number(copy.dataset.copyCode)];
+          const ok = await copyTextToClipboard(text ?? '');
+          const original = copy.textContent;
+          copy.textContent = ok ? 'コピー済み' : '失敗';
+          setTimeout(() => { copy.textContent = original; }, 1000);
+          return;
+        }
+        const openHtml = event.target.closest('[data-open-html]');
+        if (openHtml) { openHtmlPreviewWindow(Number(openHtml.dataset.openHtml)); return; }
+        const reload = event.target.closest('[data-reload-html]');
+        if (reload) {
+          const index = Number(reload.dataset.reloadHtml);
+          const host = preview.querySelector(`[data-html-shadow="${index}"]`);
+          const block = htmlPreviewBlocks[index];
+          if (host && block) renderHtmlShadowPreview(host, block.raw);
+        }
+      });
+
+      window.addEventListener('message', event => {
+        if (event.origin !== DRAWIO_ORIGIN || !drawioWindow || event.source !== drawioWindow) return;
+        let message; try { message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch { return; }
+        if (message.event === 'init') {
+          const load = { action: 'load', title: 'Markdown diagram', noSaveBtn: 1, saveAndExit: 1 };
+          if (editingDrawioDescriptor) load.descriptor = editingDrawioDescriptor;
+          else load.xml = editingXml;
+          drawioWindow.postMessage(JSON.stringify(load), DRAWIO_ORIGIN);
+          return;
+        }
+        if (message.event === 'save' && editingDrawioIndex !== null && message.xml) { markdown.value = replaceDrawioBlock(markdown.value, editingDrawioIndex, extractFenceData(message.xml)); renderPreview(); if (message.exit) closeDrawioEditor(); return; }
+        if (message.event === 'exit') closeDrawioEditor();
+      });
+
+      toolButtons.forEach(button => button.addEventListener('click', () => setPaintTool(button.dataset.paintTool)));
+      paintSize.addEventListener('input', () => paintSizeValue.textContent = `${paintSize.value} px`);
+      paintUndo.addEventListener('click', undo); paintRedo.addEventListener('click', redo);
+      paintRotateLeft.addEventListener('click', () => transformCanvas('left'));
+      paintRotateRight.addEventListener('click', () => transformCanvas('right'));
+      paintFlipH.addEventListener('click', () => transformCanvas('flipH'));
+      paintFlipV.addEventListener('click', () => transformCanvas('flipV'));
+      paintResize.addEventListener('click', resizeCanvas);
+      paintClear.addEventListener('click', () => { ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, paintCanvas.width, paintCanvas.height); ctx.restore(); commitHistory(); });
+      paintReset.addEventListener('click', async () => { if (!editingRasterOriginal) return; try { await loadRasterIntoCanvas(editingRasterOriginal, true); } catch (error) { alert(error.message); } });
+      paintCancel.addEventListener('click', closeRasterEditor);
+      paintSave.addEventListener('click', () => { if (editingRasterIndex === null) return; const newDataUri = paintCanvas.toDataURL('image/png'); markdown.value = replaceRasterImage(markdown.value, editingRasterIndex, newDataUri); closeRasterEditor(); renderPreview(); });
+
+      paintCanvas.addEventListener('pointerdown', beginPaint);
+      paintCanvas.addEventListener('pointermove', movePaint);
+      paintCanvas.addEventListener('pointerup', endPaint);
+      paintCanvas.addEventListener('pointercancel', endPaint);
+      paintCanvas.addEventListener('pointerleave', event => { if (!paintCanvas.hasPointerCapture?.(event.pointerId)) endPaint(event); });
+
+      mdToolbar.addEventListener('click', event => {
+        const button = event.target.closest('[data-md-action]');
+        if (button) handleMarkdownAction(button.dataset.mdAction);
+      });
+      newDrawioButton.addEventListener('click', createNewDrawio);
+      clipboardImageButton.addEventListener('click', insertClipboardImage);
+      uploadImageButton.addEventListener('click', () => imageFileInput.click());
+      imageFileInput.addEventListener('change', async () => {
+        await insertImageFiles(imageFileInput.files);
+        imageFileInput.value = '';
+      });
+      cm.getWrapperElement().addEventListener('paste', async event => {
+        const files = Array.from(event.clipboardData?.files || []).filter(isSupportedRasterFile);
+        if (!files.length) return;
+        event.preventDefault();
+        await insertImageFiles(files);
+        requestAnimationFrame(autoFoldBase64);
+      });
+      foldAllButton.addEventListener('click', foldAllMarkdown);
+      unfoldAllButton.addEventListener('click', unfoldAllMarkdown);
+
+      cm.on('change', scheduleRender);
+      viewerScript.addEventListener('load', renderPreview);
+      updateHistoryButtons();
+      renderPreview();
+      requestAnimationFrame(() => { cm.refresh(); autoFoldBase64(); });
+    })();
+  </script>
+</body>
+</html>
