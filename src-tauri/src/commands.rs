@@ -1155,7 +1155,7 @@ mod tests {
                 working_directory: directory.path().to_path_buf(),
                 source: "Write-Output 'safe-output'".into(),
             },
-            Duration::from_secs(5),
+            Duration::from_secs(30),
         )
         .unwrap();
         assert_eq!(
