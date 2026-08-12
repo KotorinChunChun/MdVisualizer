@@ -5,6 +5,7 @@
   "windows": ["main", "viewer-*"],
   "permissions": [
     "core:default",
+    "core:window:allow-destroy",
     "opener:default"
   ]
 }

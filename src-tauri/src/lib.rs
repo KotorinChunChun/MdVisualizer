@@ -125,20 +125,50 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { .. } = event {
-                let _ = save_window_geometry(&window.app_handle(), window);
-            }
-            if let tauri::WindowEvent::Destroyed = event {
-                let state = window.state::<AppState>();
-                let mut watcher_guard = state.watcher.lock().unwrap();
-                if let Some(watcher) = watcher_guard.as_mut() {
-                    let _ = watcher.remove_window_targets(window.label());
+            let state = window.state::<AppState>();
+            match event {
+                tauri::WindowEvent::Moved(position) => {
+                    if let Ok(mut geometries) = state.window_geometries.lock() {
+                        if let Some(geometry) = geometries.get_mut(window.label()) {
+                            geometry.x = position.x;
+                            geometry.y = position.y;
+                        }
+                    }
                 }
+                tauri::WindowEvent::Resized(size) => {
+                    if let Ok(mut geometries) = state.window_geometries.lock() {
+                        if let Some(geometry) = geometries.get_mut(window.label()) {
+                            geometry.width = size.width;
+                            geometry.height = size.height;
+                        }
+                    }
+                }
+                tauri::WindowEvent::Destroyed => {
+                    let geometry = state
+                        .window_geometries
+                        .lock()
+                        .ok()
+                        .and_then(|mut geometries| geometries.remove(window.label()));
+                    if let Some(geometry) = geometry {
+                        let _ = save_window_geometry(&window.app_handle(), geometry);
+                    }
+                    let mut watcher_guard = state.watcher.lock().unwrap();
+                    if let Some(watcher) = watcher_guard.as_mut() {
+                        let _ = watcher.remove_window_targets(window.label());
+                    }
+                }
+                _ => {}
             }
         })
         .setup(|app| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = restore_saved_window_geometry(&app.handle(), &window);
+                if let Ok(geometry) = window_geometry(&window) {
+                    let state = app.state::<AppState>();
+                    if let Ok(mut geometries) = state.window_geometries.lock() {
+                        geometries.insert(window.label().to_string(), geometry);
+                    };
+                }
             }
             Ok(())
         })

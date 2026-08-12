@@ -36,7 +36,7 @@ pub use external::{
 pub use window_settings::{
     get_initial_files, load_settings, load_settings_status, open_in_new_window,
     restore_saved_window_geometry, save_fold_state, save_settings, save_window_geometry,
-    update_external_app_settings,
+    update_external_app_settings, window_geometry,
 };
 
 #[cfg(test)]
@@ -48,8 +48,10 @@ use external::{
 use std::time::Duration;
 #[cfg(test)]
 use window_settings::{
-    adjacent_geometry, clamp_geometry_to_area, logical_geometry, WindowGeometry, WorkArea,
+    adjacent_geometry, clamp_geometry_to_area, logical_geometry, WorkArea,
 };
+#[cfg(test)]
+use crate::app_state::WindowGeometry;
 
 static CLIPBOARD_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 

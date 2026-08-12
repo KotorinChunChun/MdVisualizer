@@ -87,6 +87,17 @@ export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: 
   return viewMode === "presentation" && requestedPanel === "images" ? null : requestedPanel;
 }
 
+export async function handleWindowCloseRequest(
+  hasUnsavedChanges: boolean,
+  confirmDiscard: (message?: string) => boolean,
+  event: { preventDefault: () => void },
+  destroyWindow: () => Promise<void>,
+) {
+  event.preventDefault();
+  if (hasUnsavedChanges && !confirmDiscard("未保存の編集内容があります。破棄してアプリを終了しますか？")) return;
+  await destroyWindow();
+}
+
 export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markdownRef = useRef<HTMLDivElement | null>(null);
@@ -180,22 +191,24 @@ export function App() {
 
   useEffect(() => {
     const hasUnsavedChanges = () => tabsStateRef.current.tabs.some((tab) => tab.dirty);
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!hasUnsavedChanges()) return;
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
     let unlisten: (() => void) | undefined;
-    void getCurrentWindow().onCloseRequested((event) => {
-      if (hasUnsavedChanges() && !window.confirm("未保存の編集内容があります。破棄してアプリを終了しますか？")) {
-        event.preventDefault();
-      }
-    }).then((dispose) => { unlisten = dispose; }).catch(() => {
+    let disposed = false;
+    const appWindow = getCurrentWindow();
+    void appWindow.onCloseRequested((event) => {
+      void handleWindowCloseRequest(
+        hasUnsavedChanges(),
+        (message) => window.confirm(message),
+        event,
+        () => appWindow.destroy(),
+      );
+    }).then((dispose) => {
+      if (disposed) dispose();
+      else unlisten = dispose;
+    }).catch(() => {
       // Browser and unit-test hosts do not provide the Tauri window event API.
     });
     return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
+      disposed = true;
       unlisten?.();
     };
   }, []);

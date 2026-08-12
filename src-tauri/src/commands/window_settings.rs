@@ -1,4 +1,4 @@
-use crate::app_state::AppState;
+use crate::app_state::{AppState, WindowGeometry};
 use crate::errors::AppError;
 use crate::markdown::is_supported_document;
 use crate::settings::{
@@ -6,7 +6,6 @@ use crate::settings::{
     merge_fold_state, merge_settings, SettingsLoadResult,
 };
 use crate::sharepoint::{is_spmd_uri, parse_spmd_uri};
-use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::path::Path;
 use std::sync::atomic::Ordering;
@@ -29,18 +28,6 @@ fn fold_state_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String>
         .app_data_dir()
         .map(|path| path.join("fold-state.json"))
         .map_err(|error| error.to_string())
-}
-
-/// The next-start geometry is deliberately shared rather than bound to an
-/// ephemeral viewer-* label. The last window closed therefore becomes the
-/// next main window, even after opening documents in separate windows.
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct WindowGeometry {
-    pub x: i32,
-    pub y: i32,
-    pub width: u32,
-    pub height: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -74,18 +61,7 @@ pub(super) fn logical_geometry(
     )
 }
 
-fn geometry_from_window(window: &WebviewWindow) -> Result<WindowGeometry, String> {
-    let position = window.outer_position().map_err(|error| error.to_string())?;
-    let size = window.inner_size().map_err(|error| error.to_string())?;
-    Ok(WindowGeometry {
-        x: position.x,
-        y: position.y,
-        width: size.width,
-        height: size.height,
-    })
-}
-
-fn geometry_from_native_window(window: &tauri::Window) -> Result<WindowGeometry, String> {
+pub fn window_geometry(window: &WebviewWindow) -> Result<WindowGeometry, String> {
     let position = window.outer_position().map_err(|error| error.to_string())?;
     let size = window.inner_size().map_err(|error| error.to_string())?;
     Ok(WindowGeometry {
@@ -244,8 +220,11 @@ pub fn restore_saved_window_geometry(
         .map_err(|error| error.to_string())
 }
 
-pub fn save_window_geometry(app_handle: &AppHandle, window: &tauri::Window) -> Result<(), String> {
-    let geometry = geometry_from_native_window(window)?;
+/// Persists a previously observed geometry without querying a window from its
+/// close callback. Calling native window getters while Windows is dispatching
+/// `CloseRequested` can re-enter the UI thread and prevent the close request
+/// from completing.
+pub fn save_window_geometry(app_handle: &AppHandle, geometry: WindowGeometry) -> Result<(), String> {
     let mut updates = Map::new();
     updates.insert(
         "windowGeometry".into(),
@@ -350,7 +329,7 @@ pub async fn open_in_new_window(
             .map_err(|_| "Initial file state is unavailable.".to_string())?;
         initial_files.insert(label.clone(), vec![path]);
     }
-    let source = geometry_from_window(&window)?;
+    let source = window_geometry(&window)?;
     let source_outer_width = window
         .outer_size()
         .map_err(|error| error.to_string())?
@@ -386,5 +365,10 @@ pub async fn open_in_new_window(
         }
         return Err(error.to_string());
     }
+    state
+        .window_geometries
+        .lock()
+        .map_err(|_| "Window geometry state is unavailable.".to_string())?
+        .insert(label, geometry);
     Ok(())
 }
