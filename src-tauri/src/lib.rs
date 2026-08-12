@@ -2,6 +2,7 @@ pub mod app_state;
 pub mod asset_staging;
 pub mod backup;
 pub mod commands;
+mod credential_store;
 pub mod document_edit;
 pub mod errors;
 pub mod file_lock;

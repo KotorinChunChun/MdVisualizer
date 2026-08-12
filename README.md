@@ -65,6 +65,8 @@ spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/R
 
 `spmd:` URIにはアクセストークン、共有トークン、クエリ文字列を含めないでください。SharePoint文書では再読み込み、印刷、別窓、同じSharePoint内の相対Markdownリンクを使用できます。ローカルファイル監視、診断、外部エディター、相対画像の取得・画像編集は対象外です。
 
+初回サインインで取得した更新トークンはWindows資格情報マネージャーへ暗号化保存し、次回起動以降のアクセストークン更新に使用します。アプリ側では保存期限を設けませんが、Microsoftアカウントのパスワード変更、管理者ポリシー、同意取消しなどで更新トークンが失効した場合は再サインインが必要です。
+
 ### MSIXインストーラー
 
 Windows SDKが導入済みのx64 Windows環境では、次のコマンドで署名済みMSIXを生成できます。

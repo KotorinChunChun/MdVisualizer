@@ -1,3 +1,4 @@
+use crate::credential_store::{read_secret, write_secret};
 use crate::markdown::{
     content_revision, decode_markdown, DocumentKind, DocumentSourceKind, MarkdownLoadResult,
 };
@@ -149,6 +150,10 @@ impl SharePointAuthConfig {
 
     fn cache_key(&self) -> String {
         format!("{}:{}", self.tenant, self.client_id)
+    }
+
+    fn credential_target(&self) -> String {
+        format!("MarkdownViewer/SharePoint/{}", self.cache_key())
     }
 }
 
@@ -334,10 +339,18 @@ impl SharePointClient {
         if let Some(access_token) = self.cached_access_token(&key) {
             return Ok(access_token);
         }
-        if let Some(refresh_token) = self.cached_refresh_token(&key) {
-            if let Ok(token) = self.refresh_access_token(config, &refresh_token).await {
+        let refresh_token = match self.cached_refresh_token(&key) {
+            Some(refresh_token) => Some(refresh_token),
+            None => read_secret(&config.credential_target())
+                .map_err(|error| SharePointError::Authentication(error.to_string()))?,
+        };
+        if let Some(refresh_token) = refresh_token {
+            if let Ok(mut token) = self.refresh_access_token(config, &refresh_token).await {
+                if token.refresh_token.is_none() {
+                    token.refresh_token = Some(refresh_token);
+                }
                 let access_token = token.access_token.clone();
-                self.store_token(key.clone(), token);
+                self.store_token(config, key.clone(), token)?;
                 return Ok(access_token);
             }
             self.tokens
@@ -360,7 +373,7 @@ impl SharePointClient {
         })?;
         let token = self.poll_device_code(config, &device).await?;
         let access_token = token.access_token.clone();
-        self.store_token(key, token);
+        self.store_token(config, key, token)?;
         Ok(access_token)
     }
 
@@ -381,7 +394,16 @@ impl SharePointClient {
             .and_then(|token| token.refresh_token.clone())
     }
 
-    fn store_token(&self, key: String, token: TokenResponse) {
+    fn store_token(
+        &self,
+        config: &SharePointAuthConfig,
+        key: String,
+        token: TokenResponse,
+    ) -> Result<(), SharePointError> {
+        if let Some(refresh_token) = token.refresh_token.as_deref() {
+            write_secret(&config.credential_target(), refresh_token)
+                .map_err(|error| SharePointError::Authentication(error.to_string()))?;
+        }
         self.tokens
             .lock()
             .expect("SharePoint token cache poisoned")
@@ -393,6 +415,7 @@ impl SharePointClient {
                     refresh_token: token.refresh_token,
                 },
             );
+        Ok(())
     }
 
     async fn request_device_code(
@@ -739,6 +762,10 @@ mod tests {
                 client_id: "f0fe07a2-a716-44de-bf0e-55d5b468d225".into(),
                 tenant: "organizations".into(),
             }
+        );
+        assert_eq!(
+            SharePointAuthConfig::embedded().credential_target(),
+            "MarkdownViewer/SharePoint/organizations:f0fe07a2-a716-44de-bf0e-55d5b468d225"
         );
     }
 
