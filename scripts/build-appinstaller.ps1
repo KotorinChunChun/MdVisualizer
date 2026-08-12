@@ -67,7 +67,8 @@ Assert-MsixIdentityMatchesConfiguration `
     -ExpectedVersion $artifacts.PackageVersion
 
 foreach ($key in @("Name", "Publisher", "Version", "Architecture")) {
-    if ([string]::IsNullOrWhiteSpace($identity[$key])) {
+    $identityProperty = $identity.PSObject.Properties[$key]
+    if (-not $identityProperty -or [string]::IsNullOrWhiteSpace([string]$identityProperty.Value)) {
         throw "The MSIX Identity $key is empty."
     }
 }

@@ -24,6 +24,14 @@ describe("FoldSection", () => {
     ]);
   });
 
+  it("keeps mixed heading children in one wrapping flow", () => {
+    const { container } = render(<FoldSection><h2>長い見出しに <code>これ</code> を含める</h2><div>Body</div></FoldSection>);
+    const content = container.querySelector(".fold-heading__content")!;
+    expect(content.textContent).toBe("長い見出しに これ を含める");
+    expect(content.querySelector("code")?.textContent).toBe("これ");
+    expect(content.parentElement?.classList.contains("fold-toggle")).toBe(true);
+  });
+
   it("responds to global fold-all commands", () => {
     render(<FoldSection><h2>Details</h2><div>Visible content</div></FoldSection>);
     const toggle = screen.getByRole("button", { name: /Details/ });

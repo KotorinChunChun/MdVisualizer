@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { countMermaidFences, MarkdownPreview } from "./MarkdownPreview";
 import { openExternalUrl } from "../lib/commands";
 
-vi.mock("./ImageRenderer", () => ({ ImageRenderer: () => null }));
+vi.mock("./ImageRenderer", () => ({
+  ImageRenderer: ({ alt, headingMode }: { alt?: string; headingMode?: boolean }) => <span data-testid={`image-${alt}`} data-heading-mode={headingMode ? "true" : "false"} />,
+}));
 vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn(), runPowerShell: vi.fn() }));
 
 describe("MarkdownPreview sanitization", () => {
@@ -23,6 +25,12 @@ describe("MarkdownPreview sanitization", () => {
     fireEvent.click(button);
     expect(button.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByText("Body").closest("section")?.querySelector(":scope > .fold-content")?.hasAttribute("hidden")).toBe(true);
+  });
+
+  it("marks only images inside headings for compact heading presentation", () => {
+    render(<MarkdownPreview content={"# 見出し ![ロゴ](logo.png)\n\n本文 ![写真](photo.png)"} baseDir="" imageVersions={{}} />);
+    expect(screen.getByTestId("image-ロゴ").dataset.headingMode).toBe("true");
+    expect(screen.getByTestId("image-写真").dataset.headingMode).toBe("false");
   });
 
   it("renders nested block quotes and Markdown and HTML horizontal rules", () => {

@@ -69,9 +69,3 @@ gantt
   Unit tests :done, t1, 2026-07-29, 1d
   GUI smoke  :active, t2, after t1, 1d
 ```
-
-## 意図的なエラー
-
-```mermaid
-flowchart THIS IS INVALID
-```

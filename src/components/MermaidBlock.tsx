@@ -96,17 +96,18 @@ export function MermaidBlock({
     return () => { disposed = true; };
   }, [diagramCount, diagramIndex, localId, mode, source, stableBlockId, statusId, tabId, theme, visible, windowId]);
 
-  if (mode === "off" || mode === "always-code") return <pre className="mermaid-source"><code>{source}</code></pre>;
+  if (mode === "off" || mode === "always-code") return <div className="mermaid-container">
+    <MermaidToolbar source={source} display="code" />
+    <pre className="mermaid-source"><code>{source}</code></pre>
+  </div>;
   const shouldShowCode = mode === "error-code" && state.error !== null;
+  const displayedContent = shouldShowCode ? "code" : display;
   return <div ref={hostRef} className="mermaid-container">
-    {state.error && <div className="mermaid-error"><strong>Mermaid を描画できません。</strong><div><button type="button" onClick={() => setShowDetails((value) => !value)}>エラー詳細</button>{!shouldShowCode && <button type="button" onClick={() => setShowDetails(true)}>コードを表示</button>}</div>{showDetails && <pre>{state.error}</pre>}{(showDetails || shouldShowCode) && <pre className="mermaid-source"><code>{source}</code></pre>}</div>}
-    {!state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
-    {!state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
-    {state.svg && <>
-      <MermaidToolbar source={source} svg={state.svg} display={display} onDisplayChange={setDisplay} />
-      {display === "code"
-        ? <pre className="mermaid-source"><code>{source}</code></pre>
-        : <button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: "Mermaid図" }, mermaidSource: source })} dangerouslySetInnerHTML={{ __html: state.svg }} />}
-    </>}
+    <MermaidToolbar source={source} svg={state.svg ?? undefined} display={displayedContent} onDisplayChange={setDisplay} />
+    {state.error && <div className="mermaid-error"><strong>Mermaid を描画できません。</strong><div><button type="button" onClick={() => setShowDetails((value) => !value)}>エラー詳細</button>{displayedContent !== "code" && <button type="button" onClick={() => setDisplay("code")}>コードを表示</button>}</div>{showDetails && <pre>{state.error}</pre>}</div>}
+    {displayedContent === "code" && <pre className="mermaid-source"><code>{source}</code></pre>}
+    {displayedContent === "diagram" && !state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
+    {displayedContent === "diagram" && !state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
+    {displayedContent === "diagram" && state.svg && <button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: "Mermaid図" }, mermaidSource: source })} dangerouslySetInnerHTML={{ __html: state.svg }} />}
   </div>;
 }
