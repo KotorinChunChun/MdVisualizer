@@ -19,7 +19,24 @@ export function localPathIdentity(path: string): string {
   return `${prefix}${parts.join("\\")}`.replace(/\\+$/, "").toLocaleLowerCase();
 }
 
+/** Creates a comparison key for either a local document path or an spmd URI. */
+export function documentSourceIdentity(source: string): string {
+  const trimmed = source.trim();
+  if (/^spmd:\/\//i.test(trimmed)) {
+    try {
+      const url = new URL(trimmed);
+      return `spmd://${url.hostname.toLocaleLowerCase()}${url.pathname.toLocaleLowerCase()}`;
+    } catch {
+      return trimmed.toLocaleLowerCase();
+    }
+  }
+  return localPathIdentity(trimmed);
+}
+
 export function isMarkdownPath(path: string): boolean {
   return /\.(?:md|markdown)$/i.test(path.trim());
 }
 
+export function isSupportedDocumentPath(path: string): boolean {
+  return /\.(?:md|markdown|svg|mmd|mermaid)$/i.test(path.trim());
+}

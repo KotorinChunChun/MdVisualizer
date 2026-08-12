@@ -3,6 +3,7 @@ import { initialTabsState, tabsReducer } from "./tabsReducer";
 
 const loadedDocument = (path: string) => ({
   path,
+  kind: "markdown" as const,
   content: "# Test",
   base_dir: "C:/docs",
   image_paths: [],
@@ -77,6 +78,17 @@ describe("tabsReducer", () => {
       },
     });
     expect(restored.tabs[0].imageDisplaySizes["image.png"]).toEqual({ width: 240, height: 120 });
+  });
+
+  it("ignores an image display size update when the measured size is unchanged", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "IMAGE_DISPLAY_SIZE", id, source: "image.png", size: { width: 240, height: 120 } });
+    const measured = state;
+
+    state = tabsReducer(state, { type: "IMAGE_DISPLAY_SIZE", id, source: "image.png", size: { width: 240, height: 120 } });
+
+    expect(state).toBe(measured);
   });
 
   it("adopts the canonical loaded path for watcher event matching", () => {

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CropImageRequest, CropImageResult, MarkdownLoadResult } from "../types/app";
+import type { DiagnosticItem } from "../components/DiagnosticsPanel";
 
 export interface CorruptFileInfo {
   sourcePath: string;
@@ -14,6 +15,9 @@ export interface SettingsLoadStatus {
 export async function loadSettings(): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("load_settings"); }
 export async function loadSettingsStatus(): Promise<SettingsLoadStatus> { return await invoke<SettingsLoadStatus>("load_settings_status"); }
 export async function saveSettings(updates: Record<string, unknown>): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("save_settings", { updates }); }
+export async function copyMermaidFile(request: { kind: "code" | "png" | "svg"; source: string; svg: string; pngBytes: number[] }): Promise<string> {
+  return await invoke<string>("copy_mermaid_file", { request });
+}
 export async function updateExternalAppSettings(
   upserts: unknown[],
   removedIds: string[],
@@ -38,6 +42,9 @@ export async function openInNewWindow(path: string): Promise<void> { await invok
 
 export async function loadMarkdown(path: string): Promise<MarkdownLoadResult> {
   return await invoke<MarkdownLoadResult>("load_markdown", { path });
+}
+export async function diagnoseDocument(path: string): Promise<DiagnosticItem[]> {
+  return await invoke<DiagnosticItem[]>("diagnose_document", { path });
 }
 
 export async function startWatch(path: string): Promise<void> {
@@ -115,4 +122,17 @@ export async function openExternalApp(request: {
   line?: number;
 }): Promise<void> {
   await invoke<void>("open_external_app", { request });
+}
+
+export interface PowerShellRunResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  timedOut: boolean;
+  truncated: boolean;
+  durationMs: number;
+}
+
+export async function runPowerShell(request: { documentPath: string; language: string; source: string; workingDirectory?: string }): Promise<PowerShellRunResult> {
+  return await invoke<PowerShellRunResult>("run_powershell", { request });
 }

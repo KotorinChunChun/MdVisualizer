@@ -19,11 +19,11 @@ export const markdownSanitizeSchema = {
       "data-source-line",
     ],
     a: [...(defaultSchema.attributes?.a ?? []), "target", "rel"],
-    img: [...(defaultSchema.attributes?.img ?? []), "src", "alt", "width", "height"],
+    img: [...(defaultSchema.attributes?.img ?? []), "src", "alt", "width", "height", "data-obsidian-image"],
   },
   protocols: {
     ...defaultSchema.protocols,
-    href: ["http", "https", "mailto"],
+    href: ["http", "https", "mailto", "spmd"],
     src: ["http", "https", "data"],
   },
 };

@@ -1,4 +1,5 @@
 use crate::errors::{AppError, AppResult};
+use crate::markdown::is_supported_document;
 use notify::event::{ModifyKind, RenameMode};
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
@@ -98,20 +99,14 @@ impl FileWatcher {
                                 .collect()
                         })
                         .unwrap_or_default();
-                    let is_markdown = matches!(
-                        path.extension()
-                            .and_then(|extension| extension.to_str())
-                            .map(str::to_ascii_lowercase)
-                            .as_deref(),
-                        Some("md") | Some("markdown")
-                    );
+                    let is_document = is_supported_document(&path);
                     for label in owners {
                         let payload = FileChangedPayload {
                             window_label: label.clone(),
                             path: path.to_string_lossy().to_string(),
                             change_kind: kind,
                         };
-                        let event = if is_markdown {
+                        let event = if is_document {
                             "markdown-changed"
                         } else {
                             "image-changed"
@@ -340,5 +335,13 @@ mod tests {
             attrs: Default::default(),
         };
         assert_eq!(classify_event(&event), Some(FileChangeKind::Replaced));
+    }
+
+    #[test]
+    fn standalone_svg_and_mermaid_files_are_document_watch_targets() {
+        for path in ["readme.md", "diagram.svg", "flow.mmd", "flow.mermaid"] {
+            assert!(is_supported_document(Path::new(path)), "{path}");
+        }
+        assert!(!is_supported_document(Path::new("image.png")));
     }
 }

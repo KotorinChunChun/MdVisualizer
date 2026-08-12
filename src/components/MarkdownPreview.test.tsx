@@ -4,7 +4,7 @@ import { countMermaidFences, MarkdownPreview } from "./MarkdownPreview";
 import { openExternalUrl } from "../lib/commands";
 
 vi.mock("./ImageRenderer", () => ({ ImageRenderer: () => null }));
-vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn() }));
+vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn(), runPowerShell: vi.fn() }));
 
 describe("MarkdownPreview sanitization", () => {
   it("renders safe HTML and removes scripts, event handlers, and unsafe URLs", () => {
@@ -25,12 +25,67 @@ describe("MarkdownPreview sanitization", () => {
     expect(screen.getByText("Body").closest("section")?.querySelector(":scope > .fold-content")?.hasAttribute("hidden")).toBe(true);
   });
 
+  it("renders nested block quotes and Markdown and HTML horizontal rules", () => {
+    const { container } = render(<MarkdownPreview content={"> outer\n>\n> > inner\n\n---\n\n<hr>"} baseDir="" imageVersions={{}} />);
+
+    expect(container.querySelectorAll("blockquote")).toHaveLength(2);
+    expect(container.querySelector("blockquote blockquote")?.textContent).toContain("inner");
+    expect(container.querySelectorAll("hr")).toHaveLength(2);
+  });
+
   it("opens a relative Markdown link in the app instead of the external URL handler", () => {
     const onOpenDocument = vi.fn();
     render(<MarkdownPreview content="[next](../guide/next.md)" baseDir="C:\\docs\\current" imageVersions={{}} onOpenDocument={onOpenDocument} />);
     fireEvent.click(screen.getByRole("link", { name: "next" }));
     expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/guide/next.md");
     expect(openExternalUrl).not.toHaveBeenCalled();
+  });
+
+  it("opens an Obsidian-style local Markdown wiki link in the app", () => {
+    const onOpenDocument = vi.fn();
+    render(<MarkdownPreview content="[[linked-document.md|リンク先]]" baseDir="C:\\docs" imageVersions={{}} onOpenDocument={onOpenDocument} />);
+    fireEvent.click(screen.getByRole("link", { name: "リンク先" }));
+    expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/linked-document.md");
+  });
+
+  it("opens SVG and Mermaid document links in tabs or adjacent windows", () => {
+    const onOpenDocument = vi.fn();
+    const onOpenDocumentWindow = vi.fn();
+    render(<MarkdownPreview
+      content="[SVG](diagram.svg) [Mermaid](flow.mmd)"
+      baseDir="C:\\docs"
+      imageVersions={{}}
+      onOpenDocument={onOpenDocument}
+      onOpenDocumentWindow={onOpenDocumentWindow}
+    />);
+
+    fireEvent.click(screen.getByRole("link", { name: "SVG" }));
+    fireEvent.click(screen.getByRole("link", { name: "Mermaid" }), { ctrlKey: true });
+
+    expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/diagram.svg");
+    expect(onOpenDocumentWindow).toHaveBeenCalledWith("C:/docs/flow.mmd");
+  });
+
+  it("offers confirmed execution only for PowerShell fences backed by a document path", () => {
+    render(<MarkdownPreview content={"```pwsh\nWrite-Output safe\n```\n\n```bash\necho no\n```"} baseDir="C:\\docs" documentPath="C:\\docs\\sample.md" imageVersions={{}} />);
+    expect(screen.getAllByRole("button", { name: "PowerShellを実行" })).toHaveLength(1);
+  });
+
+  it("preserves a Mermaid block DOM node when surrounding render context changes", () => {
+    const imageVersions = {};
+    const content = "```mermaid\nflowchart LR\nA --> B\n```";
+    const view = render(<MarkdownPreview content={content} baseDir="" imageVersions={imageVersions} mermaidMode="off" imageDisplaySizes={{}} />);
+    const block = view.container.querySelector(".mermaid-source");
+
+    view.rerender(<MarkdownPreview
+      content={content}
+      baseDir=""
+      imageVersions={imageVersions}
+      mermaidMode="off"
+      imageDisplaySizes={{ "image.png": { width: 200, height: 100 } }}
+    />);
+
+    expect(view.container.querySelector(".mermaid-source")).toBe(block);
   });
 });
 

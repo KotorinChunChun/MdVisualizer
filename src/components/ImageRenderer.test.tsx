@@ -66,6 +66,15 @@ describe("ImageRenderer inline resize", () => {
     expect(screen.getByText("画像").className).toContain("caption");
   });
 
+  it("keeps the caption outside the bordered resize stage", () => {
+    const { container } = renderImage();
+    fireEvent.load(screen.getByAltText("テスト画像"));
+    const stage = container.querySelector(".inline-image-resize__stage")!;
+    const caption = container.querySelector(".inline-image-resize__caption")!;
+    expect(stage.contains(caption)).toBe(false);
+    expect(stage.querySelector(".inline-image-resize__overlay")).not.toBeNull();
+  });
+
   it("passes editable Markdown occurrence metadata to the preview", () => {
     const onMediaOpen = vi.fn();
     render(<ImageRenderer
@@ -110,8 +119,9 @@ describe("ImageRenderer inline resize", () => {
     fireEvent.pointerUp(window, { pointerId: 9, clientX: 50, clientY: 80 });
 
     const frame = container.querySelector<HTMLElement>(".inline-image-resize")!;
+    const stage = container.querySelector<HTMLElement>(".inline-image-resize__stage")!;
     expect(frame.style.width).toBe("270px");
-    expect(frame.style.height).toBe("200px");
+    expect(stage.style.height).toBe("168.75px");
     fireEvent.click(image);
     expect(onMediaOpen).toHaveBeenCalledTimes(1);
   });
@@ -144,8 +154,9 @@ describe("ImageRenderer inline resize", () => {
     fireEvent.keyDown(southEastHandle, { key: "ArrowLeft", shiftKey: true });
 
     const frame = container.querySelector<HTMLElement>(".inline-image-resize")!;
+    const stage = container.querySelector<HTMLElement>(".inline-image-resize__stage")!;
     expect(frame.style.width).toBe("296px");
-    expect(frame.style.height).toBe("185px");
+    expect(stage.style.height).toBe("185px");
   });
 
   it("does not expose resize handles for remote or data images", () => {

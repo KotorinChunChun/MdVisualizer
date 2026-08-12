@@ -2,6 +2,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import { getFileName, resolveLocalImagePath } from "./path";
 import { localPathIdentity } from "./pathIdentity";
+import { remarkObsidianImages } from "./remarkObsidianImages";
 
 type Position = {
   start?: { line?: number; offset?: number };
@@ -32,7 +33,7 @@ export interface ImageOccurrenceGroup {
   occurrences: ImageOccurrence[];
 }
 
-const parser = unified().use(remarkParse);
+const parser = unified().use(remarkParse).use(remarkObsidianImages);
 const htmlImagePattern = /<img\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1[^>]*>/gi;
 const htmlAltPattern = /\balt\s*=\s*(["'])(.*?)\1/i;
 
@@ -41,7 +42,7 @@ export function imageOccurrenceId(sourceOffset: number): string {
 }
 
 export function collectImageOccurrences(markdown: string, baseDir: string): ImageOccurrence[] {
-  const root = parser.parse(markdown) as MarkdownNode;
+  const root = parser.runSync(parser.parse(markdown)) as MarkdownNode;
   const occurrences: ImageOccurrence[] = [];
 
   const append = (source: string, caption: string, sourceLine: number, sourceOffset: number) => {

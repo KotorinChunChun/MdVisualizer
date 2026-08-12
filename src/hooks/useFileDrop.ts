@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { isMarkdownPath } from "../lib/pathIdentity";
+import { isSupportedDocumentPath } from "../lib/pathIdentity";
 
 export function useFileDrop(onDrop: (paths: string[]) => void): void {
   const callbackRef = useRef(onDrop);
@@ -11,8 +11,8 @@ export function useFileDrop(onDrop: (paths: string[]) => void): void {
     let unlisten: (() => void) | null = null;
     void getCurrentWebview().onDragDropEvent((event) => {
       if (event.payload.type !== "drop") return;
-      const markdownPaths = event.payload.paths.filter(isMarkdownPath);
-      if (markdownPaths.length > 0) callbackRef.current(markdownPaths);
+      const documentPaths = event.payload.paths.filter(isSupportedDocumentPath);
+      if (documentPaths.length > 0) callbackRef.current(documentPaths);
     }).then((remove) => {
       if (disposed) remove();
       else unlisten = remove;
@@ -26,4 +26,3 @@ export function useFileDrop(onDrop: (paths: string[]) => void): void {
     };
   }, []);
 }
-

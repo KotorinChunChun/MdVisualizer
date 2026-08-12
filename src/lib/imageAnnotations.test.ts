@@ -1,13 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   clamp,
   clampAnnotation,
   clampRect,
   createImageAnnotationState,
+  duplicateImageAnnotation,
   drawImageAnnotations,
   hitTestAnnotation,
   imageAnnotationReducer,
   type FrameAnnotation,
+  type ArrowAnnotation,
   type ImageAnnotation,
   type MaskAnnotation,
 } from "./imageAnnotations";
@@ -18,6 +20,9 @@ const frame = (id = "frame"): FrameAnnotation => ({
 });
 const solidMask = (): MaskAnnotation => ({
   id: "mask", type: "mask", x: 0, y: 0, width: 2, height: 2, style: "solid", color: "#000",
+});
+const arrow = (): ArrowAnnotation => ({
+  id: "arrow", type: "arrow", x: 10, y: 20, width: 30, height: 20, color: "#d00", lineWidth: 3, direction: "right",
 });
 
 describe("image annotation geometry", () => {
@@ -37,6 +42,26 @@ describe("image annotation geometry", () => {
     const top = { ...frame("top"), color: "#000" };
     expect(hitTestAnnotation([frame(), top], 20, 25)?.id).toBe("top");
     expect(hitTestAnnotation([frame()], 99, 25)).toBeUndefined();
+  });
+
+  it("uses ellipse geometry for ellipse hit testing", () => {
+    const ellipse = { ...frame("ellipse"), type: "ellipse" as const };
+    expect(hitTestAnnotation([ellipse], 25, 30)?.id).toBe("ellipse");
+    expect(hitTestAnnotation([ellipse], 10, 20)).toBeUndefined();
+  });
+
+  it("hit-tests an arrow along its shaft instead of its whole bounding box", () => {
+    expect(hitTestAnnotation([arrow()], 25, 30)?.id).toBe("arrow");
+    expect(hitTestAnnotation([arrow()], 25, 20)).toBeUndefined();
+  });
+
+  it("duplicates an annotation with a new identity and bounded offset", () => {
+    expect(duplicateImageAnnotation(frame(), "copy", 16, bounds)).toMatchObject({
+      id: "copy", x: 26, y: 36, width: 30, height: 20,
+    });
+    expect(duplicateImageAnnotation({ ...frame(), x: 80, y: 70 }, "edge", 16, bounds)).toMatchObject({
+      id: "edge", x: 96, y: 80, width: 4, height: 0,
+    });
   });
 });
 
@@ -97,10 +122,27 @@ describe("image annotation reducer", () => {
     expect(clamped.annotations[0]).toMatchObject({ x: 0, y: 0, width: 100, height: 80 });
   });
 
+  it("resizes one selected axis symmetrically around its center", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const taller = imageAnnotationReducer(placed, { type: "resizeSelected", axis: "height", delta: 2, bounds });
+    expect(taller.annotations[0]).toMatchObject({ x: 10, y: 19, width: 30, height: 22 });
+    const narrower = imageAnnotationReducer(taller, { type: "resizeSelected", axis: "width", delta: -2, bounds });
+    expect(narrower.annotations[0]).toMatchObject({ x: 11, y: 19, width: 28, height: 22 });
+  });
+
   it("ignores edits without a selected target", () => {
     const state = createImageAnnotationState([frame()]);
     expect(imageAnnotationReducer(state, { type: "delete" })).toBe(state);
     expect(imageAnnotationReducer(state, { type: "scaleSelected", scale: 2 })).toBe(state);
+    expect(imageAnnotationReducer(state, { type: "resizeSelected", axis: "height", delta: 2 })).toBe(state);
+  });
+
+  it("translates current annotations and history together for canvas origin changes", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const moved = imageAnnotationReducer(placed, { type: "translateAll", x: 12, y: 8 });
+    expect(moved.annotations[0]).toMatchObject({ x: 22, y: 28 });
+    expect(moved.undoStack[0]).toEqual([]);
+    expect(imageAnnotationReducer(moved, { type: "undo" }).annotations).toEqual([]);
   });
 });
 
@@ -109,6 +151,8 @@ class FakeContext {
   fillStyle = "";
   strokeStyle = "";
   lineWidth = 1;
+  lineCap: CanvasLineCap = "butt";
+  lineJoin: CanvasLineJoin = "miter";
   font = "";
   textBaseline: CanvasTextBaseline = "alphabetic";
   calls: string[] = [];
@@ -121,6 +165,11 @@ class FakeContext {
   fillRect() { this.calls.push("fillRect"); }
   strokeRect() { this.calls.push("strokeRect"); }
   fillText() { this.calls.push("fillText"); }
+  beginPath() { this.calls.push("beginPath"); }
+  ellipse() { this.calls.push("ellipse"); }
+  moveTo() { this.calls.push("moveTo"); }
+  lineTo() { this.calls.push("lineTo"); }
+  stroke() { this.calls.push("stroke"); }
   getImageData(x: number, y: number, width: number, height: number) {
     const data = new Uint8ClampedArray(width * height * 4);
     for (let row = 0; row < height; row += 1) data.set(this.pixels.slice(((y + row) * this.canvas.width + x) * 4, ((y + row) * this.canvas.width + x + width) * 4), row * width * 4);
@@ -143,12 +192,47 @@ describe("image annotation drawing", () => {
     expect(ctx.calls).toContain("fillText");
   });
 
+  it("draws an ellipse frame", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...frame(), type: "ellipse" }]);
+    expect(ctx.calls).toEqual(expect.arrayContaining(["beginPath", "ellipse", "stroke"]));
+  });
+
+  it("draws an arrow shaft and arrowhead", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [arrow()]);
+    expect(ctx.calls.filter((call) => call === "lineTo")).toHaveLength(3);
+    expect(ctx.calls).toEqual(expect.arrayContaining(["beginPath", "moveTo", "stroke"]));
+  });
+
   it("blurs image pixels inside a mask", () => {
     const ctx = new FakeContext();
     drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...solidMask(), style: "blur", width: 4, height: 1 }]);
     expect(ctx.pixels[0]).toBeGreaterThan(0);
     expect(ctx.pixels[0]).toBeLessThan(255);
     expect(ctx.pixels[4]).toBeGreaterThan(0);
+  });
+
+  it("uses native canvas filtering for browser blur masks without reading pixels", () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 100;
+    canvas.height = 80;
+    const scratchContext = { drawImage: vi.fn(), imageSmoothingEnabled: true };
+    const scratch = document.createElement("canvas");
+    Object.defineProperty(scratch, "getContext", { value: () => scratchContext });
+    const originalCreateElement = document.createElement.bind(document);
+    const createElement = vi.spyOn(document, "createElement").mockImplementation(((tagName: string) =>
+      tagName === "canvas" ? scratch : originalCreateElement(tagName)) as typeof document.createElement);
+    const ctx = {
+      canvas,
+      save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(), rect: vi.fn(), clip: vi.fn(),
+      drawImage: vi.fn(), fillRect: vi.fn(), getImageData: vi.fn(() => { throw new Error("pixel read is not allowed"); }),
+      filter: "none", globalAlpha: 1, fillStyle: "",
+    };
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...solidMask(), style: "blur", width: 40, height: 30 }]);
+    expect(ctx.drawImage).toHaveBeenCalledOnce();
+    expect(ctx.getImageData).not.toHaveBeenCalled();
+    createElement.mockRestore();
   });
 
   it("mosaics pixels into equal colour blocks", () => {

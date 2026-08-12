@@ -1,8 +1,8 @@
 import { MarkdownLoadResult } from "../types/app";
+import type { ViewMode } from "../lib/viewMode";
 import "../styles/status-bar.css";
 
 export type AutoReloadMode = "on" | "off" | "manual";
-export type MermaidMode = "on" | "off" | "error-code" | "always-code";
 
 export interface StatusBarProps {
   document: MarkdownLoadResult | null;
@@ -14,23 +14,21 @@ export interface StatusBarProps {
   zoom?: number;
   onZoomChange?: (value: number) => void;
   setZoom?: (value: number) => void;
-  mermaidMode?: MermaidMode;
-  onMermaidModeChange?: (value: MermaidMode) => void;
-  setMermaidMode?: (value: MermaidMode) => void;
   mermaidStatus?: string;
   mermaidErrorCount?: number;
   imageBackupAvailable?: boolean;
   changed?: boolean;
   theme?: string;
   onThemeChange?: (value: string) => void;
-  viewMode?: string;
-  onViewModeChange?: (value: string) => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (value: ViewMode) => void;
   onOpenSettings?: () => void;
   onOpenShortcutHelp?: () => void;
   statusText?: string;
+  linkTarget?: string;
 }
 
-const zoomOptions = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200];
+const zoomOptions = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
 
 function formatSize(sizeBytes: number) {
   return sizeBytes < 1024 ? `${sizeBytes} B` : `${(sizeBytes / 1024).toFixed(1)} KB`;
@@ -44,24 +42,21 @@ export function StatusBar({
   zoom = 100,
   onZoomChange,
   setZoom,
-  mermaidMode = "on",
-  onMermaidModeChange,
-  setMermaidMode,
   mermaidStatus,
   mermaidErrorCount = 0,
   imageBackupAvailable = false,
   changed = false,
   theme = "system",
   onThemeChange,
-  viewMode = "standard",
+  viewMode = "auto",
   onViewModeChange,
   onOpenSettings,
   onOpenShortcutHelp,
   statusText,
+  linkTarget,
 }: StatusBarProps) {
   const updateAutoReload = onAutoReloadChange ?? setAutoReload;
   const updateZoom = onZoomChange ?? setZoom;
-  const updateMermaidMode = onMermaidModeChange ?? setMermaidMode;
   const mermaidSummary = mermaidStatus
     ? `Mermaid: ${mermaidStatus}${mermaidErrorCount > 0 ? ` (${mermaidErrorCount}件のエラー)` : ""}`
     : mermaidErrorCount > 0
@@ -71,14 +66,14 @@ export function StatusBar({
   return (
     <footer className="status-bar" aria-label="ドキュメントの状態と表示設定">
       <div className="status-bar__details" aria-live="polite">
-        {document ? <>
+        {linkTarget ? <span className="status-bar__link-target" title={linkTarget}>リンク先: {linkTarget}</span> : document ? <>
           <span>{document.encoding}</span>
           <span>{formatSize(document.size_bytes)}</span>
           <span>更新 {document.modified_at}</span>
           {changed && <span className="status-bar__changed">変更あり</span>}
         </> : <span>{statusText ?? "Markdownファイル未選択"}</span>}
-        {mermaidSummary && <span>{mermaidSummary}</span>}
-        {imageBackupAvailable && <span>画像バックアップあり</span>}
+        {!linkTarget && mermaidSummary && <span>{mermaidSummary}</span>}
+        {!linkTarget && imageBackupAvailable && <span>画像バックアップあり</span>}
       </div>
       <div className="status-bar__controls" aria-label="表示設定">
         <label>
@@ -94,13 +89,16 @@ export function StatusBar({
         </label>
         <label>
           <span>レイアウト</span>
-          <select aria-label="レイアウト" value={viewMode} onChange={(event) => onViewModeChange?.(event.target.value)} disabled={!onViewModeChange}>
-            <option value="standard">標準</option>
-            <option value="wide">ワイド</option>
-            <option value="compact">コンパクト</option>
-            <option value="print">印刷</option>
-            <option value="presentation">プレゼン</option>
-            <option value="images">画像中心</option>
+          <select aria-label="レイアウト" value={viewMode} onChange={(event) => onViewModeChange?.(event.target.value as ViewMode)} disabled={!onViewModeChange}>
+            <optgroup label="本文レイアウト">
+              <option value="auto">オート</option>
+              <option value="a4-portrait">A4縦</option>
+              <option value="a3-portrait">A3縦</option>
+            </optgroup>
+            <optgroup label="表示モード">
+              <option value="presentation">プレゼン</option>
+              <option value="images">画像中心</option>
+            </optgroup>
           </select>
         </label>
         <label>
@@ -109,15 +107,6 @@ export function StatusBar({
             <option value="on">ON</option>
             <option value="manual">手動のみ</option>
             <option value="off">OFF</option>
-          </select>
-        </label>
-        <label>
-          <span>Mermaid</span>
-          <select aria-label="Mermaid" value={mermaidMode} onChange={(event) => updateMermaidMode?.(event.target.value as MermaidMode)} disabled={!updateMermaidMode}>
-            <option value="on">ON</option>
-            <option value="off">OFF</option>
-            <option value="error-code">エラー時コード</option>
-            <option value="always-code">常にコード</option>
           </select>
         </label>
         <label>

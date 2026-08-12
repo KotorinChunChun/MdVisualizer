@@ -1,28 +1,42 @@
 .inline-image-resize {
-  position: relative;
   display: inline-block;
   max-width: 100%;
   vertical-align: top;
   line-height: 0;
 }
 
+.inline-image-resize__stage {
+  position: relative;
+  display: block;
+  max-width: 100%;
+  line-height: 0;
+}
+
 .inline-image-resize__caption {
   display: block;
   max-width: 100%;
-  margin-top: 0.3rem;
+  box-sizing: border-box;
+  margin-top: 0.35rem;
+  padding: 0 0.25rem 0.2rem;
   color: var(--text-secondary);
   font-size: 0.88em;
   line-height: 1.35;
   text-align: center;
 }
 
-.markdown-body .inline-image-resize > img.markdown-img.inline-image-resize__image {
+.markdown-body .inline-image-resize__stage > img.markdown-img.inline-image-resize__image {
   display: block;
-  width: 100%;
-  height: 100%; /* Deliberately outranks app.css .markdown-img { height:auto }. */
-  max-width: none;
+  width: auto;
+  height: auto;
+  max-width: 100%;
   margin: 0;
-  object-fit: fill;
+}
+
+.markdown-body .inline-image-resize.has-display-size .inline-image-resize__stage > img.markdown-img.inline-image-resize__image {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .markdown-img.inline-image-resize__image.croppable:hover {

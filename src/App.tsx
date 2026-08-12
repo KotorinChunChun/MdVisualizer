@@ -4,10 +4,13 @@ import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
 import { StatusBar } from "./components/StatusBar";
 import { MarkdownPreview } from "./components/MarkdownPreview";
+import { StandaloneDocumentPreview } from "./components/StandaloneDocumentPreview";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
 import { SearchBar } from "./components/SearchBar";
+import { SearchResults } from "./components/SearchResults";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { SharePointAuthDialog } from "./components/SharePointAuthDialog";
 import { ExternalActions } from "./components/ExternalActions";
 import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget } from "./components/MediaPreviewModal";
@@ -15,43 +18,61 @@ import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { ImageAnnotationEditor } from "./components/ImageAnnotationEditor";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
+import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
+import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
 import { useCropEditor } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
-import { getInitialFiles, hasImageBackup, loadMarkdown, loadSettingsStatus, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateExternalAppSettings, updateImageCaption } from "./lib/commands";
+import { useApplicationSettings } from "./hooks/useApplicationSettings";
+import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
+import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
-import { ancestorFoldIds } from "./lib/foldSections";
-import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, type ExternalAppConfig } from "./types/settings";
+import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
+import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
-import { localPathIdentity } from "./lib/pathIdentity";
+import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
 import { resolveImageSrc } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
+import type { ViewMode } from "./lib/viewMode";
+import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
+import { isSharePointDocument } from "./lib/sharePoint";
+import { moveZoomLevel } from "./lib/zoom";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
 import "./styles/themes.css";
+import "./styles/syntax-highlight.css";
 
 // Keep this list in sync with StatusBar's fixed zoom choices.  Normalizing at
 // the state boundary also repairs legacy persisted values that were not a
 // selectable option.
-export const ZOOM_LEVELS = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200] as const;
-export type ZoomLevel = typeof ZOOM_LEVELS[number];
+export { moveZoomLevel, normalizeZoom, ZOOM_LEVELS, type ZoomLevel } from "./lib/zoom";
 
-export function normalizeZoom(value: number): ZoomLevel {
-  return ZOOM_LEVELS.reduce((nearest, candidate) =>
-    Math.abs(candidate - value) < Math.abs(nearest - value) ? candidate : nearest,
-  ZOOM_LEVELS[0]);
+export function focusAndSelectSearchInput(input: HTMLInputElement | null): void {
+  input?.focus();
+  input?.select();
 }
 
-export function moveZoomLevel(current: number, direction: 1 | -1): number {
-  const index = ZOOM_LEVELS.indexOf(normalizeZoom(current));
-  return ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length - 1, index + direction))];
+export function documentLinkTarget(target: EventTarget | null): string | null {
+  if (!(target instanceof Element)) return null;
+  const link = target.closest("a[href]");
+  if (!(link instanceof HTMLAnchorElement) || !link.closest(".markdown-body")) return null;
+  return link.getAttribute("href");
+}
+
+export function resolveDocumentSidePanel(searchOpen: boolean, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): DocumentSidePanelTab | null {
+  if (searchOpen) return "search";
+  return requestedPanel;
+}
+
+export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): Exclude<DocumentSidePanelTab, "search"> | null {
+  return viewMode === "presentation" && requestedPanel === "images" ? null : requestedPanel;
 }
 
 export function App() {
@@ -66,133 +87,66 @@ export function App() {
   const wasPresentationMode = useRef(false);
   const presentationRestorePending = useRef(false);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [theme, setTheme] = useState("system");
-  const [zoom, setZoom] = useState(100);
-  const [viewMode, setViewMode] = useState("standard");
-  const [autoReload, setAutoReload] = useState<"on" | "off" | "manual">("on");
-  const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
-  const [mermaidMode, setMermaidMode] = useState<"on" | "off" | "error-code" | "always-code">("on");
+  const [viewMode, setViewMode] = useState<ViewMode>("auto");
   const [searchExpandedIds, setSearchExpandedIds] = useState<string[]>([]);
+  const [codeHighlightRevision, setCodeHighlightRevision] = useState(0);
   const [mermaidStatus, setMermaidStatus] = useState(getMermaidStatus);
   const [imageBackups, setImageBackups] = useState<Record<string, boolean>>({});
-  const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
-  const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
-  const [imageA4TargetWidth, setImageA4TargetWidth] = useState(DEFAULT_IMAGE_A4_TARGET_WIDTH);
-  const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
+  const {
+    theme,
+    zoom,
+    documentViewModes,
+    setDocumentViewModes,
+    autoReload,
+    foldStates,
+    setFoldStates,
+    externalApps,
+    presentationLineThreshold,
+    imageA4TargetWidth,
+    imageEqualPadding,
+    syntaxHighlight,
+    printStyle,
+    updateTheme,
+    updateZoom,
+    updateAutoReload,
+    saveExternalAppSettings,
+  } = useApplicationSettings(setToast);
+  const {
+    sharePointAuthPrompt,
+    openAuthenticationPage,
+    dismissAuthentication,
+  } = useSharePointAuthentication(setToast);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
+  const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
-  const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
-  const [documentTocOpen, setDocumentTocOpen] = useState(false);
+  const [documentPanels, setDocumentPanels] = useState<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
+  const documentPanelsRef = useRef(documentPanels);
+  const panelBeforeSearchRef = useRef<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([]);
+  const [printing, setPrinting] = useState(false);
   const [activeTocHeadingId, setActiveTocHeadingId] = useState<string | null>(null);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
+  const [focusedLinkTarget, setFocusedLinkTarget] = useState<string | null>(null);
+  const tocPointerFrame = useRef(0);
+  const pendingTocHeadingId = useRef<string | null>(null);
   const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
   const navigationHistoryRef = useRef(emptyNavigationHistory());
   const auxiliaryNavigationRef = useRef<AuxiliaryNavigationStamp>({ button: -1, timestamp: 0 });
-  const themeRef = useRef(theme);
-  const zoomRef = useRef(zoom);
   const viewModeRef = useRef(viewMode);
-  const autoReloadRef = useRef(autoReload);
-  const mermaidModeRef = useRef(mermaidMode);
+  const documentViewModesRef = useRef(documentViewModes);
   const windowLabel = getCurrentWindow().label;
-
-  const persistSetting = useCallback((key: "theme" | "zoom" | "viewMode" | "autoReload" | "mermaidMode", value: string | number) => {
-    void saveSettings({ [key]: value }).catch((error) => {
-      setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
-    });
-  }, []);
-
-  const updateTheme = useCallback((value: string) => {
-    if (themeRef.current === value) return;
-    themeRef.current = value;
-    setTheme(value);
-    persistSetting("theme", value);
-  }, [persistSetting]);
-
-  const updateZoom = useCallback((value: number | ((current: number) => number)) => {
-    const requested = typeof value === "function" ? value(zoomRef.current) : value;
-    const next = normalizeZoom(requested);
-    if (zoomRef.current === next) return;
-    zoomRef.current = next;
-    setZoom(next);
-    persistSetting("zoom", next);
-  }, [persistSetting]);
-
-  const updateViewMode = useCallback((value: string) => {
-    if (viewModeRef.current === value) return;
-    viewModeRef.current = value;
-    setViewMode(value);
-    persistSetting("viewMode", value);
-  }, [persistSetting]);
-
-  const updateAutoReload = useCallback((value: "on" | "off" | "manual") => {
-    if (autoReloadRef.current === value) return;
-    autoReloadRef.current = value;
-    setAutoReload(value);
-    persistSetting("autoReload", value);
-  }, [persistSetting]);
-
-  const updateMermaidMode = useCallback((value: "on" | "off" | "error-code" | "always-code") => {
-    if (mermaidModeRef.current === value) return;
-    mermaidModeRef.current = value;
-    setMermaidMode(value);
-    persistSetting("mermaidMode", value);
-  }, [persistSetting]);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const applyTheme = () => {
-      document.documentElement.dataset.theme = theme === "system" ? (media.matches ? "dark" : "light") : theme;
-    };
-
-    applyTheme();
-    media.addEventListener("change", applyTheme);
-    return () => media.removeEventListener("change", applyTheme);
-  }, [theme]);
-
-  useEffect(() => {
-    void loadSettingsStatus().then(({ settings, recoveredFiles }) => {
-      if (typeof settings.theme === "string") { themeRef.current = settings.theme; setTheme(settings.theme); }
-      if (typeof settings.zoom === "number") { const value = normalizeZoom(settings.zoom); zoomRef.current = value; setZoom(value); }
-      if (typeof settings.viewMode === "string") { viewModeRef.current = settings.viewMode; setViewMode(settings.viewMode); }
-      if (["on", "off", "manual"].includes(String(settings.autoReload))) { const value = settings.autoReload as "on" | "off" | "manual"; autoReloadRef.current = value; setAutoReload(value); }
-      else if (typeof settings.autoReload === "boolean") { const value = settings.autoReload ? "on" : "off"; autoReloadRef.current = value; setAutoReload(value); }
-      if (settings.foldStates && typeof settings.foldStates === "object") setFoldStates(settings.foldStates as Record<string, Record<string, boolean>>);
-      if (["on", "off", "error-code", "always-code"].includes(String(settings.mermaidMode))) { const value = settings.mermaidMode as typeof mermaidMode; mermaidModeRef.current = value; setMermaidMode(value); }
-      const apps = normalizeExternalApps(settings.externalApps);
-      setExternalApps(apps);
-      const lineThreshold = normalizePresentationLineThreshold(settings.presentationLineThreshold);
-      setPresentationLineThreshold(lineThreshold);
-      const a4TargetWidth = normalizeImageA4TargetWidth(settings.imageA4TargetWidth);
-      const equalPadding = normalizeImageEqualPadding(settings.imageEqualPadding);
-      setImageA4TargetWidth(a4TargetWidth);
-      setImageEqualPadding(equalPadding);
-      const needsSettingsMigration = !Array.isArray(settings.externalApps)
-        || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
-        || settings.imageA4TargetWidth === undefined
-        || settings.imageEqualPadding === undefined;
-      if (needsSettingsMigration) {
-        void saveSettings({ schemaVersion: 3, externalApps: apps, presentationLineThreshold: lineThreshold, imageA4TargetWidth: a4TargetWidth, imageEqualPadding: equalPadding }).catch((error) => {
-          setToast({ id: String(Date.now()), message: `外部アプリ設定の移行に失敗しました: ${String(error)}`, type: "error" });
-        });
-      }
-      if (recoveredFiles.length > 0) {
-        setToast({
-          id: String(Date.now()),
-          message: `破損した設定ファイルを退避し、初期設定で起動しました（${recoveredFiles.length}件）`,
-          type: "info",
-        });
-      }
-    }).catch((error) => setToast({ id: String(Date.now()), message: `設定の読込に失敗しました: ${String(error)}`, type: "error" }));
-  }, []);
+  documentPanelsRef.current = documentPanels;
+  documentViewModesRef.current = documentViewModes;
 
   useEffect(() => subscribeMermaidStatus(setMermaidStatus), []);
 
   useEffect(() => {
     const handleMarkdownToast = (event: Event) => {
-      const detail = (event as CustomEvent<{ message?: string; type?: ToastState["type"] }>).detail;
+      const detail = (event as CustomEvent<{ message?: string; type?: ToastState["type"]; actionLabel?: string; onAction?: ToastState["onAction"] }>).detail;
       if (!detail?.message) return;
-      setToast({ id: String(Date.now()), message: detail.message, type: detail.type ?? "info" });
+      setToast({ id: String(Date.now()), message: detail.message, type: detail.type ?? "info", actionLabel: detail.actionLabel, onAction: detail.onAction });
     };
     window.addEventListener("markdown-toast", handleMarkdownToast);
     return () => window.removeEventListener("markdown-toast", handleMarkdownToast);
@@ -205,10 +159,30 @@ export function App() {
   mediaPreviewRef.current = mediaPreview;
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
+  const activeSharePoint = isSharePointDocument(activeTab?.document ?? activeTab);
+
+  useEffect(() => {
+    const next = activeTab?.document ? documentViewModes[activeTab.document.path] ?? "auto" : "auto";
+    viewModeRef.current = next;
+    setViewMode(next);
+  }, [activeTab?.document?.path, documentViewModes]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey || viewMode === "presentation" || !activeTab?.document) return;
+      event.preventDefault();
+      updateZoom((current) => current + (event.deltaY < 0 ? 10 : -10));
+    };
+    container.addEventListener("wheel", onWheel, { passive: false });
+    return () => container.removeEventListener("wheel", onWheel);
+  }, [activeTab?.document, updateZoom, viewMode]);
+
   const imageOccurrenceGroups = useMemo(() => {
-    if (!activeTab?.document || viewMode === "presentation") return [];
+    if (!activeTab?.document || activeSharePoint || viewMode === "presentation") return [];
     return groupImageOccurrences(collectImageOccurrences(activeTab.document.content, activeTab.document.base_dir));
-  }, [activeTab?.document, viewMode]);
+  }, [activeSharePoint, activeTab?.document, viewMode]);
   const imageGalleryItems = useMemo<ImageGalleryItem[]>(() => {
     const baseDir = activeTab?.document?.base_dir;
     if (!baseDir) return [];
@@ -221,7 +195,6 @@ export function App() {
   }, [activeTab?.document?.base_dir, imageOccurrenceGroups]);
 
   useEffect(() => {
-    setImageGalleryOpen(false);
     setActiveImageOccurrenceId(null);
     setActiveTocHeadingId(null);
   }, [activeTab?.id]);
@@ -286,9 +259,20 @@ export function App() {
   const updateSearchExpandedIds = useCallback((ids: string[]) => {
     setSearchExpandedIds((current) => current.length === ids.length && current.every((id, index) => id === ids[index]) ? current : ids);
   }, []);
-  const searchRefreshKey = `${tabsState.activeId ?? "empty"}:${activeTab?.generation ?? 0}:${searchExpandedIds.join("|")}`;
-  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey);
+  const handleCodeHighlightComplete = useCallback(() => {
+    setCodeHighlightRevision((revision) => revision + 1);
+  }, []);
+  const searchRefreshKey = `${tabsState.activeId ?? "empty"}:${activeTab?.generation ?? 0}:${searchExpandedIds.join("|")}:${codeHighlightRevision}`;
+  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey, activeTab?.document?.content ?? "");
   const { cropTarget, startCrop, cancelCrop } = useCropEditor();
+  useEffect(() => {
+    if (!activeTab?.document || activeSharePoint) { setDiagnostics([]); return; }
+    let disposed = false;
+    void diagnoseDocument(activeTab.document.path).then((items) => { if (!disposed) setDiagnostics(items); }).catch((error) => {
+      if (!disposed) setDiagnostics([{ severity: "warning", kind: "診断", line: 1, reference: activeTab.document!.path, message: `診断を完了できません: ${String(error)}` }]);
+    });
+    return () => { disposed = true; };
+  }, [activeSharePoint, activeTab?.document?.path, activeTab?.generation]);
   const restoringSearchFor = useRef<string | null>(null);
 
   useLayoutEffect(() => {
@@ -300,9 +284,15 @@ export function App() {
     search.setActiveIndex(activeTab.search.activeIndex);
   }, [activeTab?.id]);
 
+  const focusSearchInput = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      focusAndSelectSearchInput(searchInputRef.current);
+    });
+  }, []);
+
   useEffect(() => {
-    if (activeTab?.searchOpen) window.requestAnimationFrame(() => searchInputRef.current?.focus());
-  }, [activeTab?.id, activeTab?.searchOpen]);
+    if (activeTab?.searchOpen) focusSearchInput();
+  }, [activeTab?.id, activeTab?.searchOpen, focusSearchInput]);
 
   useEffect(() => {
     if (!activeTab) return;
@@ -362,9 +352,10 @@ export function App() {
     } catch (error) {
       dispatch({ type: "FAILED", id, generation, error: String(error) });
     } finally {
+      if (path.toLowerCase().startsWith("spmd://")) dismissAuthentication();
       inFlightLoads.current.delete(loadKey);
     }
-  }, []);
+  }, [dismissAuthentication]);
 
   useEffect(() => {
     void (async () => {
@@ -380,7 +371,7 @@ export function App() {
   }, [tabsState.tabs, loadTab]);
 
   const watchTargetKey = JSON.stringify(
-    [...new Set(tabsState.tabs.flatMap((tab) => tab.document ? [tab.document.path, ...tab.document.image_paths] : []))].sort(),
+    [...new Set(tabsState.tabs.flatMap((tab) => tab.document && !isSharePointDocument(tab.document) ? [tab.document.path, ...tab.document.image_paths] : []))].sort(),
   );
 
   useEffect(() => {
@@ -390,6 +381,16 @@ export function App() {
   }, [watchTargetKey, autoReload, windowLabel]);
 
   useEffect(() => () => { void removeWindowWatchTargets(windowLabel); }, [windowLabel]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    void listenForSecondaryLaunches((event) => {
+      for (const path of event.payload) {
+        void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
+      }
+    }).then((dispose) => { unlisten = dispose; });
+    return () => { unlisten?.(); };
+  }, []);
 
   useEffect(() => {
     if (!contextTab) return;
@@ -449,11 +450,25 @@ export function App() {
   }, [activeTab]);
 
   const toggleFoldAll = useCallback(() => {
-    if (!activeTab) return;
-    const toggles = [...(markdownRef.current?.querySelectorAll<HTMLButtonElement>(".fold-toggle") ?? [])];
-    const allCollapsed = toggles.length > 0 && toggles.every((toggle) => toggle.getAttribute("aria-expanded") === "false");
-    applyFoldPreset(allCollapsed ? "expand" : "collapse");
-  }, [activeTab, applyFoldPreset]);
+    if (!activeTab?.document) return;
+    const sections = [...(markdownRef.current?.querySelectorAll<HTMLElement>(".fold-section[data-fold-id][data-fold-level]") ?? [])];
+    if (!sections.length) return;
+    setFoldStates((current) => {
+      const currentForPath = current[activeTab.path] ?? {};
+      const headingStates = sections.flatMap((section) => {
+        const id = section.dataset.foldId;
+        if (!id) return [];
+        return [{
+          id,
+          level: Number(section.dataset.foldLevel ?? 6),
+          collapsed: currentForPath[id] ?? false,
+        }];
+      });
+      const nextForPath = { ...currentForPath, ...toggleNestedFoldStates(headingStates) };
+      void saveFoldState(activeTab.path, nextForPath).catch((error) => setToast({ id: String(Date.now()), message: `折りたたみ状態の保存に失敗しました: ${String(error)}`, type: "error" }));
+      return { ...current, [activeTab.path]: nextForPath };
+    });
+  }, [activeTab]);
 
   const handleFoldChange = useCallback((foldId: string, collapsed: boolean) => {
     const documentPath = activeTab?.path;
@@ -482,7 +497,6 @@ export function App() {
       scrollTop: activeId && containerRef.current ? containerRef.current.scrollTop : tab?.scrollTop ?? 0,
       viewMode: viewModeRef.current,
       presentationHeadingId: activeId ? presentationPositionsRef.current[activeId] ?? null : null,
-      mediaPreview: mediaPreviewRef.current,
     };
   }, []);
 
@@ -522,8 +536,11 @@ export function App() {
         return { ...current, [activeTab.path]: nextForPath };
       });
     }
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) {
+      setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
+    }
     requestAnimationFrame(() => requestAnimationFrame(() => target.scrollIntoView({ block: "center" })));
-  }, [activeTab?.document, activeTab?.path, recordNavigationPoint]);
+  }, [activeTab?.document, activeTab?.id, activeTab?.path, recordNavigationPoint]);
 
   const jumpToDocumentHeading = useCallback((headingId: string) => {
     const section = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-fold-id]") ?? [])]
@@ -552,22 +569,76 @@ export function App() {
         return { ...current, [activeTab.path]: nextForPath };
       });
     }
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 1500px)").matches) setDocumentTocOpen(false);
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) {
+      setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
+    }
     requestAnimationFrame(() => requestAnimationFrame(() => section.scrollIntoView({ block: "start" })));
-  }, [activeTab?.document, activeTab?.path, recordNavigationPoint]);
+  }, [activeTab?.document, activeTab?.id, activeTab?.path, recordNavigationPoint]);
+
+  const jumpToTocHeading = useCallback((headingId: string) => {
+    if (viewModeRef.current !== "presentation") {
+      jumpToDocumentHeading(headingId);
+      return;
+    }
+    if (!activeTab?.document) return;
+    recordNavigationPoint();
+    presentationPositionsRef.current[activeTab.id] = headingId;
+    setPresentationPositions((current) => current[activeTab.id] === headingId
+      ? current
+      : { ...current, [activeTab.id]: headingId });
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) {
+      setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
+    }
+  }, [activeTab?.document, activeTab?.id, jumpToDocumentHeading, recordNavigationPoint]);
+
+  const jumpToSearchResult = useCallback((index: number) => {
+    const result = search.results[index];
+    if (!result || !activeTab?.document) return;
+    search.setActiveIndex(index);
+    if (viewModeRef.current === "presentation") {
+      recordNavigationPoint();
+      if (result.headingId) {
+        presentationPositionsRef.current[activeTab.id] = result.headingId;
+        setPresentationPositions((current) => ({ ...current, [activeTab.id]: result.headingId! }));
+      }
+      return;
+    }
+    if (result.headingId) {
+      jumpToDocumentHeading(result.headingId);
+    }
+  }, [activeTab?.document, activeTab?.id, jumpToDocumentHeading, recordNavigationPoint, search]);
+
+  const jumpToDiagnostic = useCallback((item: DiagnosticItem) => {
+    if (!activeTab?.document) return;
+    recordNavigationPoint();
+    const lines = activeTab.document.content.split(/\r?\n/);
+    const needle = lines[item.line - 1]?.trim();
+    const target = [...(markdownRef.current?.querySelectorAll<HTMLElement>(".markdown-body *") ?? [])]
+      .find((element) => element.childElementCount === 0 && element.textContent?.trim() === needle);
+    target?.scrollIntoView({ block: "center" });
+  }, [activeTab?.document, recordNavigationPoint]);
 
   const handlePreviewScroll = useCallback((element: HTMLElement) => {
     if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: element.scrollTop });
     if (viewModeRef.current === "presentation") return;
-    const top = element.getBoundingClientRect().top + 4;
-    const sections = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-fold-id]") ?? [])];
-    const current = sections.reduce<HTMLElement | null>((nearest, section) => {
-      if (section.getBoundingClientRect().top > top) return nearest;
-      return section;
-    }, null) ?? sections[0];
-    const headingId = current?.dataset.foldId ?? null;
-    setActiveTocHeadingId((previous) => previous === headingId ? previous : headingId);
   }, [activeTab?.id]);
+
+  const handlePreviewPointerMove = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    if (viewModeRef.current === "presentation") return;
+    const target = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
+    const section = target?.closest<HTMLElement>("[data-fold-id]");
+    const headingId = section?.dataset.foldId ?? null;
+    if (!headingId) return;
+    pendingTocHeadingId.current = headingId;
+    if (tocPointerFrame.current) return;
+    tocPointerFrame.current = window.requestAnimationFrame(() => {
+      tocPointerFrame.current = 0;
+      const pending = pendingTocHeadingId.current;
+      if (pending) setActiveTocHeadingId((previous) => previous === pending ? previous : pending);
+    });
+  }, []);
+
+  useEffect(() => () => { if (tocPointerFrame.current) window.cancelAnimationFrame(tocPointerFrame.current); }, []);
 
   const restoreNavigationSnapshot = useCallback((snapshot: NavigationSnapshot) => {
     if (snapshot.activeTabId && tabsStateRef.current.tabs.some((tab) => tab.id === snapshot.activeTabId)) {
@@ -581,10 +652,20 @@ export function App() {
     if (viewModeRef.current !== snapshot.viewMode) {
       viewModeRef.current = snapshot.viewMode;
       setViewMode(snapshot.viewMode);
-      persistSetting("viewMode", snapshot.viewMode);
+      const documentPath = snapshot.activeTabId
+        ? tabsStateRef.current.tabs.find((tab) => tab.id === snapshot.activeTabId)?.document?.path
+        : undefined;
+      if (documentPath) {
+        const next = { ...documentViewModesRef.current, [documentPath]: snapshot.viewMode };
+        documentViewModesRef.current = next;
+        setDocumentViewModes(next);
+        void saveSettings({ documentViewModes: next }).catch((error) => {
+          setToast({ id: String(Date.now()), message: `レイアウト設定の保存に失敗しました: ${String(error)}`, type: "error" });
+        });
+      }
     }
-    setMediaPreview((snapshot.mediaPreview as MediaPreviewTarget | null) ?? null);
-  }, [persistSetting]);
+    setMediaPreview(null);
+  }, []);
 
   const goBack = useCallback(() => {
     const result = navigateBack(navigationHistoryRef.current, captureNavigationSnapshot());
@@ -599,24 +680,25 @@ export function App() {
   }, [captureNavigationSnapshot, restoreNavigationSnapshot]);
 
   const handleOpenDocument = useCallback((path: string) => {
-    const identity = localPathIdentity(path);
-    const existing = tabsStateRef.current.tabs.find((tab) => tab.kind !== "settings" && localPathIdentity(tab.path) === identity);
+    const identity = documentSourceIdentity(path);
+    const existing = tabsStateRef.current.tabs.find((tab) => tab.kind !== "settings" && documentSourceIdentity(tab.path) === identity);
     if (existing?.id === tabsStateRef.current.activeId) return;
     recordNavigationPoint();
     dispatch({ type: "OPEN", path });
   }, [recordNavigationPoint]);
+  const handleOpenDocumentWindow = useCallback((path: string) => {
+    void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
+  }, []);
   useFileDrop((paths) => paths.forEach(handleOpenDocument));
 
   const openMediaPreview = useCallback((target: MediaPreviewTarget) => {
-    recordNavigationPoint();
     setMediaPreview(target);
-  }, [recordNavigationPoint]);
+  }, []);
 
   const closeMediaPreview = useCallback(() => {
     if (!mediaPreviewRef.current) return;
-    recordNavigationPoint();
     setMediaPreview(null);
-  }, [recordNavigationPoint]);
+  }, []);
 
   const saveImageCaption = useCallback(async (context: ImageEditContext, caption: string) => {
     await updateImageCaption({
@@ -701,24 +783,6 @@ export function App() {
     dispatch({ type: "OPEN_SETTINGS" });
   }, [recordNavigationPoint]);
 
-  const saveExternalAppSettings = useCallback(async (apps: ExternalAppConfig[], lineThreshold: number, a4TargetWidth: number, equalPadding: number) => {
-    try {
-      const previousById = new Map(externalApps.map((app) => [app.id, app]));
-      const upserts = apps.filter((app) => JSON.stringify(previousById.get(app.id)) !== JSON.stringify(app));
-      const nextIds = new Set(apps.map((app) => app.id));
-      const removedIds = externalApps.filter((app) => !nextIds.has(app.id)).map((app) => app.id);
-      const saved = await updateExternalAppSettings(upserts, removedIds, lineThreshold, a4TargetWidth, equalPadding);
-      setExternalApps(normalizeExternalApps(saved.externalApps));
-      setPresentationLineThreshold(lineThreshold);
-      setImageA4TargetWidth(a4TargetWidth);
-      setImageEqualPadding(equalPadding);
-      setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
-    } catch (error) {
-      setToast({ id: String(Date.now()), message: `設定の保存に失敗しました: ${String(error)}`, type: "error" });
-      throw error;
-    }
-  }, [externalApps]);
-
   const closeTab = useCallback((id: string) => {
     const tab = tabsState.tabs.find((candidate) => candidate.id === id);
     if (tab && tab.kind !== "settings") setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
@@ -744,21 +808,73 @@ export function App() {
     dispatch({ type: "ACTIVATE", id });
   }, [recordNavigationPoint]);
 
-  const changeViewMode = useCallback((value: string) => {
-    if (viewModeRef.current === value) return;
+  const changeViewMode = useCallback((value: ViewMode) => {
+    const documentPath = activeTab?.document?.path;
+    if (!documentPath || viewModeRef.current === value) return;
     recordNavigationPoint();
-    updateViewMode(value);
-  }, [recordNavigationPoint, updateViewMode]);
+    const next = { ...documentViewModesRef.current, [documentPath]: value };
+    documentViewModesRef.current = next;
+    setDocumentViewModes(next);
+    viewModeRef.current = value;
+    setViewMode(value);
+    void saveSettings({ documentViewModes: next }).catch((error) => {
+      setToast({ id: String(Date.now()), message: `レイアウト設定の保存に失敗しました: ${String(error)}`, type: "error" });
+    });
+  }, [activeTab?.document?.path, recordNavigationPoint]);
 
   const openSearch = useCallback(() => {
-    if (viewModeRef.current !== "presentation" && activeTab?.document) dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
-  }, [activeTab]);
+    if (activeTab?.document) {
+      panelBeforeSearchRef.current[activeTab.id] = documentPanelsRef.current[activeTab.id] ?? null;
+      dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
+    }
+    focusSearchInput();
+  }, [activeTab, focusSearchInput]);
 
   const closeSearch = useCallback(() => {
     if (!activeTab) return;
     search.clear();
     dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: false });
+    const restore = panelBeforeSearchRef.current[activeTab.id] ?? null;
+    setDocumentPanels((current) => ({ ...current, [activeTab.id]: restore }));
+    delete panelBeforeSearchRef.current[activeTab.id];
   }, [activeTab, search]);
+
+  const changeDocumentSidePanel = useCallback((panel: DocumentSidePanelTab | null) => {
+    if (!activeTab?.document) return;
+    if (panel === "search") {
+      openSearch();
+      return;
+    }
+    if (activeTab.searchOpen) {
+      search.clear();
+      dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: false });
+      delete panelBeforeSearchRef.current[activeTab.id];
+    }
+    setDocumentPanels((current) => ({ ...current, [activeTab.id]: panel }));
+  }, [activeTab, openSearch, search]);
+
+  const closeDocumentSidePanel = useCallback(() => {
+    if (!activeTab) return;
+    if (activeTab.searchOpen) {
+      search.clear();
+      dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: false });
+      delete panelBeforeSearchRef.current[activeTab.id];
+    }
+    setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
+  }, [activeTab, search]);
+
+  const printDocument = useCallback(async () => {
+    if (!activeTab?.document || printing) return;
+    setPrinting(true);
+    const deadline = Date.now() + 5000;
+    while (getMermaidStatus().pending > 0 && Date.now() < deadline) {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
+    }
+    if (getMermaidStatus().pending > 0) setToast({ id: String(Date.now()), message: "Mermaidの描画待機がタイムアウトしたため、現在の状態で印刷します。", type: "info" });
+    const restore = () => setPrinting(false);
+    window.addEventListener("afterprint", restore, { once: true });
+    try { window.print(); window.setTimeout(restore, 1000); } catch (error) { restore(); setToast({ id: String(Date.now()), message: `印刷を開始できません: ${String(error)}`, type: "error" }); }
+  }, [activeTab?.document, printing]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -804,6 +920,11 @@ export function App() {
         openSearch();
         return;
       }
+      if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        void printDocument();
+        return;
+      }
       if (event.key === "Escape" && activeTab?.searchOpen && !cropTarget) {
         event.preventDefault();
         closeSearch();
@@ -830,7 +951,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab?.searchOpen, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, reload, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
+  }, [activeTab?.searchOpen, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, printDocument, reload, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
 
   useEffect(() => {
     const onMouseUp = (event: MouseEvent) => {
@@ -852,7 +973,8 @@ export function App() {
 
   const handleMarkdownChanged = useCallback(
     ({ path, changeKind }: { path: string; changeKind: string }) => {
-      const tabs = tabsState.tabs.filter((candidate) => candidate.path === path);
+      const identity = localPathIdentity(path);
+      const tabs = tabsState.tabs.filter((candidate) => localPathIdentity(candidate.path) === identity);
       if (!tabs.length) return;
       const canReload = changeKind !== "deleted" && changeKind !== "renamed";
       if (autoReload === "on" && canReload) tabs.forEach((tab) => reloadTab(tab.id));
@@ -914,18 +1036,19 @@ export function App() {
     });
   };
 
+  const requestedDocumentPanel = activeTab ? documentPanels[activeTab.id] ?? null : null;
+  const requestedPanelForView = resolveDocumentPanelForView(viewMode, requestedDocumentPanel);
+  const documentSidePanel = activeTab?.document
+    ? resolveDocumentSidePanel(Boolean(activeTab.searchOpen), requestedPanelForView)
+    : null;
+
   return (
-    <div className="app-container">
+    <div className={`app-container${printing ? " is-printing" : ""}`}>
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
-          {viewMode !== "presentation" && <button type="button" disabled={!activeTab?.document} onClick={openSearch}>検索</button>}
-          {viewMode !== "presentation" && <button
-            type="button"
-            aria-pressed={imageGalleryOpen}
-            disabled={imageOccurrenceGroups.length === 0}
-            onClick={() => setImageGalleryOpen((open) => !open)}
-          >画像</button>}
+          <button type="button" disabled={!activeTab?.document || printing} onClick={() => void printDocument()}>印刷/PDF</button>
+          <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
         </div>
         {viewMode !== "presentation" && <div className="control-group fold-controls">
@@ -938,33 +1061,64 @@ export function App() {
             <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
           </select>
         </div>}
-        <ExternalActions apps={externalApps.filter((app) => app.target === "document")} disabled={!activeTab?.document} onExecute={executeExternalApp} />
+        <ExternalActions
+          apps={activeSharePoint ? [] : externalApps.filter((app) => app.target === "document")}
+          disabled={!activeTab?.document}
+          onExecute={executeExternalApp}
+          onOpenInNewWindow={() => {
+            if (!activeTab?.document) return;
+            void openInNewWindow(activeTab.path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
+          }}
+        />
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
-        {viewMode !== "presentation" && activeTab?.searchOpen && <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} />}
       </div>}
 
-      <div className={`document-workspace${imageGalleryOpen && viewMode !== "presentation" ? " has-image-gallery" : ""}`}>
-      {activeTab?.document && viewMode !== "presentation" && <DocumentToc
-        markdown={activeTab.document.content}
-        isOpen={documentTocOpen}
-        activeHeadingId={activeTocHeadingId ?? undefined}
-        onOpenChange={setDocumentTocOpen}
-        onJump={jumpToDocumentHeading}
+      <div className="document-workspace">
+      {activeTab?.document && <DocumentSidePanel
+        activeTab={documentSidePanel}
+        onTabChange={changeDocumentSidePanel}
+        onClose={documentSidePanel === "search" ? closeSearch : closeDocumentSidePanel}
+        disabledTabs={viewMode === "presentation" ? ["images"] : []}
+        toc={<DocumentToc
+          markdown={activeTab.document.content}
+          isOpen
+          embedded
+          activeHeadingId={viewMode === "presentation" ? presentationPositions[activeTab.id] : activeTocHeadingId ?? undefined}
+          onOpenChange={() => undefined}
+          onJump={jumpToTocHeading}
+        />}
+        search={<div className="document-side-panel__search">
+          <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} embedded />
+          {search.results.length > 0
+            ? <SearchResults results={search.results} activeIndex={search.activeIndex} truncated={search.truncated} onSelect={search.setActiveIndex} onActivate={(result) => jumpToSearchResult(result.index)} />
+            : <p className="document-side-panel__empty">{search.query ? "一致する結果はありません。" : "検索語を入力してください。"}</p>}
+        </div>}
+        images={<ImageGallery
+          items={imageGalleryItems}
+          activeOccurrenceId={activeImageOccurrenceId ?? undefined}
+          onJump={jumpToImageOccurrence}
+          isOpen
+          embedded
+          onOpenChange={() => undefined}
+        />}
       />}
-      {activeTab?.document && viewMode !== "presentation" && <ImageGallery
-        items={imageGalleryItems}
-        activeOccurrenceId={activeImageOccurrenceId ?? undefined}
-        onJump={jumpToImageOccurrence}
-        isOpen={imageGalleryOpen}
-        onOpenChange={setImageGalleryOpen}
-      />}
-      <main className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`} ref={containerRef} onScroll={(event) => handlePreviewScroll(event.currentTarget)} style={{ zoom: viewMode === "presentation" && activeTab?.kind !== "settings" ? 1 : zoom / 100 }}>
+      <main
+        className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`}
+        ref={containerRef}
+        onScroll={(event) => handlePreviewScroll(event.currentTarget)}
+        onPointerMove={handlePreviewPointerMove}
+        onFocusCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.target))}
+        onBlurCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.relatedTarget))}
+        style={{ zoom: viewMode === "presentation" && activeTab?.document?.kind === "markdown" ? 1 : zoom / 100 }}
+      >
         {activeTab?.kind === "settings" ? (
           <SettingsPanel
             apps={externalApps}
             presentationLineThreshold={presentationLineThreshold}
             imageA4TargetWidth={imageA4TargetWidth}
             imageEqualPadding={imageEqualPadding}
+            syntaxHighlight={syntaxHighlight}
+            printStyle={printStyle}
             onSave={saveExternalAppSettings}
           />
         ) : activeTab?.loading ? (
@@ -978,18 +1132,30 @@ export function App() {
             <div className="empty-title">ファイルを読み込めません</div>
             <div className="empty-desc">{activeTab.error}</div>
           </div>
+        ) : activeTab?.document && activeTab.document.kind !== "markdown" ? (
+          <StandaloneDocumentPreview
+            document={activeTab.document}
+            imageVersions={imageVersions}
+            contentRef={markdownRef}
+            theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+            windowId={windowLabel}
+            tabId={activeTab.id}
+            onMediaOpen={openMediaPreview}
+          />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
-            content={activeTab.document.content}
-            baseDir={activeTab.document.base_dir}
+           content={activeTab.document.content}
+           baseDir={activeTab.document.base_dir}
+            sourcePath={activeTab.path}
             imageVersions={imageVersions}
             theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             onError={handlePreviewError}
-            mermaidMode={mermaidMode}
+            mermaidMode="on"
             windowId={windowLabel}
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
             onOpenDocument={handleOpenDocument}
+            onOpenDocumentWindow={handleOpenDocumentWindow}
             lineThreshold={presentationLineThreshold}
             initialHeadingId={presentationPositions[activeTab.id]}
             onPageChange={(headingId, sourceLine) => {
@@ -1010,7 +1176,7 @@ export function App() {
             onError={handlePreviewError}
             foldState={foldStates[activeTab.path]}
             onFoldChange={handleFoldChange}
-            mermaidMode={mermaidMode}
+            mermaidMode="on"
             windowId={windowLabel}
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
@@ -1018,15 +1184,18 @@ export function App() {
             searchExpandedIds={searchExpandedIds}
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
             onOpenDocument={handleOpenDocument}
+            onOpenDocumentWindow={handleOpenDocumentWindow}
             onMediaOpen={openMediaPreview}
-            documentPath={activeTab.path}
+            documentPath={activeSharePoint ? undefined : activeTab.path}
+            sourcePath={activeTab.path}
+            onCodeHighlightComplete={handleCodeHighlightComplete}
           />
         ) : (
           <div className="empty-state">
             <div className="empty-icon">📑</div>
-            <div className="empty-title">Markdownファイルが指定されていません</div>
+            <div className="empty-title">表示するファイルが指定されていません</div>
             <div className="empty-desc">
-              <code>.md</code> ファイルをダブルクリックして開くか、コマンドライン引数で指定してください。
+              <code>.md</code>、<code>.svg</code>、<code>.mmd</code> ファイルをダブルクリックして開くか、ドロップしてください。
             </div>
           </div>
         )}
@@ -1050,6 +1219,7 @@ export function App() {
           updateImageVersion(annotationTarget.fullPath);
           setImageBackups((current) => ({ ...current, [annotationTarget.fullPath]: backupAvailable }));
           setAnnotationTarget(null);
+          setAnnotationReturnPreview(null);
           setToast({
             id: String(Date.now()),
             message: `${filename} の注釈を保存しました`,
@@ -1057,7 +1227,11 @@ export function App() {
             restorePath: backupAvailable ? annotationTarget.fullPath : undefined,
           });
         }}
-        onCancel={() => setAnnotationTarget(null)}
+        onCancel={() => {
+          setAnnotationTarget(null);
+          setMediaPreview(annotationReturnPreview);
+          setAnnotationReturnPreview(null);
+        }}
         onError={handleCropError}
       />}
 
@@ -1076,6 +1250,7 @@ export function App() {
         onOpenImageApp={executeImageApp}
         onClose={closeMediaPreview}
         onActivate={mediaPreview.cropTarget ? () => {
+          setAnnotationReturnPreview(mediaPreview);
           setMediaPreview(null);
           setAnnotationTarget(mediaPreview.cropTarget!);
         } : undefined}
@@ -1085,14 +1260,17 @@ export function App() {
         } : undefined}
       />}
       {shortcutHelpOpen && <ShortcutHelpModal onClose={() => setShortcutHelpOpen(false)} />}
+      {sharePointAuthPrompt && <SharePointAuthDialog
+        prompt={sharePointAuthPrompt}
+        onOpenBrowser={() => openAuthenticationPage()}
+        onDismiss={dismissAuthentication}
+      />}
       <StatusBar
         document={activeTab?.document ?? null}
         autoReload={autoReload}
         onAutoReloadChange={updateAutoReload}
         zoom={viewMode === "presentation" && activeTab?.kind !== "settings" ? 100 : zoom}
         onZoomChange={viewMode === "presentation" && activeTab?.kind !== "settings" ? undefined : updateZoom}
-        mermaidMode={mermaidMode}
-        onMermaidModeChange={updateMermaidMode}
         mermaidStatus={mermaidStatus.pending ? `描画中 ${mermaidStatus.pending}` : mermaidStatus.error ? "エラー" : mermaidStatus.rendered ? `描画済み ${mermaidStatus.rendered}` : "対象なし"}
         mermaidErrorCount={mermaidStatus.errorCount}
         imageBackupAvailable={activeImageBackupAvailable}
@@ -1104,6 +1282,7 @@ export function App() {
         onOpenSettings={openSettings}
         onOpenShortcutHelp={() => setShortcutHelpOpen(true)}
         statusText={activeTab?.kind === "settings" ? "アプリケーション設定" : undefined}
+        linkTarget={focusedLinkTarget ?? undefined}
       />
       {contextTab && (() => {
         const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);

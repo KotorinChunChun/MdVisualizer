@@ -126,8 +126,10 @@ export function useInlineImageResize({
       height = clamp(width / session.aspectRatio, minSize, session.maxSize.height);
     } else if (horizontal) {
       width = clamp(width + dx * xDirection, minSize, session.maxSize.width);
+      height = clamp(width / session.aspectRatio, minSize, session.maxSize.height);
     } else if (vertical) {
       height = clamp(height + dy * yDirection, minSize, session.maxSize.height);
+      width = clamp(height * session.aspectRatio, minSize, session.maxSize.width);
     }
     emitSize({ width, height });
   }, [emitSize, minSize]);
@@ -188,8 +190,13 @@ export function useInlineImageResize({
     if (horizontal && vertical) {
       const width = clamp(current.width + amount * direction, minSize, maxSize.width);
       emitSize({ width, height: clamp(width / (current.width / current.height), minSize, maxSize.height) });
-    } else if (horizontal) emitSize({ ...current, width: clamp(current.width + amount * direction, minSize, maxSize.width) });
-    else if (vertical) emitSize({ ...current, height: clamp(current.height + amount * direction, minSize, maxSize.height) });
+    } else if (horizontal) {
+      const width = clamp(current.width + amount * direction, minSize, maxSize.width);
+      emitSize({ width, height: clamp(width / (current.width / current.height), minSize, maxSize.height) });
+    } else if (vertical) {
+      const height = clamp(current.height + amount * direction, minSize, maxSize.height);
+      emitSize({ width: clamp(height * (current.width / current.height), minSize, maxSize.width), height });
+    }
   }, [emitSize, minSize, size]);
 
   const consumeResizeClick = useCallback(() => {

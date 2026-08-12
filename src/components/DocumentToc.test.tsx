@@ -42,4 +42,11 @@ describe("DocumentToc", () => {
     fireEvent.click(closeControls[1]);
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
   });
+
+  it("renders reusable navigation without a second panel shell when embedded", () => {
+    const { container } = render(<DocumentToc markdown={markdown} isOpen embedded onOpenChange={vi.fn()} onJump={vi.fn()} />);
+    expect(container.querySelector(".document-toc--embedded")).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "文書全体の目次" })).toBeTruthy();
+    expect(screen.queryByRole("complementary", { name: "文書全体の目次" })).toBeNull();
+  });
 });

@@ -1,7 +1,8 @@
 /** Pure model and canvas helpers for non-destructive image annotations. */
 
-export type AnnotationKind = "frame" | "mask" | "label";
+export type AnnotationKind = "frame" | "ellipse" | "arrow" | "mask" | "label";
 export type MaskStyle = "solid" | "blur" | "mosaic";
+export type ArrowDirection = "right" | "down-right" | "down" | "down-left" | "left" | "up-left" | "up" | "up-right";
 
 export interface ImageBounds {
   width: number;
@@ -22,6 +23,21 @@ export interface FrameAnnotation extends AnnotationRect {
   lineWidth: number;
 }
 
+export interface EllipseAnnotation extends AnnotationRect {
+  id: string;
+  type: "ellipse";
+  color: string;
+  lineWidth: number;
+}
+
+export interface ArrowAnnotation extends AnnotationRect {
+  id: string;
+  type: "arrow";
+  color: string;
+  lineWidth: number;
+  direction: ArrowDirection;
+}
+
 export interface MaskAnnotation extends AnnotationRect {
   id: string;
   type: "mask";
@@ -39,7 +55,7 @@ export interface LabelAnnotation extends AnnotationRect {
   fontSize: number;
 }
 
-export type ImageAnnotation = FrameAnnotation | MaskAnnotation | LabelAnnotation;
+export type ImageAnnotation = FrameAnnotation | EllipseAnnotation | ArrowAnnotation | MaskAnnotation | LabelAnnotation;
 
 export interface ImageAnnotationState {
   annotations: ImageAnnotation[];
@@ -57,6 +73,7 @@ export interface AnnotationChanges extends Partial<AnnotationRect> {
   textColor?: string;
   backgroundColor?: string;
   fontSize?: number;
+  direction?: ArrowDirection;
 }
 
 export type ImageAnnotationAction =
@@ -64,6 +81,8 @@ export type ImageAnnotationAction =
   | { type: "select"; id: string | null }
   | { type: "update"; id?: string; changes: AnnotationChanges; bounds?: ImageBounds }
   | { type: "scaleSelected"; scale: number; bounds?: ImageBounds }
+  | { type: "resizeSelected"; axis: "width" | "height"; delta: number; bounds?: ImageBounds }
+  | { type: "translateAll"; x: number; y: number }
   | { type: "delete"; id?: string }
   | { type: "commitSelection" }
   | { type: "undo" }
@@ -102,7 +121,7 @@ export function clampRect(rect: AnnotationRect, bounds: ImageBounds): Annotation
 /** Clamp geometry and type-specific numeric fields while retaining annotation data. */
 export function clampAnnotation(annotation: ImageAnnotation, bounds: ImageBounds): ImageAnnotation {
   const rect = clampRect(annotation, bounds);
-  if (annotation.type === "frame") {
+  if (annotation.type === "frame" || annotation.type === "ellipse" || annotation.type === "arrow") {
     return { ...annotation, ...rect, lineWidth: Math.max(1, finite(annotation.lineWidth, 1)) };
   }
   if (annotation.type === "label") {
@@ -187,6 +206,46 @@ export function imageAnnotationReducer(
         state.annotations.map((item) => item.id === target.id ? replacement : item),
       );
     }
+    case "resizeSelected": {
+      const target = selectedAnnotation(state);
+      if (!target || !Number.isFinite(action.delta) || action.delta === 0) return state;
+      const centerX = target.x + target.width / 2;
+      const centerY = target.y + target.height / 2;
+      const maximumWidth = action.bounds
+        ? Math.max(1, Math.min(centerX, action.bounds.width - centerX) * 2)
+        : Number.POSITIVE_INFINITY;
+      const maximumHeight = action.bounds
+        ? Math.max(1, Math.min(centerY, action.bounds.height - centerY) * 2)
+        : Number.POSITIVE_INFINITY;
+      const width = action.axis === "width"
+        ? clamp(target.width + action.delta, 1, maximumWidth)
+        : target.width;
+      const height = action.axis === "height"
+        ? clamp(target.height + action.delta, 1, maximumHeight)
+        : target.height;
+      const replacement = updateAnnotation(target, {
+        x: centerX - width / 2,
+        y: centerY - height / 2,
+        width,
+        height,
+      });
+      return withHistory(
+        state,
+        state.annotations.map((item) => item.id === target.id ? replacement : item),
+      );
+    }
+    case "translateAll": {
+      if ((!Number.isFinite(action.x) || action.x === 0) && (!Number.isFinite(action.y) || action.y === 0)) return state;
+      const x = finite(action.x);
+      const y = finite(action.y);
+      const translate = (items: ImageAnnotation[]) => items.map((item) => ({ ...item, x: item.x + x, y: item.y + y }));
+      return {
+        ...state,
+        annotations: translate(state.annotations),
+        undoStack: state.undoStack.map(translate),
+        redoStack: state.redoStack.map(translate),
+      };
+    }
     case "delete": {
       const target = selectedAnnotation(state, action.id);
       if (!target) return state;
@@ -226,6 +285,45 @@ export function containsPoint(annotation: AnnotationRect, x: number, y: number):
     && y >= annotation.y && y <= annotation.y + annotation.height;
 }
 
+export function containsAnnotationPoint(annotation: ImageAnnotation, x: number, y: number): boolean {
+  if (annotation.type === "ellipse") {
+    if (annotation.width <= 0 || annotation.height <= 0) return false;
+    const normalizedX = (x - (annotation.x + annotation.width / 2)) / (annotation.width / 2);
+    const normalizedY = (y - (annotation.y + annotation.height / 2)) / (annotation.height / 2);
+    return normalizedX * normalizedX + normalizedY * normalizedY <= 1;
+  }
+  if (annotation.type === "arrow") {
+    const [start, end] = arrowEndpoints(annotation, annotation.direction);
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared === 0) return Math.hypot(x - start.x, y - start.y) <= annotation.lineWidth + 6;
+    const ratio = clamp(((x - start.x) * dx + (y - start.y) * dy) / lengthSquared, 0, 1);
+    const distance = Math.hypot(x - (start.x + dx * ratio), y - (start.y + dy * ratio));
+    return distance <= Math.max(6, annotation.lineWidth + 4);
+  }
+  return containsPoint(annotation, x, y);
+}
+
+function arrowEndpoints(rect: AnnotationRect, direction: ArrowDirection): [{ x: number; y: number }, { x: number; y: number }] {
+  const left = rect.x;
+  const right = rect.x + rect.width;
+  const top = rect.y;
+  const bottom = rect.y + rect.height;
+  const centerX = rect.x + rect.width / 2;
+  const centerY = rect.y + rect.height / 2;
+  switch (direction) {
+    case "right": return [{ x: left, y: centerY }, { x: right, y: centerY }];
+    case "down-right": return [{ x: left, y: top }, { x: right, y: bottom }];
+    case "down": return [{ x: centerX, y: top }, { x: centerX, y: bottom }];
+    case "down-left": return [{ x: right, y: top }, { x: left, y: bottom }];
+    case "left": return [{ x: right, y: centerY }, { x: left, y: centerY }];
+    case "up-left": return [{ x: right, y: bottom }, { x: left, y: top }];
+    case "up": return [{ x: centerX, y: bottom }, { x: centerX, y: top }];
+    case "up-right": return [{ x: left, y: bottom }, { x: right, y: top }];
+  }
+}
+
 /** Returns the top-most annotation at the given original-image pixel. */
 export function hitTestAnnotation(
   annotations: readonly ImageAnnotation[],
@@ -233,7 +331,7 @@ export function hitTestAnnotation(
   y: number,
 ): ImageAnnotation | undefined {
   for (let index = annotations.length - 1; index >= 0; index -= 1) {
-    if (containsPoint(annotations[index], x, y)) return annotations[index];
+    if (containsAnnotationPoint(annotations[index], x, y)) return annotations[index];
   }
   return undefined;
 }
@@ -242,7 +340,41 @@ function canvasRect(annotation: AnnotationRect, bounds: ImageBounds): Annotation
   return clampRect(annotation, bounds);
 }
 
-function applyBlur(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
+function isHtmlCanvasContext(ctx: CanvasRenderingContext2D): boolean {
+  return typeof document !== "undefined"
+    && typeof HTMLCanvasElement !== "undefined"
+    && ctx.canvas instanceof HTMLCanvasElement;
+}
+
+function applyNativeBlur(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
+  const width = Math.floor(rect.width);
+  const height = Math.floor(rect.height);
+  if (width < 1 || height < 1) return;
+  try {
+    const scratch = document.createElement("canvas");
+    scratch.width = width;
+    scratch.height = height;
+    const scratchContext = scratch.getContext("2d");
+    if (!scratchContext) throw new Error("blur scratch canvas unavailable");
+    scratchContext.drawImage(ctx.canvas, Math.floor(rect.x), Math.floor(rect.y), width, height, 0, 0, width, height);
+    const radius = Math.max(2, Math.min(16, Math.round(Math.min(width, height) / 18)));
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
+    ctx.filter = `blur(${radius}px)`;
+    ctx.drawImage(scratch, rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  } catch {
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  }
+}
+
+function applyPixelBlur(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
   const width = Math.floor(rect.width);
   const height = Math.floor(rect.height);
   if (width < 1 || height < 1) return;
@@ -275,7 +407,33 @@ function applyBlur(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
   ctx.putImageData(source, Math.floor(rect.x), Math.floor(rect.y));
 }
 
-function applyMosaic(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
+function applyNativeMosaic(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
+  const width = Math.floor(rect.width);
+  const height = Math.floor(rect.height);
+  if (width < 1 || height < 1) return;
+  try {
+    const blockSize = Math.max(4, Math.min(24, Math.round(Math.min(width, height) / 12)));
+    const scratch = document.createElement("canvas");
+    scratch.width = Math.max(1, Math.ceil(width / blockSize));
+    scratch.height = Math.max(1, Math.ceil(height / blockSize));
+    const scratchContext = scratch.getContext("2d");
+    if (!scratchContext) throw new Error("mosaic scratch canvas unavailable");
+    scratchContext.imageSmoothingEnabled = true;
+    scratchContext.drawImage(ctx.canvas, Math.floor(rect.x), Math.floor(rect.y), width, height, 0, 0, scratch.width, scratch.height);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(scratch, 0, 0, scratch.width, scratch.height, rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  } catch {
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  }
+}
+
+function applyPixelMosaic(ctx: CanvasRenderingContext2D, rect: AnnotationRect): void {
   const width = Math.floor(rect.width);
   const height = Math.floor(rect.height);
   if (width < 1 || height < 1) return;
@@ -327,9 +485,11 @@ export function drawImageAnnotations(
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
       ctx.restore();
     } else if (annotation.style === "blur") {
-      applyBlur(ctx, rect);
+      if (isHtmlCanvasContext(ctx)) applyNativeBlur(ctx, rect);
+      else applyPixelBlur(ctx, rect);
     } else {
-      applyMosaic(ctx, rect);
+      if (isHtmlCanvasContext(ctx)) applyNativeMosaic(ctx, rect);
+      else applyPixelMosaic(ctx, rect);
     }
   }
 
@@ -340,6 +500,33 @@ export function drawImageAnnotations(
       ctx.strokeStyle = annotation.color;
       ctx.lineWidth = annotation.lineWidth;
       ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      ctx.restore();
+    } else if (annotation.type === "ellipse") {
+      ctx.save();
+      ctx.strokeStyle = annotation.color;
+      ctx.lineWidth = annotation.lineWidth;
+      ctx.beginPath();
+      ctx.ellipse(rect.x + rect.width / 2, rect.y + rect.height / 2, rect.width / 2, rect.height / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else if (annotation.type === "arrow") {
+      const [start, end] = arrowEndpoints(rect, annotation.direction);
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const headLength = Math.max(10, Math.min(32, Math.hypot(end.x - start.x, end.y - start.y) * 0.24));
+      const headAngle = Math.PI / 7;
+      ctx.save();
+      ctx.strokeStyle = annotation.color;
+      ctx.lineWidth = annotation.lineWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - headLength * Math.cos(angle - headAngle), end.y - headLength * Math.sin(angle - headAngle));
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - headLength * Math.cos(angle + headAngle), end.y - headLength * Math.sin(angle + headAngle));
+      ctx.stroke();
       ctx.restore();
     } else if (annotation.type === "label") {
       ctx.save();
@@ -352,4 +539,20 @@ export function drawImageAnnotations(
       ctx.restore();
     }
   }
+}
+
+/** Create a pasted copy without sharing identity with the source annotation. */
+export function duplicateImageAnnotation(
+  annotation: ImageAnnotation,
+  id: string,
+  offset = 16,
+  bounds?: ImageBounds,
+): ImageAnnotation {
+  const duplicate = {
+    ...annotation,
+    id,
+    x: annotation.x + offset,
+    y: annotation.y + offset,
+  } as ImageAnnotation;
+  return bounds ? clampAnnotation(duplicate, bounds) : duplicate;
 }

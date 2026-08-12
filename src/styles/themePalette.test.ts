@@ -25,7 +25,7 @@ describe("theme content palette", () => {
   );
 
   it("keeps print layout independent from the selected dark theme", () => {
-    const printBlock = ruleBody(appCss, ".view-print");
+    const printBlock = appCss.slice(appCss.indexOf("@media print"));
     expect(printBlock).toContain("--inline-code-bg:");
     expect(printBlock).toContain("--inline-code-color:");
     expect(printBlock).toContain("--table-header-bg:");

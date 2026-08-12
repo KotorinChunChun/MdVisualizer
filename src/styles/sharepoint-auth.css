@@ -1,0 +1,8 @@
+.sharepoint-auth-backdrop { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 24px; background: rgb(0 0 0 / 55%); }
+.sharepoint-auth-dialog { width: min(520px, 100%); padding: 24px; color: var(--text-primary); background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 18px 48px rgb(0 0 0 / 35%); }
+.sharepoint-auth-dialog h2 { margin: 0 0 10px; }
+.sharepoint-auth-code { display: block; margin: 18px 0; padding: 14px; font: 700 28px/1.2 ui-monospace, Consolas, monospace; letter-spacing: 0.12em; text-align: center; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; user-select: all; }
+.sharepoint-auth-message { color: var(--text-secondary); }
+.sharepoint-auth-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.sharepoint-auth-actions button { padding: 7px 12px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 5px; cursor: pointer; }
+.sharepoint-auth-actions button.primary { color: #fff; background: var(--accent-color); border-color: var(--accent-color); }

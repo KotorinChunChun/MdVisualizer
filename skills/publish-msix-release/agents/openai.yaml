@@ -1,0 +1,4 @@
+interface:
+  display_name: "Publish MSIX Release"
+  short_description: "Safely plan, build, publish, and verify MSIX releases"
+  default_prompt: "Use $publish-msix-release to plan a safe beta or stable MSIX release without starting costly work unless I explicitly request it."

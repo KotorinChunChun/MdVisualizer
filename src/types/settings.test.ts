@@ -63,4 +63,5 @@ describe("external app settings", () => {
     expect(normalizeImageEqualPadding(48)).toBe(48);
     expect(normalizeImageEqualPadding(-1)).toBe(DEFAULT_IMAGE_EQUAL_PADDING);
   });
+
 });

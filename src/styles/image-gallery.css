@@ -35,6 +35,17 @@
   box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.18);
 }
 
+.image-gallery--embedded {
+  position: static;
+  width: auto;
+  max-height: none;
+  margin: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .image-gallery__header {
   position: sticky;
   top: 0;
@@ -91,6 +102,7 @@
 
 .image-gallery-card__details { min-width: 0; display: grid; gap: 0.15rem; }
 .image-gallery-card__filename { overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.image-gallery-card__caption { overflow: hidden; color: var(--text-secondary); font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
 .image-gallery-card__count { color: var(--text-secondary); font-size: 0.82rem; }
 .image-gallery-card__chevron { color: var(--text-secondary); font-size: 1.2rem; }
 
@@ -119,6 +131,6 @@
 
 /* At narrow widths, keep the document width intact and overlay the panel as a drawer. */
 @media (max-width: 1499px) {
-  .image-gallery { position: fixed; inset: 0 auto 0 0; z-index: 40; width: min(86vw, 22rem); max-height: none; margin: 0; border-width: 0 1px 0 0; border-radius: 0; box-shadow: 0.8rem 0 2rem rgba(0, 0, 0, 0.35); }
+  .image-gallery:not(.image-gallery--embedded) { position: fixed; inset: 0 auto 0 0; z-index: 40; width: min(86vw, 22rem); max-height: none; margin: 0; border-width: 0 1px 0 0; border-radius: 0; box-shadow: 0.8rem 0 2rem rgba(0, 0, 0, 0.35); }
   .image-gallery-backdrop { position: fixed; inset: 0; z-index: 35; display: block; width: 100vw; height: 100vh; padding: 0; background: rgba(0, 0, 0, 0.35); border: 0; }
 }

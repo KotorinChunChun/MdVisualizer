@@ -4,6 +4,7 @@ import { StatusBar } from "./StatusBar";
 
 const document = {
   path: "C:\\docs\\sample.md",
+  kind: "markdown" as const,
   content: "# Sample",
   base_dir: "C:\\docs",
   image_paths: [],
@@ -25,25 +26,35 @@ describe("StatusBar", () => {
     expect(screen.getByText("画像バックアップあり")).toBeTruthy();
   });
 
+  it("temporarily replaces document details with the focused link target", () => {
+    const view = render(<StatusBar document={document} mermaidStatus="描画済み" linkTarget="../guide/next.md" />);
+
+    expect(screen.getByText("リンク先: ../guide/next.md")).toBeTruthy();
+    expect(screen.queryByText("1.5 KB")).toBeNull();
+    expect(screen.queryByText("Mermaid: 描画済み")).toBeNull();
+
+    view.rerender(<StatusBar document={document} mermaidStatus="描画済み" />);
+    expect(screen.getByText("1.5 KB")).toBeTruthy();
+    expect(screen.getByText("Mermaid: 描画済み")).toBeTruthy();
+  });
+
   it("uses controlled callbacks for all status-bar selects", () => {
     const onAutoReloadChange = vi.fn();
-    const onMermaidModeChange = vi.fn();
     const onZoomChange = vi.fn();
     const onThemeChange = vi.fn();
     const onViewModeChange = vi.fn();
-    render(<StatusBar document={document} onAutoReloadChange={onAutoReloadChange} onMermaidModeChange={onMermaidModeChange} onZoomChange={onZoomChange} onThemeChange={onThemeChange} onViewModeChange={onViewModeChange} />);
+    render(<StatusBar document={document} onAutoReloadChange={onAutoReloadChange} onZoomChange={onZoomChange} onThemeChange={onThemeChange} onViewModeChange={onViewModeChange} />);
 
     fireEvent.change(screen.getByLabelText("テーマ"), { target: { value: "light" } });
-    fireEvent.change(screen.getByLabelText("レイアウト"), { target: { value: "wide" } });
+    fireEvent.change(screen.getByLabelText("レイアウト"), { target: { value: "a3-portrait" } });
     fireEvent.change(screen.getByLabelText("Auto Reload"), { target: { value: "manual" } });
-    fireEvent.change(screen.getByLabelText("Mermaid"), { target: { value: "error-code" } });
-    fireEvent.change(screen.getByLabelText("Zoom"), { target: { value: "125" } });
+    fireEvent.change(screen.getByLabelText("Zoom"), { target: { value: "120" } });
 
     expect(onAutoReloadChange).toHaveBeenCalledWith("manual");
-    expect(onMermaidModeChange).toHaveBeenCalledWith("error-code");
-    expect(onZoomChange).toHaveBeenCalledWith(125);
+    expect(screen.queryByLabelText("Mermaid")).toBeNull();
+    expect(onZoomChange).toHaveBeenCalledWith(120);
     expect(onThemeChange).toHaveBeenCalledWith("light");
-    expect(onViewModeChange).toHaveBeenCalledWith("wide");
+    expect(onViewModeChange).toHaveBeenCalledWith("a3-portrait");
   });
 
   it("keeps legacy callers working while disabling unbound controls", () => {
@@ -51,7 +62,7 @@ describe("StatusBar", () => {
 
     expect(screen.getByText("Markdownファイル未選択")).toBeTruthy();
     expect((screen.getByLabelText("Auto Reload") as HTMLSelectElement).disabled).toBe(true);
-    expect((screen.getByLabelText("Mermaid") as HTMLSelectElement).disabled).toBe(true);
+    expect(screen.queryByLabelText("Mermaid")).toBeNull();
     expect((screen.getByLabelText("Zoom") as HTMLSelectElement).disabled).toBe(true);
     expect((screen.getByLabelText("テーマ") as HTMLSelectElement).disabled).toBe(true);
     expect((screen.getByLabelText("レイアウト") as HTMLSelectElement).disabled).toBe(true);

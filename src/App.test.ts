@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { moveZoomLevel, normalizeZoom, ZOOM_LEVELS } from "./App";
+import { describe, expect, it, vi } from "vitest";
+import { documentLinkTarget, focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, ZOOM_LEVELS } from "./App";
 
 describe("zoom level selection", () => {
   it("normalizes persisted values to a selectable status-bar option", () => {
@@ -9,10 +9,55 @@ describe("zoom level selection", () => {
   });
 
   it("moves shortcuts through the fixed option list without producing gaps", () => {
-    expect(moveZoomLevel(67, 1)).toBe(80);
-    expect(moveZoomLevel(80, -1)).toBe(67);
+    expect(moveZoomLevel(70, 1)).toBe(80);
+    expect(moveZoomLevel(80, -1)).toBe(70);
     expect(moveZoomLevel(50, -1)).toBe(50);
     expect(moveZoomLevel(200, 1)).toBe(200);
     expect(ZOOM_LEVELS).toContain(moveZoomLevel(100, 1));
+  });
+});
+
+describe("search input focus", () => {
+  it("focuses the search box and selects the complete existing query", () => {
+    const input = document.createElement("input");
+    input.value = "cargo";
+    const select = vi.spyOn(input, "select");
+    document.body.append(input);
+
+    focusAndSelectSearchInput(input);
+
+    expect(document.activeElement).toBe(input);
+    expect(select).toHaveBeenCalledOnce();
+    input.remove();
+  });
+});
+
+describe("document link focus", () => {
+  it("returns the authored href only for links inside the Markdown body", () => {
+    const body = document.createElement("div");
+    body.className = "markdown-body";
+    body.innerHTML = '<a href="../guide/next.md"><span>next</span></a>';
+    const nested = body.querySelector("span");
+    const outside = document.createElement("a");
+    outside.href = "https://example.com";
+
+    expect(documentLinkTarget(nested)).toBe("../guide/next.md");
+    expect(documentLinkTarget(outside)).toBeNull();
+    expect(documentLinkTarget(null)).toBeNull();
+  });
+});
+
+describe("document side panel ownership", () => {
+  it("gives search results priority without discarding the requested TOC state", () => {
+    expect(resolveDocumentSidePanel(true, "toc")).toBe("search");
+    expect(resolveDocumentSidePanel(false, "toc")).toBe("toc");
+    expect(resolveDocumentSidePanel(false, "images")).toBe("images");
+    expect(resolveDocumentSidePanel(false, null)).toBeNull();
+  });
+
+  it("keeps the shared TOC available in presentation mode while hiding only images", () => {
+    expect(resolveDocumentPanelForView("presentation", "toc")).toBe("toc");
+    expect(resolveDocumentPanelForView("presentation", "images")).toBeNull();
+    expect(resolveDocumentPanelForView("auto", "images")).toBe("images");
   });
 });

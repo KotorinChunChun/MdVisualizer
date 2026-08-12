@@ -2,8 +2,7 @@
  * Content layout overrides.  This file is intentionally separate so the
  * final UI integration can import it after the legacy app stylesheet.
  */
-.markdown-body,
-.view-wide .markdown-body {
+.markdown-body {
   width: 100%;
   max-width: none;
 }

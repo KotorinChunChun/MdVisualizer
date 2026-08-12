@@ -31,7 +31,7 @@ export function FoldSection({ children, foldId = "", collapsed: controlledCollap
   }, [foldId, headingLevel, onCollapsedChange]);
 
   return (
-    <section className="fold-section" data-fold-id={foldId}>
+    <section className="fold-section" data-fold-id={foldId} data-fold-level={headingLevel}>
       <HeadingTag className={heading?.props.className}>
         <button
           type="button"

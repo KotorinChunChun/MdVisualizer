@@ -16,6 +16,8 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][1]).toBe(10);
     expect(onSave.mock.calls[0][2]).toBe(3508);
     expect(onSave.mock.calls[0][3]).toBe(32);
+    expect(onSave.mock.calls[0][4]).toMatchObject({ theme: "adaptive", customColors: false });
+    expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#1f2328", monochrome: false });
   });
 
   it("keeps required built-ins undeletable and validates a new document app", async () => {
@@ -55,6 +57,39 @@ describe("SettingsPanel", () => {
     fireEvent.change(screen.getByLabelText("四辺の等間隔余白"), { target: { value: "40" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0].slice(2)).toEqual([4200, 40]);
+    expect(onSave.mock.calls[0].slice(2, 4)).toEqual([4200, 40]);
+  });
+
+  it("previews and saves a syntax highlighting preset with custom base colors", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText("シンタックス配色"), { target: { value: "monokai" } });
+    fireEvent.click(screen.getByLabelText("コード基本色を上書き"));
+    fireEvent.change(screen.getByLabelText("コード背景色"), { target: { value: "#101010" } });
+    fireEvent.change(screen.getByLabelText("コード本文色"), { target: { value: "#f0f0f0" } });
+    expect(screen.getByLabelText("シンタックス配色プレビュー").getAttribute("data-syntax-theme")).toBe("monokai");
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][4]).toEqual({ theme: "monokai", customColors: true, background: "#101010", foreground: "#f0f0f0" });
+  });
+
+  it("previews and saves typed print colors, font, and monochrome mode", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText("印刷見出し色"), { target: { value: "#123456" } });
+    fireEvent.change(screen.getByLabelText("印刷罫線色"), { target: { value: "#654321" } });
+    fireEvent.change(screen.getByLabelText("印刷背景色"), { target: { value: "#eeeeee" } });
+    fireEvent.change(screen.getByLabelText("印刷フォント"), { target: { value: "serif" } });
+    fireEvent.click(screen.getByLabelText("白黒印刷"));
+    expect(screen.getByLabelText("印刷スタイルプレビュー").getAttribute("style")).toContain("rgb(255, 255, 255)");
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][5]).toEqual({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true });
+  });
+
+  it("does not ask users for SharePoint application registration values", () => {
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={vi.fn()} />);
+    expect(screen.queryByLabelText("SharePointクライアントID")).toBeNull();
+    expect(screen.queryByLabelText("SharePointテナント")).toBeNull();
   });
 });

@@ -6,6 +6,9 @@ pub enum AppError {
     #[error("File not found: {0}")]
     FileNotFound(String),
 
+    #[error("Unsupported document type: {0}")]
+    UnsupportedDocument(String),
+
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
 

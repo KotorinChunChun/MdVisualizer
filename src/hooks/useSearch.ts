@@ -1,4 +1,5 @@
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { findSearchResults, type SearchResult } from "../lib/searchResults";
 
 export interface SearchState {
   query: string;
@@ -13,6 +14,10 @@ export interface SearchState {
   next: () => void;
   previous: () => void;
   error: string | null;
+  results: SearchResult[];
+  truncated: boolean;
+  contextLines: number;
+  setContextLines: (value: number) => void;
   clear: () => void;
 }
 
@@ -32,6 +37,7 @@ export function useSearch(
   scopeId = "main",
   onMatchedFoldIds?: (ids: string[]) => void,
   refreshKey = "",
+  content = "",
 ): SearchState {
   const onMatchedFoldIdsRef = useRef(onMatchedFoldIds);
   useEffect(() => { onMatchedFoldIdsRef.current = onMatchedFoldIds; }, [onMatchedFoldIds]);
@@ -41,10 +47,12 @@ export function useSearch(
   const [resultCount, setResultCount] = useState(0);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
+  const [contextLines, setContextLines] = useState(2);
   const nativeRangesRef = useRef<Range[]>([]);
   const nativeHighlightsRef = useRef<Map<string, unknown> | undefined>(undefined);
   const nativeHighlightNamesRef = useRef<{ all: string; active: string } | null>(null);
   const pattern = useMemo(() => query ? (regex ? query : escapeRegex(query)) : "", [query, regex]);
+  const sourceResults = useMemo(() => findSearchResults(content, query, { regex, caseSensitive, contextLines }), [content, query, regex, caseSensitive, contextLines]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -166,5 +174,5 @@ export function useSearch(
     setActiveIndex((current) => (current + delta + resultCount) % resultCount);
   };
 
-  return { query, setQuery, regex, setRegex, caseSensitive, setCaseSensitive, resultCount, activeIndex, setActiveIndex, next: () => move(1), previous: () => move(-1), error, clear: () => setQuery("") };
+  return { query, setQuery, regex, setRegex, caseSensitive, setCaseSensitive, resultCount, activeIndex, setActiveIndex, next: () => move(1), previous: () => move(-1), error: error ?? sourceResults.error, results: sourceResults.results, truncated: sourceResults.truncated, contextLines, setContextLines: (value) => setContextLines(Math.max(0, Math.min(5, value))), clear: () => setQuery("") };
 }

@@ -1,8 +1,8 @@
 import type { MouseEvent } from "react";
-import { copyMermaid, type MermaidCopyKind } from "../lib/mermaidClipboard";
+import { copyMermaid, copyMermaidAsFile, type MermaidCopyKind } from "../lib/mermaidClipboard";
 
-function emitToast(type: "success" | "error", message: string): void {
-  window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message } }));
+function emitToast(type: "success" | "error", message: string, copyAsFile?: () => Promise<void>): void {
+  window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message, actionLabel: copyAsFile ? "ファイルとしてコピー" : undefined, onAction: copyAsFile } }));
 }
 
 export function MermaidToolbar({
@@ -19,7 +19,15 @@ export function MermaidToolbar({
   const copy = async (event: MouseEvent<HTMLButtonElement>, kind: MermaidCopyKind) => {
     try {
       await copyMermaid(kind, source, svg);
-      emitToast("success", kind === "code" ? "コードをコピーしました" : `${kind.toUpperCase()}で図をコピーしました`);
+      const message = kind === "code" ? "コードをコピーしました" : `${kind.toUpperCase()}で図をコピーしました`;
+      emitToast("success", message, async () => {
+        try {
+          await copyMermaidAsFile(kind, source, svg);
+          emitToast("success", "ファイルをクリップボードにコピーしました");
+        } catch {
+          emitToast("error", "ファイルとしてコピーできませんでした");
+        }
+      });
     } catch {
       emitToast("error", kind === "code" ? "コードをコピーできませんでした" : "図をコピーできませんでした");
     } finally {
@@ -32,8 +40,10 @@ export function MermaidToolbar({
       <button type="button" aria-pressed={display === "diagram"} onClick={() => onDisplayChange("diagram")}>図</button>
       <button type="button" aria-pressed={display === "code"} onClick={() => onDisplayChange("code")}>コード</button>
     </div>
-    <button type="button" onClick={(event) => void copy(event, "code")}>コードをコピー</button>
-    <button type="button" onClick={(event) => void copy(event, "png")}>PNGをコピー</button>
-    <button type="button" onClick={(event) => void copy(event, "svg")}>SVGをコピー</button>
+    <div className="mermaid-toolbar__copy" role="group" aria-label="コピー">
+      <button type="button" onClick={(event) => void copy(event, "code")}>コードをコピー</button>
+      <button type="button" onClick={(event) => void copy(event, "png")}>PNGをコピー</button>
+      <button type="button" onClick={(event) => void copy(event, "svg")}>SVGをコピー</button>
+    </div>
   </div>;
 }
