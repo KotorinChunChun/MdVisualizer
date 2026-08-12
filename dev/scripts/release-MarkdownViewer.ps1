@@ -1,211 +1,290 @@
 # =============================================================================
-#  リリース自動化スクリプト（テンプレート）
-#  - 配置場所: dev/scripts/release-<アプリ名>.ps1
-#    （原本は default プロジェクトの dev/templates/release-Sample.ps1）
-#  - 処理内容: Cargo.toml のバージョン取得 → cargo build --release →
-#    ファイル収集 → ZIP化 → Inno Setup でインストーラ生成 →
-#    GitHub Release 作成/更新（gh があれば）→ release/Publish へ移動
-#  - 使い方: 下の「リリース設定」ブロックだけをプロジェクトに合わせて書き換える。
+#  軽量リリース exe 更新スクリプト
+#  - Tauri の Release exe だけを生成する（インストーラー、ZIP、GitHub Release は作らない）
+#  - 書き込み可能な既存 exe、または release ショートカットのリンク先を更新する
+#  - MSIX の WindowsApps 配下は Windows の保護対象なので直接更新しない
+#
+#  通常実行:
+#    pwsh -NoProfile -File .\dev\scripts\release-MarkdownViewer.ps1
+#
+#  更新先を明示する場合:
+#    pwsh -NoProfile -File .\dev\scripts\release-MarkdownViewer.ps1 `
+#      -InstalledExePath "$env:LOCALAPPDATA\Programs\MarkdownViewer\MarkdownViewer.exe"
 # =============================================================================
+[CmdletBinding(SupportsShouldProcess)]
+param(
+    [string]$InstalledExePath,
+    [string]$BuiltExePath,
+    [switch]$SkipBuild
+)
+
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# =============================================================================
-#  リリース設定（★プロジェクトごとに、この節だけ書き換える）
-# =============================================================================
-# アプリ名（ZIP名・Setup名・実行ファイル名のベースに使用）
-$AppName = "MarkdownViewer"
-# 実行ファイル名（通常は "$AppName.exe"）
-$ExeName = "$AppName.exe"
-# ZIP に同梱する追加ファイル（依存DLLなど）。target/release からの相対名。
-# 存在しないものは警告を出してスキップする。不要なら空配列 @() にする。
-$ExtraFiles = @()
-# Inno Setup スクリプト。存在しなければインストーラ生成をスキップする。
-$InnoSetupScript = "installer.iss"
-# =============================================================================
+$ProjectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+if (-not $BuiltExePath) {
+    $BuiltExePath = Join-Path $ProjectRoot 'src-tauri\target\release\markdown-viewer.exe'
+}
+$BuiltExePath = [System.IO.Path]::GetFullPath($BuiltExePath)
 
-# スクリプトの存在するディレクトリ（dev/scripts/）から2階層上をプロジェクトルートとする
-$ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\")
-Push-Location $ProjectRoot
+function Test-IsWindowsAppsPath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
 
+    $windowsAppsRoot = Join-Path $env:ProgramFiles 'WindowsApps'
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    return $fullPath.StartsWith(
+        $windowsAppsRoot.TrimEnd('\') + '\',
+        [System.StringComparison]::OrdinalIgnoreCase
+    )
+}
+
+function Get-DisplayIconPath {
+    param([AllowNull()][string]$DisplayIcon)
+
+    if ([string]::IsNullOrWhiteSpace($DisplayIcon)) {
+        return $null
+    }
+
+    $candidate = $DisplayIcon.Trim().Trim('"')
+    $candidate = $candidate -replace ',\s*-?\d+$', ''
+    return $candidate.Trim().Trim('"')
+}
+
+function Find-InstalledExecutable {
+    $processPath = Get-Process -Name 'markdown-viewer', 'MarkdownViewer' -ErrorAction SilentlyContinue |
+        ForEach-Object {
+            try { $_.Path } catch { $null }
+        } |
+        Where-Object { $_ -and -not (Test-IsWindowsAppsPath -Path $_) } |
+        Select-Object -First 1
+    if ($processPath) {
+        return [pscustomobject]@{ Path = $processPath; Source = '実行中プロセス' }
+    }
+
+    $registryRoots = @(
+        'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    $installedApp = Get-ItemProperty $registryRoots -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.PSObject.Properties['DisplayName'] -and
+            $_.DisplayName -match '^Markdown\s*Viewer$|^MarkdownViewer$'
+        } |
+        Select-Object -First 1
+    if ($installedApp) {
+        $candidates = [System.Collections.Generic.List[string]]::new()
+        $displayIcon = if ($installedApp.PSObject.Properties['DisplayIcon']) {
+            $installedApp.DisplayIcon
+        }
+        else {
+            $null
+        }
+        $displayIconPath = Get-DisplayIconPath -DisplayIcon $displayIcon
+        if ($displayIconPath) {
+            $candidates.Add($displayIconPath)
+        }
+        $installLocation = if ($installedApp.PSObject.Properties['InstallLocation']) {
+            $installedApp.InstallLocation
+        }
+        else {
+            $null
+        }
+        if (-not [string]::IsNullOrWhiteSpace($installLocation)) {
+            $candidates.Add((Join-Path $installLocation 'MarkdownViewer.exe'))
+            $candidates.Add((Join-Path $installLocation 'markdown-viewer.exe'))
+        }
+
+        $registryExe = $candidates |
+            Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+            Select-Object -First 1
+        if ($registryExe) {
+            return [pscustomobject]@{ Path = $registryExe; Source = 'アンインストール情報' }
+        }
+    }
+
+    $shortcutRoots = @(
+        [Environment]::GetFolderPath('Desktop'),
+        [Environment]::GetFolderPath('CommonDesktopDirectory')
+    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Container) }
+    $releaseShortcut = Get-ChildItem -LiteralPath $shortcutRoots -Filter '*.lnk' -ErrorAction SilentlyContinue |
+        Where-Object { $_.BaseName -match '(?i)markdown.?viewer.*release|release.*markdown.?viewer' } |
+        Select-Object -First 1
+    if ($releaseShortcut) {
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($releaseShortcut.FullName)
+        if ($shortcut.TargetPath) {
+            return [pscustomobject]@{ Path = $shortcut.TargetPath; Source = 'release ショートカット' }
+        }
+    }
+
+    $msixPackage = Get-AppxPackage -Name 'com.markdownviewer.viewer' -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($msixPackage) {
+        throw @"
+インストール済みの MarkdownViewer は MSIX 版です。
+MSIX の exe は WindowsApps の保護対象なので直接差し替えできません。
+書き込み可能なポータブル版のパスを -InstalledExePath で指定するか、MSIX 更新用スクリプトを使用してください。
+MSIX: $($msixPackage.PackageFullName)
+"@
+    }
+
+    throw '更新対象の MarkdownViewer.exe を検出できませんでした。-InstalledExePath で既存 exe のパスを指定してください。'
+}
+
+function Assert-ApplicationStopped {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $usingProcesses = Get-Process -Name 'markdown-viewer', 'MarkdownViewer' -ErrorAction SilentlyContinue |
+        Where-Object {
+            try {
+                [System.IO.Path]::GetFullPath($_.Path).Equals(
+                    $fullPath,
+                    [System.StringComparison]::OrdinalIgnoreCase
+                )
+            }
+            catch {
+                $false
+            }
+        }
+    if ($usingProcesses) {
+        $processIds = ($usingProcesses.Id | Sort-Object) -join ', '
+        throw "MarkdownViewer が実行中です。アプリを終了してから再実行してください。PID: $processIds"
+    }
+}
+
+function New-BackupPath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
+    return "$Path.backup-$timestamp"
+}
+
+if ($InstalledExePath) {
+    $resolvedTarget = [pscustomobject]@{
+        Path = [System.IO.Path]::GetFullPath($InstalledExePath)
+        Source = '-InstalledExePath'
+    }
+}
+else {
+    $resolvedTarget = Find-InstalledExecutable
+    $resolvedTarget.Path = [System.IO.Path]::GetFullPath($resolvedTarget.Path)
+}
+
+if (Test-IsWindowsAppsPath -Path $resolvedTarget.Path) {
+    throw 'MSIX の WindowsApps 配下にある exe は直接差し替えできません。MSIX 更新用スクリプトを使用してください。'
+}
+if (-not (Test-Path -LiteralPath $resolvedTarget.Path -PathType Leaf)) {
+    throw "更新対象の exe が存在しません: $($resolvedTarget.Path)"
+}
+
+Assert-ApplicationStopped -Path $resolvedTarget.Path
+if (
+    -not $BuiltExePath.Equals($resolvedTarget.Path, [System.StringComparison]::OrdinalIgnoreCase) -and
+    (Test-Path -LiteralPath $BuiltExePath -PathType Leaf)
+) {
+    Assert-ApplicationStopped -Path $BuiltExePath
+}
+
+$samePath = $BuiltExePath.Equals(
+    $resolvedTarget.Path,
+    [System.StringComparison]::OrdinalIgnoreCase
+)
+$backupPath = $null
+
+Write-Host '========================================================' -ForegroundColor Cyan
+Write-Host ' MarkdownViewer 軽量 Release exe 更新' -ForegroundColor Cyan
+Write-Host " ビルド出力: $BuiltExePath" -ForegroundColor Green
+Write-Host " 更新対象:   $($resolvedTarget.Path)" -ForegroundColor Yellow
+Write-Host " 検出方法:   $($resolvedTarget.Source)" -ForegroundColor DarkGray
+Write-Host '========================================================' -ForegroundColor Cyan
+
+if ($resolvedTarget.Source -eq 'release ショートカット' -and -not $WhatIfPreference) {
+    $installedMsixPackage = Get-AppxPackage -Name 'com.markdownviewer.viewer' -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($installedMsixPackage) {
+        Write-Warning 'このPCのスタートメニュー版はMSIXです。今回更新するのはデスクトップのreleaseショートカットが参照するexeだけです。'
+    }
+}
+
+if (-not $SkipBuild) {
+    if (-not $PSCmdlet.ShouldProcess($BuiltExePath, 'Tauri Release exe を生成')) {
+        Write-Host 'WhatIf のためビルドと差し替えを実行しませんでした。' -ForegroundColor Gray
+        return
+    }
+
+    if ($samePath) {
+        $backupPath = New-BackupPath -Path $resolvedTarget.Path
+        Copy-Item -LiteralPath $resolvedTarget.Path -Destination $backupPath
+        Write-Host "ビルド前の exe をバックアップしました: $backupPath" -ForegroundColor DarkGray
+    }
+
+    Push-Location $ProjectRoot
+    try {
+        Write-Host 'Tauri Release exe を生成しています（バンドル生成なし）...' -ForegroundColor Yellow
+        & npm run tauri build -- --no-bundle
+        if ($LASTEXITCODE -ne 0) {
+            throw "Tauri Release ビルドに失敗しました。終了コード: $LASTEXITCODE"
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+if (-not (Test-Path -LiteralPath $BuiltExePath -PathType Leaf)) {
+    throw "生成済みの Release exe が見つかりません: $BuiltExePath"
+}
+
+if ($samePath) {
+    $hash = (Get-FileHash -LiteralPath $BuiltExePath -Algorithm SHA256).Hash
+    Write-Host 'Release exe の生成が完了しました。ショートカットのリンク先は更新済みです。' -ForegroundColor Green
+    if ($backupPath) {
+        Write-Host "バックアップ: $backupPath" -ForegroundColor DarkGray
+    }
+    Write-Host "SHA-256: $hash" -ForegroundColor DarkGray
+    return
+}
+
+if (-not $PSCmdlet.ShouldProcess($resolvedTarget.Path, '既存 exe をバックアップして Release exe に差し替え')) {
+    Write-Host 'WhatIf のため exe の差し替えを実行しませんでした。' -ForegroundColor Gray
+    return
+}
+
+$targetDirectory = Split-Path -Parent $resolvedTarget.Path
+$temporaryTarget = Join-Path $targetDirectory ".markdown-viewer-update-$PID.exe"
+$backupPath = New-BackupPath -Path $resolvedTarget.Path
 try {
-    # 1. バージョン情報を src-tauri/Cargo.toml から取得
-    $cargoToml = Get-Content "src-tauri/Cargo.toml" -Raw
-    if ($cargoToml -match 'version\s*=\s*"([^"]+)"') {
-        $version = $Matches[1]
-    }
-    else {
-        Write-Error "src-tauri/Cargo.toml からバージョンを取得できませんでした。"
-        exit 1
+    Copy-Item -LiteralPath $BuiltExePath -Destination $temporaryTarget -Force
+    $sourceHash = (Get-FileHash -LiteralPath $BuiltExePath -Algorithm SHA256).Hash
+    $temporaryHash = (Get-FileHash -LiteralPath $temporaryTarget -Algorithm SHA256).Hash
+    if ($sourceHash -ne $temporaryHash) {
+        throw '一時コピーの SHA-256 がビルド済み exe と一致しません。'
     }
 
-    $releaseName = "${AppName}_v$version"
-    $releaseDir = "release/$releaseName"
-    $zipFile = "release/$releaseName.zip"
-    $setupFileName = "${AppName}_v${version}_Setup"
-    $setupDestPath = "release/$setupFileName.exe"
-
-    Write-Host "Releasing $releaseName ..." -ForegroundColor Cyan
-
-    # バージョンを確認してから続行するか問い合わせる
-    $confirm = Read-Host "バージョン v$version でリリースを開始します。続行しますか？ (y/N)"
-    if ($confirm -notmatch '^[Yy]$') {
-        Write-Host "キャンセルしました。" -ForegroundColor Gray
-        exit 0
+    [System.IO.File]::Replace($temporaryTarget, $resolvedTarget.Path, $backupPath, $true)
+    $installedHash = (Get-FileHash -LiteralPath $resolvedTarget.Path -Algorithm SHA256).Hash
+    if ($sourceHash -ne $installedHash) {
+        throw '差し替え後の exe の SHA-256 がビルド済み exe と一致しません。'
     }
-
-    # 2. Tauri ビルドの実行 (フロントエンドビルド + Rustリリースビルド)
-    Write-Host "Building Tauri app (release)..." -ForegroundColor Yellow
-    npm run tauri build
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ビルドに失敗しました。"
-        exit 1
-    }
-
-    # 3. リリースフォルダの準備
-    if (Test-Path $releaseDir) {
-        Remove-Item -Recurse -Force $releaseDir
-    }
-    New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
-
-    # 4. ファイルのコピー
-    Write-Host "Copying files..." -ForegroundColor Yellow
-
-    # 実行ファイル (src-tauri/target/release/)
-    $exePath = "src-tauri/target/release/$ExeName"
-    if (-not (Test-Path $exePath)) {
-        $exePath = "src-tauri/target/release/markdown-viewer.exe"
-    }
-    if (Test-Path $exePath) {
-        Copy-Item $exePath "$releaseDir/$ExeName"
-    }
-    else {
-        Write-Warning "実行ファイルが見つかりません: $exePath"
-    }
-
-    # 追加ファイル（依存DLLなど。存在しないものはスキップ）
-    foreach ($f in $ExtraFiles) {
-        $extraPath = "src-tauri/target/release/$f"
-        if (Test-Path $extraPath) {
-            Copy-Item $extraPath "$releaseDir/$f"
-        }
-        else {
-            Write-Warning "追加ファイルが見つかりません（スキップ）: $extraPath"
-        }
-    }
-
-    # README.md
-    if (Test-Path "README.md") {
-        Copy-Item "README.md" "$releaseDir/README.md"
-    }
-
-    # インストーラー (Inno Setup)
-    # /O で出力先フォルダ、/F で出力ファイル名を直接指定
-    if (Test-Path $InnoSetupScript) {
-        Write-Host "Building installer with Inno Setup..." -ForegroundColor Yellow
-        $isccPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-        if (-not (Test-Path $isccPath)) {
-            $isccPath = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
-        }
-        if (-not (Test-Path $isccPath)) {
-            $isccPath = "C:\Program Files\Inno Setup 6\ISCC.exe"
-        }
-
-        if (Test-Path $isccPath) {
-            & $isccPath /O"release" /F"$setupFileName" "$InnoSetupScript"
-            if ($LASTEXITCODE -eq 0 -and (Test-Path $setupDestPath)) {
-                Write-Host "インストーラーを作成しました: $setupDestPath" -ForegroundColor Green
-            }
-            else {
-                Write-Warning "Inno Setup のコンパイルが完了しなかったか、生成ファイルが見つかりません。"
-            }
-        }
-        else {
-            Write-Warning "Inno Setup コンパイラ(ISCC.exe)が見つかりませんでした。インストーラーの生成をスキップします。"
-        }
-    }
-    else {
-        Write-Host "Inno Setup スクリプト ($InnoSetupScript) が無いため、インストーラー生成をスキップします。" -ForegroundColor Gray
-    }
-
-    # 5. ZIP 圧縮
-    Write-Host "Compressing to ZIP..." -ForegroundColor Yellow
-    if (Test-Path $zipFile) { Remove-Item $zipFile }
-    Write-Host "Waiting for file locks to clear..." -ForegroundColor Yellow
-    Start-Sleep -Seconds 3
-    Compress-Archive -Path "$releaseDir/*" -DestinationPath $zipFile -ErrorAction Stop
-
-    # ZIP作成後、一時フォルダを削除
-    if (Test-Path $releaseDir) {
-        Remove-Item -Recurse -Force $releaseDir
-    }
-
-    Write-Host "Release package created at: $zipFile" -ForegroundColor Green
-
-    # 6. GitHub Release への追加 (gh CLI がある場合)
-    $ghAvailable = Get-Command gh -ErrorAction SilentlyContinue
-    if ($ghAvailable) {
-        Write-Host "GitHub CLI の状態とリリースの存在を確認中..." -ForegroundColor Cyan
-        $tagName = "v$version"
-
-        # 既存のリリースがあるか確認
-        $null = gh release view $tagName 2>&1
-        $releaseExists = ($LASTEXITCODE -eq 0)
-
-        # アップロードするアセットの集約
-        $uploadAssets = @($zipFile)
-        if (Test-Path $setupDestPath) {
-            $uploadAssets += $setupDestPath
-        }
-
-        if ($releaseExists) {
-            Write-Host "警告: GitHub リリース $tagName は既に存在します。" -ForegroundColor Yellow
-            $overwrite = Read-Host "既存のリリースのファイルを上書きして更新しますか？ (y/N)"
-            if ($overwrite -match '^[Yy]$') {
-                Write-Host "アセットを上書きアップロード中..." -ForegroundColor Yellow
-                gh release upload $tagName $uploadAssets --clobber
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host "GitHub リリースアセットを正常に更新しました: $tagName" -ForegroundColor Green
-                }
-                else {
-                    Write-Warning "GitHub リリースアセットの更新に失敗しました。"
-                }
-            }
-            else {
-                Write-Host "リリースの更新をスキップしました。" -ForegroundColor Gray
-            }
-        }
-        else {
-            Write-Host "新規リリースを作成中..." -ForegroundColor Yellow
-            gh release create $tagName $uploadAssets --title "Release $tagName" --notes "Automated release for $tagName"
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "GitHub リリースを正常に作成しました: $tagName" -ForegroundColor Green
-            }
-            else {
-                Write-Warning "GitHub リリースの作成に失敗しました。認証（gh auth login）を確認してください。"
-            }
-        }
-    }
-    else {
-        Write-Host "GitHub CLI (gh) が見つからないため、GitHub へのアップロードはスキップしました。" -ForegroundColor Gray
-    }
-
-    # 7. リリース成果物を release/Publish へ移動（Git対象外の公開控え）
-    $publishDir = "release/Publish"
-    if (-not (Test-Path $publishDir)) {
-        New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
-    }
-
-    Write-Host "Moving artifacts to $publishDir ..." -ForegroundColor Yellow
-    if (Test-Path $zipFile) {
-        Move-Item -Path $zipFile -Destination $publishDir -Force
-    }
-    if (Test-Path $setupDestPath) {
-        Move-Item -Path $setupDestPath -Destination $publishDir -Force
-    }
-
-    Write-Host "全ての処理が完了しました！" -ForegroundColor Green
 }
 finally {
-    Pop-Location
+    if (Test-Path -LiteralPath $temporaryTarget) {
+        Remove-Item -LiteralPath $temporaryTarget -Force
+    }
 }
 
+Write-Host 'Release exe の生成と差し替えが完了しました。' -ForegroundColor Green
+Write-Host "更新先:     $($resolvedTarget.Path)" -ForegroundColor Green
+Write-Host "バックアップ: $backupPath" -ForegroundColor DarkGray
+Write-Host "SHA-256:    $sourceHash" -ForegroundColor DarkGray
