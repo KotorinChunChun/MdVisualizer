@@ -1,5 +1,5 @@
 import React from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
@@ -18,6 +18,12 @@ import type { ImageSize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { imageOccurrenceId } from "../lib/imageOccurrences";
 import { remarkObsidianImages } from "../lib/remarkObsidianImages";
+import { DelimitedTableBlock } from "./DelimitedTableBlock";
+import { isDelimitedTableLanguage } from "../lib/delimitedTable";
+import { collectEditableMarkdownOccurrences, type CodeFenceOccurrence, type ImageMarkdownOccurrence, type InlineSvgOccurrence } from "../lib/markdownOccurrences";
+import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
+import { sanitizeSvgXml } from "../lib/svgSafety";
+import { DrawioBlock } from "./DrawioBlock";
 
 type MarkdownNode = {
   type?: string;
@@ -70,6 +76,8 @@ interface MarkdownPreviewProps {
   documentPath?: string;
   sourcePath?: string;
   onCodeHighlightComplete?: () => void;
+  onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
+  stagedAssetPreviews?: Record<string, string>;
 }
 
 interface MarkdownRenderContextValue {
@@ -95,12 +103,22 @@ interface MarkdownRenderContextValue {
   onCodeHighlightComplete?: () => void;
   mermaidFenceOffsets: number[];
   mermaidIndexByOffset: Map<number, number>;
+  codeFenceByOffset: Map<number, CodeFenceOccurrence>;
+  onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
+  imageOccurrenceByOffset: Map<number, ImageMarkdownOccurrence>;
+  inlineSvgByOffset: Map<number, InlineSvgOccurrence>;
+  stagedAssetPreviews: Record<string, string>;
 }
 
 const MarkdownRenderContext = React.createContext<MarkdownRenderContextValue | null>(null);
 const EMPTY_FOLD_STATE: Record<string, boolean> = {};
 const EMPTY_IMAGE_DISPLAY_SIZES: Record<string, ImageSize> = {};
 const EMPTY_SEARCH_EXPANDED_IDS: string[] = [];
+
+function markdownUrlTransform(url: string, key: string): string {
+  if (key === "src" && /^data:image\/(?:png|jpe?g|gif|webp|bmp);base64,[a-z0-9+/=\s]+$/i.test(url)) return url;
+  return defaultUrlTransform(url);
+}
 
 function useMarkdownRenderContext(): MarkdownRenderContextValue {
   const context = React.useContext(MarkdownRenderContext);
@@ -117,6 +135,26 @@ const MarkdownSection: NonNullable<Components["section"]> = ({ node, children })
 
 const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, children, ...props }) => {
   const context = useMarkdownRenderContext();
+  const language = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
+  if (language === "drawio") {
+    const sourceOffset = node?.position?.start.offset;
+    const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
+    return <DrawioBlock
+      source={String(children ?? "").replace(/\n$/, "")}
+      theme={context.theme}
+      blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
+      onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
+    />;
+  }
+  if (isDelimitedTableLanguage(language)) {
+    const sourceOffset = node?.position?.start.offset;
+    const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
+    return <DelimitedTableBlock
+      language={language}
+      source={String(children ?? "").replace(/\n$/, "")}
+      onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
+    />;
+  }
   if (className?.toLowerCase().includes("language-mermaid")) {
     const sourceOffset = node?.position?.start.offset;
     const diagramIndex = sourceOffset === undefined ? 0 : context.mermaidIndexByOffset.get(sourceOffset) ?? 0;
@@ -163,6 +201,17 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
   const context = useMarkdownRenderContext();
   const headingMode = useIsFoldHeading();
   const isObsidianImage = node?.properties?.["data-obsidian-image"] === "true";
+  const sourceOffset = node?.position?.start.offset;
+  const occurrence = sourceOffset === undefined ? undefined : context.imageOccurrenceByOffset.get(sourceOffset);
+  const source = String(src ?? "");
+  const local = source && !/^(?:https?:|file:|\/\/)/i.test(source);
+  const assetKind = parseRasterDataUri(source) || /\.(?:png|jpe?g|gif|webp|bmp)(?:[?#]|$)/i.test(source) ? "raster" : /\.svg(?:[?#]|$)/i.test(source) ? "svg" : null;
+  const conversionContext: AssetConversionContext | undefined = occurrence && context.documentPath && local && assetKind ? {
+    documentPath: context.documentPath,
+    occurrence,
+    assetKind,
+    storage: source.toLowerCase().startsWith("data:") ? "embedded" : "external",
+  } : undefined;
   return <ImageRenderer
     src={src}
     alt={alt}
@@ -176,8 +225,27 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
     occurrenceId={imageOccurrenceId(node?.position?.start.offset ?? 0)}
     sourceLine={node?.position?.start.line}
     markdownPath={context.documentPath}
-    sourceOffset={isObsidianImage ? undefined : node?.position?.start.offset}
+    sourceOffset={isObsidianImage ? undefined : sourceOffset}
+    conversionContext={conversionContext}
+    previewSrc={context.stagedAssetPreviews[source]}
   />;
+};
+
+const MarkdownSvg = ({ node }: { node?: { position?: { start?: { offset?: number } } } }) => {
+  const context = useMarkdownRenderContext();
+  const offset = node?.position?.start?.offset;
+  const svgOccurrences = [...context.inlineSvgByOffset.values()];
+  const occurrence = (offset === undefined ? undefined : context.inlineSvgByOffset.get(offset) ?? svgOccurrences.find((candidate) => offset >= candidate.start && offset < candidate.end))
+    ?? (svgOccurrences.length === 1 ? svgOccurrences[0] : undefined);
+  if (!occurrence) return null;
+  let safeSvg: string;
+  try { safeSvg = sanitizeSvgXml(occurrence.svg); }
+  catch { return <span className="image-error-fallback">⚠️ SVGを表示できません</span>; }
+  const conversionContext: AssetConversionContext | undefined = context.documentPath ? { documentPath: context.documentPath, occurrence, assetKind: "svg", storage: "embedded" } : undefined;
+  return <span className="inline-svg-preview" role="img" aria-label="インラインSVG" onClick={(event) => {
+    event.preventDefault(); event.stopPropagation();
+    context.onMediaOpen?.({ content: { kind: "svg", svg: safeSvg, alt: "SVG" }, conversionContext });
+  }} dangerouslySetInnerHTML={{ __html: safeSvg }} />;
 };
 
 const markdownComponents: Components = {
@@ -186,6 +254,7 @@ const markdownComponents: Components = {
   table: MarkdownTable,
   a: MarkdownLink,
   img: MarkdownImage,
+  svg: MarkdownSvg as Components["svg"],
 };
 
 const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
@@ -211,12 +280,22 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   documentPath,
   sourcePath,
   onCodeHighlightComplete,
+  onCodeFenceBodyChange,
+  stagedAssetPreviews = {},
 }) => {
   const mermaidFenceOffsets = React.useMemo(() => collectMermaidFenceOffsets(content), [content]);
   const mermaidIndexByOffset = React.useMemo(
     () => new Map(mermaidFenceOffsets.map((offset, index) => [offset, index])),
     [mermaidFenceOffsets],
   );
+  const editableOccurrences = React.useMemo(() => collectEditableMarkdownOccurrences(content), [content]);
+  const codeFenceByOffset = React.useMemo(() => new Map(
+    editableOccurrences
+      .filter((occurrence): occurrence is CodeFenceOccurrence => occurrence.kind === "code-fence")
+      .map((occurrence) => [occurrence.start, occurrence]),
+  ), [editableOccurrences]);
+  const imageOccurrenceByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is ImageMarkdownOccurrence => occurrence.kind === "image").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
+  const inlineSvgByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is InlineSvgOccurrence => occurrence.kind === "inline-svg").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const renderContext = React.useMemo<MarkdownRenderContextValue>(() => ({
     baseDir,
     imageVersions,
@@ -240,11 +319,16 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     onCodeHighlightComplete,
     mermaidFenceOffsets,
     mermaidIndexByOffset,
+    codeFenceByOffset,
+    onCodeFenceBodyChange,
+    imageOccurrenceByOffset,
+    inlineSvgByOffset,
+    stagedAssetPreviews,
   }), [
-    baseDir, documentPath, foldState, imageDisplaySizes, imageVersions, mermaidFenceOffsets,
+    baseDir, codeFenceByOffset, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
-    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, tabId, theme, windowId,
+    onCodeFenceBodyChange, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, tabId, theme, windowId,
   ]);
 
   return (
@@ -254,6 +338,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
           remarkPlugins={[remarkGfm, remarkObsidianImages]}
           rehypePlugins={[rehypeRaw, rehypeFoldSections, rehypeBlockAnchors, [rehypeSanitize, markdownSanitizeSchema]]}
           components={markdownComponents}
+          urlTransform={markdownUrlTransform}
         >
           {content}
         </ReactMarkdown>

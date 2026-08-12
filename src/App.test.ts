@@ -1,5 +1,42 @@
 import { describe, expect, it, vi } from "vitest";
-import { documentLinkTarget, focusAndSelectSearchInput, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+import { documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+
+describe("window close protection", () => {
+  it("destroys an unmodified window without asking", async () => {
+    const confirmDiscard = vi.fn(() => false);
+    const preventDefault = vi.fn();
+    const destroyWindow = vi.fn(async () => {});
+
+    await handleWindowCloseRequest(false, confirmDiscard, { preventDefault }, destroyWindow);
+
+    expect(confirmDiscard).not.toHaveBeenCalled();
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(destroyWindow).toHaveBeenCalledOnce();
+  });
+
+  it("destroys a modified window after discard is confirmed", async () => {
+    const confirmDiscard = vi.fn(() => true);
+    const preventDefault = vi.fn();
+    const destroyWindow = vi.fn(async () => {});
+
+    await handleWindowCloseRequest(true, confirmDiscard, { preventDefault }, destroyWindow);
+
+    expect(confirmDiscard).toHaveBeenCalledWith("未保存の編集内容があります。破棄してアプリを終了しますか？");
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(destroyWindow).toHaveBeenCalledOnce();
+  });
+
+  it("keeps a modified window open when discard is rejected", async () => {
+    const confirmDiscard = vi.fn(() => false);
+    const preventDefault = vi.fn();
+    const destroyWindow = vi.fn(async () => {});
+
+    await handleWindowCloseRequest(true, confirmDiscard, { preventDefault }, destroyWindow);
+
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(destroyWindow).not.toHaveBeenCalled();
+  });
+});
 
 describe("zoom level selection", () => {
   it("normalizes persisted values to a selectable status-bar option", () => {

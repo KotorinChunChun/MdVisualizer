@@ -6,6 +6,14 @@ export interface CropTarget {
   filename: string;
 }
 
+export interface ImageEditTarget {
+  rawSrc: string;
+  filename: string;
+  storage: "external" | "embedded";
+  fullPath?: string;
+  conversionContext?: import("../lib/assetConversion").AssetConversionContext;
+}
+
 export function useCropEditor() {
   const [cropTarget, setCropTarget] = useState<CropTarget | null>(null);
 

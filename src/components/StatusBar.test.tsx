@@ -11,6 +11,7 @@ const document = {
   encoding: "UTF-8",
   size_bytes: 1536,
   modified_at: "2026-07-29 12:00",
+  revision: "revision-1",
 };
 
 describe("StatusBar", () => {

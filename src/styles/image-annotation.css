@@ -19,6 +19,7 @@
 .annotation-editor__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .annotation-editor__hint { margin: 0; color: var(--text-secondary); font-size: 11px; line-height: 1.6; }
 .annotation-editor__replacement-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.annotation-editor__transform-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .annotation-editor__replacement-file { display: none; }
 .annotation-editor__replacement-status { overflow-wrap: anywhere; color: var(--text-secondary); font-size: 11px; line-height: 1.5; }
 .annotation-editor__palette { display: flex; align-items: center; gap: 8px; }

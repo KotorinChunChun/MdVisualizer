@@ -10,6 +10,7 @@ const loadedDocument = (path: string) => ({
   encoding: "UTF-8",
   size_bytes: 7,
   modified_at: "2026-07-29T00:00:00Z",
+  revision: "revision-1",
 });
 
 describe("tabsReducer", () => {
@@ -147,5 +148,66 @@ describe("tabsReducer", () => {
     state = tabsReducer(state, { type: "OPEN_SETTINGS" });
     expect(state.tabs.filter((tab) => tab.kind === "settings")).toHaveLength(1);
     expect(state.activeId).toBe(settingsId);
+  });
+
+  it("tracks a Markdown draft independently from the saved document", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id, content: "# Edited" });
+
+    expect(state.tabs[0]).toMatchObject({ draft: "# Edited", dirty: true, saving: false });
+    expect(state.tabs[0].document?.content).toBe("# Test");
+  });
+
+  it("keeps the editor workspace mode independently in each tab", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const first = state.activeId!;
+    state = tabsReducer(state, { type: "EDITOR_MODE", id: first, mode: "split" });
+    state = tabsReducer(state, { type: "OPEN", path: "b.md" });
+
+    expect(state.tabs.find((tab) => tab.id === first)?.editorMode).toBe("split");
+    expect(state.tabs.find((tab) => tab.id === state.activeId)?.editorMode).toBe("preview");
+  });
+
+  it("keeps edits made while an earlier draft is being saved", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id, content: "# First edit" });
+    state = tabsReducer(state, { type: "SAVE_STARTED", id });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id, content: "# Second edit" });
+
+    state = tabsReducer(state, {
+      type: "SAVED",
+      id,
+      document: { ...loadedDocument("C:\\docs\\a.md"), content: "# First edit", revision: "revision-2" },
+    });
+
+    expect(state.tabs[0]).toMatchObject({ draft: "# Second edit", dirty: true, saving: false });
+    expect(state.tabs[0].document).toMatchObject({ content: "# First edit", revision: "revision-2" });
+  });
+
+  it("retains a dirty draft when saving fails", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id, content: "# Edited" });
+    state = tabsReducer(state, { type: "SAVE_STARTED", id });
+    state = tabsReducer(state, { type: "SAVE_FAILED", id, error: "Conflict" });
+
+    expect(state.tabs[0]).toMatchObject({ draft: "# Edited", dirty: true, saving: false, saveError: "Conflict" });
+  });
+
+  it("keeps staged assets through edits and removes only those committed by a save", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:/docs/a.md" });
+    state = tabsReducer(state, { type: "LOADED", id: "tab-1", generation: 1, document: { ...loadedDocument("C:/docs/a.md"), content: "old" } });
+    state = tabsReducer(state, { type: "STAGED_ASSET_ADDED", id: "tab-1", content: "![x](image.png)", asset: { id: "stage-1", filename: "image.png" } });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id: "tab-1", content: "# title\n![x](image.png)" });
+    expect(state.tabs[0].pendingAssets?.map((asset) => asset.id)).toEqual(["stage-1"]);
+    state = tabsReducer(state, { type: "SAVED", id: "tab-1", document: { ...loadedDocument("C:/docs/a.md"), content: "![x](image.png)", revision: "revision-2" }, committedAssetIds: ["stage-1"] });
+    expect(state.tabs[0].pendingAssets).toEqual([]);
+    expect(state.tabs[0].dirty).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
@@ -20,19 +20,22 @@ import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
-import { useCropEditor } from "./hooks/useCropEditor";
+import { useCropEditor, type ImageEditTarget } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { diagnoseDocument, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveSettings, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
-import { ClosedTabState, initialTabsState, tabsReducer } from "./state/tabsReducer";
+import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
+import { replaceCodeFenceBody, replaceMarkdownOccurrence, type CodeFenceOccurrence } from "./lib/markdownOccurrences";
+import { parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./lib/assetConversion";
+import { sanitizeSvgXml } from "./lib/svgSafety";
 import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
@@ -53,6 +56,8 @@ import "./styles/syntax-highlight.css";
 // the state boundary also repairs legacy persisted values that were not a
 // selectable option.
 export { moveZoomLevel, normalizeZoom, ZOOM_LEVELS, type ZoomLevel } from "./lib/zoom";
+
+const MarkdownEditor = lazy(() => import("./components/MarkdownEditor").then((module) => ({ default: module.MarkdownEditor })));
 
 export function focusAndSelectSearchInput(input: HTMLInputElement | null): void {
   input?.focus();
@@ -82,11 +87,23 @@ export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: 
   return viewMode === "presentation" && requestedPanel === "images" ? null : requestedPanel;
 }
 
+export async function handleWindowCloseRequest(
+  hasUnsavedChanges: boolean,
+  confirmDiscard: (message?: string) => boolean,
+  event: { preventDefault: () => void },
+  destroyWindow: () => Promise<void>,
+) {
+  event.preventDefault();
+  if (hasUnsavedChanges && !confirmDiscard("未保存の編集内容があります。破棄してアプリを終了しますか？")) return;
+  await destroyWindow();
+}
+
 export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
+  const recentSelfSaves = useRef(new Map<string, number>());
   const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
   const [presentationPositions, setPresentationPositions] = useState<Record<string, string>>({});
   const presentationPositionsRef = useRef<Record<string, string>>({});
@@ -124,7 +141,7 @@ export function App() {
     dismissAuthentication,
   } = useSharePointAuthentication(setToast);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
-  const [annotationTarget, setAnnotationTarget] = useState<import("./hooks/useCropEditor").CropTarget | null>(null);
+  const [annotationTarget, setAnnotationTarget] = useState<ImageEditTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [documentPanels, setDocumentPanels] = useState<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
@@ -167,6 +184,34 @@ export function App() {
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
   const activeSharePoint = isSharePointDocument(activeTab?.document ?? activeTab);
+  const canEditActive = Boolean(activeTab?.document?.kind === "markdown" && !activeSharePoint);
+  const editorMode: EditorWorkspaceMode = canEditActive ? activeTab?.editorMode ?? "preview" : "preview";
+  const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
+  const previewContent = useDeferredValue(activeMarkdownContent);
+
+  useEffect(() => {
+    const hasUnsavedChanges = () => tabsStateRef.current.tabs.some((tab) => tab.dirty);
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    const appWindow = getCurrentWindow();
+    void appWindow.onCloseRequested((event) => {
+      void handleWindowCloseRequest(
+        hasUnsavedChanges(),
+        (message) => window.confirm(message),
+        event,
+        () => appWindow.destroy(),
+      );
+    }).then((dispose) => {
+      if (disposed) dispose();
+      else unlisten = dispose;
+    }).catch(() => {
+      // Browser and unit-test hosts do not provide the Tauri window event API.
+    });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
 
   useEffect(() => {
     const next = activeTab?.document ? documentViewModes[activeTab.document.path] ?? "auto" : "auto";
@@ -188,8 +233,8 @@ export function App() {
 
   const imageOccurrenceGroups = useMemo(() => {
     if (!activeTab?.document || activeSharePoint || viewMode === "presentation") return [];
-    return groupImageOccurrences(collectImageOccurrences(activeTab.document.content, activeTab.document.base_dir));
-  }, [activeSharePoint, activeTab?.document, viewMode]);
+    return groupImageOccurrences(collectImageOccurrences(previewContent, activeTab.document.base_dir));
+  }, [activeSharePoint, activeTab?.document, previewContent, viewMode]);
   const imageGalleryItems = useMemo<ImageGalleryItem[]>(() => {
     const baseDir = activeTab?.document?.base_dir;
     if (!baseDir) return [];
@@ -270,7 +315,7 @@ export function App() {
     setCodeHighlightRevision((revision) => revision + 1);
   }, []);
   const searchRefreshKey = `${tabsState.activeId ?? "empty"}:${activeTab?.generation ?? 0}:${searchExpandedIds.join("|")}:${codeHighlightRevision}`;
-  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey, activeTab?.document?.content ?? "");
+  const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey, previewContent);
   const { cropTarget, startCrop, cancelCrop } = useCropEditor();
   useEffect(() => {
     if (!activeTab?.document || activeSharePoint) { setDiagnostics([]); return; }
@@ -410,17 +455,55 @@ export function App() {
     return () => { document.removeEventListener("pointerdown", dismissOnOutsidePointer, true); window.removeEventListener("keydown", dismissOnEscape); };
   }, [contextTab]);
 
-  const reloadTab = useCallback((id: string) => {
-    if (id === activeTab?.id && containerRef.current && markdownRef.current) {
+  const reloadTab = useCallback((id: string, confirmDiscard = true) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
+    if (!tab) return false;
+    if (confirmDiscard && tab.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄して再読み込みしますか？`)) return false;
+    if (tab.pendingAssets?.length) void discardStagedAssets(tab.pendingAssets.map((asset) => asset.id));
+    if (id === tabsStateRef.current.activeId && containerRef.current && markdownRef.current) {
       const anchor = captureScrollAnchor(containerRef.current, markdownRef.current);
       if (anchor) reloadAnchors.current[id] = anchor;
     }
     dispatch({ type: "RELOAD", id });
-  }, [activeTab?.id]);
+    return true;
+  }, []);
 
   const reload = useCallback(() => {
     if (activeTab?.document) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
+
+  const saveTab = useCallback(async (id: string) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
+    if (!tab?.document || !tab.dirty || tab.saving) return;
+    if (tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) {
+      setToast({ id: String(Date.now()), message: "この文書は閲覧専用です。", type: "error" });
+      return;
+    }
+    dispatch({ type: "SAVE_STARTED", id });
+    const identity = localPathIdentity(tab.document.path);
+    const selfSaveUntil = Date.now() + 2000;
+    recentSelfSaves.current.set(identity, selfSaveUntil);
+    window.setTimeout(() => {
+      if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
+    }, 2100);
+    try {
+      const stagedAssetIds = (tab.pendingAssets ?? []).map((asset) => asset.id);
+      const document = await saveMarkdown({
+        path: tab.document.path,
+        content: tab.draft,
+        expectedRevision: tab.document.revision,
+        stagedAssetIds,
+      });
+      dispatch({ type: "SAVED", id, document, committedAssetIds: stagedAssetIds });
+      setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
+    } catch (error) {
+      recentSelfSaves.current.delete(identity);
+      const message = String(error);
+      dispatch({ type: "SAVE_FAILED", id, error: message });
+      if (message.toLowerCase().includes("conflict")) dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
+      setToast({ id: String(Date.now()), message: `保存に失敗しました: ${message}`, type: "error" });
+    }
+  }, []);
 
   const applyFoldPreset = useCallback((preset: "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset") => {
     if (!activeTab?.document) return;
@@ -705,6 +788,9 @@ export function App() {
   }, []);
 
   const saveImageCaption = useCallback(async (context: ImageEditContext, caption: string) => {
+    if (tabsStateRef.current.tabs.some((tab) => localPathIdentity(tab.path) === localPathIdentity(context.markdownPath) && tab.dirty)) {
+      throw new Error("未保存のMarkdown編集があります。先に文書を保存してから画像情報を変更してください。");
+    }
     await updateImageCaption({
       markdownPath: context.markdownPath,
       sourceOffset: context.sourceOffset,
@@ -722,6 +808,9 @@ export function App() {
   }, []);
 
   const renamePreviewImage = useCallback(async (context: ImageEditContext, filename: string) => {
+    if (tabsStateRef.current.tabs.some((tab) => localPathIdentity(tab.path) === localPathIdentity(context.markdownPath) && tab.dirty)) {
+      throw new Error("未保存のMarkdown編集があります。先に文書を保存してから画像名を変更してください。");
+    }
     const result = await renameImageAndReferences({
       markdownPath: context.markdownPath,
       imagePath: context.imagePath,
@@ -788,10 +877,13 @@ export function App() {
   }, [recordNavigationPoint]);
 
   const closeTab = useCallback((id: string) => {
-    const tab = tabsState.tabs.find((candidate) => candidate.id === id);
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
+    if (tab?.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄してタブを閉じますか？`)) return false;
+    if (tab?.pendingAssets?.length) void discardStagedAssets(tab.pendingAssets.map((asset) => asset.id));
     if (tab && tab.kind !== "settings") setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
     dispatch({ type: "CLOSE", id });
-  }, [tabsState.tabs]);
+    return true;
+  }, []);
 
   const closeActiveTab = useCallback(() => {
     if (!activeTab) return;
@@ -825,6 +917,77 @@ export function App() {
       setToast({ id: String(Date.now()), message: `レイアウト設定の保存に失敗しました: ${String(error)}`, type: "error" });
     });
   }, [activeTab?.document?.path, recordNavigationPoint]);
+
+  const changeEditorMode = useCallback((mode: EditorWorkspaceMode) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return;
+    dispatch({ type: "EDITOR_MODE", id: tab.id, mode });
+  }, []);
+
+  const updateCodeFenceBody = useCallback((occurrence: CodeFenceOccurrence, body: string): boolean => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return false;
+    try {
+      const content = replaceCodeFenceBody(tab.draft, occurrence, body);
+      dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+      setToast({ id: crypto.randomUUID(), message: "表の変更をMarkdownドラフトへ反映しました", type: "success" });
+      return true;
+    } catch (error) {
+      setToast({ id: crypto.randomUUID(), message: error instanceof Error ? error.message : String(error), type: "error" });
+      return false;
+    }
+  }, []);
+
+  const convertDocumentAsset = useCallback(async (context: AssetConversionContext) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) throw new Error("この文書は閲覧専用です。");
+    if (context.storage === "embedded") {
+      let extension: string;
+      let mediaType: string;
+      let base64: string | undefined;
+      let text: string | undefined;
+      let previewSource: string;
+      if (context.assetKind === "raster" && context.occurrence.kind === "image") {
+        const parsed = parseRasterDataUri(context.occurrence.source);
+        if (!parsed) throw new Error("未対応のBase64ラスタ画像です。");
+        ({ extension, mediaType, base64 } = parsed);
+        previewSource = context.occurrence.source;
+      } else if (context.assetKind === "svg" && context.occurrence.kind === "inline-svg") {
+        extension = "svg"; mediaType = "image/svg+xml"; text = sanitizeSvgXml(context.occurrence.svg);
+        previewSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(text)}`;
+      } else throw new Error("この埋め込み形式は外部ファイルへ変換できません。");
+      const staged = await stageDocumentAsset({ documentPath: tab.document.path, preferredFilename: preferredAssetFilename(context, extension), base64, text });
+      const content = context.occurrence.kind === "image"
+        ? replaceImageOccurrenceSource(tab.draft, context.occurrence, staged.filename)
+        : replaceMarkdownOccurrence(tab.draft, context.occurrence, `![SVG](${staged.filename})`);
+      dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, mediaType, base64, text, previewSource } });
+      setMediaPreview(null);
+      setToast({ id: String(Date.now()), message: `${staged.filename} を一時ステージしました。Markdown保存時に確定します。`, type: "success" });
+      return;
+    }
+
+    if (context.occurrence.kind !== "image") throw new Error("外部アセットの参照形式が不正です。");
+    const occurrence = context.occurrence;
+    const pending = (tab.pendingAssets ?? []).find((asset) => asset.filename === occurrence.source);
+    const loaded = pending ? null : await readDocumentAsset(tab.document.path, occurrence.source);
+    let content: string;
+    if (context.assetKind === "raster") {
+      const mediaType = pending?.mediaType ?? loaded?.mediaType;
+      const base64 = pending?.base64 ?? loaded?.base64;
+      if (!mediaType || !base64) throw new Error("ラスタ画像データを読み込めませんでした。");
+      content = replaceImageOccurrenceSource(tab.draft, occurrence, `data:${mediaType};base64,${base64}`);
+    } else {
+      const text = pending?.text ?? loaded?.text;
+      if (!text) throw new Error("SVG XMLを読み込めませんでした。");
+      content = replaceMarkdownOccurrence(tab.draft, occurrence, sanitizeSvgXml(text));
+    }
+    if (pending) {
+      await discardStagedAssets([pending.id]);
+      dispatch({ type: "STAGED_ASSET_REMOVED", id: tab.id, content, stagingId: pending.id });
+    } else dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+    setMediaPreview(null);
+    setToast({ id: String(Date.now()), message: "埋め込み形式へ変換しました。", type: "success" });
+  }, []);
 
   const openSearch = useCallback(() => {
     if (activeTab?.document) {
@@ -907,6 +1070,12 @@ export function App() {
         return;
       }
 
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        if (activeTab) void saveTab(activeTab.id);
+        return;
+      }
+
       if (event.key === "F5") {
         event.preventDefault();
         reload();
@@ -955,7 +1124,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab?.searchOpen, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, printDocument, reload, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
+  }, [activeTab, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, printDocument, reload, saveTab, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
 
   useEffect(() => {
     const onMouseUp = (event: MouseEvent) => {
@@ -978,11 +1147,16 @@ export function App() {
   const handleMarkdownChanged = useCallback(
     ({ path, changeKind }: { path: string; changeKind: string }) => {
       const identity = localPathIdentity(path);
+      const selfSaveUntil = recentSelfSaves.current.get(identity);
+      if (selfSaveUntil && selfSaveUntil >= Date.now()) return;
+      if (selfSaveUntil) recentSelfSaves.current.delete(identity);
       const tabs = tabsState.tabs.filter((candidate) => localPathIdentity(candidate.path) === identity);
       if (!tabs.length) return;
       const canReload = changeKind !== "deleted" && changeKind !== "renamed";
-      if (autoReload === "on" && canReload) tabs.forEach((tab) => reloadTab(tab.id));
-      else tabs.forEach((tab) => dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true }));
+      tabs.forEach((tab) => {
+        if (autoReload === "on" && canReload && !tab.dirty && !tab.saving) reloadTab(tab.id, false);
+        else dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true });
+      });
     },
     [tabsState.tabs, autoReload, reloadTab]
   );
@@ -1051,11 +1225,18 @@ export function App() {
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
-          <button type="button" disabled={!activeTab?.document || printing} onClick={() => void printDocument()}>印刷/PDF</button>
+          <button type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷/PDF</button>
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
+          <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
         </div>
-        {viewMode !== "presentation" && <div className="control-group fold-controls">
+        <div className="control-group editor-mode-controls" aria-label="編集画面">
+          <span className="control-group__title">画面</span>
+          <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("edit")}>編集のみ</button>
+          <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
+          <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
+        </div>
+        {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>
           <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
             const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset";
@@ -1077,14 +1258,14 @@ export function App() {
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
       </div>}
 
-      <div className="document-workspace">
-      {activeTab?.document && <DocumentSidePanel
+      <div className={`document-workspace editor-workspace-${editorMode}`}>
+      {editorMode === "preview" && activeTab?.document && <DocumentSidePanel
         activeTab={documentSidePanel}
         onTabChange={changeDocumentSidePanel}
         onClose={documentSidePanel === "search" ? closeSearch : closeDocumentSidePanel}
         disabledTabs={viewMode === "presentation" ? ["images"] : []}
         toc={<DocumentToc
-          markdown={activeTab.document.content}
+          markdown={previewContent}
           isOpen
           embedded
           activeHeadingId={viewMode === "presentation" ? presentationPositions[activeTab.id] : activeTocHeadingId ?? undefined}
@@ -1106,7 +1287,17 @@ export function App() {
           onOpenChange={() => undefined}
         />}
       />}
-      <main
+      {canEditActive && editorMode !== "preview" && activeTab?.document && <Suspense fallback={<div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
+        <MarkdownEditor
+          documentId={`${activeTab.id}:${activeTab.generation}`}
+          value={activeTab.draft}
+          dirty={activeTab.dirty}
+          saving={activeTab.saving}
+          onChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
+          onSave={() => void saveTab(activeTab.id)}
+        />
+      </Suspense>}
+      {(editorMode !== "edit" || !canEditActive) && <main
         className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`}
         ref={containerRef}
         onScroll={(event) => handlePreviewScroll(event.currentTarget)}
@@ -1148,7 +1339,7 @@ export function App() {
           />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
-           content={activeTab.document.content}
+           content={previewContent}
            baseDir={activeTab.document.base_dir}
             sourcePath={activeTab.path}
             imageVersions={imageVersions}
@@ -1172,7 +1363,7 @@ export function App() {
           />
         ) : activeTab?.document ? (
           <MarkdownPreview
-            content={activeTab.document.content}
+            content={previewContent}
             baseDir={activeTab.document.base_dir}
             imageVersions={imageVersions}
             contentRef={markdownRef}
@@ -1193,6 +1384,8 @@ export function App() {
             documentPath={activeSharePoint ? undefined : activeTab.path}
             sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
+            onCodeFenceBodyChange={activeSharePoint ? undefined : updateCodeFenceBody}
+            stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
           />
         ) : (
           <div className="empty-state">
@@ -1203,7 +1396,7 @@ export function App() {
             </div>
           </div>
         )}
-      </main>
+      </main>}
       </div>
 
       {cropTarget && (
@@ -1218,15 +1411,31 @@ export function App() {
       )}
       {annotationTarget && <ImageAnnotationEditor
         target={annotationTarget}
-        imageVersion={imageVersions[annotationTarget.fullPath] ?? 0}
-        onApply={(filename, backupAvailable) => {
-          updateImageVersion(annotationTarget.fullPath);
-          setImageBackups((current) => ({ ...current, [annotationTarget.fullPath]: backupAvailable }));
+        imageVersion={annotationTarget.fullPath ? imageVersions[annotationTarget.fullPath] ?? 0 : 0}
+        onApply={({ filename, backupAvailable, dataUri }) => {
+          if (annotationTarget.storage === "embedded" && dataUri && annotationTarget.conversionContext) {
+            const context = annotationTarget.conversionContext;
+            const tab = tabsState.tabs.find((candidate) => candidate.document?.path === context.documentPath);
+            if (!tab || context.occurrence.kind !== "image") {
+              handleCropError("Base64画像の反映先が見つかりません。");
+              return;
+            }
+            try {
+              const content = replaceImageOccurrenceSource(tab.draft, context.occurrence, dataUri);
+              dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+            } catch (error) {
+              handleCropError(`Base64画像の反映に失敗しました: ${String(error)}`);
+              return;
+            }
+          } else if (annotationTarget.fullPath) {
+            updateImageVersion(annotationTarget.fullPath);
+            setImageBackups((current) => ({ ...current, [annotationTarget.fullPath!]: backupAvailable }));
+          }
           setAnnotationTarget(null);
           setAnnotationReturnPreview(null);
           setToast({
             id: String(Date.now()),
-            message: `${filename} の注釈を保存しました`,
+            message: `${filename} の画像編集を反映しました`,
             type: "success",
             restorePath: backupAvailable ? annotationTarget.fullPath : undefined,
           });
@@ -1248,15 +1457,17 @@ export function App() {
         content={mediaPreview.content}
         mermaidSource={mediaPreview.mermaidSource}
         imageContext={mediaPreview.imageContext}
+        conversionContext={mediaPreview.conversionContext}
+        onConvertAsset={convertDocumentAsset}
         onSaveCaption={saveImageCaption}
         onRenameImage={renamePreviewImage}
         imageApps={externalApps.filter((app) => app.target === "image")}
         onOpenImageApp={executeImageApp}
         onClose={closeMediaPreview}
-        onActivate={mediaPreview.cropTarget ? () => {
+        onActivate={mediaPreview.editTarget ? () => {
           setAnnotationReturnPreview(mediaPreview);
           setMediaPreview(null);
-          setAnnotationTarget(mediaPreview.cropTarget!);
+          setAnnotationTarget(mediaPreview.editTarget!);
         } : undefined}
         onCrop={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);

@@ -1,0 +1,44 @@
+.data-grid-card { margin: 1em 0; overflow: hidden; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; background: var(--panel-bg); }
+.data-grid-toolbar, .data-grid-footer, .table-editor-toolbar, .table-editor-footer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px; background: var(--panel-bg); }
+.data-grid-toolbar { border-bottom: 1px solid var(--border-color); }
+.data-grid-toolbar button, .data-grid-footer button, .table-editor-dialog button { min-height: 30px; padding: 4px 9px; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 5px; background: var(--btn-bg); cursor: pointer; }
+.data-grid-toolbar button.active { color: #fff; border-color: var(--accent-color); background: var(--accent-color); }
+.data-grid-toolbar button:disabled, .data-grid-footer button:disabled, .table-editor-dialog button:disabled { cursor: not-allowed; opacity: .5; }
+.data-grid-search { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.data-grid-search input { width: min(240px, 36vw); min-height: 30px; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-color); }
+.data-grid-column-panel { display: flex; gap: 12px; flex-wrap: wrap; padding: 8px; border-bottom: 1px solid var(--border-color); }
+.data-grid-column-panel label, .search-panes label { display: flex; align-items: center; gap: 5px; }
+.search-panes { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; max-height: 260px; padding: 8px; overflow: auto; border-bottom: 1px solid var(--border-color); }
+.search-panes fieldset { min-width: 0; max-height: 220px; padding: 6px; overflow: auto; border: 1px solid var(--border-color); border-radius: 5px; }
+.search-panes label span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-panes label small { margin-left: auto; color: var(--text-muted); }
+.data-grid-table-wrap { overflow: auto; }
+.data-grid-table { min-width: 100%; margin: 0; border-collapse: collapse; }
+.data-grid-table th, .data-grid-table td { padding: 7px 9px; border: 1px solid var(--border-color); text-align: left; white-space: pre-wrap; }
+.data-grid-table th button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 0; color: inherit; border: 0; background: transparent; font: inherit; font-weight: 650; cursor: pointer; }
+.data-grid-empty { padding: 20px !important; color: var(--text-muted); text-align: center !important; }
+.data-grid-footer { border-top: 1px solid var(--border-color); color: var(--text-muted); }
+.data-grid-footer .spacer { flex: 1 1 auto; }
+.data-grid-footer select { min-height: 28px; color: var(--text-primary); border: 1px solid var(--border-color); background: var(--bg-color); }
+.data-grid-error { margin: 1em 0; padding: 12px; color: var(--error-color, #d1242f); border: 1px solid currentColor; border-radius: 6px; white-space: pre-wrap; }
+.table-editor-overlay { position: fixed; z-index: 12000; inset: 0; display: grid; place-items: center; padding: 22px; background: #0008; }
+.table-editor-dialog { display: flex; width: min(1200px, 96vw); max-height: 92vh; flex-direction: column; overflow: hidden; color: var(--text-primary); border-radius: 10px; background: var(--bg-color); box-shadow: 0 18px 60px #0007; }
+.table-editor-toolbar { border-bottom: 1px solid var(--border-color); }
+.table-editor-toolbar strong { margin-right: auto; }
+.table-editor-note { margin: 0; padding: 7px 10px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
+.table-editor-scroll { flex: 1 1 auto; padding: 10px; overflow: auto; }
+.table-editor-grid { min-width: 100%; border-collapse: collapse; }
+.table-editor-grid th, .table-editor-grid td { min-width: 120px; padding: 5px; border: 1px solid var(--border-color); vertical-align: top; }
+.table-editor-grid th { position: relative; background: var(--table-header-bg); }
+.table-editor-grid input, .table-editor-grid textarea { width: calc(100% - 28px); min-height: 30px; padding: 4px; color: var(--text-primary); border: 1px solid var(--border-color); background: var(--bg-color); }
+.table-editor-grid textarea { width: 100%; min-height: 52px; resize: vertical; }
+.table-editor-grid th button { float: right; padding: 2px 6px; }
+.table-editor-grid .table-editor-row-action { min-width: 42px; width: 42px; text-align: center; }
+.table-editor-footer { justify-content: flex-end; border-top: 1px solid var(--border-color); }
+.table-editor-footer .table-editor-save { color: #fff; border-color: var(--accent-color); background: var(--accent-color); }
+
+@media print {
+  .data-grid-toolbar, .data-grid-column-panel, .search-panes, .data-grid-footer, .table-editor-overlay { display: none !important; }
+  .data-grid-card, .data-grid-table-wrap { overflow: visible; border-color: #777; }
+  .data-grid-table th, .data-grid-table td { color: #111; border-color: #777; }
+}
