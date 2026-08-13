@@ -1,4 +1,5 @@
 use crate::errors::{AppError, AppResult};
+use crate::markdown::{content_revision, DocumentSourceKind};
 use base64::Engine;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
@@ -31,6 +32,9 @@ pub struct DocumentAssetData {
     pub media_type: String,
     pub base64: String,
     pub text: Option<String>,
+    pub path: Option<String>,
+    pub revision: Option<String>,
+    pub source: DocumentSourceKind,
 }
 
 pub struct AssetStagingManager {
@@ -244,6 +248,9 @@ pub fn read_document_asset(document_path: &str, source: &str) -> AppResult<Docum
         media_type: media_type.into(),
         base64: base64::engine::general_purpose::STANDARD.encode(&bytes),
         text,
+        path: Some(path.to_string_lossy().into_owned()),
+        revision: Some(content_revision(&bytes)),
+        source: DocumentSourceKind::Local,
     })
 }
 

@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ImageRenderer } from "./ImageRenderer";
+import { readDocumentAsset } from "../lib/commands";
+
+vi.mock("../lib/commands", () => ({ readDocumentAsset: vi.fn() }));
 
 const imageRect = {
   x: 0,
@@ -17,6 +20,7 @@ const imageRect = {
 
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
   vi.restoreAllMocks();
 });
 
@@ -58,6 +62,55 @@ function ControlledImage() {
 }
 
 describe("ImageRenderer inline resize", () => {
+  it("loads a relative SharePoint PNG through the authenticated command", async () => {
+    vi.mocked(readDocumentAsset).mockResolvedValue({
+      filename: "diagram.png",
+      mediaType: "image/png",
+      base64: "iVBORw0KGgo=",
+      text: null,
+      path: "spmd://contoso.sharepoint.com/sites/docs/Shared/diagram.png",
+      revision: "etag-1",
+      source: "sharepoint",
+    });
+    render(<ImageRenderer
+      src="images/diagram.png"
+      alt="SharePoint PNG"
+      baseDir="spmd://contoso.sharepoint.com/sites/docs/Shared"
+      markdownPath="spmd://contoso.sharepoint.com/sites/docs/Shared/readme.md"
+      imageVersions={{}}
+    />);
+    expect(screen.getByText("画像を読み込んでいます…")).not.toBeNull();
+    const image = await screen.findByAltText("SharePoint PNG");
+    expect(image.getAttribute("src")).toBe("data:image/png;base64,iVBORw0KGgo=");
+    expect(readDocumentAsset).toHaveBeenCalledWith(
+      "spmd://contoso.sharepoint.com/sites/docs/Shared/readme.md",
+      "images/diagram.png",
+    );
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+
+  it("sanitizes an authenticated SharePoint SVG before displaying it", async () => {
+    vi.mocked(readDocumentAsset).mockResolvedValue({
+      filename: "diagram.svg",
+      mediaType: "image/svg+xml",
+      base64: "",
+      text: '<svg xmlns="http://www.w3.org/2000/svg"><script>bad()</script><path d="M0 0"/></svg>',
+      source: "sharepoint",
+    });
+    render(<ImageRenderer
+      src="diagram.svg"
+      alt="SharePoint SVG"
+      baseDir="spmd://contoso.sharepoint.com/sites/docs/Shared"
+      markdownPath="spmd://contoso.sharepoint.com/sites/docs/Shared/readme.md"
+      imageVersions={{}}
+    />);
+    const image = await screen.findByAltText("SharePoint SVG");
+    const decoded = decodeURIComponent(image.getAttribute("src") ?? "");
+    expect(decoded).toContain("<svg");
+    expect(decoded).not.toContain("<script");
+    await waitFor(() => expect(readDocumentAsset).toHaveBeenCalledTimes(1));
+  });
+
   it("exposes a stable gallery navigation anchor", () => {
     render(<ImageRenderer src="image.png" alt="画像" baseDir="C:\\docs" imageVersions={{}} occurrenceId="markdown-image-42" sourceLine={7} />);
     const anchor = document.getElementById("markdown-image-42");

@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getCacheBusterUrl } from "../lib/image";
 import { getFileName, isAbsoluteLocalPath, resolveImageSrc } from "../lib/path";
+import { readDocumentAsset } from "../lib/commands";
+import { sanitizeSvgXml } from "../lib/svgSafety";
 import type { CropTarget } from "../hooks/useCropEditor";
 import { InlineImageResizeOverlay } from "./InlineImageResizeOverlay";
 import { ImageSize, useInlineImageResize } from "../hooks/useInlineImageResize";
@@ -51,6 +53,44 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   previewSrc,
 }) => {
   const [loadError, setLoadError] = useState(false);
+  const [authenticatedSrc, setAuthenticatedSrc] = useState<string | null>(null);
+  const [authenticatedLoading, setAuthenticatedLoading] = useState(false);
+  const isSharePointAsset = Boolean(
+    markdownPath?.toLowerCase().startsWith("spmd:") &&
+    src &&
+    !/^(?:[a-z][a-z0-9+.-]*:|\/|\\|\/\/)/i.test(src) &&
+    /\.(?:png|svg)$/i.test(src),
+  );
+
+  useEffect(() => {
+    setLoadError(false);
+    setAuthenticatedSrc(null);
+    if (!isSharePointAsset || !markdownPath || previewSrc) {
+      setAuthenticatedLoading(false);
+      return;
+    }
+    let active = true;
+    setAuthenticatedLoading(true);
+    void readDocumentAsset(markdownPath, src)
+      .then((asset) => {
+        if (!active) return;
+        if (asset.mediaType === "image/svg+xml") {
+          const safeSvg = sanitizeSvgXml(asset.text ?? "");
+          setAuthenticatedSrc(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(safeSvg)}`);
+        } else if (asset.mediaType === "image/png") {
+          setAuthenticatedSrc(`data:image/png;base64,${asset.base64}`);
+        } else {
+          throw new Error("未対応のSharePoint画像形式です。");
+        }
+      })
+      .catch(() => {
+        if (active) setLoadError(true);
+      })
+      .finally(() => {
+        if (active) setAuthenticatedLoading(false);
+      });
+    return () => { active = false; };
+  }, [isSharePointAsset, markdownPath, previewSrc, src]);
   const {
     imageRef,
     size,
@@ -63,7 +103,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
 
   if (!src) return null;
 
-  const resolvedSrc = previewSrc ?? resolveImageSrc(src, baseDir);
+  const resolvedSrc = previewSrc ?? authenticatedSrc ?? (isSharePointAsset ? "" : resolveImageSrc(src, baseDir));
   const isRemote =
     src.toLowerCase().startsWith("http://") ||
     src.toLowerCase().startsWith("https://") ||
@@ -73,7 +113,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   const isSupportedRaster = /\.(?:png|jpe?g|gif|webp|bmp)(?:[?#]|$)/i.test(src);
   const isEmbeddedRaster = /^data:image\/(?:png|jpe?g|gif|webp|bmp);base64,/i.test(src);
   // SVG is display-only until a dedicated vector editing design is approved.
-  const isEditableLocalImage = !previewSrc && !isRemote && isSupportedRaster;
+  const isEditableLocalImage = !previewSrc && !isSharePointAsset && !isRemote && isSupportedRaster;
   const canInlineResize = isEditableLocalImage && !presentationMode && !headingMode;
   const hasDisplaySize = !headingMode && Boolean(size);
 
@@ -86,6 +126,10 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
 
   const version = imageVersions[fullPath] || 0;
   const displaySrc = getCacheBusterUrl(resolvedSrc, version);
+
+  if (authenticatedLoading || (isSharePointAsset && !authenticatedSrc && !loadError)) {
+    return <span className="image-loading-placeholder">画像を読み込んでいます…</span>;
+  }
 
   if (loadError) {
     return (

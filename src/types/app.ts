@@ -27,6 +27,9 @@ export interface DocumentAssetData {
   mediaType: string;
   base64: string;
   text?: string | null;
+  path?: string | null;
+  revision?: string | null;
+  source: "local" | "sharepoint";
 }
 
 export interface CropImageRequest {

@@ -1,7 +1,9 @@
+use crate::asset_staging::DocumentAssetData;
 use crate::credential_store::{read_secret, write_secret};
 use crate::markdown::{
     content_revision, decode_markdown, DocumentKind, DocumentSourceKind, MarkdownLoadResult,
 };
+use base64::Engine;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 use reqwest::{Client, Response, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -18,6 +20,8 @@ const GRAPH_SCOPE: &str = "offline_access https://graph.microsoft.com/Sites.Read
 const SHAREPOINT_CLIENT_ID: &str = "f0fe07a2-a716-44de-bf0e-55d5b468d225";
 const SHAREPOINT_TENANT: &str = "organizations";
 const MAX_MARKDOWN_BYTES: usize = 10 * 1024 * 1024;
+const MAX_ASSET_BYTES: usize = 50 * 1024 * 1024;
+const MAX_IMAGE_PIXELS: u64 = 100_000_000;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,6 +31,16 @@ pub struct SpmdUri {
     pub server_relative_path: String,
     pub site_path: String,
     pub filename: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SpmdAssetUri {
+    pub canonical_uri: String,
+    pub tenant_host: String,
+    pub server_relative_path: String,
+    pub site_path: String,
+    pub filename: String,
+    pub media_type: &'static str,
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]
@@ -43,6 +57,8 @@ pub enum SpmdUriError {
     UnsafePath,
     #[error("spmd URIで開けるのは.mdまたは.markdownファイルだけです。")]
     UnsupportedDocument,
+    #[error("spmd文書から読み込める画像は相対パスのPNGまたはSVGだけです。")]
+    UnsupportedAsset,
 }
 
 pub fn is_spmd_uri(value: &str) -> bool {
@@ -113,6 +129,67 @@ pub fn parse_spmd_uri(value: &str) -> Result<SpmdUri, SpmdUriError> {
     })
 }
 
+pub fn resolve_spmd_asset_uri(
+    document: &SpmdUri,
+    source: &str,
+) -> Result<SpmdAssetUri, SpmdUriError> {
+    if source.trim().is_empty()
+        || source.starts_with(['/', '\\'])
+        || source.contains(['?', '#', '\\', ':'])
+    {
+        return Err(SpmdUriError::UnsupportedAsset);
+    }
+    let base = Url::parse(&document.canonical_uri).map_err(|_| SpmdUriError::Invalid)?;
+    let parsed = base.join(source).map_err(|_| SpmdUriError::UnsupportedAsset)?;
+    if parsed.scheme() != SPMD_SCHEME
+        || !parsed
+            .host_str()
+            .is_some_and(|host| host.eq_ignore_ascii_case(&document.tenant_host))
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+    {
+        return Err(SpmdUriError::UnsupportedAsset);
+    }
+    let decoded_segments = parsed
+        .path_segments()
+        .ok_or(SpmdUriError::Invalid)?
+        .filter(|segment| !segment.is_empty())
+        .map(decode_safe_segment)
+        .collect::<Result<Vec<_>, _>>()?;
+    let site_segments = path_segments(&document.site_path);
+    if decoded_segments.len() < 4
+        || site_segments.len() != 2
+        || !decoded_segments
+            .iter()
+            .take(2)
+            .zip(site_segments.iter())
+            .all(|(left, right)| left.eq_ignore_ascii_case(right))
+    {
+        return Err(SpmdUriError::UnsupportedAsset);
+    }
+    let filename = decoded_segments
+        .last()
+        .cloned()
+        .ok_or(SpmdUriError::UnsupportedAsset)?;
+    let media_type = match filename
+        .rsplit_once('.')
+        .map(|(_, extension)| extension.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("png") => "image/png",
+        Some("svg") => "image/svg+xml",
+        _ => return Err(SpmdUriError::UnsupportedAsset),
+    };
+    Ok(SpmdAssetUri {
+        canonical_uri: format!("{SPMD_SCHEME}://{}{}", document.tenant_host, parsed.path()),
+        tenant_host: document.tenant_host.clone(),
+        server_relative_path: format!("/{}", decoded_segments.join("/")),
+        site_path: document.site_path.clone(),
+        filename,
+        media_type,
+    })
+}
+
 fn decode_safe_segment(value: &str) -> Result<String, SpmdUriError> {
     let decoded = percent_decode_str(value)
         .decode_utf8()
@@ -165,6 +242,12 @@ pub enum SharePointError {
     Graph(String),
     #[error("SharePoint文書が大きすぎます（上限10 MB）。")]
     DocumentTooLarge,
+    #[error("SharePoint画像が大きすぎます（上限50 MB）。")]
+    AssetTooLarge,
+    #[error("SharePoint画像の内容がPNGまたはSVGとして正しくありません: {0}")]
+    InvalidAsset(String),
+    #[error("SharePointから取得した内容がサイズ上限を超えました。")]
+    ContentTooLarge,
     #[error("SharePoint文書の場所をドキュメントライブラリとして解決できませんでした。")]
     DriveNotFound,
     #[error(transparent)]
@@ -296,7 +379,13 @@ impl SharePointClient {
             encode_segment(&drive.id),
             encode_segment(&item.id)
         );
-        let bytes = self.graph_bytes(&content_url, &token).await?;
+        let bytes = self
+            .graph_bytes_limited(&content_url, &token, MAX_MARKDOWN_BYTES)
+            .await
+            .map_err(|error| match error {
+                SharePointError::ContentTooLarge => SharePointError::DocumentTooLarge,
+                other => other,
+            })?;
         let revision = item
             .e_tag
             .clone()
@@ -320,6 +409,68 @@ impl SharePointClient {
             source: DocumentSourceKind::SharePoint,
             web_url: Some(item.web_url),
             etag: item.e_tag,
+        })
+    }
+
+    pub async fn load_asset<F>(
+        &self,
+        document: &SpmdUri,
+        source: &str,
+        config: &SharePointAuthConfig,
+        show_prompt: F,
+    ) -> Result<DocumentAssetData, SharePointError>
+    where
+        F: FnOnce(DeviceCodePrompt) -> Result<(), SharePointError>,
+    {
+        let asset = resolve_spmd_asset_uri(document, source)?;
+        let token = self.access_token(config, show_prompt).await?;
+        let site_url = format!(
+            "{GRAPH_ROOT}/sites/{}:{}",
+            asset.tenant_host,
+            encode_graph_path(&asset.site_path)
+        );
+        let site: SiteResponse = self.graph_json(&site_url, &token).await?;
+        let drives_url = format!("{GRAPH_ROOT}/sites/{}/drives", encode_segment(&site.id));
+        let drives: DrivesResponse = self.graph_json(&drives_url, &token).await?;
+        let (document_drive, _) = select_drive(&drives.value, document)?;
+        let (asset_drive, item_path) = select_drive_path(
+            &drives.value,
+            &asset.tenant_host,
+            &asset.server_relative_path,
+        )?;
+        if document_drive.id != asset_drive.id {
+            return Err(SpmdUriError::UnsupportedAsset.into());
+        }
+        let item_url = format!(
+            "{GRAPH_ROOT}/drives/{}/root:/{}",
+            encode_segment(&asset_drive.id),
+            encode_graph_path(&item_path).trim_start_matches('/')
+        );
+        let item: DriveItemResponse = self.graph_json(&item_url, &token).await?;
+        if item.size as usize > MAX_ASSET_BYTES {
+            return Err(SharePointError::AssetTooLarge);
+        }
+        let content_url = format!(
+            "{GRAPH_ROOT}/drives/{}/items/{}/content",
+            encode_segment(&asset_drive.id),
+            encode_segment(&item.id)
+        );
+        let bytes = self
+            .graph_bytes_limited(&content_url, &token, MAX_ASSET_BYTES)
+            .await
+            .map_err(|error| match error {
+                SharePointError::ContentTooLarge => SharePointError::AssetTooLarge,
+                other => other,
+            })?;
+        let text = validate_asset_bytes(asset.media_type, &bytes)?;
+        Ok(DocumentAssetData {
+            filename: item.name,
+            media_type: asset.media_type.into(),
+            base64: base64::engine::general_purpose::STANDARD.encode(&bytes),
+            text,
+            path: Some(asset.canonical_uri),
+            revision: Some(item.e_tag.unwrap_or_else(|| content_revision(&bytes))),
+            source: DocumentSourceKind::SharePoint,
         })
     }
 
@@ -542,7 +693,12 @@ impl SharePointClient {
             .map_err(|error| SharePointError::Graph(error.to_string()))
     }
 
-    async fn graph_bytes(&self, url: &str, access_token: &str) -> Result<Vec<u8>, SharePointError> {
+    async fn graph_bytes_limited(
+        &self,
+        url: &str,
+        access_token: &str,
+        max_bytes: usize,
+    ) -> Result<Vec<u8>, SharePointError> {
         let response = self
             .http
             .get(url)
@@ -553,9 +709,9 @@ impl SharePointClient {
         let mut response = ensure_graph_success(response).await?;
         if response
             .content_length()
-            .is_some_and(|length| length > MAX_MARKDOWN_BYTES as u64)
+            .is_some_and(|length| length > max_bytes as u64)
         {
-            return Err(SharePointError::DocumentTooLarge);
+            return Err(SharePointError::ContentTooLarge);
         }
         let mut bytes = Vec::new();
         while let Some(chunk) = response
@@ -563,8 +719,8 @@ impl SharePointClient {
             .await
             .map_err(|error| SharePointError::Graph(error.to_string()))?
         {
-            if bytes.len() + chunk.len() > MAX_MARKDOWN_BYTES {
-                return Err(SharePointError::DocumentTooLarge);
+            if bytes.len() + chunk.len() > max_bytes {
+                return Err(SharePointError::ContentTooLarge);
             }
             bytes.extend_from_slice(&chunk);
         }
@@ -639,14 +795,22 @@ fn select_drive<'a>(
     drives: &'a [DriveResponse],
     source: &SpmdUri,
 ) -> Result<(&'a DriveResponse, String), SharePointError> {
-    let document_segments = path_segments(&source.server_relative_path);
+    select_drive_path(drives, &source.tenant_host, &source.server_relative_path)
+}
+
+fn select_drive_path<'a>(
+    drives: &'a [DriveResponse],
+    tenant_host: &str,
+    server_relative_path: &str,
+) -> Result<(&'a DriveResponse, String), SharePointError> {
+    let document_segments = path_segments(server_relative_path);
     drives
         .iter()
         .filter_map(|drive| {
             let url = Url::parse(&drive.web_url).ok()?;
             if !url
                 .host_str()
-                .is_some_and(|host| host.eq_ignore_ascii_case(&source.tenant_host))
+                .is_some_and(|host| host.eq_ignore_ascii_case(tenant_host))
             {
                 return None;
             }
@@ -680,6 +844,66 @@ fn decoded_url_path_segments(url: &Url) -> Result<Vec<String>, SpmdUriError> {
         .filter(|segment| !segment.is_empty())
         .map(decode_safe_segment)
         .collect()
+}
+
+fn validate_asset_bytes(
+    media_type: &str,
+    bytes: &[u8],
+) -> Result<Option<String>, SharePointError> {
+    match media_type {
+        "image/png" => {
+            const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
+            if bytes.len() < 24
+                || &bytes[..8] != PNG_SIGNATURE
+                || &bytes[12..16] != b"IHDR"
+            {
+                return Err(SharePointError::InvalidAsset(
+                    "PNGシグネチャまたはIHDRがありません。".into(),
+                ));
+            }
+            let width = u32::from_be_bytes(bytes[16..20].try_into().unwrap());
+            let height = u32::from_be_bytes(bytes[20..24].try_into().unwrap());
+            if width == 0
+                || height == 0
+                || u64::from(width) * u64::from(height) > MAX_IMAGE_PIXELS
+            {
+                return Err(SharePointError::InvalidAsset(
+                    "PNGの画像寸法が無効または大きすぎます。".into(),
+                ));
+            }
+            Ok(None)
+        }
+        "image/svg+xml" => {
+            let text = String::from_utf8(bytes.to_vec()).map_err(|_| {
+                SharePointError::InvalidAsset("SVGはUTF-8である必要があります。".into())
+            })?;
+            let prefix = text
+                .trim_start_matches('\u{feff}')
+                .trim_start()
+                .chars()
+                .take(4096)
+                .collect::<String>()
+                .to_ascii_lowercase();
+            let Some(position) = prefix.find("<svg") else {
+                return Err(SharePointError::InvalidAsset(
+                    "SVGルート要素がありません。".into(),
+                ));
+            };
+            if !prefix[position + 4..]
+                .chars()
+                .next()
+                .is_some_and(|value| value.is_whitespace() || value == '>')
+            {
+                return Err(SharePointError::InvalidAsset(
+                    "SVGルート要素が正しくありません。".into(),
+                ));
+            }
+            Ok(Some(text))
+        }
+        _ => Err(SharePointError::InvalidAsset(
+            "未対応の画像形式です。".into(),
+        )),
+    }
 }
 
 fn format_modified_at(value: &str) -> String {
@@ -752,6 +976,70 @@ mod tests {
         ] {
             assert!(parse_spmd_uri(uri).is_err(), "{uri}");
         }
+    }
+
+    #[test]
+    fn resolves_relative_png_and_svg_assets_inside_the_same_site() {
+        let document = parse_spmd_uri(EXAMPLE).unwrap();
+        let png = resolve_spmd_asset_uri(&document, "images/diagram.png").unwrap();
+        assert_eq!(png.media_type, "image/png");
+        assert_eq!(
+            png.canonical_uri,
+            "spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/images/diagram.png"
+        );
+        let svg = resolve_spmd_asset_uri(&document, "../assets/%E5%9B%B3.svg").unwrap();
+        assert_eq!(svg.media_type, "image/svg+xml");
+        assert_eq!(
+            svg.server_relative_path,
+            "/sites/msteams_fcce9d/Shared Documents/assets/図.svg"
+        );
+    }
+
+    #[test]
+    fn rejects_unsafe_or_unsupported_spmd_assets() {
+        let document = parse_spmd_uri(EXAMPLE).unwrap();
+        for source in [
+            "https://example.com/image.png",
+            "/sites/msteams_fcce9d/image.png",
+            "image.png?token=secret",
+            "image.jpg",
+            "..\\image.png",
+        ] {
+            assert_eq!(
+                resolve_spmd_asset_uri(&document, source),
+                Err(SpmdUriError::UnsupportedAsset),
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
+    fn validates_png_dimensions_and_svg_text() {
+        let mut png = vec![0u8; 24];
+        png[..8].copy_from_slice(b"\x89PNG\r\n\x1a\n");
+        png[12..16].copy_from_slice(b"IHDR");
+        png[16..20].copy_from_slice(&640u32.to_be_bytes());
+        png[20..24].copy_from_slice(&480u32.to_be_bytes());
+        assert_eq!(validate_asset_bytes("image/png", &png).unwrap(), None);
+
+        png[16..20].copy_from_slice(&20_000u32.to_be_bytes());
+        png[20..24].copy_from_slice(&20_000u32.to_be_bytes());
+        assert!(matches!(
+            validate_asset_bytes("image/png", &png),
+            Err(SharePointError::InvalidAsset(_))
+        ));
+
+        let svg = b"<?xml version=\"1.0\"?><svg xmlns=\"http://www.w3.org/2000/svg\"></svg>";
+        assert_eq!(
+            validate_asset_bytes("image/svg+xml", svg)
+                .unwrap()
+                .as_deref(),
+            std::str::from_utf8(svg).ok()
+        );
+        assert!(matches!(
+            validate_asset_bytes("image/svg+xml", b"<html></html>"),
+            Err(SharePointError::InvalidAsset(_))
+        ));
     }
 
     #[test]

@@ -251,8 +251,27 @@ pub fn discard_staged_assets(state: State<'_, AppState>, ids: Vec<String>) {
 }
 
 #[tauri::command]
-pub fn read_document_asset(document_path: String, source: String) -> Result<DocumentAssetData, String> {
-    do_read_document_asset(&document_path, &source).map_err(|error| error.to_string())
+pub async fn read_document_asset(
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    document_path: String,
+    source: String,
+) -> Result<DocumentAssetData, String> {
+    if !is_spmd_uri(&document_path) {
+        return do_read_document_asset(&document_path, &source)
+            .map_err(|error| error.to_string());
+    }
+    let document = parse_spmd_uri(&document_path).map_err(|error| error.to_string())?;
+    let config = SharePointAuthConfig::embedded();
+    state
+        .sharepoint
+        .load_asset(&document, &source, &config, |prompt| {
+            window
+                .emit("sharepoint-authentication-required", prompt)
+                .map_err(|error| SharePointError::Authentication(error.to_string()))
+        })
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[derive(Serialize)]
