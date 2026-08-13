@@ -13,6 +13,7 @@ import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
 import { CodeBlock } from "./CodeBlock";
 import { MermaidBlock } from "./MermaidBlock";
 import { openExternalUrl } from "../lib/commands";
+import { resolveSharePointBrowserUrl } from "../lib/sharePoint";
 import { resolveLocalDocumentPath, resolveSharePointDocumentPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
@@ -193,7 +194,8 @@ const MarkdownLink: NonNullable<Components["a"]> = ({ href, children, ...props }
       target?.scrollIntoView({ block: "start" });
       return;
     }
-    void openExternalUrl(href).catch((error) => context.onError?.(String(error)));
+    const browserTarget = resolveSharePointBrowserUrl(href, context.sourcePath ?? context.documentPath) ?? href;
+    void openExternalUrl(browserTarget).catch((error) => context.onError?.(String(error)));
   }}>{children}</a>;
 };
 

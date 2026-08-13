@@ -148,7 +148,7 @@ export function resolveSharePointDocumentPath(href: string, documentPath?: strin
     if (resolved.protocol !== "spmd:" || !resolved.hostname.toLowerCase().endsWith(".sharepoint.com")) return null;
     if (resolved.username || resolved.password || resolved.port || resolved.search) return null;
     if (!/^\/(?:sites|teams)\/[^/]+\//i.test(resolved.pathname)) return null;
-    if (!isSupportedDocumentPath(resolved.pathname)) return null;
+    if (!isMarkdownDocumentPath(resolved.pathname)) return null;
     resolved.hash = "";
     return resolved.toString();
   } catch {
