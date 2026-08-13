@@ -47,6 +47,8 @@ import type { ViewMode } from "./lib/viewMode";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { isSharePointDocument } from "./lib/sharePoint";
 import { moveZoomLevel } from "./lib/zoom";
+import { moveHeadingBlock } from "./lib/markdownEditing";
+import { buildPresentationModel } from "./lib/presentationModel";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -689,6 +691,26 @@ export function App() {
     }
   }, [activeTab?.document, activeTab?.id, jumpToDocumentHeading, recordNavigationPoint]);
 
+  const moveTocHeading = useCallback((sourceHeadingId: string, targetHeadingId: string, position: "before" | "after"): boolean => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    if (!tab?.document || tab.document.kind !== "markdown") return false;
+    const model = buildPresentationModel(tab.draft);
+    const sourceHeading = model.headings[sourceHeadingId];
+    const targetHeading = model.headings[targetHeadingId];
+    if (!sourceHeading || !targetHeading) return false;
+    const content = moveHeadingBlock(tab.draft, sourceHeading.headingStart, targetHeading.headingStart, position);
+    if (!content || content === tab.draft) return false;
+    dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+    setActiveTocHeadingId(null);
+    setFoldStates((current) => ({ ...current, [tab.path]: {} }));
+    void saveFoldState(tab.path, {}).catch((error) => setToast({
+      id: String(Date.now()),
+      message: `折りたたみ状態の同期に失敗しました: ${String(error)}`,
+      type: "error",
+    }));
+    return true;
+  }, []);
+
   const jumpToSearchResult = useCallback((index: number) => {
     const result = search.results[index];
     if (!result || !activeTab?.document) return;
@@ -1287,6 +1309,7 @@ export function App() {
           activeHeadingId={viewMode === "presentation" ? presentationPositions[activeTab.id] : activeTocHeadingId ?? undefined}
           onOpenChange={() => undefined}
           onJump={jumpToTocHeading}
+          onMove={canEditActive && viewMode !== "presentation" ? moveTocHeading : undefined}
         />}
         search={<div className="document-side-panel__search">
           <SearchBar search={search} inputRef={searchInputRef} onClose={closeSearch} embedded />

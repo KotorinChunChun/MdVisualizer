@@ -49,4 +49,31 @@ describe("DocumentToc", () => {
     expect(screen.getByRole("navigation", { name: "文書全体の目次" })).toBeTruthy();
     expect(screen.queryByRole("complementary", { name: "文書全体の目次" })).toBeNull();
   });
+
+  it("moves a heading by keyboard only among siblings", () => {
+    const onMove = vi.fn(() => true);
+    render(<DocumentToc markdown={markdown} isOpen embedded onOpenChange={vi.fn()} onJump={vi.fn()} onMove={onMove} />);
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "子見出し" }), { key: "ArrowDown", altKey: true });
+    expect(onMove).toHaveBeenCalledWith("子見出し", "もう一つの子", "after");
+    expect(screen.getByText("子見出しを移動しました。")).toBeTruthy();
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "孫見出し" }), { key: "ArrowDown", altKey: true });
+    expect(onMove).toHaveBeenCalledOnce();
+  });
+
+  it("shows an insertion marker during same-level dragging", () => {
+    const onMove = vi.fn(() => true);
+    const { container } = render(<DocumentToc markdown={markdown} isOpen embedded onOpenChange={vi.fn()} onJump={vi.fn()} onMove={onMove} />);
+    const source = screen.getByRole("button", { name: "子見出し" });
+    const target = screen.getByRole("button", { name: "もう一つの子" });
+    Object.defineProperty(target, "getBoundingClientRect", { value: () => ({ top: 0, height: 20 }) });
+    const dataTransfer = { effectAllowed: "none", dropEffect: "none", setData: vi.fn(), getData: vi.fn() };
+
+    fireEvent.dragStart(source, { dataTransfer });
+    fireEvent.dragOver(target, { dataTransfer, clientY: 18 });
+    expect(container.querySelector("li.is-drop-after")).toBeTruthy();
+    fireEvent.drop(target, { dataTransfer });
+    expect(onMove).toHaveBeenCalledWith("子見出し", "もう一つの子", "after");
+  });
 });

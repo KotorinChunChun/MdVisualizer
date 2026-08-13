@@ -29,6 +29,13 @@ export {
   type StructuredListKind,
 } from "./structuredLists";
 
+export {
+  moveHeadingBlock,
+  normalizeNumberedHeadings,
+  parseMarkdownHeadingBlocks,
+  type MarkdownHeadingBlock,
+} from "./structuredHeadings";
+
 export interface MarkdownEditChange {
   from: number;
   to: number;

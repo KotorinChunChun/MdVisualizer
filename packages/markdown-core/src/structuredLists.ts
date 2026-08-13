@@ -1,4 +1,5 @@
 import type { MarkdownEditChange } from "./index";
+import { normalizeNumberedHeadings } from "./structuredHeadings";
 
 export type StructuredListKind = "unordered" | "ordered" | "task-unchecked" | "task-checked";
 
@@ -102,7 +103,7 @@ export function renumberOrderedLists(source: string): string {
 }
 
 export function buildOrderedListNormalization(source: string, anchor: number, head = anchor): MarkdownEditChange | null {
-  const after = renumberOrderedLists(source);
+  const after = normalizeNumberedHeadings(renumberOrderedLists(source));
   if (after === source) return null;
   return minimalChange(source, after, mapPosition(source, after, anchor), mapPosition(source, after, head));
 }
