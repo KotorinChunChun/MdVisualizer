@@ -20,6 +20,7 @@
 | [v0.0.6 Markdown／プレゼン印刷](markdown-presentation.md) | 引用、水平線、見出し罫線、印刷 |
 | [v0.0.7 カスタマイズ](customization.md) | サイドパネル、配色、確認実行、印刷設定 |
 | [Markdown Editor機能テスト](drawio_markdown_sample.md) | CSV／TSV、Mermaid、draw.io、SVG、Base64画像 |
+| [v0.0.10 編集・図操作](v0.0.10-editing.md) | リスト操作、見出し採番、目次移動、Mermaid／draw.ioコピー |
 | [サンプル集README](README.md) | 各ファイルの用途一覧 |
 
 ---

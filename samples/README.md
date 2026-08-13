@@ -16,6 +16,7 @@
 | `markdown-presentation.md` | 引用、Markdown／HTML水平線、見出し罫線、プレゼン印刷の下位見出し一覧 |
 | `customization.md` | 単一サイドパネル、syntax配色、PowerShell確認実行、印刷スタイル設定 |
 | `drawio_markdown_sample.md` | Markdown EditorのCSV／TSV、Mermaid、draw.io、SVG、Base64画像 |
+| `v0.0.10-editing.md` | 構造化リスト、見出し採番、目次ドラッグ、Mermaid／draw.ioコピーの操作確認 |
 | `images/sample.png` | ラスター画像、注釈編集、クロップ、表示縮小 |
 | `images/sample.svg` | SVG表示と拡大プレビュー |
 
@@ -25,3 +26,5 @@
 ダーク、ライト、GitHubを切り替え、リンク、インラインコード、表見出しを比較してください。
 
 Markdown Editor機能は[`drawio_markdown_sample.md`](drawio_markdown_sample.md)を開き、`csv`／`tsv`コードフェンスの対話操作、Mermaid、SVG、Base64画像、`drawio`コードフェンスの表示・編集を確認してください。サンプル内の先頭リンクから本README、目次、ローカルリンク確認へ戻れます。
+
+v0.0.10の編集操作は[`v0.0.10-editing.md`](v0.0.10-editing.md)を開き、構造化リストのショートカット、目次からの同階層移動、図のコピーと表示切替を確認してください。

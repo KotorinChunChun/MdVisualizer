@@ -1,6 +1,6 @@
 # Markdown Editor 機能テスト
 
-[検証用サンプル目次へ戻る](sample.md) | [サンプル集README](README.md) | [ローカルMarkdownリンク確認](local-links.md)
+[検証用サンプル目次へ戻る](sample.md) | [v0.0.10編集・図操作](v0.0.10-editing.md) | [サンプル集README](README.md) | [ローカルMarkdownリンク確認](local-links.md)
 
 この初期Markdownには、主要機能を一通り試せるサンプルを入れています。見出し・コードブロック・Base64行は左端の折り畳み操作も確認できます。
 
