@@ -237,6 +237,15 @@ function Invoke-ElevatedMsixOverwrite {
         -Wait `
         -PassThru
     if ($process.ExitCode -ne 0) {
+        if ((Test-Path -LiteralPath $BuiltExePath -PathType Leaf) -and
+            (Test-Path -LiteralPath $Target.Path -PathType Leaf)) {
+            $sourceHash = (Get-FileHash -LiteralPath $BuiltExePath -Algorithm SHA256).Hash
+            $installedHash = (Get-FileHash -LiteralPath $Target.Path -Algorithm SHA256).Hash
+            if ($sourceHash -eq $installedHash) {
+                Write-Warning "管理者プロセスは終了コード $($process.ExitCode) を返しましたが、差し替え先のSHA-256はRelease exeと一致しています。差し替え成功として継続します。"
+                return
+            }
+        }
         throw "管理者権限でのMSIX exe差し替えに失敗しました。終了コード: $($process.ExitCode)"
     }
 }
