@@ -15,7 +15,10 @@ use crate::image_references::{
 use crate::markdown::{
     load_markdown as do_load_markdown, DocumentKind, MarkdownLoadResult,
 };
-use crate::sharepoint::{is_spmd_uri, parse_spmd_uri, SharePointAuthConfig, SharePointError};
+use crate::sharepoint::{
+    is_spmd_uri, parse_spmd_uri, SharePointAssetSaveRequest, SharePointAssetSaveResult,
+    SharePointAuthConfig, SharePointError,
+};
 use crate::watcher::FileWatcher;
 use serde::Deserialize;
 use serde::Serialize;
@@ -266,6 +269,24 @@ pub async fn read_document_asset(
     state
         .sharepoint
         .load_asset(&document, &source, &config, |prompt| {
+            window
+                .emit("sharepoint-authentication-required", prompt)
+                .map_err(|error| SharePointError::Authentication(error.to_string()))
+        })
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn save_sharepoint_asset(
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    request: SharePointAssetSaveRequest,
+) -> Result<SharePointAssetSaveResult, String> {
+    let config = SharePointAuthConfig::embedded();
+    state
+        .sharepoint
+        .save_asset(request, &config, |prompt| {
             window
                 .emit("sharepoint-authentication-required", prompt)
                 .map_err(|error| SharePointError::Authentication(error.to_string()))

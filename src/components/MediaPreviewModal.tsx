@@ -25,6 +25,7 @@ export interface MediaPreviewTarget {
   mermaidSource?: string;
   imageContext?: ImageEditContext;
   conversionContext?: AssetConversionContext;
+  svgEditTarget?: import("../hooks/useCropEditor").SharePointAssetEditContext & { svg: string; filename: string };
 }
 
 interface ZoomAnchor {

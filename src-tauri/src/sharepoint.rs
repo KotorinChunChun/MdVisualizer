@@ -16,7 +16,8 @@ use url::Url;
 
 pub const SPMD_SCHEME: &str = "spmd";
 const GRAPH_ROOT: &str = "https://graph.microsoft.com/v1.0";
-const GRAPH_SCOPE: &str = "offline_access https://graph.microsoft.com/Sites.Read.All";
+const GRAPH_SCOPE: &str = "offline_access https://graph.microsoft.com/Sites.Read.All https://graph.microsoft.com/Files.ReadWrite";
+const GRAPH_SCOPE_CACHE_VERSION: &str = "sites-read-files-write-v1";
 const SHAREPOINT_CLIENT_ID: &str = "f0fe07a2-a716-44de-bf0e-55d5b468d225";
 const SHAREPOINT_TENANT: &str = "organizations";
 const MAX_MARKDOWN_BYTES: usize = 10 * 1024 * 1024;
@@ -226,11 +227,17 @@ impl SharePointAuthConfig {
     }
 
     fn cache_key(&self) -> String {
-        format!("{}:{}", self.tenant, self.client_id)
+        format!(
+            "{}:{}:{}",
+            self.tenant, self.client_id, GRAPH_SCOPE_CACHE_VERSION
+        )
     }
 
     fn credential_target(&self) -> String {
-        format!("MarkdownViewer/SharePoint/{}", self.cache_key())
+        format!(
+            "MarkdownViewer/SharePoint/{}:{}",
+            self.tenant, self.client_id
+        )
     }
 }
 
@@ -246,6 +253,8 @@ pub enum SharePointError {
     AssetTooLarge,
     #[error("SharePoint画像の内容がPNGまたはSVGとして正しくありません: {0}")]
     InvalidAsset(String),
+    #[error("SharePoint画像は読み込み後に更新されています。再読み込みしてから編集し直してください。")]
+    AssetConflict,
     #[error("SharePointから取得した内容がサイズ上限を超えました。")]
     ContentTooLarge,
     #[error("SharePoint文書の場所をドキュメントライブラリとして解決できませんでした。")]
@@ -319,6 +328,14 @@ struct DriveItemResponse {
     last_modified_date_time: String,
     e_tag: Option<String>,
     web_url: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct UpdatedDriveItemResponse {
+    name: String,
+    size: u64,
+    e_tag: Option<String>,
 }
 
 pub struct SharePointClient {
@@ -471,6 +488,92 @@ impl SharePointClient {
             path: Some(asset.canonical_uri),
             revision: Some(item.e_tag.unwrap_or_else(|| content_revision(&bytes))),
             source: DocumentSourceKind::SharePoint,
+        })
+    }
+
+    pub async fn save_asset<F>(
+        &self,
+        request: SharePointAssetSaveRequest,
+        config: &SharePointAuthConfig,
+        show_prompt: F,
+    ) -> Result<SharePointAssetSaveResult, SharePointError>
+    where
+        F: FnOnce(DeviceCodePrompt) -> Result<(), SharePointError>,
+    {
+        let document = parse_spmd_uri(&request.document_path)?;
+        let asset = resolve_spmd_asset_uri(&document, &request.source)?;
+        let bytes = asset_save_bytes(&request, asset.media_type)?;
+        if bytes.len() > MAX_ASSET_BYTES {
+            return Err(SharePointError::AssetTooLarge);
+        }
+        validate_asset_bytes(asset.media_type, &bytes)?;
+        if asset.media_type == "image/svg+xml" {
+            validate_svg_safety(std::str::from_utf8(&bytes).map_err(|_| {
+                SharePointError::InvalidAsset("SVGはUTF-8である必要があります。".into())
+            })?)?;
+        }
+        if request.expected_revision.trim().is_empty() {
+            return Err(SharePointError::AssetConflict);
+        }
+
+        let token = self.access_token(config, show_prompt).await?;
+        let site_url = format!(
+            "{GRAPH_ROOT}/sites/{}:{}",
+            asset.tenant_host,
+            encode_graph_path(&asset.site_path)
+        );
+        let site: SiteResponse = self.graph_json(&site_url, &token).await?;
+        let drives_url = format!("{GRAPH_ROOT}/sites/{}/drives", encode_segment(&site.id));
+        let drives: DrivesResponse = self.graph_json(&drives_url, &token).await?;
+        let (document_drive, _) = select_drive(&drives.value, &document)?;
+        let (asset_drive, item_path) = select_drive_path(
+            &drives.value,
+            &asset.tenant_host,
+            &asset.server_relative_path,
+        )?;
+        if document_drive.id != asset_drive.id {
+            return Err(SpmdUriError::UnsupportedAsset.into());
+        }
+        let item_url = format!(
+            "{GRAPH_ROOT}/drives/{}/root:/{}",
+            encode_segment(&asset_drive.id),
+            encode_graph_path(&item_path).trim_start_matches('/')
+        );
+        let item: DriveItemResponse = self.graph_json(&item_url, &token).await?;
+        if item.e_tag.as_deref() != Some(request.expected_revision.as_str()) {
+            return Err(SharePointError::AssetConflict);
+        }
+        let content_url = format!(
+            "{GRAPH_ROOT}/drives/{}/items/{}/content",
+            encode_segment(&asset_drive.id),
+            encode_segment(&item.id)
+        );
+        let saved_revision = content_revision(&bytes);
+        let response = self
+            .http
+            .put(content_url)
+            .bearer_auth(&token)
+            .header("If-Match", &request.expected_revision)
+            .header("Content-Type", asset.media_type)
+            .body(bytes)
+            .send()
+            .await
+            .map_err(|error| SharePointError::Graph(error.to_string()))?;
+        if response.status() == StatusCode::PRECONDITION_FAILED {
+            return Err(SharePointError::AssetConflict);
+        }
+        let response = ensure_graph_success(response).await?;
+        let updated = response
+            .json::<UpdatedDriveItemResponse>()
+            .await
+            .map_err(|error| SharePointError::Graph(error.to_string()))?;
+        Ok(SharePointAssetSaveResult {
+            filename: updated.name,
+            path: asset.canonical_uri,
+            revision: updated
+                .e_tag
+                .unwrap_or(saved_revision),
+            size_bytes: updated.size,
         })
     }
 
@@ -798,6 +901,26 @@ fn select_drive<'a>(
     select_drive_path(drives, &source.tenant_host, &source.server_relative_path)
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SharePointAssetSaveRequest {
+    pub document_path: String,
+    pub source: String,
+    pub expected_revision: String,
+    pub media_type: String,
+    pub base64: Option<String>,
+    pub text: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SharePointAssetSaveResult {
+    pub filename: String,
+    pub path: String,
+    pub revision: String,
+    pub size_bytes: u64,
+}
+
 fn select_drive_path<'a>(
     drives: &'a [DriveResponse],
     tenant_host: &str,
@@ -844,6 +967,38 @@ fn decoded_url_path_segments(url: &Url) -> Result<Vec<String>, SpmdUriError> {
         .filter(|segment| !segment.is_empty())
         .map(decode_safe_segment)
         .collect()
+}
+
+fn asset_save_bytes(
+    request: &SharePointAssetSaveRequest,
+    expected_media_type: &str,
+) -> Result<Vec<u8>, SharePointError> {
+    if request.media_type != expected_media_type {
+        return Err(SharePointError::InvalidAsset(
+            "参照先の拡張子と保存形式が一致しません。".into(),
+        ));
+    }
+    match expected_media_type {
+        "image/png" if request.text.is_none() => request
+            .base64
+            .as_deref()
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| SharePointError::InvalidAsset("PNGデータがありません。".into()))
+            .and_then(|value| {
+                base64::engine::general_purpose::STANDARD
+                    .decode(value)
+                    .map_err(|_| SharePointError::InvalidAsset("PNGのBase64が不正です。".into()))
+            }),
+        "image/svg+xml" if request.base64.is_none() => request
+            .text
+            .as_deref()
+            .filter(|value| !value.is_empty())
+            .map(|value| value.as_bytes().to_vec())
+            .ok_or_else(|| SharePointError::InvalidAsset("SVGデータがありません。".into())),
+        _ => Err(SharePointError::InvalidAsset(
+            "保存データの指定が不正です。".into(),
+        )),
+    }
 }
 
 fn validate_asset_bytes(
@@ -904,6 +1059,45 @@ fn validate_asset_bytes(
             "未対応の画像形式です。".into(),
         )),
     }
+}
+
+fn validate_svg_safety(text: &str) -> Result<(), SharePointError> {
+    let lower = text.to_ascii_lowercase();
+    for blocked in [
+        "<!doctype",
+        "<!entity",
+        "<script",
+        "<foreignobject",
+        "<iframe",
+        "<object",
+        "<embed",
+        "<link",
+        "<style",
+        "<audio",
+        "<video",
+        "javascript:",
+    ] {
+        if lower.contains(blocked) {
+            return Err(SharePointError::InvalidAsset(
+                "SVGに許可されていない要素または参照があります。".into(),
+            ));
+        }
+    }
+    let event_attribute = regex::Regex::new(r#"(?i)\son[a-z0-9_-]*\s*="#).unwrap();
+    let style_attribute = regex::Regex::new(r#"(?i)\sstyle\s*="#).unwrap();
+    let external_href =
+        regex::Regex::new(r#"(?i)\s(?:href|xlink:href)\s*=\s*[\"']\s*[^#\"']"#).unwrap();
+    let external_url = regex::Regex::new(r#"(?i)url\(\s*[^#\s)]"#).unwrap();
+    if event_attribute.is_match(text)
+        || style_attribute.is_match(text)
+        || external_href.is_match(text)
+        || external_url.is_match(text)
+    {
+        return Err(SharePointError::InvalidAsset(
+            "SVGに許可されていない属性または外部参照があります。".into(),
+        ));
+    }
+    Ok(())
 }
 
 fn format_modified_at(value: &str) -> String {
@@ -1040,6 +1234,42 @@ mod tests {
             validate_asset_bytes("image/svg+xml", b"<html></html>"),
             Err(SharePointError::InvalidAsset(_))
         ));
+    }
+
+    #[test]
+    fn accepts_only_matching_png_or_svg_save_payloads() {
+        let mut png = vec![0u8; 24];
+        png[..8].copy_from_slice(b"\x89PNG\r\n\x1a\n");
+        png[12..16].copy_from_slice(b"IHDR");
+        png[16..20].copy_from_slice(&1u32.to_be_bytes());
+        png[20..24].copy_from_slice(&1u32.to_be_bytes());
+        let png_request = SharePointAssetSaveRequest {
+            document_path: EXAMPLE.into(),
+            source: "image.png".into(),
+            expected_revision: "etag".into(),
+            media_type: "image/png".into(),
+            base64: Some(base64::engine::general_purpose::STANDARD.encode(&png)),
+            text: None,
+        };
+        assert_eq!(asset_save_bytes(&png_request, "image/png").unwrap(), png);
+
+        let svg_request = SharePointAssetSaveRequest {
+            document_path: EXAMPLE.into(),
+            source: "image.svg".into(),
+            expected_revision: "etag".into(),
+            media_type: "image/svg+xml".into(),
+            base64: None,
+            text: Some("<svg></svg>".into()),
+        };
+        assert_eq!(
+            asset_save_bytes(&svg_request, "image/svg+xml").unwrap(),
+            b"<svg></svg>"
+        );
+        assert!(asset_save_bytes(&png_request, "image/svg+xml").is_err());
+        assert!(validate_svg_safety("<svg><script>alert(1)</script></svg>").is_err());
+        assert!(validate_svg_safety("<svg><use href=\"#shape\"/></svg>").is_ok());
+        assert!(validate_svg_safety("<svg><image href=\"https://example.com/a.png\"/></svg>")
+            .is_err());
     }
 
     #[test]

@@ -63,6 +63,7 @@ function ControlledImage() {
 
 describe("ImageRenderer inline resize", () => {
   it("loads a relative SharePoint PNG through the authenticated command", async () => {
+    const onMediaOpen = vi.fn();
     vi.mocked(readDocumentAsset).mockResolvedValue({
       filename: "diagram.png",
       mediaType: "image/png",
@@ -78,6 +79,7 @@ describe("ImageRenderer inline resize", () => {
       baseDir="spmd://contoso.sharepoint.com/sites/docs/Shared"
       markdownPath="spmd://contoso.sharepoint.com/sites/docs/Shared/readme.md"
       imageVersions={{}}
+      onMediaOpen={onMediaOpen}
     />);
     expect(screen.getByText("画像を読み込んでいます…")).not.toBeNull();
     const image = await screen.findByAltText("SharePoint PNG");
@@ -87,14 +89,24 @@ describe("ImageRenderer inline resize", () => {
       "images/diagram.png",
     );
     expect(screen.queryAllByRole("button")).toHaveLength(0);
+    fireEvent.click(image);
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({
+      editTarget: expect.objectContaining({
+        storage: "sharepoint",
+        sharePoint: expect.objectContaining({ revision: "etag-1", source: "images/diagram.png" }),
+      }),
+    }));
   });
 
   it("sanitizes an authenticated SharePoint SVG before displaying it", async () => {
+    const onMediaOpen = vi.fn();
     vi.mocked(readDocumentAsset).mockResolvedValue({
       filename: "diagram.svg",
       mediaType: "image/svg+xml",
       base64: "",
       text: '<svg xmlns="http://www.w3.org/2000/svg"><script>bad()</script><path d="M0 0"/></svg>',
+      path: "spmd://contoso.sharepoint.com/sites/docs/Shared/diagram.svg",
+      revision: "etag-1",
       source: "sharepoint",
     });
     render(<ImageRenderer
@@ -103,12 +115,18 @@ describe("ImageRenderer inline resize", () => {
       baseDir="spmd://contoso.sharepoint.com/sites/docs/Shared"
       markdownPath="spmd://contoso.sharepoint.com/sites/docs/Shared/readme.md"
       imageVersions={{}}
+      onMediaOpen={onMediaOpen}
     />);
     const image = await screen.findByAltText("SharePoint SVG");
     const decoded = decodeURIComponent(image.getAttribute("src") ?? "");
     expect(decoded).toContain("<svg");
     expect(decoded).not.toContain("<script");
     await waitFor(() => expect(readDocumentAsset).toHaveBeenCalledTimes(1));
+    fireEvent.click(image);
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({
+      content: expect.objectContaining({ kind: "svg" }),
+      svgEditTarget: expect.objectContaining({ revision: "etag-1", source: "diagram.svg" }),
+    }));
   });
 
   it("exposes a stable gallery navigation anchor", () => {

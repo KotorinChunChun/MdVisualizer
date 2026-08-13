@@ -16,6 +16,7 @@ import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget } from "./components/MediaPreviewModal";
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { ImageAnnotationEditor } from "./components/ImageAnnotationEditor";
+import { SvgSourceEditor, type SvgSourceEditTarget } from "./components/SvgSourceEditor";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
@@ -27,7 +28,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -143,6 +144,7 @@ export function App() {
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<ImageEditTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
+  const [svgEditorTarget, setSvgEditorTarget] = useState<SvgSourceEditTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [documentPanels, setDocumentPanels] = useState<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
   const documentPanelsRef = useRef(documentPanels);
@@ -1412,8 +1414,19 @@ export function App() {
       {annotationTarget && <ImageAnnotationEditor
         target={annotationTarget}
         imageVersion={annotationTarget.fullPath ? imageVersions[annotationTarget.fullPath] ?? 0 : 0}
-        onApply={({ filename, backupAvailable, dataUri }) => {
-          if (annotationTarget.storage === "embedded" && dataUri && annotationTarget.conversionContext) {
+        onApply={async ({ filename, backupAvailable, dataUri }) => {
+          if (annotationTarget.storage === "sharepoint" && dataUri && annotationTarget.sharePoint) {
+            const parsed = parseRasterDataUri(dataUri);
+            if (!parsed || parsed.mediaType !== "image/png") throw new Error("編集結果をPNGとして生成できませんでした。");
+            await saveSharePointAsset({
+              documentPath: annotationTarget.sharePoint.documentPath,
+              source: annotationTarget.sharePoint.source,
+              expectedRevision: annotationTarget.sharePoint.revision,
+              mediaType: "image/png",
+              base64: parsed.base64,
+            });
+            updateImageVersion(`${annotationTarget.sharePoint.documentPath}|${annotationTarget.sharePoint.source}`);
+          } else if (annotationTarget.storage === "embedded" && dataUri && annotationTarget.conversionContext) {
             const context = annotationTarget.conversionContext;
             const tab = tabsState.tabs.find((candidate) => candidate.document?.path === context.documentPath);
             if (!tab || context.occurrence.kind !== "image") {
@@ -1427,7 +1440,7 @@ export function App() {
               handleCropError(`Base64画像の反映に失敗しました: ${String(error)}`);
               return;
             }
-          } else if (annotationTarget.fullPath) {
+          } else if (annotationTarget.storage === "external" && annotationTarget.fullPath) {
             updateImageVersion(annotationTarget.fullPath);
             setImageBackups((current) => ({ ...current, [annotationTarget.fullPath!]: backupAvailable }));
           }
@@ -1437,7 +1450,7 @@ export function App() {
             id: String(Date.now()),
             message: `${filename} の画像編集を反映しました`,
             type: "success",
-            restorePath: backupAvailable ? annotationTarget.fullPath : undefined,
+            restorePath: annotationTarget.storage === "external" && backupAvailable ? annotationTarget.fullPath : undefined,
           });
         }}
         onCancel={() => {
@@ -1446,6 +1459,24 @@ export function App() {
           setAnnotationReturnPreview(null);
         }}
         onError={handleCropError}
+      />}
+
+      {svgEditorTarget && <SvgSourceEditor
+        target={svgEditorTarget}
+        onSave={async (svg) => {
+          await saveSharePointAsset({
+            documentPath: svgEditorTarget.documentPath,
+            source: svgEditorTarget.source,
+            expectedRevision: svgEditorTarget.revision,
+            mediaType: "image/svg+xml",
+            text: svg,
+          });
+          updateImageVersion(`${svgEditorTarget.documentPath}|${svgEditorTarget.source}`);
+          setSvgEditorTarget(null);
+          setMediaPreview(null);
+          setToast({ id: String(Date.now()), message: `${svgEditorTarget.filename} のSVG編集をSharePointへ保存しました`, type: "success" });
+        }}
+        onCancel={() => setSvgEditorTarget(null)}
       />}
 
       <Toast
@@ -1468,6 +1499,9 @@ export function App() {
           setAnnotationReturnPreview(mediaPreview);
           setMediaPreview(null);
           setAnnotationTarget(mediaPreview.editTarget!);
+        } : mediaPreview.svgEditTarget ? () => {
+          setMediaPreview(null);
+          setSvgEditorTarget(mediaPreview.svgEditTarget!);
         } : undefined}
         onCrop={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);

@@ -187,6 +187,7 @@ pub fn run() {
             stage_document_asset,
             discard_staged_assets,
             read_document_asset,
+            save_sharepoint_asset,
             diagnose_document,
             start_watch,
             stop_watch,

@@ -8,6 +8,7 @@ import { InlineImageResizeOverlay } from "./InlineImageResizeOverlay";
 import { ImageSize, useInlineImageResize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import type { AssetConversionContext } from "../lib/assetConversion";
+import type { DocumentAssetData } from "../types/app";
 import "../styles/inline-image-resize.css";
 
 interface ImageRendererProps {
@@ -24,6 +25,7 @@ interface ImageRendererProps {
   occurrenceId?: string;
   sourceLine?: number;
   markdownPath?: string;
+  documentSourcePath?: string;
   sourceOffset?: number;
   conversionContext?: AssetConversionContext;
   previewSrc?: string;
@@ -48,32 +50,38 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   occurrenceId,
   sourceLine,
   markdownPath,
+  documentSourcePath,
   sourceOffset,
   conversionContext,
   previewSrc,
 }) => {
   const [loadError, setLoadError] = useState(false);
   const [authenticatedSrc, setAuthenticatedSrc] = useState<string | null>(null);
+  const [authenticatedAsset, setAuthenticatedAsset] = useState<DocumentAssetData | null>(null);
   const [authenticatedLoading, setAuthenticatedLoading] = useState(false);
+  const assetDocumentPath = documentSourcePath ?? markdownPath;
   const isSharePointAsset = Boolean(
-    markdownPath?.toLowerCase().startsWith("spmd:") &&
+    assetDocumentPath?.toLowerCase().startsWith("spmd:") &&
     src &&
     !/^(?:[a-z][a-z0-9+.-]*:|\/|\\|\/\/)/i.test(src) &&
     /\.(?:png|svg)$/i.test(src),
   );
+  const authenticatedVersion = imageVersions[`${assetDocumentPath ?? ""}|${src}`] ?? 0;
 
   useEffect(() => {
     setLoadError(false);
     setAuthenticatedSrc(null);
-    if (!isSharePointAsset || !markdownPath || previewSrc) {
+    setAuthenticatedAsset(null);
+    if (!isSharePointAsset || !assetDocumentPath || previewSrc) {
       setAuthenticatedLoading(false);
       return;
     }
     let active = true;
     setAuthenticatedLoading(true);
-    void readDocumentAsset(markdownPath, src)
+    void readDocumentAsset(assetDocumentPath, src)
       .then((asset) => {
         if (!active) return;
+        setAuthenticatedAsset(asset);
         if (asset.mediaType === "image/svg+xml") {
           const safeSvg = sanitizeSvgXml(asset.text ?? "");
           setAuthenticatedSrc(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(safeSvg)}`);
@@ -90,7 +98,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         if (active) setAuthenticatedLoading(false);
       });
     return () => { active = false; };
-  }, [isSharePointAsset, markdownPath, previewSrc, src]);
+  }, [assetDocumentPath, authenticatedVersion, isSharePointAsset, previewSrc, src]);
   const {
     imageRef,
     size,
@@ -155,6 +163,19 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     } : null;
     const editTarget = cropTarget
       ? { ...cropTarget, storage: "external" as const, conversionContext }
+      : authenticatedAsset?.mediaType === "image/png" && authenticatedAsset.path && authenticatedAsset.revision && assetDocumentPath
+        ? {
+          rawSrc: displaySrc,
+          filename: authenticatedAsset.filename,
+          storage: "sharepoint" as const,
+          sharePoint: {
+            documentPath: assetDocumentPath,
+            source: src,
+            path: authenticatedAsset.path,
+            revision: authenticatedAsset.revision,
+            mediaType: "image/png" as const,
+          },
+        }
       : isEmbeddedRaster && conversionContext
         ? {
           rawSrc: displaySrc,
@@ -163,8 +184,11 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
           conversionContext,
         }
         : null;
+    const safeSharePointSvg = authenticatedAsset?.mediaType === "image/svg+xml" && authenticatedAsset.text
+      ? sanitizeSvgXml(authenticatedAsset.text)
+      : null;
     onMediaOpen?.({
-      content: { kind: "image", src: displaySrc, alt },
+      content: safeSharePointSvg ? { kind: "svg", svg: safeSharePointSvg, alt } : { kind: "image", src: displaySrc, alt },
       cropTarget,
       editTarget,
       imageContext: cropTarget && markdownPath && sourceOffset !== undefined ? {
@@ -175,6 +199,17 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         caption: alt,
       } : undefined,
       conversionContext,
+      svgEditTarget: safeSharePointSvg && authenticatedAsset?.path && authenticatedAsset.revision && assetDocumentPath
+        ? {
+          documentPath: assetDocumentPath,
+          source: src,
+          path: authenticatedAsset.path,
+          revision: authenticatedAsset.revision,
+          mediaType: "image/svg+xml",
+          svg: safeSharePointSvg,
+          filename: authenticatedAsset.filename,
+        }
+        : undefined,
     });
   };
 

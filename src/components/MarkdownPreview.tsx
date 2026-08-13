@@ -225,6 +225,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
     occurrenceId={imageOccurrenceId(node?.position?.start.offset ?? 0)}
     sourceLine={node?.position?.start.line}
     markdownPath={context.documentPath}
+    documentSourcePath={context.sourcePath}
     sourceOffset={isObsidianImage ? undefined : sourceOffset}
     conversionContext={conversionContext}
     previewSrc={context.stagedAssetPreviews[source]}
