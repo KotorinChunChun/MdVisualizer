@@ -3,7 +3,6 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [switch]$SkipBuild,
-    [switch]$Deploy,
     [string]$AppCatalogUrl = 'https://excelchunchun.sharepoint.com/sites/test-team-site',
     [ValidateSet('sitecollection', 'tenant')]
     [string]$AppCatalogScope = 'sitecollection'
@@ -35,7 +34,7 @@ $arguments = @(
     '--appCatalogScope', $AppCatalogScope,
     '--appCatalogUrl', $AppCatalogUrl,
     '--overwrite',
-    '--output', 'none'
+    '--output', 'json'
 )
 
 if (!$PSCmdlet.ShouldProcess("$AppCatalogUrl ($AppCatalogScope)", "$(Split-Path -Leaf $packagePath) を上書きアップロード")) {
@@ -46,16 +45,15 @@ Push-Location $spfxRoot
 try {
     & $nodeExe $npmCli @arguments
     if ($LASTEXITCODE -ne 0) {
-        throw 'App Catalogへのアップロードに失敗しました。m365 loginの認証状態と権限を確認してください。'
+        throw 'App Catalogへのアップロードに失敗しました。m365 loginをSharePoint委任AllSites.FullControlへ管理者同意済みのアプリで再認証したか確認してください。'
     }
-    if ($Deploy) {
-        & $nodeExe $npmCli exec -- m365 spo app deploy `
-            --name (Split-Path -Leaf $packagePath) `
-            --appCatalogScope $AppCatalogScope `
-            --appCatalogUrl $AppCatalogUrl `
-            --output none
-        if ($LASTEXITCODE -ne 0) { throw 'App Catalogでの有効化に失敗しました。' }
-    }
+    & $nodeExe $npmCli exec -- m365 spo app deploy `
+        --name (Split-Path -Leaf $packagePath) `
+        --appCatalogScope $AppCatalogScope `
+        --appCatalogUrl $AppCatalogUrl `
+        --skipFeatureDeployment `
+        --output json
+    if ($LASTEXITCODE -ne 0) { throw 'App Catalogでの全サイト自動展開に失敗しました。' }
 }
 finally {
     Pop-Location

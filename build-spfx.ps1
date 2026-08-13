@@ -2,8 +2,7 @@
 
 [CmdletBinding()]
 param(
-    [switch]$SkipUpload,
-    [switch]$Deploy
+    [switch]$SkipUpload
 )
 
 Set-StrictMode -Version Latest
@@ -15,8 +14,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if (!$SkipUpload) {
-    Write-Host 'sppkg生成成功後のApp Catalog上書き更新を開始します。'
-    & (Join-Path $PSScriptRoot 'upload-sppkg.ps1') -SkipBuild -Deploy:$Deploy
+    Write-Host 'sppkg生成成功後のApp Catalog上書き更新と全サイト自動展開を開始します。'
+    & (Join-Path $PSScriptRoot 'upload-sppkg.ps1') -SkipBuild
     if ($LASTEXITCODE -ne 0) {
         throw "App Catalog更新が終了コード $LASTEXITCODE で失敗しました。"
     }
