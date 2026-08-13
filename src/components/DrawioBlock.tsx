@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { classifyDrawioSource, prepareDrawioLoad } from "../lib/drawio";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { MermaidBlock } from "./MermaidBlock";
+import { MermaidToolbar } from "./MermaidToolbar";
 import { DrawioEditorModal } from "./DrawioEditorModal";
 import "../styles/drawio.css";
 
@@ -33,6 +34,43 @@ function ensureDrawioViewer(): Promise<void> {
   return viewerPromise;
 }
 
+export function drawioViewerConfig(xml: string): Record<string, unknown> {
+  return {
+    highlight: "#0000ff",
+    nav: false,
+    resize: false,
+    responsive: true,
+    border: 12,
+    center: true,
+    forceCenter: true,
+    "auto-fit": true,
+    lightbox: false,
+    xml,
+  };
+}
+
+export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 12): string {
+  try {
+    const bounds = svg.getBBox();
+    if ([bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite)
+      && bounds.width > 0
+      && bounds.height > 0) {
+      const viewBox = [
+        bounds.x - padding,
+        bounds.y - padding,
+        bounds.width + padding * 2,
+        bounds.height + padding * 2,
+      ].join(" ");
+      if (svg.getAttribute("viewBox") !== viewBox) svg.setAttribute("viewBox", viewBox);
+      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    }
+  } catch {
+    // Empty diagrams and jsdom-like SVG implementations may not expose a
+    // measurable bounding box. The viewer-provided viewBox remains usable.
+  }
+  return svg.outerHTML;
+}
+
 export function DrawioBlock({ source, theme, blockId, onSave }: {
   source: string;
   theme: string;
@@ -41,32 +79,70 @@ export function DrawioBlock({ source, theme, blockId, onSave }: {
 }) {
   const [editing, setEditing] = useState(false);
   const [viewerError, setViewerError] = useState<string | null>(null);
+  const [renderedSvg, setRenderedSvg] = useState<string>();
+  const [display, setDisplay] = useState<"diagram" | "code">("diagram");
   const viewerRef = useRef<HTMLDivElement>(null);
   const kind = useMemo(() => classifyDrawioSource(source), [source]);
   const load = useMemo(() => {
     try { return prepareDrawioLoad(source); }
     catch (error) { return error instanceof Error ? error : new Error(String(error)); }
   }, [source]);
+  const safeSourceSvg = useMemo(() => {
+    if (kind !== "svg") return undefined;
+    try { return sanitizeSvgXml(source); }
+    catch { return undefined; }
+  }, [kind, source]);
 
   useEffect(() => {
-    if (load instanceof Error || "descriptor" in load || kind === "svg") return;
+    setDisplay("diagram");
+    setViewerError(null);
+    setRenderedSvg(safeSourceSvg);
+  }, [safeSourceSvg, source]);
+
+  useEffect(() => {
+    if (display !== "diagram" || load instanceof Error || "descriptor" in load || kind === "svg") return;
     const element = viewerRef.current;
     if (!element) return;
-    element.setAttribute("data-mxgraph", JSON.stringify({ highlight: "#0000ff", nav: true, resize: true, toolbar: "zoom layers lightbox", xml: load.xml }));
+    element.replaceChildren();
+    element.setAttribute("data-mxgraph", JSON.stringify(drawioViewerConfig(load.xml)));
     let disposed = false;
+    let animationFrame = 0;
+    const captureRenderedSvg = () => {
+      if (disposed) return;
+      const svg = element.querySelector<SVGSVGElement>("svg");
+      if (svg) setRenderedSvg(fitDrawioSvgToContent(svg));
+    };
+    const observer = new MutationObserver(captureRenderedSvg);
+    observer.observe(element, { childList: true, subtree: true });
     void ensureDrawioViewer().then(() => {
-      if (!disposed) window.GraphViewer?.processElements();
+      if (disposed) return;
+      window.GraphViewer?.processElements();
+      animationFrame = window.requestAnimationFrame(captureRenderedSvg);
     }).catch((error) => { if (!disposed) setViewerError(String(error)); });
-    return () => { disposed = true; };
-  }, [kind, load]);
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [display, kind, load]);
 
   const label = kind === "svg" ? "SVG → draw.io" : kind === "mermaid" ? "Mermaid → draw.io" : kind === "compressed" ? "draw.io（圧縮データ）" : "draw.io";
   let preview;
-  if (load instanceof Error) preview = <p className="drawio-block__error">{load.message}</p>;
-  else if (kind === "svg") {
-    try { preview = <div className="drawio-block__svg" dangerouslySetInnerHTML={{ __html: sanitizeSvgXml(source) }} />; }
-    catch { preview = <p className="drawio-block__error">SVGを安全に表示できません。</p>; }
-  } else if (kind === "mermaid") preview = <MermaidBlock source={source} theme={theme} mode="on" blockId={`drawio-${blockId}`} diagramIndex={0} diagramCount={1} />;
+  if (display === "code") preview = <pre className="drawio-block__source"><code>{source}</code></pre>;
+  else if (load instanceof Error) preview = <p className="drawio-block__error">{load.message}</p>;
+  else if (kind === "svg") preview = safeSourceSvg
+    ? <div className="drawio-block__svg" dangerouslySetInnerHTML={{ __html: safeSourceSvg }} />
+    : <p className="drawio-block__error">SVGを安全に表示できません。</p>;
+  else if (kind === "mermaid") preview = <MermaidBlock
+    source={source}
+    theme={theme}
+    mode="on"
+    blockId={`drawio-${blockId}`}
+    diagramIndex={0}
+    diagramCount={1}
+    showToolbar={false}
+    onRenderedSvg={setRenderedSvg}
+  />;
   else preview = viewerError
     ? <div className="drawio-block__fallback"><p>{viewerError}</p><pre><code>{source}</code></pre></div>
     : <div ref={viewerRef} className="drawio-block__viewer mxgraph" />;
@@ -74,7 +150,15 @@ export function DrawioBlock({ source, theme, blockId, onSave }: {
   return <div className="drawio-block" data-drawio-block={blockId}>
     <div className="drawio-block__toolbar">
       <span>{label}</span>
-      {onSave && <button className="diagram-action-button" type="button" onClick={() => setEditing(true)}>編集</button>}
+      <MermaidToolbar
+        source={source}
+        svg={renderedSvg}
+        display={display}
+        onDisplayChange={setDisplay}
+        ariaLabel="draw.io操作"
+        allowFileCopy={false}
+        onEdit={onSave ? () => setEditing(true) : undefined}
+      />
     </div>
     <div className="drawio-block__preview">{preview}</div>
     {editing && !(load instanceof Error) && <DrawioEditorModal source={source} onSave={onSave!} onCancel={() => setEditing(false)} />}

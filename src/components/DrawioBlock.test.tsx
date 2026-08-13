@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DrawioBlock } from "./DrawioBlock";
+import { DrawioBlock, drawioViewerConfig, fitDrawioSvgToContent } from "./DrawioBlock";
 
-vi.mock("./MermaidBlock", () => ({ MermaidBlock: ({ source }: { source: string }) => <div data-testid="mermaid-drawio">{source}</div> }));
+vi.mock("./MermaidBlock", () => ({ MermaidBlock: ({ source, onRenderedSvg }: { source: string; onRenderedSvg?: (svg: string) => void }) => <div data-testid="mermaid-drawio" onClick={() => onRenderedSvg?.('<svg viewBox="0 0 10 10"/>')}>{source}</div> }));
 
 describe("DrawioBlock", () => {
   afterEach(cleanup);
@@ -24,5 +24,45 @@ describe("DrawioBlock", () => {
     render(<DrawioBlock source={"flowchart LR\nA-->B"} theme="dark" blockId="two" />);
     expect(screen.getByTestId("mermaid-drawio").textContent).toContain("A-->B");
     expect(screen.queryByRole("button", { name: "編集" })).toBeNull();
+  });
+
+  it("uses responsive viewer bounds without the built-in zoom toolbar", () => {
+    const config = drawioViewerConfig("<mxGraphModel/>");
+    expect(config.responsive).toBe(true);
+    expect(config.border).toBe(12);
+    expect(config).not.toHaveProperty("toolbar");
+  });
+
+  it("crops a rendered diagram to its actual bounds and keeps negative coordinates", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    Object.defineProperty(svg, "getBBox", {
+      value: () => ({ x: -30, y: -10, width: 120, height: 70 }),
+    });
+
+    const result = fitDrawioSvgToContent(svg, 10);
+    expect(result).toContain('viewBox="-40 -20 140 90"');
+    expect(result).toContain('preserveAspectRatio="xMidYMid meet"');
+  });
+
+  it("keeps the viewer viewBox for an empty diagram", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 1 1");
+    Object.defineProperty(svg, "getBBox", {
+      value: () => ({ x: 0, y: 0, width: 0, height: 0 }),
+    });
+
+    expect(fitDrawioSvgToContent(svg)).toContain('viewBox="0 0 1 1"');
+  });
+
+  it("offers the same copy and display controls as Mermaid", () => {
+    const source = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
+    render(<DrawioBlock source={source} theme="light" blockId="controls" />);
+
+    expect(screen.getByRole("toolbar", { name: "draw.io操作" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "コードをコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "PNGをコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "SVGをコピー" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "コード" }));
+    expect(screen.getByText(source)).toBeTruthy();
   });
 });
