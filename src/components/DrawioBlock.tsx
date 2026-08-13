@@ -74,7 +74,7 @@ export function DrawioBlock({ source, theme, blockId, onSave }: {
   return <div className="drawio-block" data-drawio-block={blockId}>
     <div className="drawio-block__toolbar">
       <span>{label}</span>
-      {onSave && <button type="button" onClick={() => setEditing(true)}>編集</button>}
+      {onSave && <button className="diagram-action-button" type="button" onClick={() => setEditing(true)}>編集</button>}
     </div>
     <div className="drawio-block__preview">{preview}</div>
     {editing && !(load instanceof Error) && <DrawioEditorModal source={source} onSave={onSave!} onCancel={() => setEditing(false)} />}

@@ -1,3 +1,6 @@
+// @ts-nocheck -- This suite also verifies source wiring without shipping Node typings.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
 
@@ -104,6 +107,14 @@ describe("TOC pointer focus", () => {
     expect(tocHeadingIdAtPointer(betweenHeadings, root)).toBeNull();
     expect(tocHeadingIdAtPointer(outside, root)).toBeNull();
     expect(tocHeadingIdAtPointer(null, root)).toBeNull();
+  });
+
+  it("uses the pointer event target and clears focus when leaving the preview", () => {
+    const source = readFileSync(join(process.cwd(), "src/App.tsx"), "utf8");
+    expect(source).toContain("const target = event.target instanceof Element ? event.target : null;");
+    expect(source).not.toContain("document.elementFromPoint(event.clientX, event.clientY)");
+    expect(source).toContain("onPointerLeave={handlePreviewPointerLeave}");
+    expect(source).toContain("setActiveTocHeadingId(null);");
   });
 });
 

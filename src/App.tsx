@@ -723,7 +723,7 @@ export function App() {
 
   const handlePreviewPointerMove = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (viewModeRef.current === "presentation") return;
-    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const target = event.target instanceof Element ? event.target : null;
     pendingTocHeadingId.current = tocHeadingIdAtPointer(target, markdownRef.current);
     if (tocPointerFrame.current) return;
     tocPointerFrame.current = window.requestAnimationFrame(() => {
@@ -731,6 +731,12 @@ export function App() {
       const pending = pendingTocHeadingId.current;
       setActiveTocHeadingId((previous) => previous === pending ? previous : pending);
     });
+  }, []);
+
+  const handlePreviewPointerLeave = useCallback(() => {
+    if (viewModeRef.current === "presentation") return;
+    pendingTocHeadingId.current = null;
+    setActiveTocHeadingId(null);
   }, []);
 
   useEffect(() => () => { if (tocPointerFrame.current) window.cancelAnimationFrame(tocPointerFrame.current); }, []);
@@ -1312,6 +1318,7 @@ export function App() {
         ref={containerRef}
         onScroll={(event) => handlePreviewScroll(event.currentTarget)}
         onPointerMove={handlePreviewPointerMove}
+        onPointerLeave={handlePreviewPointerLeave}
         onFocusCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.target))}
         onBlurCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.relatedTarget))}
         style={{ zoom: viewMode === "presentation" && activeTab?.document?.kind === "markdown" ? 1 : zoom / 100 }}

@@ -13,7 +13,9 @@ describe("DrawioBlock", () => {
     const { container } = render(<DrawioBlock source={source} theme="light" blockId="one" onSave={onSave} />);
     expect(container.innerHTML).not.toContain("script");
     expect(screen.getByText("SVG → draw.io")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "編集" }));
+    const editButton = screen.getByRole("button", { name: "編集" });
+    expect(editButton.classList.contains("diagram-action-button")).toBe(true);
+    fireEvent.click(editButton);
     expect(screen.getByRole("dialog", { name: "draw.io図の編集" })).toBeTruthy();
     expect(screen.getByText(/<path>/)).toBeTruthy();
   });
