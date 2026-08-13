@@ -15,7 +15,7 @@
 | `obsidian-images.md` | Obsidian画像、画像一覧・監視、altキャプションと下罫線の配置 |
 | `markdown-presentation.md` | 引用、Markdown／HTML水平線、見出し罫線、プレゼン印刷の下位見出し一覧 |
 | `customization.md` | 単一サイドパネル、syntax配色、PowerShell確認実行、印刷スタイル設定 |
-| `../dev/drawio_markdown_sample.md` | v0.0.9の編集モード、CSV／TSV、draw.io、Base64画像 |
+| `drawio_markdown_sample.md` | Markdown EditorのCSV／TSV、Mermaid、draw.io、SVG、Base64画像 |
 | `images/sample.png` | ラスター画像、注釈編集、クロップ、表示縮小 |
 | `images/sample.svg` | SVG表示と拡大プレビュー |
 
@@ -24,4 +24,4 @@
 `markdown-presentation.md`、v0.0.7の設定機能は`customization.md`で確認してください。テーマ配色を確認するときは、
 ダーク、ライト、GitHubを切り替え、リンク、インラインコード、表見出しを比較してください。
 
-v0.0.9は`../dev/drawio_markdown_sample.md`を開き、ローカルMarkdownの「編集のみ」「編集／閲覧」「閲覧のみ」、`csv`／`tsv`コードフェンスの対話操作、Markdown内画像・SVGの保存形式変換、Base64画像編集、`drawio`コードフェンスの表示・編集を確認してください。
+Markdown Editor機能は[`drawio_markdown_sample.md`](drawio_markdown_sample.md)を開き、`csv`／`tsv`コードフェンスの対話操作、Mermaid、SVG、Base64画像、`drawio`コードフェンスの表示・編集を確認してください。サンプル内の先頭リンクから本README、目次、ローカルリンク確認へ戻れます。
