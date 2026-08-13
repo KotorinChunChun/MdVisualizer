@@ -338,6 +338,44 @@ struct UpdatedDriveItemResponse {
     e_tag: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+struct PermissionsResponse {
+    value: Vec<PermissionResponse>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PermissionResponse {
+    #[serde(default)]
+    roles: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AccessTokenClaims {
+    #[serde(default)]
+    scp: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GraphErrorEnvelope {
+    error: GraphApiError,
+}
+
+#[derive(Debug, Deserialize)]
+struct GraphApiError {
+    code: String,
+    message: String,
+    #[serde(rename = "innerError")]
+    inner_error: Option<GraphInnerError>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GraphInnerError {
+    #[serde(rename = "request-id")]
+    request_id: Option<String>,
+    #[serde(rename = "client-request-id")]
+    client_request_id: Option<String>,
+}
+
 pub struct SharePointClient {
     http: Client,
     tokens: Mutex<HashMap<String, CachedToken>>,
@@ -480,6 +518,9 @@ impl SharePointClient {
                 other => other,
             })?;
         let text = validate_asset_bytes(asset.media_type, &bytes)?;
+        let (can_edit, edit_disabled_reason) = self
+            .asset_edit_capability(&asset_drive.id, &item.id, &token)
+            .await;
         Ok(DocumentAssetData {
             filename: item.name,
             media_type: asset.media_type.into(),
@@ -488,7 +529,41 @@ impl SharePointClient {
             path: Some(asset.canonical_uri),
             revision: Some(item.e_tag.unwrap_or_else(|| content_revision(&bytes))),
             source: DocumentSourceKind::SharePoint,
+            can_edit,
+            edit_disabled_reason,
         })
+    }
+
+    async fn asset_edit_capability(
+        &self,
+        drive_id: &str,
+        item_id: &str,
+        access_token: &str,
+    ) -> (bool, Option<String>) {
+        if !access_token_has_scope(access_token, "Files.ReadWrite") {
+            return (
+                false,
+                Some("Microsoft GraphのFiles.ReadWrite権限が許可されていません。Microsoftへのサインインをやり直し、組織の管理者にこの権限の同意を依頼してください。".into()),
+            );
+        }
+        let permissions_url = format!(
+            "{GRAPH_ROOT}/drives/{}/items/{}/permissions?$select=roles",
+            encode_segment(drive_id),
+            encode_segment(item_id)
+        );
+        match self.graph_json::<PermissionsResponse>(&permissions_url, access_token).await {
+            Ok(permissions) if permissions_allow_write(&permissions.value) => (true, None),
+            Ok(_) => (
+                false,
+                Some("このSharePoint画像への書込み権限がありません。SharePointで対象ファイルまたは親フォルダーの編集権限を付与してもらってください。".into()),
+            ),
+            Err(error) => (
+                false,
+                Some(format!(
+                    "このSharePoint画像の書込み権限を確認できないため編集を無効にしました。SharePointで編集権限を確認してから再読み込みしてください。詳細: {error}"
+                )),
+            ),
+        }
     }
 
     pub async fn save_asset<F>(
@@ -868,16 +943,70 @@ async fn ensure_graph_success(response: Response) -> Result<Response, SharePoint
     }
     let status = response.status();
     let detail = response.text().await.unwrap_or_default();
-    let detail = detail.chars().take(2000).collect::<String>();
+    let parsed = serde_json::from_str::<GraphErrorEnvelope>(&detail).ok();
+    let code = parsed
+        .as_ref()
+        .map(|value| value.error.code.as_str())
+        .unwrap_or("unknown");
+    let message = parsed
+        .as_ref()
+        .map(|value| value.error.message.as_str())
+        .unwrap_or(&detail);
+    let request_id = parsed
+        .as_ref()
+        .and_then(|value| value.error.inner_error.as_ref())
+        .and_then(|inner| {
+            inner
+                .request_id
+                .as_deref()
+                .or(inner.client_request_id.as_deref())
+        });
+    let diagnostic = format!(
+        "[HTTP {} / code: {}{}] {}",
+        status.as_u16(),
+        code,
+        request_id
+            .map(|value| format!(" / request-id: {value}"))
+            .unwrap_or_default(),
+        message.chars().take(1000).collect::<String>()
+    );
     let reason = match status {
-        StatusCode::UNAUTHORIZED => "Microsoftへのサインインが無効です。".to_string(),
-        StatusCode::FORBIDDEN => "このSharePoint文書を読む権限がありません。".to_string(),
+        StatusCode::UNAUTHORIZED => format!(
+            "Microsoftへのサインインが無効です。再度サインインしてください。 {diagnostic}"
+        ),
+        StatusCode::FORBIDDEN => format!(
+            "このSharePoint項目へアクセスする権限がありません。SharePoint側の権限とMicrosoft Graphへの同意を確認してください。 {diagnostic}"
+        ),
         StatusCode::NOT_FOUND => {
-            "SharePointサイト、ライブラリ、または文書が見つかりません。".to_string()
+            format!("SharePointサイト、ライブラリ、または項目が見つかりません。 {diagnostic}")
         }
-        _ => format!("Microsoft GraphがHTTP {status}を返しました。 {detail}"),
+        _ => format!("Microsoft Graphへの要求に失敗しました。 {diagnostic}"),
     };
     Err(SharePointError::Graph(reason))
+}
+
+fn access_token_has_scope(access_token: &str, required: &str) -> bool {
+    let Some(payload) = access_token.split('.').nth(1) else {
+        return false;
+    };
+    let Ok(bytes) = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(payload) else {
+        return false;
+    };
+    let Ok(claims) = serde_json::from_slice::<AccessTokenClaims>(&bytes) else {
+        return false;
+    };
+    claims
+        .scp
+        .split_whitespace()
+        .any(|scope| scope.eq_ignore_ascii_case(required))
+}
+
+fn permissions_allow_write(permissions: &[PermissionResponse]) -> bool {
+    permissions.iter().any(|permission| {
+        permission.roles.iter().any(|role| {
+            role.eq_ignore_ascii_case("write") || role.eq_ignore_ascii_case("owner")
+        })
+    })
 }
 
 fn encode_segment(value: &str) -> String {
@@ -1306,5 +1435,28 @@ mod tests {
         assert_eq!(drive.id, "documents");
         assert_eq!(item, "md/README.md");
         assert_eq!(encode_graph_path(&item), "/md/README%2Emd");
+    }
+
+    #[test]
+    fn reads_delegated_write_scope_from_the_access_token() {
+        let claims = base64::engine::general_purpose::URL_SAFE_NO_PAD
+            .encode(br#"{"scp":"Sites.Read.All Files.ReadWrite"}"#);
+        let token = format!("header.{claims}.signature");
+        assert!(access_token_has_scope(&token, "files.readwrite"));
+        assert!(!access_token_has_scope(&token, "Files.ReadWrite.All"));
+        assert!(!access_token_has_scope("opaque-token", "Files.ReadWrite"));
+    }
+
+    #[test]
+    fn recognizes_effective_write_and_owner_roles() {
+        assert!(permissions_allow_write(&[PermissionResponse {
+            roles: vec!["write".into()],
+        }]));
+        assert!(permissions_allow_write(&[PermissionResponse {
+            roles: vec!["OWNER".into()],
+        }]));
+        assert!(!permissions_allow_write(&[PermissionResponse {
+            roles: vec!["read".into()],
+        }]));
     }
 }

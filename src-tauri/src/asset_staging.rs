@@ -35,6 +35,8 @@ pub struct DocumentAssetData {
     pub path: Option<String>,
     pub revision: Option<String>,
     pub source: DocumentSourceKind,
+    pub can_edit: bool,
+    pub edit_disabled_reason: Option<String>,
 }
 
 pub struct AssetStagingManager {
@@ -251,6 +253,8 @@ pub fn read_document_asset(document_path: &str, source: &str) -> AppResult<Docum
         path: Some(path.to_string_lossy().into_owned()),
         revision: Some(content_revision(&bytes)),
         source: DocumentSourceKind::Local,
+        can_edit: true,
+        edit_disabled_reason: None,
     })
 }
 

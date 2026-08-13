@@ -8,13 +8,13 @@ afterEach(() => {
 });
 
 describe("Toast", () => {
-  it("starts fading after two seconds and closes after three seconds", () => {
+  it("stays fully visible for three seconds and closes after fading", () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     const { container } = render(<Toast toast={{ id: "notice-1", message: "完了", type: "success" }} onClose={onClose} />);
     const toast = container.querySelector(".toast")!;
 
-    act(() => vi.advanceTimersByTime(1000));
+    act(() => vi.advanceTimersByTime(2000));
     expect(toast.classList.contains("is-fading")).toBe(false);
     act(() => vi.advanceTimersByTime(1000));
     expect(toast.classList.contains("is-fading")).toBe(true);

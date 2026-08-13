@@ -72,6 +72,8 @@ describe("ImageRenderer inline resize", () => {
       path: "spmd://contoso.sharepoint.com/sites/docs/Shared/diagram.png",
       revision: "etag-1",
       source: "sharepoint",
+      canEdit: true,
+      editDisabledReason: null,
     });
     render(<ImageRenderer
       src="images/diagram.png"
@@ -108,6 +110,8 @@ describe("ImageRenderer inline resize", () => {
       path: "spmd://contoso.sharepoint.com/sites/docs/Shared/diagram.svg",
       revision: "etag-1",
       source: "sharepoint",
+      canEdit: true,
+      editDisabledReason: null,
     });
     render(<ImageRenderer
       src="diagram.svg"
@@ -126,6 +130,34 @@ describe("ImageRenderer inline resize", () => {
     expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({
       content: expect.objectContaining({ kind: "svg" }),
       svgEditTarget: expect.objectContaining({ revision: "etag-1", source: "diagram.svg" }),
+    }));
+  });
+
+  it("keeps a SharePoint image viewable but marks editing unavailable without write permission", async () => {
+    const onMediaOpen = vi.fn();
+    vi.mocked(readDocumentAsset).mockResolvedValue({
+      filename: "readonly.png",
+      mediaType: "image/png",
+      base64: "iVBORw0KGgo=",
+      text: null,
+      path: "spmd://contoso.sharepoint.com/sites/docs/Shared/readonly.png",
+      revision: "etag-readonly",
+      source: "sharepoint",
+      canEdit: false,
+      editDisabledReason: "この画像への書込み権限がありません。",
+    });
+    render(<ImageRenderer
+      src="readonly.png"
+      alt="読取り専用画像"
+      baseDir="spmd://contoso.sharepoint.com/sites/docs/Shared"
+      markdownPath="spmd://contoso.sharepoint.com/sites/docs/Shared/readme.md"
+      imageVersions={{}}
+      onMediaOpen={onMediaOpen}
+    />);
+    fireEvent.click(await screen.findByAltText("読取り専用画像"));
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({
+      editTarget: null,
+      editDisabledReason: "この画像への書込み権限がありません。",
     }));
   });
 

@@ -30,6 +30,8 @@ export interface DocumentAssetData {
   path?: string | null;
   revision?: string | null;
   source: "local" | "sharepoint";
+  canEdit: boolean;
+  editDisabledReason?: string | null;
 }
 
 export interface SharePointAssetSaveRequest {

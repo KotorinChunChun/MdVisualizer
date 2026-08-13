@@ -1234,8 +1234,8 @@ export function App() {
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <span className="control-group__title">画面</span>
-          <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("edit")}>編集のみ</button>
-          <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
+          <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} title={activeSharePoint ? "SharePoint Markdown本文の編集は現在未対応です。SharePointまたは別の編集アプリで本文を編集してください。" : undefined} onClick={() => changeEditorMode("edit")}>編集のみ</button>
+          <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} title={activeSharePoint ? "SharePoint Markdown本文の編集は現在未対応です。SharePointまたは別の編集アプリで本文を編集してください。" : undefined} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
           <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
         </div>
         {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
@@ -1503,6 +1503,7 @@ export function App() {
           setMediaPreview(null);
           setSvgEditorTarget(mediaPreview.svgEditTarget!);
         } : undefined}
+        editDisabledReason={mediaPreview.editDisabledReason}
         onCrop={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);
           startCrop(mediaPreview.cropTarget!);

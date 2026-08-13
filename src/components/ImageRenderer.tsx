@@ -163,7 +163,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     } : null;
     const editTarget = cropTarget
       ? { ...cropTarget, storage: "external" as const, conversionContext }
-      : authenticatedAsset?.mediaType === "image/png" && authenticatedAsset.path && authenticatedAsset.revision && assetDocumentPath
+      : authenticatedAsset?.canEdit && authenticatedAsset.mediaType === "image/png" && authenticatedAsset.path && authenticatedAsset.revision && assetDocumentPath
         ? {
           rawSrc: displaySrc,
           filename: authenticatedAsset.filename,
@@ -199,7 +199,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         caption: alt,
       } : undefined,
       conversionContext,
-      svgEditTarget: safeSharePointSvg && authenticatedAsset?.path && authenticatedAsset.revision && assetDocumentPath
+      svgEditTarget: authenticatedAsset?.canEdit && safeSharePointSvg && authenticatedAsset.path && authenticatedAsset.revision && assetDocumentPath
         ? {
           documentPath: assetDocumentPath,
           source: src,
@@ -209,6 +209,9 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
           svg: safeSharePointSvg,
           filename: authenticatedAsset.filename,
         }
+        : undefined,
+      editDisabledReason: isSharePointAsset && authenticatedAsset && !authenticatedAsset.canEdit
+        ? authenticatedAsset.editDisabledReason ?? "このSharePoint画像は編集できません。"
         : undefined,
     });
   };

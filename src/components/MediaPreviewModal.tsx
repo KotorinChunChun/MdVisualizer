@@ -26,6 +26,7 @@ export interface MediaPreviewTarget {
   imageContext?: ImageEditContext;
   conversionContext?: AssetConversionContext;
   svgEditTarget?: import("../hooks/useCropEditor").SharePointAssetEditContext & { svg: string; filename: string };
+  editDisabledReason?: string;
 }
 
 interface ZoomAnchor {
@@ -55,6 +56,7 @@ export function MediaPreviewModal({
   content,
   onClose,
   onActivate,
+  editDisabledReason,
   onCrop,
   mermaidSource,
   imageContext,
@@ -68,6 +70,7 @@ export function MediaPreviewModal({
   content: MediaPreviewContent;
   onClose: () => void;
   onActivate?: () => void;
+  editDisabledReason?: string;
   onCrop?: () => void;
   mermaidSource?: string;
   imageContext?: ImageEditContext;
@@ -175,7 +178,7 @@ export function MediaPreviewModal({
         onExecute={(app) => onOpenImageApp(app, imageContext)}
       />}
       {onCrop && <button type="button" onClick={onCrop}>クロップ</button>}
-      {onActivate && <button type="button" onClick={onActivate}>画像編集</button>}
+      {(onActivate || editDisabledReason) && <button type="button" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}
       {conversionContext && onConvertAsset && <button type="button" disabled={converting} onClick={() => {
         setConverting(true); setConversionError(null);
         void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));
