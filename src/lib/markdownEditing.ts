@@ -1,5 +1,15 @@
 export {
+  buildOrderedListNormalization,
   buildMarkdownEdit,
+  buildStructuredListEnter,
+  buildStructuredListIndent,
+  buildStructuredListMove,
+  buildStructuredListPaste,
+  buildStructuredListToggle,
+  parseMarkdownListLine,
+  renumberOrderedLists,
   type MarkdownEditAction,
   type MarkdownEditChange,
+  type MarkdownListLine,
+  type StructuredListKind,
 } from "@markdown-viewer/markdown-core";

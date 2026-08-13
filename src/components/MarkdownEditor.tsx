@@ -3,9 +3,20 @@ import { basicSetup } from "codemirror";
 import { indentWithTab } from "@codemirror/commands";
 import { foldAll, foldEffect, foldService, unfoldAll } from "@codemirror/language";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { EditorState } from "@codemirror/state";
+import { EditorState, Prec } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
-import { buildMarkdownEdit, type MarkdownEditAction } from "../lib/markdownEditing";
+import {
+  buildMarkdownEdit,
+  buildOrderedListNormalization,
+  buildStructuredListEnter,
+  buildStructuredListIndent,
+  buildStructuredListMove,
+  buildStructuredListPaste,
+  buildStructuredListToggle,
+  type MarkdownEditAction,
+  type MarkdownEditChange,
+  type StructuredListKind,
+} from "../lib/markdownEditing";
 import { findBase64FoldRange } from "../lib/base64Folding";
 import "../styles/markdown-editor.css";
 
@@ -62,12 +73,31 @@ function foldBase64Data(view: EditorView) {
   if (effects.length) view.dispatch({ effects });
 }
 
+function dispatchEdit(view: EditorView, change: MarkdownEditChange | null, userEvent: string): boolean {
+  if (!change) return false;
+  view.dispatch({
+    changes: { from: change.from, to: change.to, insert: change.insert },
+    selection: { anchor: change.anchor, head: change.head },
+    scrollIntoView: true,
+    userEvent,
+  });
+  return true;
+}
+
+function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
+  if (action === "unordered-list") return "unordered";
+  if (action === "ordered-list") return "ordered";
+  if (action === "task-list") return "task-unchecked";
+  return null;
+}
+
 export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave }: MarkdownEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
   const applyingExternal = useRef(false);
+  const normalizingLists = useRef(false);
   onChangeRef.current = onChange;
   onSaveRef.current = onSave;
   const lineSeparator = useMemo(() => value.includes("\r\n") ? "\r\n" : value.includes("\r") ? "\r" : "\n", [documentId]);
@@ -84,12 +114,44 @@ export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onS
         base64FoldService,
         editorTheme,
         EditorView.contentAttributes.of({ "aria-label": "Markdownを編集", spellcheck: "true" }),
-        keymap.of([
+        Prec.high(keymap.of([
+          { key: "Ctrl-.", run: (view) => dispatchEdit(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, "unordered"), "input.list.toggle") },
+          { key: "Ctrl-1", run: (view) => dispatchEdit(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, "ordered"), "input.list.toggle") },
+          { key: "Ctrl-[", run: (view) => dispatchEdit(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, "task-unchecked"), "input.list.toggle") },
+          { key: "Ctrl-]", run: (view) => dispatchEdit(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, "task-checked"), "input.list.toggle") },
+          { key: "Enter", run: (view) => dispatchEdit(view, buildStructuredListEnter(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to), "input.list.enter") },
+          { key: "Tab", run: (view) => dispatchEdit(view, buildStructuredListIndent(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to), "input.list.indent") },
+          { key: "Shift-Tab", run: (view) => dispatchEdit(view, buildStructuredListIndent(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, true), "input.list.outdent") },
+          { key: "Alt-ArrowUp", run: (view) => dispatchEdit(view, buildStructuredListMove(view.state.sliceDoc(), view.state.selection.main.head, -1), "input.list.move") },
+          { key: "Alt-ArrowDown", run: (view) => dispatchEdit(view, buildStructuredListMove(view.state.sliceDoc(), view.state.selection.main.head, 1), "input.list.move") },
           indentWithTab,
           { key: "Mod-s", run: () => { onSaveRef.current(); return true; } },
-        ]),
+        ])),
+        EditorView.domEventHandlers({
+          paste: (event, view) => {
+            const text = event.clipboardData?.getData("text/plain");
+            if (!text) return false;
+            const selection = view.state.selection.main;
+            const handled = dispatchEdit(view, buildStructuredListPaste(view.state.sliceDoc(), selection.from, selection.to, text), "input.list.paste");
+            if (handled) event.preventDefault();
+            return handled;
+          },
+        }),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged && !applyingExternal.current) onChangeRef.current(update.state.sliceDoc());
+          if (!update.docChanged || applyingExternal.current) return;
+          const value = update.state.sliceDoc();
+          onChangeRef.current(value);
+          if (normalizingLists.current) return;
+          const selection = update.state.selection.main;
+          const correction = buildOrderedListNormalization(value, selection.anchor, selection.head);
+          if (!correction) return;
+          queueMicrotask(() => {
+            const current = viewRef.current;
+            if (!current || current.state.sliceDoc() !== value) return;
+            normalizingLists.current = true;
+            dispatchEdit(current, correction, "input.list.renumber");
+            normalizingLists.current = false;
+          });
         }),
       ],
     });
@@ -115,13 +177,11 @@ export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onS
     const view = viewRef.current;
     if (!view) return;
     const selection = view.state.selection.main;
-    const change = buildMarkdownEdit(view.state.sliceDoc(), selection.from, selection.to, action);
-    view.dispatch({
-      changes: { from: change.from, to: change.to, insert: change.insert },
-      selection: { anchor: change.anchor, head: change.head },
-      scrollIntoView: true,
-      userEvent: "input.toolbar",
-    });
+    const kind = listToggleKind(action);
+    const change = kind
+      ? buildStructuredListToggle(view.state.sliceDoc(), selection.from, selection.to, kind)
+      : buildMarkdownEdit(view.state.sliceDoc(), selection.from, selection.to, action);
+    dispatchEdit(view, change, "input.toolbar");
     view.focus();
   };
 

@@ -16,6 +16,19 @@ export type MarkdownEditAction =
   | "drawio"
   | "image";
 
+export {
+  buildStructuredListEnter,
+  buildOrderedListNormalization,
+  buildStructuredListIndent,
+  buildStructuredListMove,
+  buildStructuredListPaste,
+  buildStructuredListToggle,
+  parseMarkdownListLine,
+  renumberOrderedLists,
+  type MarkdownListLine,
+  type StructuredListKind,
+} from "./structuredLists";
+
 export interface MarkdownEditChange {
   from: number;
   to: number;

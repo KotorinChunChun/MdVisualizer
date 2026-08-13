@@ -42,4 +42,23 @@ describe("MarkdownEditor", () => {
     expect(container.querySelector(".cm-content")?.textContent).not.toContain("ORIGINAL");
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it("toggles list states from shortcuts at the current cursor", async () => {
+    const onChange = vi.fn();
+    const { container } = render(<MarkdownEditor documentId="tab-1:1" value="item" dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+    const editor = container.querySelector<HTMLElement>(".cm-content")!;
+
+    fireEvent.keyDown(editor, { key: "]", ctrlKey: true });
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("- [x] item"));
+  });
+
+  it("continues an ordered list with Enter", async () => {
+    const onChange = vi.fn();
+    const { container } = render(<MarkdownEditor documentId="tab-1:1" value="1. item" dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+    const editor = container.querySelector<HTMLElement>(".cm-content")!;
+
+    fireEvent.keyDown(editor, { key: "End" });
+    fireEvent.keyDown(editor, { key: "Enter" });
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("1. item\n2. "));
+  });
 });
