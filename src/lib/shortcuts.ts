@@ -7,7 +7,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   { keys: "Ctrl + S", description: "編集中のローカルMarkdownを保存" },
   { keys: "Ctrl + F", description: "文書内を検索" },
   { keys: "Ctrl + P", description: "印刷／PDF" },
-  { keys: "F5", description: "文書を再読み込み" },
+  { keys: "F5", description: "文書を再読込" },
   { keys: "Ctrl + + / Ctrl + ;", description: "表示を拡大" },
   { keys: "Ctrl + -", description: "表示を縮小" },
   { keys: "Ctrl + 0", description: "表示倍率を100%に戻す" },
