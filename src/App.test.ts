@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+import { canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+
+describe("Markdown editing availability", () => {
+  it("enables editing for both local and SharePoint Markdown documents", () => {
+    expect(canEditMarkdownDocument({ kind: "markdown" })).toBe(true);
+    expect(canEditMarkdownDocument({ kind: "svg" })).toBe(false);
+    expect(canEditMarkdownDocument(null)).toBe(false);
+  });
+});
 
 describe("window close protection", () => {
   it("destroys an unmodified window without asking", async () => {

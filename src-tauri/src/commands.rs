@@ -208,11 +208,25 @@ pub async fn load_markdown(
 }
 
 #[tauri::command]
-pub fn save_markdown(
+pub async fn save_markdown(
+    window: WebviewWindow,
     state: State<'_, AppState>,
     request: SaveMarkdownRequest,
 ) -> Result<MarkdownLoadResult, String> {
-    do_save_markdown(request, &state.asset_staging).map_err(|error| error.to_string())
+    if !is_spmd_uri(&request.path) {
+        return do_save_markdown(request, &state.asset_staging)
+            .map_err(|error| error.to_string());
+    }
+    let config = SharePointAuthConfig::embedded();
+    state
+        .sharepoint
+        .save_markdown(request, &config, |prompt| {
+            window
+                .emit("sharepoint-authentication-required", prompt)
+                .map_err(|error| SharePointError::Authentication(error.to_string()))
+        })
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[derive(Deserialize)]

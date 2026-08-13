@@ -1,5 +1,6 @@
 use crate::asset_staging::DocumentAssetData;
 use crate::credential_store::{read_secret, write_secret};
+use crate::document_edit::{encode_markdown_like_original, SaveMarkdownRequest};
 use crate::markdown::{
     content_revision, decode_markdown, DocumentKind, DocumentSourceKind, MarkdownLoadResult,
 };
@@ -255,6 +256,10 @@ pub enum SharePointError {
     InvalidAsset(String),
     #[error("SharePoint画像は読み込み後に更新されています。再読み込みしてから編集し直してください。")]
     AssetConflict,
+    #[error("SharePoint Markdownは読み込み後に更新されています。再読込してから編集し直してください。")]
+    MarkdownConflict,
+    #[error("SharePoint Markdownを元の文字コードで保存できません: {0}")]
+    InvalidMarkdown(String),
     #[error("SharePointから取得した内容がサイズ上限を超えました。")]
     ContentTooLarge,
     #[error("SharePoint文書の場所をドキュメントライブラリとして解決できませんでした。")]
@@ -336,6 +341,8 @@ struct UpdatedDriveItemResponse {
     name: String,
     size: u64,
     e_tag: Option<String>,
+    last_modified_date_time: Option<String>,
+    web_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -464,6 +471,108 @@ impl SharePointClient {
             source: DocumentSourceKind::SharePoint,
             web_url: Some(item.web_url),
             etag: item.e_tag,
+        })
+    }
+
+    pub async fn save_markdown<F>(
+        &self,
+        request: SaveMarkdownRequest,
+        config: &SharePointAuthConfig,
+        show_prompt: F,
+    ) -> Result<MarkdownLoadResult, SharePointError>
+    where
+        F: FnOnce(DeviceCodePrompt) -> Result<(), SharePointError>,
+    {
+        if !request.staged_asset_ids.is_empty() {
+            return Err(SharePointError::InvalidMarkdown(
+                "SharePoint本文保存ではローカルの一時画像を同時保存できません。".into(),
+            ));
+        }
+        if request.expected_revision.trim().is_empty() {
+            return Err(SharePointError::MarkdownConflict);
+        }
+        let source = parse_spmd_uri(&request.path)?;
+        let token = self.access_token(config, show_prompt).await?;
+        let site_url = format!(
+            "{GRAPH_ROOT}/sites/{}:{}",
+            source.tenant_host,
+            encode_graph_path(&source.site_path)
+        );
+        let site: SiteResponse = self.graph_json(&site_url, &token).await?;
+        let drives_url = format!("{GRAPH_ROOT}/sites/{}/drives", encode_segment(&site.id));
+        let drives: DrivesResponse = self.graph_json(&drives_url, &token).await?;
+        let (drive, item_path) = select_drive(&drives.value, &source)?;
+        let item_url = format!(
+            "{GRAPH_ROOT}/drives/{}/root:/{}",
+            encode_segment(&drive.id),
+            encode_graph_path(&item_path).trim_start_matches('/')
+        );
+        let item: DriveItemResponse = self.graph_json(&item_url, &token).await?;
+        if item.e_tag.as_deref() != Some(request.expected_revision.as_str()) {
+            return Err(SharePointError::MarkdownConflict);
+        }
+        let content_url = format!(
+            "{GRAPH_ROOT}/drives/{}/items/{}/content",
+            encode_segment(&drive.id),
+            encode_segment(&item.id)
+        );
+        let original = self
+            .graph_bytes_limited(&content_url, &token, MAX_MARKDOWN_BYTES)
+            .await
+            .map_err(|error| match error {
+                SharePointError::ContentTooLarge => SharePointError::DocumentTooLarge,
+                other => other,
+            })?;
+        let output = encode_markdown_like_original(&original, &request.content)
+            .map_err(|error| SharePointError::InvalidMarkdown(error.to_string()))?;
+        if output.len() > MAX_MARKDOWN_BYTES {
+            return Err(SharePointError::DocumentTooLarge);
+        }
+        let response = self
+            .http
+            .put(&content_url)
+            .bearer_auth(&token)
+            .header("If-Match", &request.expected_revision)
+            .header("Content-Type", "text/markdown")
+            .body(output.clone())
+            .send()
+            .await
+            .map_err(|error| SharePointError::Graph(error.to_string()))?;
+        if response.status() == StatusCode::PRECONDITION_FAILED {
+            return Err(SharePointError::MarkdownConflict);
+        }
+        let response = ensure_graph_success(response).await?;
+        let updated = response
+            .json::<UpdatedDriveItemResponse>()
+            .await
+            .map_err(|error| SharePointError::Graph(error.to_string()))?;
+        let revision = updated
+            .e_tag
+            .clone()
+            .unwrap_or_else(|| content_revision(&output));
+        let (content, encoding) = decode_markdown(&output);
+        let base_dir = source
+            .canonical_uri
+            .rsplit_once('/')
+            .map(|(parent, _)| parent.to_string())
+            .unwrap_or_else(|| source.canonical_uri.clone());
+        Ok(MarkdownLoadResult {
+            path: source.canonical_uri,
+            kind: DocumentKind::Markdown,
+            content,
+            base_dir,
+            image_paths: Vec::new(),
+            encoding,
+            size_bytes: updated.size,
+            modified_at: updated
+                .last_modified_date_time
+                .as_deref()
+                .map(format_modified_at)
+                .unwrap_or_else(|| format_modified_at(&item.last_modified_date_time)),
+            revision: revision.clone(),
+            source: DocumentSourceKind::SharePoint,
+            web_url: updated.web_url.or(Some(item.web_url)),
+            etag: Some(revision),
         })
     }
 

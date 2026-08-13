@@ -73,14 +73,22 @@ fn save_locked(path: &Path, request: &SaveMarkdownRequest) -> AppResult<Markdown
         ));
     }
 
-    let original = decode_original(&bytes);
-    let content = preserve_line_endings(&original.text, &request.content);
+    let output = encode_markdown_like_original(&bytes, &request.content)?;
+    atomic_write(path, &output)?;
+    load_markdown(&path.to_string_lossy())
+}
+
+pub(crate) fn encode_markdown_like_original(
+    original_bytes: &[u8],
+    edited_content: &str,
+) -> AppResult<Vec<u8>> {
+    let original = decode_original(original_bytes);
+    let content = preserve_line_endings(&original.text, edited_content);
     let payload = encode_payload(original.encoding, &content)?;
     let mut output = Vec::with_capacity(original.bom.len() + payload.len());
     output.extend_from_slice(original.bom);
     output.extend_from_slice(&payload);
-    atomic_write(path, &output)?;
-    load_markdown(&path.to_string_lossy())
+    Ok(output)
 }
 
 fn decode_original(bytes: &[u8]) -> OriginalDocument {

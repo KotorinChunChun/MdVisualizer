@@ -88,6 +88,10 @@ export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: 
   return viewMode === "presentation" && requestedPanel === "images" ? null : requestedPanel;
 }
 
+export function canEditMarkdownDocument(document: { kind: string } | null | undefined): boolean {
+  return document?.kind === "markdown";
+}
+
 export async function handleWindowCloseRequest(
   hasUnsavedChanges: boolean,
   confirmDiscard: (message?: string) => boolean,
@@ -186,7 +190,7 @@ export function App() {
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
   const activeSharePoint = isSharePointDocument(activeTab?.document ?? activeTab);
-  const canEditActive = Boolean(activeTab?.document?.kind === "markdown" && !activeSharePoint);
+  const canEditActive = canEditMarkdownDocument(activeTab?.document);
   const editorMode: EditorWorkspaceMode = canEditActive ? activeTab?.editorMode ?? "preview" : "preview";
   const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
   const previewContent = useDeferredValue(activeMarkdownContent);
@@ -477,17 +481,19 @@ export function App() {
   const saveTab = useCallback(async (id: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
     if (!tab?.document || !tab.dirty || tab.saving) return;
-    if (tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) {
+    if (tab.document.kind !== "markdown") {
       setToast({ id: String(Date.now()), message: "この文書は閲覧専用です。", type: "error" });
       return;
     }
     dispatch({ type: "SAVE_STARTED", id });
-    const identity = localPathIdentity(tab.document.path);
+    const identity = isSharePointDocument(tab.document) ? null : localPathIdentity(tab.document.path);
     const selfSaveUntil = Date.now() + 2000;
-    recentSelfSaves.current.set(identity, selfSaveUntil);
-    window.setTimeout(() => {
-      if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
-    }, 2100);
+    if (identity) {
+      recentSelfSaves.current.set(identity, selfSaveUntil);
+      window.setTimeout(() => {
+        if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
+      }, 2100);
+    }
     try {
       const stagedAssetIds = (tab.pendingAssets ?? []).map((asset) => asset.id);
       const document = await saveMarkdown({
@@ -499,10 +505,10 @@ export function App() {
       dispatch({ type: "SAVED", id, document, committedAssetIds: stagedAssetIds });
       setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
     } catch (error) {
-      recentSelfSaves.current.delete(identity);
+      if (identity) recentSelfSaves.current.delete(identity);
       const message = String(error);
       dispatch({ type: "SAVE_FAILED", id, error: message });
-      if (message.toLowerCase().includes("conflict")) dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
+      if (message.toLowerCase().includes("conflict") || message.includes("更新されています") || message.includes("HTTP 412")) dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
       setToast({ id: String(Date.now()), message: `保存に失敗しました: ${message}`, type: "error" });
     }
   }, []);
@@ -922,13 +928,13 @@ export function App() {
 
   const changeEditorMode = useCallback((mode: EditorWorkspaceMode) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
-    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return;
+    if (!tab?.document || tab.document.kind !== "markdown") return;
     dispatch({ type: "EDITOR_MODE", id: tab.id, mode });
   }, []);
 
   const updateCodeFenceBody = useCallback((occurrence: CodeFenceOccurrence, body: string): boolean => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
-    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return false;
+    if (!tab?.document || tab.document.kind !== "markdown") return false;
     try {
       const content = replaceCodeFenceBody(tab.draft, occurrence, body);
       dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
@@ -1234,8 +1240,8 @@ export function App() {
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <span className="control-group__title">画面</span>
-          <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} title={activeSharePoint ? "SharePoint Markdown本文の編集は現在未対応です。SharePointまたは別の編集アプリで本文を編集してください。" : undefined} onClick={() => changeEditorMode("edit")}>編集のみ</button>
-          <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} title={activeSharePoint ? "SharePoint Markdown本文の編集は現在未対応です。SharePointまたは別の編集アプリで本文を編集してください。" : undefined} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
+          <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("edit")}>編集のみ</button>
+          <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
           <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
         </div>
         {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
@@ -1386,7 +1392,7 @@ export function App() {
             documentPath={activeSharePoint ? undefined : activeTab.path}
             sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
-            onCodeFenceBodyChange={activeSharePoint ? undefined : updateCodeFenceBody}
+            onCodeFenceBodyChange={updateCodeFenceBody}
             stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
           />
         ) : (
