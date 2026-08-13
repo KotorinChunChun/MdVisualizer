@@ -21,8 +21,18 @@ export function replaceImageOccurrenceSource(markdown: string, occurrence: Image
   return replaceMarkdownOccurrence(markdown, occurrence, replacement);
 }
 
+export function normalizedAssetFilename(label: string, extension: string, fallback = "image"): string {
+  const normalizedExtension = extension.trim().replace(/^\.+/, "").toLowerCase() || "png";
+  const withoutImageExtension = label.trim().replace(/(?:\.(?:png|jpe?g|gif|webp|bmp|avif|svg))+$/i, "");
+  const stem = withoutImageExtension
+    .replace(/[\\/:*?"<>|\s]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48)
+    || fallback;
+  return `${stem}.${normalizedExtension}`;
+}
+
 export function preferredAssetFilename(context: AssetConversionContext, extension: string): string {
   const label = context.occurrence.kind === "image" ? context.occurrence.caption : context.assetKind === "svg" ? "diagram" : "image";
-  const stem = label.trim().replace(/[\\/:*?"<>|\s]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || (context.assetKind === "svg" ? "diagram" : "image");
-  return `${stem}.${extension}`;
+  return normalizedAssetFilename(label, extension, context.assetKind === "svg" ? "diagram" : "image");
 }

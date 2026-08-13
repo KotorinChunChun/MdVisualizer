@@ -1443,7 +1443,8 @@ export function App() {
             updateImageVersion(`${annotationTarget.sharePoint.documentPath}|${annotationTarget.sharePoint.source}`);
           } else if (annotationTarget.storage === "embedded" && dataUri && annotationTarget.conversionContext) {
             const context = annotationTarget.conversionContext;
-            const tab = tabsState.tabs.find((candidate) => candidate.document?.path === context.documentPath);
+            const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document
+              && documentSourceIdentity(candidate.document.path) === documentSourceIdentity(context.documentPath));
             if (!tab || context.occurrence.kind !== "image") {
               handleCropError("Base64画像の反映先が見つかりません。");
               return;

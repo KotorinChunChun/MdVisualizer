@@ -29,4 +29,17 @@ describe("MarkdownEditor", () => {
 
     expect(onSave).toHaveBeenCalledOnce();
   });
+
+  it("reflects an externally edited Base64 occurrence in CodeMirror without emitting another change", async () => {
+    const onChange = vi.fn();
+    const original = "![photo](data:image/png;base64,ORIGINAL)";
+    const edited = "![photo](data:image/png;base64,EDITED)";
+    const { container, rerender } = render(<MarkdownEditor documentId="tab-1:1" value={original} dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+
+    rerender(<MarkdownEditor documentId="tab-1:1" value={edited} dirty saving={false} onChange={onChange} onSave={() => {}} />);
+
+    await waitFor(() => expect(container.querySelector(".cm-content")?.textContent).toContain("EDITED"));
+    expect(container.querySelector(".cm-content")?.textContent).not.toContain("ORIGINAL");
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

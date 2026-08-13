@@ -7,7 +7,7 @@ import type { CropTarget } from "../hooks/useCropEditor";
 import { InlineImageResizeOverlay } from "./InlineImageResizeOverlay";
 import { ImageSize, useInlineImageResize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
-import type { AssetConversionContext } from "../lib/assetConversion";
+import { normalizedAssetFilename, parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
 import type { DocumentAssetData } from "../types/app";
 import "../styles/inline-image-resize.css";
 
@@ -179,7 +179,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       : isEmbeddedRaster && conversionContext
         ? {
           rawSrc: displaySrc,
-          filename: `${alt.trim() || "image"}.png`,
+          filename: normalizedAssetFilename(alt, parseRasterDataUri(src)?.extension ?? "png"),
           storage: "embedded" as const,
           conversionContext,
         }

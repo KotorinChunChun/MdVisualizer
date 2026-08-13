@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { collectEditableMarkdownOccurrences } from "./markdownOccurrences";
-import { parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./assetConversion";
+import { normalizedAssetFilename, parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./assetConversion";
 
 describe("asset conversions", () => {
   it("parses supported raster data URIs", () => {
@@ -19,5 +19,13 @@ describe("asset conversions", () => {
     const occurrence = collectEditableMarkdownOccurrences("![設計 図](data:image/png;base64,AAAA)")[0];
     const context = { occurrence, assetKind: "raster", storage: "embedded", documentPath: "C:/docs/a.md" } as AssetConversionContext;
     expect(preferredAssetFilename(context, "png")).toBe("設計-図.png");
+  });
+
+  it("does not duplicate an existing image extension from the caption", () => {
+    const occurrence = collectEditableMarkdownOccurrences("![screen.PNG](data:image/png;base64,AAAA)")[0];
+    const context = { occurrence, assetKind: "raster", storage: "embedded", documentPath: "C:/docs/a.md" } as AssetConversionContext;
+    expect(preferredAssetFilename(context, "png")).toBe("screen.png");
+    expect(normalizedAssetFilename("photo.jpg", "png")).toBe("photo.png");
+    expect(normalizedAssetFilename("  <>  ", ".WEBP")).toBe("image.webp");
   });
 });
