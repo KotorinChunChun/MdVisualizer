@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "spfx-markdown-editor-client-side-solution",
+    "id": "cc592ba5-ad2e-4616-ba55-5c9cc000a6ab",
+    "version": "0.0.9.0",
+    "includeClientSideAssets": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "KotorinChunChun",
+      "websiteUrl": "https://github.com/KotorinChunChun/MarkdownViewer",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.23.2"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "SharePoint Markdown Editor"
+      },
+      "longDescription": {
+        "default": "SharePoint上のMarkdownファイルをCodeMirror 6で編集します。"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "spfx-markdown-editor Feature",
+        "description": "Markdown Editor Web Partを有効にします。",
+        "id": "21be68cf-476f-4fcd-9b1e-449b3d855ad4",
+        "version": "0.0.9.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/spfx-markdown-editor.sppkg"
+  }
+}

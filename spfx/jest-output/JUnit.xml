@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="4" failures="0" errors="0" time="30.127">
+  <testsuite name="resolveDrawioConnection" errors="0" failures="0" skipped="0" timestamp="2026-08-13T09:56:50" time="2.938" tests="2">
+    <testcase classname="resolveDrawioConnection &gt; " name="uses the official editor only for official mode (lib-commonjs\webparts\markdownEditor\DrawioConnection.test.js)" time="0.053">
+    </testcase>
+    <testcase classname="resolveDrawioConnection &gt; " name="accepts a same-origin SharePoint page and rejects another host (lib-commonjs\webparts\markdownEditor\DrawioConnection.test.js)" time="0.023">
+    </testcase>
+  </testsuite>
+  <testsuite name="MarkdownTextEncoding" errors="0" failures="0" skipped="0" timestamp="2026-08-13T09:56:50" time="2.97" tests="2">
+    <testcase classname="MarkdownTextEncoding &gt; " name="preserves UTF-8 BOM and CRLF (lib-commonjs\webparts\markdownEditor\MarkdownTextEncoding.test.js)" time="0.045">
+    </testcase>
+    <testcase classname="MarkdownTextEncoding &gt; " name="preserves UTF-16LE BOM (lib-commonjs\webparts\markdownEditor\MarkdownTextEncoding.test.js)" time="0.008">
+    </testcase>
+  </testsuite>
+</testsuites>

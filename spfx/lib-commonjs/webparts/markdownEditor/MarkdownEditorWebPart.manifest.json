@@ -1,0 +1,31 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "b4752ea8-2872-48e9-8027-2acee063cc51",
+  "alias": "MarkdownEditorWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage"],
+  "supportsFullBleed": true,
+  "supportsThemeVariants": true,
+  "preconfiguredEntries": [
+    {
+      "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+      "group": { "default": "Advanced" },
+      "title": { "default": "Markdown Editor" },
+      "description": { "default": "SharePointファイルを直接編集できるMarkdownエディター" },
+      "officeFabricIconFontName": "Page",
+      "properties": {
+        "sourceWebUrl": "",
+        "documentLibrary": "",
+        "subfolderPath": "",
+        "serverRelativeFileUrl": "",
+        "drawioConnectionMode": "official",
+        "drawioEditorUrl": "",
+        "drawioViewerUrl": "",
+        "drawioSharePointPageUrl": ""
+      }
+    }
+  ]
+}

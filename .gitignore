@@ -10,6 +10,11 @@ src-tauri/target/
 node_modules/
 dist/
 build/
+.tools/
+packages/*/lib/
+spfx/lib/
+spfx/temp/
+spfx/sharepoint/
 *.exe
 *.dll
 *.so
