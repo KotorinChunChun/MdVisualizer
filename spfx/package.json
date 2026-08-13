@@ -29,7 +29,7 @@
     "encoding-japanese": "2.2.0",
     "highlight.js": "11.11.1",
     "hast-util-to-html": "9.0.5",
-    "mermaid": "11.16.0",
+    "mermaid": "11.16.1",
     "rehype-raw": "7.0.0",
     "rehype-sanitize": "6.0.0",
     "rehype-stringify": "10.0.1",

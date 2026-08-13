@@ -106,7 +106,7 @@ function Initialize-ProjectDependencies {
         Write-Host "依存関係はpackage-lock.jsonと同期済みです: $WorkingDirectory"
         return
     }
-    Invoke-ProjectNpm -WorkingDirectory $WorkingDirectory -Arguments @('ci')
+    Invoke-ProjectNpm -WorkingDirectory $WorkingDirectory -Arguments @('ci', '--prefer-offline', '--no-audit', '--no-fund')
     Set-Content -LiteralPath $stampFile -Value $expected -Encoding utf8NoBOM
 }
 
