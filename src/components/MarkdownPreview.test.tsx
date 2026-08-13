@@ -56,6 +56,18 @@ describe("MarkdownPreview sanitization", () => {
     expect(onOpenDocument).toHaveBeenCalledWith("C:/docs/linked-document.md");
   });
 
+  it("opens a non-Markdown spmd relative link as an absolute HTTPS URL", () => {
+    vi.mocked(openExternalUrl).mockResolvedValue(undefined);
+    render(<MarkdownPreview
+      content="[仕様書](../files/spec.pdf)"
+      baseDir="spmd://excelchunchun.sharepoint.com/sites/test-team-site/SpoWiki/folder"
+      sourcePath="spmd://excelchunchun.sharepoint.com/sites/test-team-site/SpoWiki/folder/README.md"
+      imageVersions={{}}
+    />);
+    fireEvent.click(screen.getByRole("link", { name: "仕様書" }));
+    expect(openExternalUrl).toHaveBeenCalledWith("https://excelchunchun.sharepoint.com/sites/test-team-site/SpoWiki/files/spec.pdf");
+  });
+
   it("opens SVG and Mermaid document links in tabs or adjacent windows", () => {
     const onOpenDocument = vi.fn();
     const onOpenDocumentWindow = vi.fn();

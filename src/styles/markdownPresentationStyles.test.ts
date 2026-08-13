@@ -8,8 +8,9 @@ const presentationCss = readFileSync(join(process.cwd(), "src/styles/presentatio
 const inlineImageCss = readFileSync(join(process.cwd(), "src/styles/inline-image-resize.css"), "utf8");
 
 function ruleBody(css: string, selector: string) {
+  const normalizedCss = css.replace(/\r\n?/g, "\n");
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return css.match(new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`))?.[1] ?? "";
+  return normalizedCss.match(new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`))?.[1] ?? "";
 }
 
 describe("Markdown and presentation print styles", () => {

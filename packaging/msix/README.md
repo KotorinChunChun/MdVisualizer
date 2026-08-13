@@ -8,7 +8,8 @@ Windows SDKの`MakeAppx.exe`と`SignTool.exe`を使い、x64版のMarkdownViewer
 pwsh -NoProfile -File .\scripts\build-msix.ps1
 ```
 
-`release\msix`へ署名済み`.msix`と公開鍵`.cer`を出力する。初回はCurrent Userの
+`release\msix`へ署名済み`.msix`と公開鍵`MarkdownViewer.cer`を出力する。公開鍵のファイル名は
+バージョンにかかわらず固定し、同じ証明書を使用している間は既存ファイルを再利用する。初回はCurrent Userの
 `Personal (My)`証明書ストアへ`MarkdownViewer Self-Signed Code Signing`というFriendly Nameの
 コード署名証明書を作成し、秘密鍵を永続保存する。2回目以降は同じ証明書を再利用する。
 
@@ -38,7 +39,7 @@ MSIX生成後、beta更新チャネルの`.appinstaller`を生成する。
 
 ```powershell
 pwsh -NoProfile -File .\scripts\build-appinstaller.ps1 `
-  -MsixPath .\release\msix\MarkdownViewer_0.0.8.0_x64.msix `
+  -MsixPath .\release\msix\MarkdownViewer_0.0.9.0_x64.msix `
   -ChannelBaseUri "https://excel-chunchun.sakura.ne.jp/download/beta/"
 ```
 

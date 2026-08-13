@@ -27,6 +27,27 @@ export interface DocumentAssetData {
   mediaType: string;
   base64: string;
   text?: string | null;
+  path?: string | null;
+  revision?: string | null;
+  source: "local" | "sharepoint";
+  canEdit: boolean;
+  editDisabledReason?: string | null;
+}
+
+export interface SharePointAssetSaveRequest {
+  documentPath: string;
+  source: string;
+  expectedRevision: string;
+  mediaType: "image/png" | "image/svg+xml";
+  base64?: string;
+  text?: string;
+}
+
+export interface SharePointAssetSaveResult {
+  filename: string;
+  path: string;
+  revision: string;
+  sizeBytes: number;
 }
 
 export interface CropImageRequest {

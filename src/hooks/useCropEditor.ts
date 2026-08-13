@@ -9,9 +9,18 @@ export interface CropTarget {
 export interface ImageEditTarget {
   rawSrc: string;
   filename: string;
-  storage: "external" | "embedded";
+  storage: "external" | "embedded" | "sharepoint";
   fullPath?: string;
   conversionContext?: import("../lib/assetConversion").AssetConversionContext;
+  sharePoint?: SharePointAssetEditContext;
+}
+
+export interface SharePointAssetEditContext {
+  documentPath: string;
+  source: string;
+  path: string;
+  revision: string;
+  mediaType: "image/png" | "image/svg+xml";
 }
 
 export function useCropEditor() {

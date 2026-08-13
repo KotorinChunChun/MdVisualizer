@@ -1,31 +1,35 @@
 # =============================================================================
-#  軽量リリース exe 更新スクリプト
-#  - Tauri の Release exe だけを生成する（インストーラー、ZIP、GitHub Release は作らない）
-#  - 書き込み可能な既存 exe、または release ショートカットのリンク先を更新する
-#  - MSIX の WindowsApps 配下は Windows の保護対象なので直接更新しない
+#  デバッグ用 MSIX exe 更新スクリプト
+#  - Tauri の Release exe だけを生成する（MSIX、ZIP、インストーラーは作らない）
+#  - 登録済みMSIXのInstallLocation配下からexeを特定し、バイナリだけを強制置換する
+#  - WindowsApps内の変更はパッケージ署名を壊すため、開発PCでのデバッグ専用
 #
 #  通常実行:
 #    pwsh -NoProfile -File .\dev\scripts\release-MarkdownViewer.ps1
-#
-#  更新先を明示する場合:
-#    pwsh -NoProfile -File .\dev\scripts\release-MarkdownViewer.ps1 `
-#      -InstalledExePath "$env:LOCALAPPDATA\Programs\MarkdownViewer\MarkdownViewer.exe"
 # =============================================================================
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$InstalledExePath,
     [string]$BuiltExePath,
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [switch]$ElevatedMsixOverwrite
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $ProjectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+$PackageIdentityName = 'com.markdownviewer.viewer'
 if (-not $BuiltExePath) {
     $BuiltExePath = Join-Path $ProjectRoot 'src-tauri\target\release\markdown-viewer.exe'
 }
 $BuiltExePath = [System.IO.Path]::GetFullPath($BuiltExePath)
+
+function Test-IsAdministrator {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
 
 function Test-IsWindowsAppsPath {
     param(
@@ -41,120 +45,78 @@ function Test-IsWindowsAppsPath {
     )
 }
 
-function Get-DisplayIconPath {
-    param([AllowNull()][string]$DisplayIcon)
-
-    if ([string]::IsNullOrWhiteSpace($DisplayIcon)) {
-        return $null
-    }
-
-    $candidate = $DisplayIcon.Trim().Trim('"')
-    $candidate = $candidate -replace ',\s*-?\d+$', ''
-    return $candidate.Trim().Trim('"')
-}
-
-function Find-InstalledExecutable {
-    $processPath = Get-Process -Name 'markdown-viewer', 'MarkdownViewer' -ErrorAction SilentlyContinue |
-        ForEach-Object {
-            try { $_.Path } catch { $null }
-        } |
-        Where-Object { $_ -and -not (Test-IsWindowsAppsPath -Path $_) } |
-        Select-Object -First 1
-    if ($processPath) {
-        return [pscustomobject]@{ Path = $processPath; Source = '実行中プロセス' }
-    }
-
-    $registryRoots = @(
-        'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
-        'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
-        'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
-    )
-    $installedApp = Get-ItemProperty $registryRoots -ErrorAction SilentlyContinue |
-        Where-Object {
-            $_.PSObject.Properties['DisplayName'] -and
-            $_.DisplayName -match '^Markdown\s*Viewer$|^MarkdownViewer$'
-        } |
-        Select-Object -First 1
-    if ($installedApp) {
-        $candidates = [System.Collections.Generic.List[string]]::new()
-        $displayIcon = if ($installedApp.PSObject.Properties['DisplayIcon']) {
-            $installedApp.DisplayIcon
-        }
-        else {
-            $null
-        }
-        $displayIconPath = Get-DisplayIconPath -DisplayIcon $displayIcon
-        if ($displayIconPath) {
-            $candidates.Add($displayIconPath)
-        }
-        $installLocation = if ($installedApp.PSObject.Properties['InstallLocation']) {
-            $installedApp.InstallLocation
-        }
-        else {
-            $null
-        }
-        if (-not [string]::IsNullOrWhiteSpace($installLocation)) {
-            $candidates.Add((Join-Path $installLocation 'MarkdownViewer.exe'))
-            $candidates.Add((Join-Path $installLocation 'markdown-viewer.exe'))
-        }
-
-        $registryExe = $candidates |
-            Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
-            Select-Object -First 1
-        if ($registryExe) {
-            return [pscustomobject]@{ Path = $registryExe; Source = 'アンインストール情報' }
-        }
-    }
-
-    $shortcutRoots = @(
-        [Environment]::GetFolderPath('Desktop'),
-        [Environment]::GetFolderPath('CommonDesktopDirectory')
-    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Container) }
-    $releaseShortcut = Get-ChildItem -LiteralPath $shortcutRoots -Filter '*.lnk' -ErrorAction SilentlyContinue |
-        Where-Object { $_.BaseName -match '(?i)markdown.?viewer.*release|release.*markdown.?viewer' } |
-        Select-Object -First 1
-    if ($releaseShortcut) {
-        $shell = New-Object -ComObject WScript.Shell
-        $shortcut = $shell.CreateShortcut($releaseShortcut.FullName)
-        if ($shortcut.TargetPath) {
-            return [pscustomobject]@{ Path = $shortcut.TargetPath; Source = 'release ショートカット' }
-        }
-    }
-
-    $msixPackage = Get-AppxPackage -Name 'com.markdownviewer.viewer' -ErrorAction SilentlyContinue |
-        Select-Object -First 1
-    if ($msixPackage) {
-        throw @"
-インストール済みの MarkdownViewer は MSIX 版です。
-MSIX の exe は WindowsApps の保護対象なので直接差し替えできません。
-書き込み可能なポータブル版のパスを -InstalledExePath で指定するか、MSIX 更新用スクリプトを使用してください。
-MSIX: $($msixPackage.PackageFullName)
-"@
-    }
-
-    throw '更新対象の MarkdownViewer.exe を検出できませんでした。-InstalledExePath で既存 exe のパスを指定してください。'
-}
-
-function Assert-ApplicationStopped {
+function Get-MsixExecutableCandidates {
     param(
         [Parameter(Mandatory)]
-        [string]$Path
+        [string]$InstallLocation
     )
 
-    $fullPath = [System.IO.Path]::GetFullPath($Path)
-    $usingProcesses = Get-Process -Name 'markdown-viewer', 'MarkdownViewer' -ErrorAction SilentlyContinue |
-        Where-Object {
-            try {
-                [System.IO.Path]::GetFullPath($_.Path).Equals(
-                    $fullPath,
+    $root = [System.IO.Path]::GetFullPath($InstallLocation)
+    return @(
+        Get-ChildItem -LiteralPath $root -File -Recurse -ErrorAction Stop |
+            Where-Object { $_.Name -ieq 'markdown-viewer.exe' } |
+            Where-Object {
+                $_.FullName.StartsWith(
+                    $root.TrimEnd('\') + '\',
                     [System.StringComparison]::OrdinalIgnoreCase
                 )
             }
-            catch {
-                $false
+    )
+}
+
+function Find-InstalledMsixExecutable {
+    param([string]$ExpectedPath)
+
+    $packages = @(
+        Get-AppxPackage -Name $PackageIdentityName -ErrorAction SilentlyContinue |
+            Sort-Object Version -Descending
+    )
+    if ($packages.Count -eq 0) {
+        throw "MSIX版 $PackageIdentityName が現在のユーザーへインストールされていません。"
+    }
+
+    foreach ($package in $packages) {
+        $candidates = @(Get-MsixExecutableCandidates -InstallLocation $package.InstallLocation)
+        if ($ExpectedPath) {
+            $expectedFullPath = [System.IO.Path]::GetFullPath($ExpectedPath)
+            $matched = $candidates |
+                Where-Object {
+                    $_.FullName.Equals($expectedFullPath, [System.StringComparison]::OrdinalIgnoreCase)
+                } |
+                Select-Object -First 1
+            if ($matched) {
+                return [pscustomobject]@{
+                    Path = $matched.FullName
+                    PackageFullName = $package.PackageFullName
+                    InstallLocation = $package.InstallLocation
+                }
+            }
+            continue
+        }
+
+        if ($candidates.Count -eq 1) {
+            return [pscustomobject]@{
+                Path = $candidates[0].FullName
+                PackageFullName = $package.PackageFullName
+                InstallLocation = $package.InstallLocation
             }
         }
-    if ($usingProcesses) {
+        if ($candidates.Count -gt 1) {
+            throw "MSIX配下にmarkdown-viewer.exeが複数見つかったため対象を確定できません: $($package.InstallLocation)"
+        }
+    }
+
+    if ($ExpectedPath) {
+        throw "指定されたWindowsApps内exeは、登録済み $PackageIdentityName パッケージの実行ファイルではありません: $ExpectedPath"
+    }
+    throw "登録済みMSIXの配下にmarkdown-viewer.exeが見つかりませんでした: $($packages[0].InstallLocation)"
+}
+
+function Assert-MarkdownViewerStopped {
+    $usingProcesses = @(
+        Get-Process -Name 'markdown-viewer', 'MarkdownViewer' -ErrorAction SilentlyContinue
+    )
+    if ($usingProcesses.Count -gt 0) {
         $processIds = ($usingProcesses.Id | Sort-Object) -join ', '
         throw "MarkdownViewer が実行中です。アプリを終了してから再実行してください。PID: $processIds"
     }
@@ -163,70 +125,155 @@ function Assert-ApplicationStopped {
 function New-BackupPath {
     param(
         [Parameter(Mandatory)]
-        [string]$Path
+        [string]$PackageFullName
     )
 
+    $safePackageName = $PackageFullName -replace '[^A-Za-z0-9._-]', '_'
     $timestamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
-    return "$Path.backup-$timestamp"
+    $backupDirectory = Join-Path $ProjectRoot "release\msix-debug-backup\$safePackageName\$timestamp"
+    New-Item -ItemType Directory -Path $backupDirectory -Force | Out-Null
+    return Join-Path $backupDirectory 'markdown-viewer.exe'
+}
+
+function Invoke-CheckedNativeCommand {
+    param(
+        [Parameter(Mandatory)]
+        [string]$FilePath,
+        [Parameter(Mandatory)]
+        [string[]]$ArgumentList
+    )
+
+    & $FilePath @ArgumentList
+    if ($LASTEXITCODE -ne 0) {
+        throw "管理者コマンドに失敗しました。終了コード ${LASTEXITCODE}: $FilePath"
+    }
+}
+
+function Invoke-MsixExecutableOverwrite {
+    param(
+        [Parameter(Mandatory)]
+        [pscustomobject]$Target,
+        [Parameter(Mandatory)]
+        [string]$SourcePath
+    )
+
+    if (-not (Test-IsAdministrator)) {
+        throw 'WindowsApps内のexeを上書きするには管理者権限が必要です。'
+    }
+
+    Assert-MarkdownViewerStopped
+    $sourceHash = (Get-FileHash -LiteralPath $SourcePath -Algorithm SHA256).Hash
+    $backupPath = New-BackupPath -PackageFullName $Target.PackageFullName
+    Copy-Item -LiteralPath $Target.Path -Destination $backupPath -Force
+    $originalHash = (Get-FileHash -LiteralPath $backupPath -Algorithm SHA256).Hash
+    $originalAcl = Get-Acl -LiteralPath $Target.Path
+    $currentUserSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $aclChanged = $false
+
+    try {
+        Invoke-CheckedNativeCommand -FilePath 'takeown.exe' -ArgumentList @('/F', $Target.Path, '/A')
+        Invoke-CheckedNativeCommand `
+            -FilePath 'icacls.exe' `
+            -ArgumentList @($Target.Path, '/grant:r', "*${currentUserSid}:(F)")
+        $aclChanged = $true
+
+        Copy-Item -LiteralPath $SourcePath -Destination $Target.Path -Force
+        $installedHash = (Get-FileHash -LiteralPath $Target.Path -Algorithm SHA256).Hash
+        if ($sourceHash -ne $installedHash) {
+            throw '差し替え後のWindowsApps内exeのSHA-256がRelease exeと一致しません。'
+        }
+    }
+    catch {
+        try {
+            Copy-Item -LiteralPath $backupPath -Destination $Target.Path -Force
+        }
+        catch {
+            Write-Warning "上書き失敗後の自動復元にも失敗しました。バックアップを使用してください: $backupPath"
+        }
+        throw
+    }
+    finally {
+        if ($aclChanged) {
+            try {
+                Set-Acl -LiteralPath $Target.Path -AclObject $originalAcl
+            }
+            catch {
+                Write-Warning "WindowsApps内exeの元のACLを復元できませんでした: $($_.Exception.Message)"
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        BackupPath = $backupPath
+        OriginalHash = $originalHash
+        InstalledHash = $sourceHash
+    }
+}
+
+function ConvertTo-ProcessArgument {
+    param([Parameter(Mandatory)][string]$Value)
+    return '"' + $Value.Replace('"', '\"') + '"'
+}
+
+function Invoke-ElevatedMsixOverwrite {
+    param(
+        [Parameter(Mandatory)]
+        [pscustomobject]$Target
+    )
+
+    $pwshPath = (Get-Process -Id $PID).Path
+    $arguments = @(
+        '-NoProfile',
+        '-File', (ConvertTo-ProcessArgument -Value $PSCommandPath),
+        '-SkipBuild',
+        '-BuiltExePath', (ConvertTo-ProcessArgument -Value $BuiltExePath),
+        '-InstalledExePath', (ConvertTo-ProcessArgument -Value $Target.Path),
+        '-ElevatedMsixOverwrite'
+    )
+    $process = Start-Process `
+        -FilePath $pwshPath `
+        -ArgumentList $arguments `
+        -Verb RunAs `
+        -Wait `
+        -PassThru
+    if ($process.ExitCode -ne 0) {
+        if ((Test-Path -LiteralPath $BuiltExePath -PathType Leaf) -and
+            (Test-Path -LiteralPath $Target.Path -PathType Leaf)) {
+            $sourceHash = (Get-FileHash -LiteralPath $BuiltExePath -Algorithm SHA256).Hash
+            $installedHash = (Get-FileHash -LiteralPath $Target.Path -Algorithm SHA256).Hash
+            if ($sourceHash -eq $installedHash) {
+                Write-Warning "管理者プロセスは終了コード $($process.ExitCode) を返しましたが、差し替え先のSHA-256はRelease exeと一致しています。差し替え成功として継続します。"
+                return
+            }
+        }
+        throw "管理者権限でのMSIX exe差し替えに失敗しました。終了コード: $($process.ExitCode)"
+    }
 }
 
 if ($InstalledExePath) {
-    $resolvedTarget = [pscustomobject]@{
-        Path = [System.IO.Path]::GetFullPath($InstalledExePath)
-        Source = '-InstalledExePath'
+    if (Test-IsWindowsAppsPath -Path $InstalledExePath) {
+        $resolvedTarget = Find-InstalledMsixExecutable -ExpectedPath $InstalledExePath
+    }
+    else {
+        throw '-InstalledExePathで指定できるのは、登録済みMarkdownViewer MSIX配下のexeだけです。'
     }
 }
 else {
-    $resolvedTarget = Find-InstalledExecutable
-    $resolvedTarget.Path = [System.IO.Path]::GetFullPath($resolvedTarget.Path)
+    $resolvedTarget = Find-InstalledMsixExecutable
 }
-
-if (Test-IsWindowsAppsPath -Path $resolvedTarget.Path) {
-    throw 'MSIX の WindowsApps 配下にある exe は直接差し替えできません。MSIX 更新用スクリプトを使用してください。'
-}
-if (-not (Test-Path -LiteralPath $resolvedTarget.Path -PathType Leaf)) {
-    throw "更新対象の exe が存在しません: $($resolvedTarget.Path)"
-}
-
-Assert-ApplicationStopped -Path $resolvedTarget.Path
-if (
-    -not $BuiltExePath.Equals($resolvedTarget.Path, [System.StringComparison]::OrdinalIgnoreCase) -and
-    (Test-Path -LiteralPath $BuiltExePath -PathType Leaf)
-) {
-    Assert-ApplicationStopped -Path $BuiltExePath
-}
-
-$samePath = $BuiltExePath.Equals(
-    $resolvedTarget.Path,
-    [System.StringComparison]::OrdinalIgnoreCase
-)
-$backupPath = $null
 
 Write-Host '========================================================' -ForegroundColor Cyan
-Write-Host ' MarkdownViewer 軽量 Release exe 更新' -ForegroundColor Cyan
+Write-Host ' MarkdownViewer デバッグ用 MSIX exe 更新' -ForegroundColor Cyan
 Write-Host " ビルド出力: $BuiltExePath" -ForegroundColor Green
 Write-Host " 更新対象:   $($resolvedTarget.Path)" -ForegroundColor Yellow
-Write-Host " 検出方法:   $($resolvedTarget.Source)" -ForegroundColor DarkGray
+Write-Host " パッケージ: $($resolvedTarget.PackageFullName)" -ForegroundColor DarkGray
 Write-Host '========================================================' -ForegroundColor Cyan
-
-if ($resolvedTarget.Source -eq 'release ショートカット' -and -not $WhatIfPreference) {
-    $installedMsixPackage = Get-AppxPackage -Name 'com.markdownviewer.viewer' -ErrorAction SilentlyContinue |
-        Select-Object -First 1
-    if ($installedMsixPackage) {
-        Write-Warning 'このPCのスタートメニュー版はMSIXです。今回更新するのはデスクトップのreleaseショートカットが参照するexeだけです。'
-    }
-}
+Write-Warning 'WindowsApps内のexeだけを置換するため、MSIXの署名整合性は失われます。開発PCでのデバッグ以外には使用しないでください。'
 
 if (-not $SkipBuild) {
     if (-not $PSCmdlet.ShouldProcess($BuiltExePath, 'Tauri Release exe を生成')) {
         Write-Host 'WhatIf のためビルドと差し替えを実行しませんでした。' -ForegroundColor Gray
         return
-    }
-
-    if ($samePath) {
-        $backupPath = New-BackupPath -Path $resolvedTarget.Path
-        Copy-Item -LiteralPath $resolvedTarget.Path -Destination $backupPath
-        Write-Host "ビルド前の exe をバックアップしました: $backupPath" -ForegroundColor DarkGray
     }
 
     Push-Location $ProjectRoot
@@ -243,48 +290,29 @@ if (-not $SkipBuild) {
 }
 
 if (-not (Test-Path -LiteralPath $BuiltExePath -PathType Leaf)) {
-    throw "生成済みの Release exe が見つかりません: $BuiltExePath"
+    throw "生成済みのRelease exeが見つかりません: $BuiltExePath"
 }
 
-if ($samePath) {
-    $hash = (Get-FileHash -LiteralPath $BuiltExePath -Algorithm SHA256).Hash
-    Write-Host 'Release exe の生成が完了しました。ショートカットのリンク先は更新済みです。' -ForegroundColor Green
-    if ($backupPath) {
-        Write-Host "バックアップ: $backupPath" -ForegroundColor DarkGray
-    }
-    Write-Host "SHA-256: $hash" -ForegroundColor DarkGray
+if (-not $PSCmdlet.ShouldProcess($resolvedTarget.Path, 'MSIX内exeをバックアップしてRelease exeで強制上書き')) {
+    Write-Host 'WhatIf のためMSIX内exeの差し替えを実行しませんでした。' -ForegroundColor Gray
     return
 }
 
-if (-not $PSCmdlet.ShouldProcess($resolvedTarget.Path, '既存 exe をバックアップして Release exe に差し替え')) {
-    Write-Host 'WhatIf のため exe の差し替えを実行しませんでした。' -ForegroundColor Gray
+Assert-MarkdownViewerStopped
+
+if (-not (Test-IsAdministrator)) {
+    if ($ElevatedMsixOverwrite) {
+        throw '管理者権限への昇格に失敗しました。'
+    }
+    Write-Host 'WindowsApps内exeの置換部分だけを管理者権限で再実行します。' -ForegroundColor Yellow
+    Invoke-ElevatedMsixOverwrite -Target $resolvedTarget
+    Write-Host 'Release exeの生成とMSIX内exeの差し替えが完了しました。' -ForegroundColor Green
     return
 }
 
-$targetDirectory = Split-Path -Parent $resolvedTarget.Path
-$temporaryTarget = Join-Path $targetDirectory ".markdown-viewer-update-$PID.exe"
-$backupPath = New-BackupPath -Path $resolvedTarget.Path
-try {
-    Copy-Item -LiteralPath $BuiltExePath -Destination $temporaryTarget -Force
-    $sourceHash = (Get-FileHash -LiteralPath $BuiltExePath -Algorithm SHA256).Hash
-    $temporaryHash = (Get-FileHash -LiteralPath $temporaryTarget -Algorithm SHA256).Hash
-    if ($sourceHash -ne $temporaryHash) {
-        throw '一時コピーの SHA-256 がビルド済み exe と一致しません。'
-    }
-
-    [System.IO.File]::Replace($temporaryTarget, $resolvedTarget.Path, $backupPath, $true)
-    $installedHash = (Get-FileHash -LiteralPath $resolvedTarget.Path -Algorithm SHA256).Hash
-    if ($sourceHash -ne $installedHash) {
-        throw '差し替え後の exe の SHA-256 がビルド済み exe と一致しません。'
-    }
-}
-finally {
-    if (Test-Path -LiteralPath $temporaryTarget) {
-        Remove-Item -LiteralPath $temporaryTarget -Force
-    }
-}
-
-Write-Host 'Release exe の生成と差し替えが完了しました。' -ForegroundColor Green
-Write-Host "更新先:     $($resolvedTarget.Path)" -ForegroundColor Green
-Write-Host "バックアップ: $backupPath" -ForegroundColor DarkGray
-Write-Host "SHA-256:    $sourceHash" -ForegroundColor DarkGray
+$result = Invoke-MsixExecutableOverwrite -Target $resolvedTarget -SourcePath $BuiltExePath
+Write-Host 'Release exeの生成とMSIX内exeの差し替えが完了しました。' -ForegroundColor Green
+Write-Host "更新先:       $($resolvedTarget.Path)" -ForegroundColor Green
+Write-Host "バックアップ: $($result.BackupPath)" -ForegroundColor DarkGray
+Write-Host "更新前SHA-256: $($result.OriginalHash)" -ForegroundColor DarkGray
+Write-Host "更新後SHA-256: $($result.InstalledHash)" -ForegroundColor DarkGray

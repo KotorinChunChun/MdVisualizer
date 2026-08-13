@@ -27,7 +27,7 @@
           MarkdownViewer betaは自己署名証明書で署名されています。初回インストールの前に、
           次の公開証明書をWindowsの「信頼されたユーザー」へ登録してください。
         </p>
-        <a class="button primary" href="../beta/MarkdownViewer_0.0.7.0_x64.cer" download>証明書をダウンロード</a>
+        <a class="button primary" href="../beta/MarkdownViewer.cer" download>証明書をダウンロード</a>
       </section>
 
       <section class="fingerprint" aria-labelledby="fingerprint-title">
@@ -48,7 +48,7 @@
           <h2 id="gui-title">画面から登録する</h2>
         </div>
         <ol>
-          <li><span>1</span><div><h3>ダウンロードしたCERを開く</h3><p><code>MarkdownViewer_0.0.7.0_x64.cer</code> をダブルクリックし、「証明書のインストール」を選びます。</p></div></li>
+          <li><span>1</span><div><h3>ダウンロードしたCERを開く</h3><p><code>MarkdownViewer.cer</code> をダブルクリックし、「証明書のインストール」を選びます。</p></div></li>
           <li><span>2</span><div><h3>現在のユーザーを選ぶ</h3><p>保存場所は「現在のユーザー」を選択して「次へ」進みます。管理者権限は不要です。</p></div></li>
           <li><span>3</span><div><h3>保存先を指定する</h3><p>「証明書をすべて次のストアに配置する」を選び、「参照」から<strong>信頼されたユーザー</strong>（Trusted People）を選択します。</p></div></li>
           <li><span>4</span><div><h3>内容を確認して完了する</h3><p>発行先とThumbprintを上記と照合してから「完了」を選びます。セキュリティ警告が出た場合も、同じ発行先であることを再確認します。</p></div></li>
@@ -63,7 +63,7 @@
           <p>CERをダウンロードしたフォルダで、次を実行します。</p>
         </div>
         <pre><code>Import-Certificate `
-  -FilePath .\MarkdownViewer_0.0.7.0_x64.cer `
+  -FilePath .\MarkdownViewer.cer `
   -CertStoreLocation Cert:\CurrentUser\TrustedPeople</code></pre>
       </section>
 

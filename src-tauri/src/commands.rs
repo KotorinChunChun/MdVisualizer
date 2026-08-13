@@ -15,7 +15,10 @@ use crate::image_references::{
 use crate::markdown::{
     load_markdown as do_load_markdown, DocumentKind, MarkdownLoadResult,
 };
-use crate::sharepoint::{is_spmd_uri, parse_spmd_uri, SharePointAuthConfig, SharePointError};
+use crate::sharepoint::{
+    is_spmd_uri, parse_spmd_uri, SharePointAssetSaveRequest, SharePointAssetSaveResult,
+    SharePointAuthConfig, SharePointError,
+};
 use crate::watcher::FileWatcher;
 use serde::Deserialize;
 use serde::Serialize;
@@ -205,11 +208,25 @@ pub async fn load_markdown(
 }
 
 #[tauri::command]
-pub fn save_markdown(
+pub async fn save_markdown(
+    window: WebviewWindow,
     state: State<'_, AppState>,
     request: SaveMarkdownRequest,
 ) -> Result<MarkdownLoadResult, String> {
-    do_save_markdown(request, &state.asset_staging).map_err(|error| error.to_string())
+    if !is_spmd_uri(&request.path) {
+        return do_save_markdown(request, &state.asset_staging)
+            .map_err(|error| error.to_string());
+    }
+    let config = SharePointAuthConfig::embedded();
+    state
+        .sharepoint
+        .save_markdown(request, &config, |prompt| {
+            window
+                .emit("sharepoint-authentication-required", prompt)
+                .map_err(|error| SharePointError::Authentication(error.to_string()))
+        })
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[derive(Deserialize)]
@@ -251,8 +268,45 @@ pub fn discard_staged_assets(state: State<'_, AppState>, ids: Vec<String>) {
 }
 
 #[tauri::command]
-pub fn read_document_asset(document_path: String, source: String) -> Result<DocumentAssetData, String> {
-    do_read_document_asset(&document_path, &source).map_err(|error| error.to_string())
+pub async fn read_document_asset(
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    document_path: String,
+    source: String,
+) -> Result<DocumentAssetData, String> {
+    if !is_spmd_uri(&document_path) {
+        return do_read_document_asset(&document_path, &source)
+            .map_err(|error| error.to_string());
+    }
+    let document = parse_spmd_uri(&document_path).map_err(|error| error.to_string())?;
+    let config = SharePointAuthConfig::embedded();
+    state
+        .sharepoint
+        .load_asset(&document, &source, &config, |prompt| {
+            window
+                .emit("sharepoint-authentication-required", prompt)
+                .map_err(|error| SharePointError::Authentication(error.to_string()))
+        })
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn save_sharepoint_asset(
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    request: SharePointAssetSaveRequest,
+) -> Result<SharePointAssetSaveResult, String> {
+    let config = SharePointAuthConfig::embedded();
+    state
+        .sharepoint
+        .save_asset(request, &config, |prompt| {
+            window
+                .emit("sharepoint-authentication-required", prompt)
+                .map_err(|error| SharePointError::Authentication(error.to_string()))
+        })
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[derive(Serialize)]

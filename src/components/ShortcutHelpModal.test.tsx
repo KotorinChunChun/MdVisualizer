@@ -16,6 +16,8 @@ describe("ShortcutHelpModal", () => {
   it("lists the new shortcuts and closes with Escape", () => {
     const onClose = vi.fn();
     render(<ShortcutHelpModal onClose={onClose} />);
+    expect(screen.getByText("Ctrl + S")).toBeTruthy();
+    expect(screen.getByText("Ctrl + P")).toBeTruthy();
     expect(screen.getByText("Ctrl + + / Ctrl + ;")).toBeTruthy();
     expect(screen.getByText("Ctrl + ?")).toBeTruthy();
     fireEvent.keyDown(window, { key: "Escape" });
@@ -26,7 +28,7 @@ describe("ShortcutHelpModal", () => {
     render(<ShortcutHelpModal onClose={() => {}} />);
 
     expect(screen.getByRole("heading", { name: "バージョン情報" })).toBeTruthy();
-    expect(screen.getByText("2026-08-10")).toBeTruthy();
+    expect(screen.getByText("2026-08-13")).toBeTruthy();
     expect(screen.getByText("0.0.9")).toBeTruthy();
     expect(screen.getByText("KotorinChunChun")).toBeTruthy();
 

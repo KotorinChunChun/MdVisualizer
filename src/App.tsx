@@ -16,6 +16,7 @@ import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget } from "./components/MediaPreviewModal";
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { ImageAnnotationEditor } from "./components/ImageAnnotationEditor";
+import { SvgSourceEditor, type SvgSourceEditTarget } from "./components/SvgSourceEditor";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
@@ -27,7 +28,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -87,6 +88,10 @@ export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: 
   return viewMode === "presentation" && requestedPanel === "images" ? null : requestedPanel;
 }
 
+export function canEditMarkdownDocument(document: { kind: string } | null | undefined): boolean {
+  return document?.kind === "markdown";
+}
+
 export async function handleWindowCloseRequest(
   hasUnsavedChanges: boolean,
   confirmDiscard: (message?: string) => boolean,
@@ -143,6 +148,7 @@ export function App() {
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [annotationTarget, setAnnotationTarget] = useState<ImageEditTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
+  const [svgEditorTarget, setSvgEditorTarget] = useState<SvgSourceEditTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [documentPanels, setDocumentPanels] = useState<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
   const documentPanelsRef = useRef(documentPanels);
@@ -184,7 +190,7 @@ export function App() {
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
   const activeSharePoint = isSharePointDocument(activeTab?.document ?? activeTab);
-  const canEditActive = Boolean(activeTab?.document?.kind === "markdown" && !activeSharePoint);
+  const canEditActive = canEditMarkdownDocument(activeTab?.document);
   const editorMode: EditorWorkspaceMode = canEditActive ? activeTab?.editorMode ?? "preview" : "preview";
   const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
   const previewContent = useDeferredValue(activeMarkdownContent);
@@ -475,17 +481,19 @@ export function App() {
   const saveTab = useCallback(async (id: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
     if (!tab?.document || !tab.dirty || tab.saving) return;
-    if (tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) {
+    if (tab.document.kind !== "markdown") {
       setToast({ id: String(Date.now()), message: "この文書は閲覧専用です。", type: "error" });
       return;
     }
     dispatch({ type: "SAVE_STARTED", id });
-    const identity = localPathIdentity(tab.document.path);
+    const identity = isSharePointDocument(tab.document) ? null : localPathIdentity(tab.document.path);
     const selfSaveUntil = Date.now() + 2000;
-    recentSelfSaves.current.set(identity, selfSaveUntil);
-    window.setTimeout(() => {
-      if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
-    }, 2100);
+    if (identity) {
+      recentSelfSaves.current.set(identity, selfSaveUntil);
+      window.setTimeout(() => {
+        if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
+      }, 2100);
+    }
     try {
       const stagedAssetIds = (tab.pendingAssets ?? []).map((asset) => asset.id);
       const document = await saveMarkdown({
@@ -497,10 +505,10 @@ export function App() {
       dispatch({ type: "SAVED", id, document, committedAssetIds: stagedAssetIds });
       setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
     } catch (error) {
-      recentSelfSaves.current.delete(identity);
+      if (identity) recentSelfSaves.current.delete(identity);
       const message = String(error);
       dispatch({ type: "SAVE_FAILED", id, error: message });
-      if (message.toLowerCase().includes("conflict")) dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
+      if (message.toLowerCase().includes("conflict") || message.includes("更新されています") || message.includes("HTTP 412")) dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
       setToast({ id: String(Date.now()), message: `保存に失敗しました: ${message}`, type: "error" });
     }
   }, []);
@@ -920,13 +928,13 @@ export function App() {
 
   const changeEditorMode = useCallback((mode: EditorWorkspaceMode) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
-    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return;
+    if (!tab?.document || tab.document.kind !== "markdown") return;
     dispatch({ type: "EDITOR_MODE", id: tab.id, mode });
   }, []);
 
   const updateCodeFenceBody = useCallback((occurrence: CodeFenceOccurrence, body: string): boolean => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
-    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return false;
+    if (!tab?.document || tab.document.kind !== "markdown") return false;
     try {
       const content = replaceCodeFenceBody(tab.draft, occurrence, body);
       dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
@@ -1227,14 +1235,16 @@ export function App() {
         <div className="control-group document-actions">
           <button type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷/PDF</button>
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
-          <button type="button" disabled={!activeTab?.document} onClick={reload}>再読み込み</button>
+          <button type="button" disabled={!activeTab?.document} onClick={reload}>再読込</button>
           <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <span className="control-group__title">画面</span>
-          <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("edit")}>編集のみ</button>
-          <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
-          <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
+          <div className="editor-mode-segments" role="group" aria-label="編集画面の切り替え">
+            <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("edit")}>編集のみ</button>
+            <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
+            <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
+          </div>
         </div>
         {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>
@@ -1255,7 +1265,7 @@ export function App() {
             void openInNewWindow(activeTab.path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
           }}
         />
-        {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読み込み</button>}
+        {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読込</button>}
       </div>}
 
       <div className={`document-workspace editor-workspace-${editorMode}`}>
@@ -1384,7 +1394,7 @@ export function App() {
             documentPath={activeSharePoint ? undefined : activeTab.path}
             sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
-            onCodeFenceBodyChange={activeSharePoint ? undefined : updateCodeFenceBody}
+            onCodeFenceBodyChange={updateCodeFenceBody}
             stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
           />
         ) : (
@@ -1412,8 +1422,19 @@ export function App() {
       {annotationTarget && <ImageAnnotationEditor
         target={annotationTarget}
         imageVersion={annotationTarget.fullPath ? imageVersions[annotationTarget.fullPath] ?? 0 : 0}
-        onApply={({ filename, backupAvailable, dataUri }) => {
-          if (annotationTarget.storage === "embedded" && dataUri && annotationTarget.conversionContext) {
+        onApply={async ({ filename, backupAvailable, dataUri }) => {
+          if (annotationTarget.storage === "sharepoint" && dataUri && annotationTarget.sharePoint) {
+            const parsed = parseRasterDataUri(dataUri);
+            if (!parsed || parsed.mediaType !== "image/png") throw new Error("編集結果をPNGとして生成できませんでした。");
+            await saveSharePointAsset({
+              documentPath: annotationTarget.sharePoint.documentPath,
+              source: annotationTarget.sharePoint.source,
+              expectedRevision: annotationTarget.sharePoint.revision,
+              mediaType: "image/png",
+              base64: parsed.base64,
+            });
+            updateImageVersion(`${annotationTarget.sharePoint.documentPath}|${annotationTarget.sharePoint.source}`);
+          } else if (annotationTarget.storage === "embedded" && dataUri && annotationTarget.conversionContext) {
             const context = annotationTarget.conversionContext;
             const tab = tabsState.tabs.find((candidate) => candidate.document?.path === context.documentPath);
             if (!tab || context.occurrence.kind !== "image") {
@@ -1427,7 +1448,7 @@ export function App() {
               handleCropError(`Base64画像の反映に失敗しました: ${String(error)}`);
               return;
             }
-          } else if (annotationTarget.fullPath) {
+          } else if (annotationTarget.storage === "external" && annotationTarget.fullPath) {
             updateImageVersion(annotationTarget.fullPath);
             setImageBackups((current) => ({ ...current, [annotationTarget.fullPath!]: backupAvailable }));
           }
@@ -1437,7 +1458,7 @@ export function App() {
             id: String(Date.now()),
             message: `${filename} の画像編集を反映しました`,
             type: "success",
-            restorePath: backupAvailable ? annotationTarget.fullPath : undefined,
+            restorePath: annotationTarget.storage === "external" && backupAvailable ? annotationTarget.fullPath : undefined,
           });
         }}
         onCancel={() => {
@@ -1446,6 +1467,24 @@ export function App() {
           setAnnotationReturnPreview(null);
         }}
         onError={handleCropError}
+      />}
+
+      {svgEditorTarget && <SvgSourceEditor
+        target={svgEditorTarget}
+        onSave={async (svg) => {
+          await saveSharePointAsset({
+            documentPath: svgEditorTarget.documentPath,
+            source: svgEditorTarget.source,
+            expectedRevision: svgEditorTarget.revision,
+            mediaType: "image/svg+xml",
+            text: svg,
+          });
+          updateImageVersion(`${svgEditorTarget.documentPath}|${svgEditorTarget.source}`);
+          setSvgEditorTarget(null);
+          setMediaPreview(null);
+          setToast({ id: String(Date.now()), message: `${svgEditorTarget.filename} のSVG編集をSharePointへ保存しました`, type: "success" });
+        }}
+        onCancel={() => setSvgEditorTarget(null)}
       />}
 
       <Toast
@@ -1468,7 +1507,11 @@ export function App() {
           setAnnotationReturnPreview(mediaPreview);
           setMediaPreview(null);
           setAnnotationTarget(mediaPreview.editTarget!);
+        } : mediaPreview.svgEditTarget ? () => {
+          setMediaPreview(null);
+          setSvgEditorTarget(mediaPreview.svgEditTarget!);
         } : undefined}
+        editDisabledReason={mediaPreview.editDisabledReason}
         onCrop={mediaPreview.cropTarget ? () => {
           setMediaPreview(null);
           startCrop(mediaPreview.cropTarget!);
@@ -1504,7 +1547,7 @@ export function App() {
         if (!tab) return null;
         const index = tabsState.tabs.indexOf(tab);
         const close = (id: string) => { closeTab(id); setContextTab(null); };
-        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => { void openInNewWindow(tab.path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" })); setContextTab(null); }} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
+        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
       })()}
     </div>
   );

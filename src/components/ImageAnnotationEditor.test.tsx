@@ -231,6 +231,40 @@ describe("ImageAnnotationEditor", () => {
     expect(saveRenderedImage).not.toHaveBeenCalled();
   });
 
+  it("returns edited SharePoint images as PNG data without calling the local file saver", async () => {
+    const context = { drawImage: vi.fn(), canvas: { width: 0, height: 0 } };
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => callback(new Blob(["png"], { type: "image/png" })));
+    const onApply = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(<ImageAnnotationEditor
+      {...props}
+      target={{
+        rawSrc: "data:image/png;base64,AAAA",
+        filename: "sharepoint.png",
+        storage: "sharepoint",
+        sharePoint: {
+          documentPath: "spmd://contoso.sharepoint.com/sites/docs/Shared/readme.md",
+          source: "sharepoint.png",
+          path: "spmd://contoso.sharepoint.com/sites/docs/Shared/sharepoint.png",
+          revision: "etag-1",
+          mediaType: "image/png",
+        },
+      }}
+      onApply={onApply}
+    />);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,AAAA");
+    loadEditorImage(container);
+    fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "321" } });
+    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(expect.objectContaining({
+      filename: "sharepoint.png",
+      backupAvailable: false,
+      dataUri: "data:image/png;base64,cG5n",
+    })));
+    const { saveRenderedImage } = await import("../lib/commands");
+    expect(saveRenderedImage).not.toHaveBeenCalled();
+  });
+
   it("undoes and redoes a rotation together with its canvas dimensions", async () => {
     const context = { drawImage: vi.fn(), translate: vi.fn(), rotate: vi.fn(), scale: vi.fn(), canvas: { width: 0, height: 0 } };
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);

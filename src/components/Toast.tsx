@@ -15,8 +15,8 @@ export const Toast: React.FC<ToastProps> = ({ toast, onRestore, onClose }) => {
   useEffect(() => {
     if (!toast) return;
     setFading(false);
-    const fadeTimer = window.setTimeout(() => setFading(true), 2000);
-    const closeTimer = window.setTimeout(() => onCloseRef.current?.(), 3000);
+    const fadeTimer = window.setTimeout(() => setFading(true), 3000);
+    const closeTimer = window.setTimeout(() => onCloseRef.current?.(), 4000);
     return () => {
       window.clearTimeout(fadeTimer);
       window.clearTimeout(closeTimer);

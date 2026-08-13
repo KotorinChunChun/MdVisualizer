@@ -31,7 +31,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({ filePath, onReload, onSear
           title="F5キーで手動リロード"
           disabled={!filePath}
         >
-          再読み込み
+          再読込
         </button>
       </div>
     </header>

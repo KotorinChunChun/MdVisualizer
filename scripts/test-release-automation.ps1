@@ -54,6 +54,44 @@ function Assert-BlockedBeforeWork {
 
 $releaseFingerprintBefore = Get-DirectoryFingerprint -Path $releaseDirectory
 $websiteFingerprintBefore = Get-DirectoryFingerprint -Path $websiteDownloadDirectory
+$releaseToolsPath = Join-Path $PSScriptRoot "ReleaseTools.psm1"
+Import-Module $releaseToolsPath -Force
+$configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
+foreach ($channel in @("beta", "stable")) {
+    $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $channel
+    if ($artifacts.CertificateFileName -ne "MarkdownViewer.cer") {
+        throw "The public certificate file name is not stable for ${channel}: $($artifacts.CertificateFileName)"
+    }
+    if ([System.IO.Path]::GetFileName($artifacts.StagedCertificatePath) -ne "MarkdownViewer.cer") {
+        throw "The staged public certificate file name is not stable for ${channel}."
+    }
+}
+$temporaryCertificateDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "MarkdownViewer-certificate-test-$PID"
+$temporaryCertificatePath = Join-Path $temporaryCertificateDirectory "MarkdownViewer.cer"
+try {
+    $initialBytes = [System.Text.Encoding]::UTF8.GetBytes("same certificate")
+    if (-not (Set-FileBytesIfChanged -Path $temporaryCertificatePath -Bytes $initialBytes)) {
+        throw "The initial certificate test file was not written."
+    }
+    $fixedTimestamp = [DateTime]::UtcNow.AddDays(-1)
+    [System.IO.File]::SetLastWriteTimeUtc($temporaryCertificatePath, $fixedTimestamp)
+    if (Set-FileBytesIfChanged -Path $temporaryCertificatePath -Bytes $initialBytes) {
+        throw "An unchanged certificate was unexpectedly rewritten."
+    }
+    if ([System.IO.File]::GetLastWriteTimeUtc($temporaryCertificatePath) -ne $fixedTimestamp) {
+        throw "The unchanged certificate timestamp was modified."
+    }
+    if (-not (Set-FileBytesIfChanged `
+        -Path $temporaryCertificatePath `
+        -Bytes ([System.Text.Encoding]::UTF8.GetBytes("replacement certificate")))) {
+        throw "A changed certificate was not rewritten."
+    }
+}
+finally {
+    if (Test-Path -LiteralPath $temporaryCertificateDirectory) {
+        Remove-Item -LiteralPath $temporaryCertificateDirectory -Recurse -Force
+    }
+}
 $planOutput = (& $orchestratorPath -Mode Plan 6>&1 | Out-String)
 if (-not $planOutput.Contains("NO BUILD, INSTALLER GENERATION, STAGING, UPLOAD, OR INSTALLATION WAS STARTED.")) {
     throw "Plan mode did not emit the no-work safety marker."

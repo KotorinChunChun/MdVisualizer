@@ -49,6 +49,37 @@ function Assert-AbsoluteHttpsUri {
     return $parsedUri.AbsoluteUri
 }
 
+function Set-FileBytesIfChanged {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        [Parameter(Mandatory)]
+        [byte[]]$Bytes
+    )
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $newHash = [Convert]::ToHexString(
+        [System.Security.Cryptography.SHA256]::HashData($Bytes)
+    )
+    $existingHash = if (Test-Path -LiteralPath $fullPath -PathType Leaf) {
+        (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash
+    }
+    else {
+        $null
+    }
+    if ($existingHash -eq $newHash) {
+        return $false
+    }
+
+    $parentDirectory = Split-Path -Parent $fullPath
+    if (-not (Test-Path -LiteralPath $parentDirectory -PathType Container)) {
+        New-Item -ItemType Directory -Path $parentDirectory -Force | Out-Null
+    }
+    [System.IO.File]::WriteAllBytes($fullPath, $Bytes)
+    return $true
+}
+
 function Import-ReleaseConfiguration {
     [CmdletBinding()]
     param(
@@ -83,6 +114,7 @@ function Import-ReleaseConfiguration {
         "application.publisher" = $configuration.application.publisher
         "application.architecture" = $configuration.application.architecture
         "application.certificateFriendlyName" = $configuration.application.certificateFriendlyName
+        "application.certificateFileName" = $configuration.application.certificateFileName
         "build.tauriConfig" = $configuration.build.tauriConfig
         "build.releaseDirectory" = $configuration.build.releaseDirectory
         "build.siteSourceDirectory" = $configuration.build.siteSourceDirectory
@@ -99,6 +131,13 @@ function Import-ReleaseConfiguration {
 
     if ($configuration.application.architecture -notin @("x64", "x86", "arm64")) {
         throw "Unsupported release architecture: $($configuration.application.architecture)"
+    }
+    if (
+        [System.IO.Path]::GetFileName($configuration.application.certificateFileName) -ne
+            $configuration.application.certificateFileName -or
+        [System.IO.Path]::GetExtension($configuration.application.certificateFileName) -ne ".cer"
+    ) {
+        throw "Certificate file name must be a simple .cer file name: $($configuration.application.certificateFileName)"
     }
 
     [void](Assert-AbsoluteHttpsUri -Name "distribution.publicDownloadPage" -Value $configuration.distribution.publicDownloadPage)
@@ -198,7 +237,7 @@ function Get-ReleaseArtifacts {
     $artifactBaseName = $Configuration.Raw.application.artifactBaseName
     $architecture = $Configuration.Raw.application.architecture
     $packageFileName = "${artifactBaseName}_${packageVersion}_${architecture}.msix"
-    $certificateFileName = "${artifactBaseName}_${packageVersion}_${architecture}.cer"
+    $certificateFileName = $Configuration.Raw.application.certificateFileName
     $appInstallerFileName = $channelConfiguration.AppInstallerFileName
 
     return [pscustomobject]@{
@@ -300,6 +339,7 @@ function Assert-MsixIdentityMatchesConfiguration {
 
 Export-ModuleMember -Function @(
     "ConvertTo-MsixVersion",
+    "Set-FileBytesIfChanged",
     "Import-ReleaseConfiguration",
     "Get-ReleaseChannel",
     "Get-ConfiguredApplicationVersion",

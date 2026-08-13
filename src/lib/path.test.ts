@@ -48,5 +48,6 @@ describe("Windows image paths", () => {
     expect(resolveSharePointDocumentPath("spmd://evil.example/sites/manual/docs/a.md")).toBeNull();
     expect(resolveSharePointDocumentPath("a.md?token=secret", source)).toBeNull();
     expect(resolveLocalDocumentPath("spmd://evil.example/sites/manual/docs/a.md", "C:\\docs")).toBeNull();
+    expect(resolveSharePointDocumentPath("diagram.svg", source)).toBeNull();
   });
 });

@@ -87,7 +87,7 @@ export function ImageAnnotationEditor({
 }: {
   target: ImageEditTarget;
   imageVersion: number;
-  onApply: (result: { filename: string; backupAvailable: boolean; dataUri?: string }) => void;
+  onApply: (result: { filename: string; backupAvailable: boolean; dataUri?: string }) => void | Promise<void>;
   onCancel: () => void;
   onError: (message: string) => void;
 }) {
@@ -583,14 +583,14 @@ export function ImageAnnotationEditor({
       const blob = await new Promise<Blob>((resolve, reject) =>
         output.toBlob((value) => value ? resolve(value) : reject(new Error("画像をPNGへ変換できません。")), "image/png"),
       );
-      if (target.storage === "embedded") {
+      if (target.storage !== "external") {
         const dataUri = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Data URIを生成できません。"));
           reader.onerror = () => reject(reader.error ?? new Error("Data URIを生成できません。"));
           reader.readAsDataURL(blob);
         });
-        onApply({ filename: target.filename, backupAvailable: false, dataUri });
+        await onApply({ filename: target.filename, backupAvailable: false, dataUri });
       } else {
         if (!target.fullPath) throw new Error("外部画像のパスがありません。");
         const result = await saveRenderedImage({
@@ -599,7 +599,7 @@ export function ImageAnnotationEditor({
           expectedSourceWidth: originalSourceSizeRef.current?.width ?? image.naturalWidth,
           expectedSourceHeight: originalSourceSizeRef.current?.height ?? image.naturalHeight,
         });
-        onApply({ filename: target.filename, backupAvailable: result.backup_available });
+        await onApply({ filename: target.filename, backupAvailable: result.backup_available });
       }
     } catch (error) {
       onError(`画像編集の保存に失敗しました: ${String(error)}`);
@@ -773,9 +773,9 @@ export function ImageAnnotationEditor({
     }
     dispatch({ type: "reset" });
   };
-  const originalImageSource = target.storage === "embedded"
-    ? target.rawSrc
-    : `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`;
+  const originalImageSource = target.storage === "external"
+    ? `${target.rawSrc}${target.rawSrc.includes("?") ? "&" : "?"}annotationVersion=${loadedVersion}`
+    : target.rawSrc;
   const imageSource = replacementSource ?? originalImageSource;
   const canvasStyle = displayGeometry.width > 0
     ? { width: `${displayGeometry.width}px`, height: `${displayGeometry.height}px` }

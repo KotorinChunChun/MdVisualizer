@@ -352,7 +352,7 @@ pub async fn open_in_new_window(
     let geometry = adjacent_geometry(source, source_outer_width, area);
     let (width, height, x, y) = logical_geometry(geometry, scale_factor);
 
-    if let Err(error) =
+    let created_window = match
         WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
             .title("MarkdownViewer")
             .inner_size(width, height)
@@ -360,11 +360,17 @@ pub async fn open_in_new_window(
             .prevent_overflow()
             .build()
     {
-        if let Ok(mut initial_files) = state.initial_files.lock() {
-            initial_files.remove(&label);
+        Ok(created_window) => created_window,
+        Err(error) => {
+            if let Ok(mut initial_files) = state.initial_files.lock() {
+                initial_files.remove(&label);
+            }
+            return Err(error.to_string());
         }
-        return Err(error.to_string());
-    }
+    };
+    created_window.show().map_err(|error| error.to_string())?;
+    created_window.unminimize().map_err(|error| error.to_string())?;
+    created_window.set_focus().map_err(|error| error.to_string())?;
     state
         .window_geometries
         .lock()

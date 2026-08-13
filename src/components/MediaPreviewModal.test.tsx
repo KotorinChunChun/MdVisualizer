@@ -13,6 +13,17 @@ describe("MediaPreviewModal", () => {
     expect(screen.queryByRole("button", { name: "注釈" })).toBeNull();
   });
 
+  it("disables image editing and explains how to resolve missing permissions", () => {
+    render(<MediaPreviewModal
+      content={{ kind: "image", src: "asset://readonly.png", alt: "読取り専用" }}
+      onClose={vi.fn()}
+      editDisabledReason="SharePointで編集権限を付与してください。"
+    />);
+    const button = screen.getByRole("button", { name: "画像編集" });
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(button.getAttribute("title")).toBe("SharePointで編集権限を付与してください。");
+  });
+
   it("defaults to maximum-fit display and switches to 1:1", () => {
     render(<MediaPreviewModal content={{ kind: "svg", svg: '<svg viewBox="0 0 400 200" />', alt: "図" }} onClose={vi.fn()} />);
 

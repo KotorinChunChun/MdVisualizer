@@ -5,9 +5,15 @@
   "author": "KotorinChunChun",
   "repository": "https://github.com/KotorinChunChun/MarkdownViewer",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build:core": "npm --workspace @markdown-viewer/markdown-core run build",
+    "build": "npm run build:core && tsc && vite build",
+    "build:spfx": "pwsh -NoProfile -File ./build-spfx.ps1",
+    "build:spfx:local": "pwsh -NoProfile -File ./build-spfx.ps1 -SkipUpload",
     "build:msix": "pwsh -NoProfile -File ./scripts/build-msix.ps1",
     "build:appinstaller": "pwsh -NoProfile -File ./scripts/build-appinstaller.ps1",
     "release:plan": "pwsh -NoProfile -File ./scripts/publish-msix-release.ps1 -Mode Plan",
@@ -17,6 +23,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@markdown-viewer/markdown-core": "0.0.9",
     "@codemirror/commands": "^6.10.4",
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/language": "^6.12.4",
@@ -26,7 +33,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "codemirror": "^6.0.2",
     "highlight.js": "^11.11.1",
-    "mermaid": "^11.16.0",
+    "mermaid": "^11.16.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",

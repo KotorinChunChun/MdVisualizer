@@ -2,6 +2,7 @@ pub mod app_state;
 pub mod asset_staging;
 pub mod backup;
 pub mod commands;
+mod credential_store;
 pub mod document_edit;
 pub mod errors;
 pub mod file_lock;
@@ -113,6 +114,9 @@ pub fn run() {
                     let Some(window) = app.get_webview_window(&label) else {
                         return;
                     };
+                    let _ = window.show();
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
                     let _ = window.emit_to(
                         EventTarget::webview_window(label),
                         "open-markdown-in-new-window",
@@ -186,6 +190,7 @@ pub fn run() {
             stage_document_asset,
             discard_staged_assets,
             read_document_asset,
+            save_sharepoint_asset,
             diagnose_document,
             start_watch,
             stop_watch,
