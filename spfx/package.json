@@ -1,6 +1,6 @@
 {
   "name": "spfx-markdown-editor",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "private": true,
   "engines": {
     "node": ">=22.14.0 <23.0.0"
