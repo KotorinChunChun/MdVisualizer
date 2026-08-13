@@ -118,7 +118,11 @@ export class SharePointMarkdownFileBrowser {
   }
 
   private _normalize(value: string): string {
-    return value.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').replace(/\/{2,}/g, '/');
+    const normalized = value.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').replace(/\/{2,}/g, '/');
+    if (normalized.split('/').some(segment => segment === '.' || segment === '..')) {
+      throw new Error('文書ライブラリまたはサブフォルダーに相対移動（.／..）は指定できません。');
+    }
+    return normalized;
   }
 
   private async _ensureSuccess(response: SPHttpClientResponse, prefix: string): Promise<void> {

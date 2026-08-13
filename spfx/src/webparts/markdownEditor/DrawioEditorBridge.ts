@@ -1,12 +1,16 @@
 import type { IResolvedDrawioConnection } from './DrawioConnection';
 
-interface IDrawioMessage {
+export interface IDrawioMessage {
   event?: string;
   xml?: string;
   exit?: boolean;
 }
 
-function parseMessage(event: MessageEvent, source: Window | null, origin: string): IDrawioMessage | undefined {
+export function parseTrustedDrawioMessage(
+  event: Pick<MessageEvent, 'source' | 'origin' | 'data'>,
+  source: MessageEventSource | null,
+  origin: string
+): IDrawioMessage | undefined {
   if (!source || event.source !== source || event.origin !== origin) return undefined;
   try {
     const value = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
@@ -64,7 +68,7 @@ export class DrawioEditorBridge {
   private readonly _receive = (event: MessageEvent): void => {
     const origin = this._connection.editorUrl?.origin;
     if (!origin) return;
-    const message = parseMessage(event, this._frame?.contentWindow || null, origin);
+    const message = parseTrustedDrawioMessage(event, this._frame?.contentWindow || null, origin);
     if (!message) return;
     if (message.event === 'init') {
       this._frame?.contentWindow?.postMessage(JSON.stringify({
