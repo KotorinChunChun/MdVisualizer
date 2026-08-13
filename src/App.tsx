@@ -1539,7 +1539,7 @@ export function App() {
         if (!tab) return null;
         const index = tabsState.tabs.indexOf(tab);
         const close = (id: string) => { closeTab(id); setContextTab(null); };
-        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => { void openInNewWindow(tab.path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" })); setContextTab(null); }} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
+        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
       })()}
     </div>
   );

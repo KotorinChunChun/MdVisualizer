@@ -114,6 +114,9 @@ pub fn run() {
                     let Some(window) = app.get_webview_window(&label) else {
                         return;
                     };
+                    let _ = window.show();
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
                     let _ = window.emit_to(
                         EventTarget::webview_window(label),
                         "open-markdown-in-new-window",
