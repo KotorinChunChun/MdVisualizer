@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "dev": "vite",
+    "debug:smoke": "pwsh -NoProfile -File ./scripts/debug-rebuild-smoke.ps1",
     "build:core": "npm --workspace @markdown-viewer/markdown-core run build",
     "build": "npm run build:core && tsc && vite build",
     "build:spfx": "pwsh -NoProfile -File ./build-spfx.ps1",

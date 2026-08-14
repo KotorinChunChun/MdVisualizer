@@ -28,7 +28,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -49,6 +49,7 @@ import { isSharePointDocument } from "./lib/sharePoint";
 import { moveZoomLevel } from "./lib/zoom";
 import { moveHeadingBlock } from "./lib/markdownEditing";
 import { buildPresentationModel } from "./lib/presentationModel";
+import { buildDebugWindowState } from "./lib/debugState";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -196,6 +197,11 @@ export function App() {
   const editorMode: EditorWorkspaceMode = canEditActive ? activeTab?.editorMode ?? "preview" : "preview";
   const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
   const previewContent = useDeferredValue(activeMarkdownContent);
+
+  useEffect(() => {
+    if (import.meta.env.VITE_MARKDOWNVIEWER_DEBUG_API !== "1") return;
+    void reportDebugWindowState(buildDebugWindowState(windowLabel, tabsState, mediaPreview !== null));
+  }, [mediaPreview, tabsState, windowLabel]);
 
   useEffect(() => {
     const hasUnsavedChanges = () => tabsStateRef.current.tabs.some((tab) => tab.dirty);

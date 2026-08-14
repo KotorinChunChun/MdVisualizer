@@ -1,4 +1,4 @@
-use crate::app_state::AppState;
+use crate::app_state::{AppState, DebugWindowState};
 use crate::asset_staging::{
     read_document_asset as do_read_document_asset, DocumentAssetData, StagedAssetResult,
 };
@@ -57,6 +57,29 @@ use window_settings::{
 use crate::app_state::WindowGeometry;
 
 static CLIPBOARD_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+#[tauri::command]
+pub fn report_debug_window_state(
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    mut snapshot: DebugWindowState,
+) -> Result<(), String> {
+    #[cfg(debug_assertions)]
+    {
+        snapshot.label = window.label().to_string();
+        state
+            .debug_windows
+            .lock()
+            .map_err(|_| "Debug window state is unavailable.".to_string())?
+            .insert(snapshot.label.clone(), snapshot);
+        Ok(())
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let _ = (window, state, &mut snapshot);
+        Err("Debug state API is disabled in release builds.".to_string())
+    }
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]

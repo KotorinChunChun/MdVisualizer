@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CropImageRequest, CropImageResult, MarkdownLoadResult, SaveMarkdownRequest } from "../types/app";
 import type { DiagnosticItem } from "../components/DiagnosticsPanel";
+import type { DebugWindowState } from "./debugState";
 
 export interface CorruptFileInfo {
   sourcePath: string;
@@ -37,6 +38,9 @@ export async function saveFoldState(documentPath: string, state: Record<string, 
 
 export async function getInitialFiles(): Promise<string[]> {
   return await invoke<string[]>("get_initial_files");
+}
+export async function reportDebugWindowState(snapshot: DebugWindowState): Promise<void> {
+  await invoke<void>("report_debug_window_state", { snapshot });
 }
 export async function openInNewWindow(path: string): Promise<void> { await invoke<void>("open_in_new_window", { path }); }
 
