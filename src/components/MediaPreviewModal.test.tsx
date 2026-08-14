@@ -46,7 +46,7 @@ describe("MediaPreviewModal", () => {
     fireEvent.pointerUp(viewport, { pointerId: 1 });
   });
 
-  it("centers the diagram within a pan canvas that has space on every side", () => {
+  it("fits the diagram to the viewport without adding a scrollable blank canvas", () => {
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       callback(0);
       return 1;
@@ -62,10 +62,15 @@ describe("MediaPreviewModal", () => {
     act(() => { window.dispatchEvent(new Event("resize")); });
 
     const stage = document.querySelector<HTMLElement>(".media-preview__stage")!;
-    expect(stage.style.width).toBe("2400px");
-    expect(stage.style.height).toBe("1600px");
-    expect(viewport.scrollLeft).toBe(800);
-    expect(viewport.scrollTop).toBe(500);
+    const transform = document.querySelector<HTMLElement>(".media-preview__transform")!;
+    expect(stage.style.width).toBe("800px");
+    expect(stage.style.height).toBe("600px");
+    expect(transform.style.width).toBe("800px");
+    expect(transform.style.height).toBe("400px");
+    expect(transform.style.left).toBe("0px");
+    expect(transform.style.top).toBe("100px");
+    expect(viewport.scrollLeft).toBe(0);
+    expect(viewport.scrollTop).toBe(0);
     vi.unstubAllGlobals();
   });
 
@@ -85,8 +90,8 @@ describe("MediaPreviewModal", () => {
 
     fireEvent.wheel(viewport, { ctrlKey: true, deltaY: -100, deltaMode: 0, clientX: 200, clientY: 150 });
 
-    expect(viewport.scrollLeft).toBeCloseTo(844.28, 1);
-    expect(viewport.scrollTop).toBeCloseTo(511.07, 1);
+    expect(viewport.scrollLeft).toBeCloseTo(44.28, 1);
+    expect(viewport.scrollTop).toBe(0);
     expect(screen.getByText(/244%/)).toBeTruthy();
     vi.unstubAllGlobals();
   });

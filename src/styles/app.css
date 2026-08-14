@@ -427,7 +427,7 @@ body {
 .code-run-confirmation footer .code-run-confirmation__execute { color: #fff; background: #b42318; border-color: #b42318; }
 .table-scroll { overflow-x: auto; margin-bottom: 1em; }
 .table-scroll table { min-width: max-content; margin-bottom: 0; }
-.mermaid-block { display: block; width: 100%; overflow: auto; padding: 12px; margin-bottom: 1em; color: inherit; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; cursor: zoom-in; }
+.mermaid-block { display: block; width: 100%; overflow: auto; padding: 12px; margin-bottom: 1em; color: #1f2937; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; cursor: zoom-in; }
 .mermaid-block svg { display: block; max-width: 100%; height: auto; margin: auto; }
 .mermaid-loading { padding: 20px; color: var(--text-muted); }
 .mermaid-container { min-width: 0; max-width: 100%; overflow: hidden; }
@@ -530,12 +530,13 @@ body {
 .media-preview__svg {
   width: 100%;
   height: 100%;
+  background: #fff;
 }
 .media-preview__svg svg {
   width: 100%;
   height: 100%;
-  max-width: none;
-  max-height: none;
+  max-width: none !important;
+  max-height: none !important;
 }
 .media-preview__scale {
   justify-self: center;

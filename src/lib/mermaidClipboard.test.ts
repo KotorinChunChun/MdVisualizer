@@ -36,7 +36,32 @@ describe("copyMermaid", () => {
     expect(result).toContain("Node label");
     expect(result).toContain("<text");
     expect(result).toContain('viewBox="0 0 200 100"');
+    expect(result).toContain('width="200"');
+    expect(result).toContain('height="100"');
     expect(result).toContain('fill="#123456"');
+    expect(result).toContain('data-canvas-background="true"');
+    expect(result).toContain('fill="#ffffff"');
+  });
+
+  it("puts a white SVG background behind line labels and keeps multiline text above it", () => {
+    const result = normalizeSvgForClipboard(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" style="max-width:200px">
+        <path d="M0 50H200" />
+        <g class="edgeLabel" transform="translate(100 50)">
+          <foreignObject x="-40" y="-20" width="80" height="40">
+            <div xmlns="http://www.w3.org/1999/xhtml">Line<br/>label</div>
+          </foreignObject>
+        </g>
+      </svg>
+    `);
+
+    expect(result).not.toContain("foreignObject");
+    expect(result).not.toContain("max-width");
+    expect(result).toContain('class="clipboard-label-background"');
+    expect(result).toContain('x="-40"');
+    expect(result).toContain('width="80"');
+    expect(result).toContain("<tspan");
+    expect(result.indexOf('class="clipboard-label-background"')).toBeLessThan(result.indexOf("<text"));
   });
 
   it("removes executable SVG content while preserving generated styles", () => {
@@ -56,7 +81,8 @@ describe("copyMermaid", () => {
 
   it("rasterizes the normalized SVG through a data URL", async () => {
     const drawImage = vi.fn();
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage } as unknown as CanvasRenderingContext2D);
+    const fillRect = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage, fillRect } as unknown as CanvasRenderingContext2D);
     vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => {
       callback(new Blob(["png"], { type: "image/png" }));
     });
@@ -80,6 +106,7 @@ describe("copyMermaid", () => {
     expect(blob.type).toBe("image/png");
     expect(assignedSource).toMatch(/^data:image\/svg\+xml/);
     expect(decodeURIComponent(assignedSource)).toContain("<text");
+    expect(fillRect).toHaveBeenCalledWith(0, 0, 120, 60);
     expect(drawImage).toHaveBeenCalled();
   });
 });

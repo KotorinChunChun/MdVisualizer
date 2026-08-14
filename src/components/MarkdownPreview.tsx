@@ -145,6 +145,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       theme={context.theme}
       blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
       onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
+      onMediaOpen={context.onMediaOpen}
     />;
   }
   if (isDelimitedTableLanguage(language)) {

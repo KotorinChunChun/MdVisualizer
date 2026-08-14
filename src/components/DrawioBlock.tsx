@@ -4,6 +4,7 @@ import { sanitizeSvgXml } from "../lib/svgSafety";
 import { MermaidBlock } from "./MermaidBlock";
 import { MermaidToolbar } from "./MermaidToolbar";
 import { DrawioEditorModal } from "./DrawioEditorModal";
+import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import "../styles/drawio.css";
 
 declare global {
@@ -40,7 +41,7 @@ export function drawioViewerConfig(xml: string): Record<string, unknown> {
     nav: false,
     resize: false,
     responsive: true,
-    border: 12,
+    border: 0,
     center: true,
     forceCenter: true,
     "auto-fit": true,
@@ -50,6 +51,7 @@ export function drawioViewerConfig(xml: string): Record<string, unknown> {
 }
 
 export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 12): string {
+  const fitted = svg.cloneNode(true) as SVGSVGElement;
   try {
     const bounds = svg.getBBox();
     if ([bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite)
@@ -61,21 +63,33 @@ export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 12): string 
         bounds.width + padding * 2,
         bounds.height + padding * 2,
       ].join(" ");
-      if (svg.getAttribute("viewBox") !== viewBox) svg.setAttribute("viewBox", viewBox);
-      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      fitted.setAttribute("viewBox", viewBox);
+      fitted.setAttribute("preserveAspectRatio", "xMidYMid meet");
     }
   } catch {
     // Empty diagrams and jsdom-like SVG implementations may not expose a
     // measurable bounding box. The viewer-provided viewBox remains usable.
   }
-  return svg.outerHTML;
+  fitted.removeAttribute("width");
+  fitted.removeAttribute("height");
+  const style = fitted.getAttribute("style");
+  if (style) {
+    const responsiveStyle = style
+      .split(";")
+      .map((declaration) => declaration.trim())
+      .filter((declaration) => declaration && !/^(?:min-|max-)?(?:width|height)\s*:/i.test(declaration));
+    if (responsiveStyle.length > 0) fitted.setAttribute("style", `${responsiveStyle.join(";")};`);
+    else fitted.removeAttribute("style");
+  }
+  return fitted.outerHTML;
 }
 
-export function DrawioBlock({ source, theme, blockId, onSave }: {
+export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
   source: string;
   theme: string;
   blockId: string;
   onSave?: (source: string) => boolean | void;
+  onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [viewerError, setViewerError] = useState<string | null>(null);
@@ -127,11 +141,22 @@ export function DrawioBlock({ source, theme, blockId, onSave }: {
   }, [display, kind, load]);
 
   const label = kind === "svg" ? "SVG → draw.io" : kind === "mermaid" ? "Mermaid → draw.io" : kind === "compressed" ? "draw.io（圧縮データ）" : "draw.io";
+  const svgPreview = (svg: string, alt: string) => {
+    const content = <div className="drawio-block__svg" dangerouslySetInnerHTML={{ __html: svg }} />;
+    return onMediaOpen
+      ? <button
+        type="button"
+        className="drawio-block__zoom"
+        aria-label="図を拡大"
+        onClick={() => onMediaOpen({ content: { kind: "svg", svg, alt } })}
+      >{content}</button>
+      : content;
+  };
   let preview;
   if (display === "code") preview = <pre className="drawio-block__source"><code>{source}</code></pre>;
   else if (load instanceof Error) preview = <p className="drawio-block__error">{load.message}</p>;
   else if (kind === "svg") preview = safeSourceSvg
-    ? <div className="drawio-block__svg" dangerouslySetInnerHTML={{ __html: safeSourceSvg }} />
+    ? svgPreview(safeSourceSvg, "draw.io図")
     : <p className="drawio-block__error">SVGを安全に表示できません。</p>;
   else if (kind === "mermaid") preview = <MermaidBlock
     source={source}
@@ -142,7 +167,9 @@ export function DrawioBlock({ source, theme, blockId, onSave }: {
     diagramCount={1}
     showToolbar={false}
     onRenderedSvg={setRenderedSvg}
+    onMediaOpen={onMediaOpen}
   />;
+  else if (renderedSvg) preview = svgPreview(renderedSvg, "draw.io図");
   else preview = viewerError
     ? <div className="drawio-block__fallback"><p>{viewerError}</p><pre><code>{source}</code></pre></div>
     : <div ref={viewerRef} className="drawio-block__viewer mxgraph" />;

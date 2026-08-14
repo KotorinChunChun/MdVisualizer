@@ -105,12 +105,10 @@ export function MediaPreviewModal({
   const effectiveScale = (mode === "fit" ? fitScale : 1) * scale;
   const mediaWidth = intrinsic.width * effectiveScale;
   const mediaHeight = intrinsic.height * effectiveScale;
-  const panInset = {
-    x: Math.max(viewportSize.width, 96),
-    y: Math.max(viewportSize.height, 96),
-  };
-  const stageWidth = mediaWidth + panInset.x * 2;
-  const stageHeight = mediaHeight + panInset.y * 2;
+  const stageWidth = Math.max(viewportSize.width, mediaWidth);
+  const stageHeight = Math.max(viewportSize.height, mediaHeight);
+  const mediaLeft = Math.max(0, (stageWidth - mediaWidth) / 2);
+  const mediaTop = Math.max(0, (stageHeight - mediaHeight) / 2);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -140,10 +138,10 @@ export function MediaPreviewModal({
     const viewport = viewportRef.current;
     const anchor = zoomAnchorRef.current;
     if (!viewport || !anchor || display === "code") return;
-    viewport.scrollLeft = panInset.x + anchor.mediaX * effectiveScale - anchor.viewportX;
-    viewport.scrollTop = panInset.y + anchor.mediaY * effectiveScale - anchor.viewportY;
+    viewport.scrollLeft = Math.max(0, mediaLeft + anchor.mediaX * effectiveScale - anchor.viewportX);
+    viewport.scrollTop = Math.max(0, mediaTop + anchor.mediaY * effectiveScale - anchor.viewportY);
     zoomAnchorRef.current = null;
-  }, [display, effectiveScale, panInset.x, panInset.y]);
+  }, [display, effectiveScale, mediaLeft, mediaTop]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -209,8 +207,8 @@ export function MediaPreviewModal({
         zoomAnchorRef.current = {
           viewportX,
           viewportY,
-          mediaX: (viewport.scrollLeft + viewportX - panInset.x) / currentEffectiveScale,
-          mediaY: (viewport.scrollTop + viewportY - panInset.y) / currentEffectiveScale,
+          mediaX: (viewport.scrollLeft + viewportX - mediaLeft) / currentEffectiveScale,
+          mediaY: (viewport.scrollTop + viewportY - mediaTop) / currentEffectiveScale,
         };
         const deltaPixels = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? Math.max(1, viewport.clientHeight) : 1);
         const nextScale = Math.min(8, Math.max(0.1, currentScale * Math.exp(-deltaPixels * 0.002)));
@@ -248,8 +246,8 @@ export function MediaPreviewModal({
             style={{
               width: `${mediaWidth}px`,
               height: `${mediaHeight}px`,
-              left: `${panInset.x}px`,
-              top: `${panInset.y}px`,
+              left: `${mediaLeft}px`,
+              top: `${mediaTop}px`,
             }}
             onClick={(event) => {
               event.stopPropagation();

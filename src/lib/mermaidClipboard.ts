@@ -27,18 +27,69 @@ function numericAttribute(element: Element, name: string): number {
   return Number.isFinite(value) ? value : 0;
 }
 
+function labelLines(element: Element): string[] {
+  let text = "";
+  const visit = (node: Node): void => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.textContent ?? "";
+      return;
+    }
+    if (!(node instanceof Element)) return;
+    const tag = node.localName.toLowerCase();
+    if (tag === "br") {
+      text += "\n";
+      return;
+    }
+    for (const child of Array.from(node.childNodes)) visit(child);
+    if (["div", "p", "li"].includes(tag) && !text.endsWith("\n")) text += "\n";
+  };
+  visit(element);
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function hasAncestorClass(element: Element, className: string): boolean {
+  for (let current = element.parentElement; current; current = current.parentElement) {
+    if (current.classList.contains(className)) return true;
+  }
+  return false;
+}
+
 function replaceForeignObjectWithText(document: Document): void {
   for (const foreignObject of Array.from(document.querySelectorAll("foreignObject"))) {
-    const label = foreignObject.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    const lines = labelLines(foreignObject);
+    const replacement = document.createElementNS(SVG_NAMESPACE, "g");
     const text = document.createElementNS(SVG_NAMESPACE, "text");
-    const x = numericAttribute(foreignObject, "x") + numericAttribute(foreignObject, "width") / 2;
-    const y = numericAttribute(foreignObject, "y") + numericAttribute(foreignObject, "height") / 2;
+    const originX = numericAttribute(foreignObject, "x");
+    const originY = numericAttribute(foreignObject, "y");
+    const width = numericAttribute(foreignObject, "width");
+    const height = numericAttribute(foreignObject, "height");
+    const x = originX + width / 2;
+    const y = originY + height / 2;
+    const fontSizeValue = firstPresentationValue(foreignObject, "font-size") ?? "16px";
+    const fontSize = Number.parseFloat(fontSizeValue) || 16;
+    const lineHeight = fontSize * 1.2;
+
+    // Mermaidの線上ラベルはHTML側の背景色で罫線を隠している。
+    // foreignObjectを取り除く場合も同じ描画順をSVG要素で再現する。
+    if (hasAncestorClass(foreignObject, "edgeLabel") || hasAncestorClass(foreignObject, "labelBkg")) {
+      const background = document.createElementNS(SVG_NAMESPACE, "rect");
+      background.setAttribute("class", "clipboard-label-background");
+      background.setAttribute("x", String(originX));
+      background.setAttribute("y", String(originY));
+      background.setAttribute("width", String(width));
+      background.setAttribute("height", String(height));
+      background.setAttribute("fill", "#ffffff");
+      replacement.appendChild(background);
+    }
 
     text.setAttribute("x", String(x));
-    text.setAttribute("y", String(y));
+    text.setAttribute("y", String(y - Math.max(0, lines.length - 1) * lineHeight / 2));
     text.setAttribute("text-anchor", "middle");
     text.setAttribute("dominant-baseline", "middle");
-    text.setAttribute("font-size", firstPresentationValue(foreignObject, "font-size") ?? "16px");
+    text.setAttribute("font-size", fontSizeValue);
     text.setAttribute("font-family", firstPresentationValue(foreignObject, "font-family") ?? "sans-serif");
     text.setAttribute("fill", firstPresentationValue(foreignObject, "color")
       ?? firstPresentationValue(foreignObject, "fill")
@@ -47,10 +98,49 @@ function replaceForeignObjectWithText(document: Document): void {
     const fontWeight = firstPresentationValue(foreignObject, "font-weight");
     if (fontWeight) text.setAttribute("font-weight", fontWeight);
     const transform = foreignObject.getAttribute("transform");
-    if (transform) text.setAttribute("transform", transform);
-    text.textContent = label;
-    foreignObject.replaceWith(text);
+    if (transform) replacement.setAttribute("transform", transform);
+    if (lines.length <= 1) {
+      text.textContent = lines[0] ?? "";
+    } else {
+      lines.forEach((line, index) => {
+        const tspan = document.createElementNS(SVG_NAMESPACE, "tspan");
+        tspan.setAttribute("x", String(x));
+        if (index > 0) tspan.setAttribute("dy", String(lineHeight));
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+    }
+    replacement.appendChild(text);
+    foreignObject.replaceWith(replacement);
   }
+}
+
+function removeRootSizeLimits(root: Element): void {
+  const style = root.getAttribute("style");
+  if (!style) return;
+  const declarations = style
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part && !/^max-(?:width|height)\s*:/i.test(part));
+  if (declarations.length > 0) root.setAttribute("style", `${declarations.join(";")};`);
+  else root.removeAttribute("style");
+}
+
+function addWhiteCanvas(document: Document): void {
+  const root = document.documentElement;
+  root.querySelector('[data-canvas-background="true"]')?.remove();
+  const viewBox = root.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
+  const [x, y, width, height] = viewBox?.length === 4 && viewBox.every(Number.isFinite)
+    ? viewBox
+    : [0, 0, numericAttribute(root, "width"), numericAttribute(root, "height")];
+  const background = document.createElementNS(SVG_NAMESPACE, "rect");
+  background.setAttribute("data-canvas-background", "true");
+  background.setAttribute("x", String(x));
+  background.setAttribute("y", String(y));
+  background.setAttribute("width", String(width || "100%"));
+  background.setAttribute("height", String(height || "100%"));
+  background.setAttribute("fill", "#ffffff");
+  root.insertBefore(background, root.firstChild);
 }
 
 function removeUnsafeSvgContent(document: Document): void {
@@ -101,6 +191,13 @@ export function normalizeSvgForClipboard(svg: string): string {
     const height = Number.parseFloat(root.getAttribute("height") ?? "");
     if (width > 0 && height > 0) root.setAttribute("viewBox", `0 0 ${width} ${height}`);
   }
+  removeRootSizeLimits(root);
+  const viewBox = root.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
+  if (viewBox?.length === 4 && viewBox[2] > 0 && viewBox[3] > 0) {
+    root.setAttribute("width", String(viewBox[2]));
+    root.setAttribute("height", String(viewBox[3]));
+  }
+  addWhiteCanvas(document);
   return new XMLSerializer().serializeToString(root);
 }
 
@@ -138,6 +235,8 @@ export async function svgToPngBlob(svg: string): Promise<Blob> {
   canvas.height = height;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvasを使用できません");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
 
   const image = new Image();
   await new Promise<void>((resolve, reject) => {
