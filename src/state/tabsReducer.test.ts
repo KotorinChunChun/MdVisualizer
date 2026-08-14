@@ -161,6 +161,16 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].document?.content).toBe("# Test");
   });
 
+  it("keeps the first opened content after reloads and saves", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
+    const id = state.tabs[0].id;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: { ...loadedDocument("C:\\docs\\a.md"), content: "opened" } });
+    state = tabsReducer(state, { type: "SAVED", id, document: { ...loadedDocument("C:\\docs\\a.md"), content: "saved" } });
+    state = tabsReducer(state, { type: "RELOAD", id });
+    state = tabsReducer(state, { type: "LOADED", id, generation: 2, document: { ...loadedDocument("C:\\docs\\a.md"), content: "external" } });
+    expect(state.tabs[0].openedContent).toBe("opened");
+  });
+
   it("keeps the editor workspace mode independently in each tab", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;

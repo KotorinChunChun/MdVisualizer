@@ -57,6 +57,7 @@ const screenshot = async (filename) => {
 await command("Page.enable");
 await command("Runtime.enable");
 await evaluate(`document.querySelector('.media-preview__close')?.click()`);
+await evaluate(`document.querySelector('[aria-label="差分を閉じる"]')?.click()`);
 await delay(150);
 const documentReady = await evaluate(`new Promise((resolve) => {
   const deadline = Date.now() + 20000;
@@ -157,8 +158,44 @@ const drawio = await evaluate(`new Promise((resolve) => {
   }, 300);
 })`);
 const drawioScreenshot = await screenshot("drawio-popup.png");
+await evaluate(`document.querySelector('.media-preview__close')?.click()`);
 
-const report = { initialScreenshot, mermaidScreenshot, drawioScreenshot, mermaid, drawio };
+const diff = await evaluate(`new Promise((resolve) => {
+  const button = [...document.querySelectorAll('.document-actions button')].find((candidate) => candidate.textContent.trim() === '差分');
+  if (!button) { resolve({ opened: false, reason: '差分ボタンがありません' }); return; }
+  button.click();
+  const deadline = Date.now() + 20000;
+  const poll = () => {
+    const modal = document.querySelector('.document-diff');
+    if (modal) {
+      resolve({
+        opened: true,
+        mode: modal.querySelector('.document-diff__panes--three-way') ? 'three-way' : 'two-way',
+        panes: modal.querySelectorAll('.document-diff__pane').length,
+        summary: modal.querySelector('.document-diff__header small')?.textContent ?? '',
+      });
+    } else if (Date.now() >= deadline) resolve({ opened: false, reason: '20秒以内に開きませんでした' });
+    else setTimeout(poll, 100);
+  };
+  poll();
+})`);
+const diffCodeScreenshot = await screenshot("diff-code.png");
+const renderedDiff = await evaluate(`new Promise((resolve) => {
+  const button = [...document.querySelectorAll('.document-diff__actions button')].find((candidate) => candidate.textContent.trim() === 'レンダリング');
+  button?.click();
+  const deadline = Date.now() + 5000;
+  const poll = () => {
+    const panes = document.querySelectorAll('.document-diff__rendered');
+    if (panes.length > 0 || Date.now() >= deadline) {
+      resolve({ panes: panes.length, highlightedBlocks: document.querySelectorAll('.markdown-diff-line').length });
+    } else setTimeout(poll, 50);
+  };
+  poll();
+})`);
+await delay(150);
+const diffRenderedScreenshot = await screenshot("diff-rendered.png");
+
+const report = { initialScreenshot, mermaidScreenshot, drawioScreenshot, diffCodeScreenshot, diffRenderedScreenshot, mermaid, drawio, diff, renderedDiff };
 if (!mermaid.opened || !mermaid.maximumFit || mermaid.extraScrollableCanvas) {
   throw new Error(`Mermaid maximum-fit verification failed: ${JSON.stringify(mermaid)}`);
 }
@@ -167,6 +204,9 @@ if (mermaid.canvasBackground !== "rgb(255, 255, 255)" || mermaid.inlineBackgroun
 }
 if (!drawio.opened || !drawio.maximumFit || drawio.extraRightBottomWhitespace) {
   throw new Error(`draw.io popup verification failed: ${JSON.stringify(drawio)}`);
+}
+if (!diff.opened || ![2, 3].includes(diff.panes) || renderedDiff.panes !== diff.panes) {
+  throw new Error(`Document diff verification failed: ${JSON.stringify({ diff, renderedDiff })}`);
 }
 await writeFile(`${outputDirectory}/preview-report.json`, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 socket.close();

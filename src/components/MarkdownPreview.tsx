@@ -79,6 +79,42 @@ interface MarkdownPreviewProps {
   onCodeHighlightComplete?: () => void;
   onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
   stagedAssetPreviews?: Record<string, string>;
+  diffChangedLines?: ReadonlySet<number>;
+}
+
+type DiffHastNode = {
+  type?: string;
+  tagName?: string;
+  properties?: Record<string, unknown>;
+  position?: { start?: { line?: number }; end?: { line?: number } };
+  children?: DiffHastNode[];
+};
+
+const DIFF_BLOCK_TAGS = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote", "pre", "table", "hr"]);
+
+function rehypeDiffLines(options?: { changedLines?: number[] }) {
+  const changedLines = new Set(options?.changedLines ?? []);
+  return (tree: DiffHastNode) => {
+    if (changedLines.size === 0) return;
+    const visit = (node: DiffHastNode) => {
+      const start = node.position?.start?.line;
+      const end = node.position?.end?.line ?? start;
+      if (node.type === "element" && node.tagName && DIFF_BLOCK_TAGS.has(node.tagName) && start && end) {
+        let changed = false;
+        for (let line = start; line <= end; line += 1) {
+          if (changedLines.has(line)) { changed = true; break; }
+        }
+        if (changed) {
+          node.properties ??= {};
+          const current = node.properties.className;
+          const classes = Array.isArray(current) ? current : typeof current === "string" ? current.split(/\s+/) : [];
+          node.properties.className = [...classes, "markdown-diff-line"];
+        }
+      }
+      node.children?.forEach(visit);
+    };
+    visit(tree);
+  };
 }
 
 interface MarkdownRenderContextValue {
@@ -286,6 +322,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onCodeHighlightComplete,
   onCodeFenceBodyChange,
   stagedAssetPreviews = {},
+  diffChangedLines,
 }) => {
   const mermaidFenceOffsets = React.useMemo(() => collectMermaidFenceOffsets(content), [content]);
   const mermaidIndexByOffset = React.useMemo(
@@ -340,7 +377,13 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
       <div className="markdown-body" ref={contentRef}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkObsidianImages]}
-          rehypePlugins={[rehypeRaw, rehypeFoldSections, rehypeBlockAnchors, [rehypeSanitize, markdownSanitizeSchema]]}
+          rehypePlugins={[
+            rehypeRaw,
+            rehypeFoldSections,
+            rehypeBlockAnchors,
+            [rehypeSanitize, markdownSanitizeSchema],
+            [rehypeDiffLines, { changedLines: [...(diffChangedLines ?? [])] }],
+          ]}
           components={markdownComponents}
           urlTransform={markdownUrlTransform}
         >

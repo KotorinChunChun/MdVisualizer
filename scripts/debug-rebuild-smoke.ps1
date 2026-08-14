@@ -170,6 +170,16 @@ do {
 if (-not $restoredState) { throw "再起動後のデバッグ状態APIに接続できませんでした。" }
 Write-Output ("OPEN_STATE_AFTER_BUILD=" + ($restoredState | ConvertTo-Json -Depth 8 -Compress))
 
+$activeTab = @($restoredState.windows | ForEach-Object { $_.tabs } | Where-Object active)[0]
+if ($activeTab -and $activeTab.path) {
+    $expectedTitle = "$(Split-Path -Leaf ([string]$activeTab.path)) - MarkdownViewer"
+    $process.Refresh()
+    if ($process.MainWindowTitle -ne $expectedTitle) {
+        throw "アプリケーションタイトルが一致しません。expected=$expectedTitle actual=$($process.MainWindowTitle)"
+    }
+    Write-Output "WINDOW_TITLE=$($process.MainWindowTitle)"
+}
+
 $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
 & $nodePath $analyzer $RemoteDebuggingPort $runDirectory
 if ($LASTEXITCODE -ne 0) { throw "実画面解析に失敗しました（終了コード: $LASTEXITCODE）。" }
@@ -179,6 +189,8 @@ Write-Output "RESTORED_FILES=$($restoreFiles.Count)"
 Write-Output "REPORT=$(Join-Path $runDirectory 'preview-report.json')"
 Write-Output "MERMAID_SCREENSHOT=$(Join-Path $runDirectory 'mermaid-popup.png')"
 Write-Output "DRAWIO_SCREENSHOT=$(Join-Path $runDirectory 'drawio-popup.png')"
+Write-Output "DIFF_CODE_SCREENSHOT=$(Join-Path $runDirectory 'diff-code.png')"
+Write-Output "DIFF_RENDERED_SCREENSHOT=$(Join-Path $runDirectory 'diff-rendered.png')"
 
 if ($StopAfterTest) {
     Stop-Process -Id $process.Id -Force

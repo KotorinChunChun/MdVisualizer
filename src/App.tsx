@@ -21,6 +21,7 @@ import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
+import { DocumentDiffModal, type DocumentDiffTarget } from "./components/DocumentDiffModal";
 import { useCropEditor, type ImageEditTarget } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -157,6 +158,8 @@ export function App() {
     dismissAuthentication,
   } = useSharePointAuthentication(setToast);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
+  const [documentDiff, setDocumentDiff] = useState<DocumentDiffTarget | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
   const [annotationTarget, setAnnotationTarget] = useState<ImageEditTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
   const [svgEditorTarget, setSvgEditorTarget] = useState<SvgSourceEditTarget | null>(null);
@@ -499,6 +502,29 @@ export function App() {
   const reload = useCallback(() => {
     if (activeTab?.document) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
+
+  const openDocumentDiff = useCallback(async () => {
+    const tabId = tabsStateRef.current.activeId;
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId);
+    if (!tab?.document || tab.document.kind !== "markdown") return;
+    setDiffLoading(true);
+    try {
+      const storageDocument = await loadMarkdown(tab.document.path);
+      if (storageDocument.kind !== "markdown") throw new Error("Markdown文書として再読込できませんでした。");
+      const latestTab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId) ?? tab;
+      setDocumentDiff({
+        path: storageDocument.path,
+        baseDir: storageDocument.base_dir,
+        openedContent: latestTab.openedContent ?? tab.openedContent ?? tab.document.content,
+        storageContent: storageDocument.content,
+        editingContent: latestTab.draft,
+      });
+    } catch (error) {
+      setToast({ id: String(Date.now()), message: `差分の取得に失敗しました: ${String(error)}`, type: "error" });
+    } finally {
+      setDiffLoading(false);
+    }
+  }, []);
 
   const saveTab = useCallback(async (id: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
@@ -1285,6 +1311,7 @@ export function App() {
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読込</button>
           <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
+          <button type="button" disabled={!canEditActive || diffLoading} onClick={() => void openDocumentDiff()}>{diffLoading ? "差分取得中…" : "差分"}</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <span className="control-group__title">画面</span>
@@ -1536,6 +1563,12 @@ export function App() {
           setToast({ id: String(Date.now()), message: `${svgEditorTarget.filename} のSVG編集をSharePointへ保存しました`, type: "success" });
         }}
         onCancel={() => setSvgEditorTarget(null)}
+      />}
+
+      {documentDiff && <DocumentDiffModal
+        target={documentDiff}
+        theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+        onClose={() => setDocumentDiff(null)}
       />}
 
       <Toast
