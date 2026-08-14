@@ -250,6 +250,11 @@ pub fn run() {
                         geometries.insert(window.label().to_string(), geometry);
                     };
                 }
+                // The main window is created hidden so the default size never
+                // flashes before the persisted geometry has been restored.
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
             }
             Ok(())
         })

@@ -2,7 +2,15 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+
+describe("application window title", () => {
+  it("uses the active tab filename followed by the application name", () => {
+    expect(applicationWindowTitle({ path: "C:\\docs\\sample.md" })).toBe("sample.md - MarkdownViewer");
+    expect(applicationWindowTitle({ kind: "settings", path: "__settings__" })).toBe("設定 - MarkdownViewer");
+    expect(applicationWindowTitle(null)).toBe("MarkdownViewer");
+  });
+});
 
 describe("Markdown editing availability", () => {
   it("enables editing for both local and SharePoint Markdown documents", () => {

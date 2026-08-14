@@ -10,6 +10,8 @@ export interface TabState {
   kind?: "document" | "settings";
   path: string;
   document: MarkdownLoadResult | null;
+  /** The immutable text captured by the first successful load of this tab. */
+  openedContent?: string;
   error: string | null;
   loading: boolean;
   scrollTop: number;
@@ -134,6 +136,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         ...tab,
         path: action.document.path,
         document: action.document,
+        openedContent: tab.openedContent ?? action.document.content,
         draft: action.document.content,
         dirty: false,
         saving: false,

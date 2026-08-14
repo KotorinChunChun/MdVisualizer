@@ -14,7 +14,8 @@
       {
         "title": "MarkdownViewer",
         "width": 1000,
-        "height": 750
+        "height": 750,
+        "visible": false
       }
     ],
     "security": {

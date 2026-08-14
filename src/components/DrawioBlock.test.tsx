@@ -67,8 +67,8 @@ describe("DrawioBlock", () => {
 
     expect(screen.getByRole("toolbar", { name: "draw.io操作" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "コードをコピー" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "PNGをコピー" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "SVGをコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ラスタコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "コード" }));
     expect(screen.getByText(source)).toBeTruthy();
   });

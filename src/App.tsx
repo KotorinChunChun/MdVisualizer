@@ -95,6 +95,14 @@ export function canEditMarkdownDocument(document: { kind: string } | null | unde
   return document?.kind === "markdown";
 }
 
+export function applicationWindowTitle(tab: { kind?: "document" | "settings"; path: string } | null | undefined): string {
+  if (!tab) return "MarkdownViewer";
+  if (tab.kind === "settings") return "設定 - MarkdownViewer";
+  const segments = tab.path.split(/[\\/]/).filter(Boolean);
+  const filename = segments[segments.length - 1] ?? tab.path;
+  return `${filename} - MarkdownViewer`;
+}
+
 export async function handleWindowCloseRequest(
   hasUnsavedChanges: boolean,
   confirmDiscard: (message?: string) => boolean,
@@ -197,6 +205,12 @@ export function App() {
   const editorMode: EditorWorkspaceMode = canEditActive ? activeTab?.editorMode ?? "preview" : "preview";
   const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
   const previewContent = useDeferredValue(activeMarkdownContent);
+
+  useEffect(() => {
+    void getCurrentWindow().setTitle(applicationWindowTitle(activeTab)).catch(() => {
+      // Browser and unit-test hosts do not provide the Tauri window API.
+    });
+  }, [activeTab?.id, activeTab?.kind, activeTab?.path]);
 
   useEffect(() => {
     if (import.meta.env.VITE_MARKDOWNVIEWER_DEBUG_API !== "1") return;
