@@ -18,12 +18,14 @@ export type MarkdownEditAction =
 
 export {
   buildStructuredListEnter,
+  buildStructuredListSoftEnter,
   buildOrderedListNormalization,
   buildStructuredListIndent,
   buildStructuredListMove,
   buildStructuredListPaste,
   buildStructuredListToggle,
   parseMarkdownListLine,
+  normalizeStructuredListIndentationForRendering,
   renumberOrderedLists,
   type MarkdownListLine,
   type StructuredListKind,

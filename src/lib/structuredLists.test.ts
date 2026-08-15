@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   buildStructuredListEnter,
+  buildStructuredListSoftEnter,
   buildStructuredListIndent,
   buildStructuredListMove,
   buildStructuredListPaste,
   buildStructuredListToggle,
+  normalizeStructuredListIndentationForRendering,
   renumberOrderedLists,
 } from "./markdownEditing";
 
@@ -36,6 +38,27 @@ describe("structured Markdown lists", () => {
   it("continues numbered items and exits an empty item", () => {
     expect(apply("1. one", buildStructuredListEnter("1. one", 6, 6))).toBe("1. one\n2. ");
     expect(apply("1. one\n2. ", buildStructuredListEnter("1. one\n2. ", 11, 11))).toBe("1. one\n");
+  });
+
+  it("continues numbered items at every indentation depth", () => {
+    const source = "1. outer\n  1. child\n    1. deep";
+    expect(apply(source, buildStructuredListEnter(source, source.length, source.length)))
+      .toBe("1. outer\n  1. child\n    1. deep\n    2. ");
+  });
+
+  it("adds one indentation level without a marker on Shift+Enter", () => {
+    const source = "1. outer\n  1. child\n    1. deep";
+    const change = buildStructuredListSoftEnter(source, source.length, source.length);
+    expect(apply(source, change)).toBe("1. outer\n  1. child\n    1. deep\n      ");
+    expect(change?.anchor).toBe(source.length + 7);
+  });
+
+  it("normalizes compact list levels for rendering without changing source offsets", () => {
+    const source = "1. outer\r\n  1. child\r\n     - odd bullet\r\n       - odd child\r\n2. next";
+    const normalized = normalizeStructuredListIndentationForRendering(source);
+    expect(normalized).toBe("1. outer\r\n\t 1. child\r\n\t \t \t- odd bullet\r\n\t \t \t \t- odd child\r\n2. next");
+    expect(normalized).toHaveLength(source.length);
+    expect(normalizeStructuredListIndentationForRendering("    1. code\n\n```md\n  1. literal\n```")).toBe("    1. code\n\n```md\n  1. literal\n```");
   });
 
   it("indents an item and renumbers its old and new levels", () => {

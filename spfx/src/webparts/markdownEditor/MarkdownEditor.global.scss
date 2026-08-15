@@ -90,6 +90,9 @@
   line-height: 1.6;
 }
 
+.spfxMarkdownPreview ul.markdown-list-marker-even { list-style-type: disc; }
+.spfxMarkdownPreview ul.markdown-list-marker-odd { list-style-type: circle; }
+
 .spfxMarkdownPreview img,
 .spfxMarkdownPreview svg {
   max-width: 100%;

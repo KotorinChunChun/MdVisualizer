@@ -75,6 +75,39 @@ const documentReady = await evaluate(`new Promise((resolve) => {
 })`);
 if (!documentReady) throw new Error("Mermaid or draw.io block did not appear within 20 seconds");
 
+const structuredList = await evaluate(`(() => {
+  const root = [...document.querySelectorAll('.markdown-body ol')].find((list) =>
+    [...list.children].some((child) => child.tagName === 'LI' && child.textContent.includes('リスト親'))
+  );
+  if (!root) return { found: false };
+  const directItems = [...root.children].filter((child) => child.tagName === 'LI');
+  const first = directItems[0];
+  const orderedDepth = first?.querySelector(':scope > ol > li > ol > li') ? 3 : 0;
+  const bullets = [...(first?.querySelectorAll('ul') ?? [])].map((list) => ({
+    text: list.querySelector(':scope > li > p')?.textContent ?? list.querySelector(':scope > li')?.firstChild?.textContent ?? '',
+    markerClass: [...list.classList].find((name) => name.startsWith('markdown-list-marker-')) ?? '',
+  }));
+  return {
+    found: true,
+    directItems: directItems.length,
+    orderedDepth,
+    bullets,
+    joinedOrderedText: [...first.querySelectorAll('p')].some((paragraph) => paragraph.textContent.includes('1. リスト孫')),
+  };
+})()`);
+const structuredListScreenshot = await screenshot("structured-list.png");
+const expectedMarkerClasses = [
+  "markdown-list-marker-odd",
+  "markdown-list-marker-even",
+  "markdown-list-marker-odd",
+  "markdown-list-marker-even",
+];
+if (!structuredList.found || structuredList.directItems !== 2 || structuredList.orderedDepth !== 3
+  || structuredList.joinedOrderedText
+  || JSON.stringify(structuredList.bullets.map((item) => item.markerClass)) !== JSON.stringify(expectedMarkerClasses)) {
+  throw new Error(`Structured list verification failed: ${JSON.stringify(structuredList)}`);
+}
+
 await evaluate(`document.querySelector('.mermaid-container')?.scrollIntoView({ block: 'center', inline: 'center' })`);
 const mermaidReady = await evaluate(`new Promise((resolve) => {
   const deadline = Date.now() + 20000;
@@ -244,7 +277,7 @@ const diffClosed = await evaluate(`new Promise((resolve) => {
   poll();
 })`);
 
-const report = { initialScreenshot, mermaidScreenshot, drawioScreenshot, diffCodeScreenshot, diffRenderedScreenshot, diffSplitScreenshot, mermaid, drawio, diffPreview, diffCode, diffSplit, diffClosed };
+const report = { initialScreenshot, structuredListScreenshot, mermaidScreenshot, drawioScreenshot, diffCodeScreenshot, diffRenderedScreenshot, diffSplitScreenshot, structuredList, mermaid, drawio, diffPreview, diffCode, diffSplit, diffClosed };
 if (!mermaid.opened || !mermaid.maximumFit || mermaid.extraScrollableCanvas) {
   throw new Error(`Mermaid maximum-fit verification failed: ${JSON.stringify(mermaid)}`);
 }

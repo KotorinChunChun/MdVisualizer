@@ -350,6 +350,9 @@ body {
   margin-bottom: 1em;
 }
 
+.markdown-body ul.markdown-list-marker-even { list-style-type: disc; }
+.markdown-body ul.markdown-list-marker-odd { list-style-type: circle; }
+
 .markdown-body code {
   background-color: var(--inline-code-bg);
   color: var(--inline-code-color);

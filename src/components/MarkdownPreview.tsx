@@ -25,6 +25,7 @@ import { collectEditableMarkdownOccurrences, type CodeFenceOccurrence, type Imag
 import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { DrawioBlock } from "./DrawioBlock";
+import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
 
 type MarkdownNode = {
   type?: string;
@@ -293,6 +294,23 @@ const MarkdownSvg = ({ node }: { node?: { position?: { start?: { offset?: number
   }} dangerouslySetInnerHTML={{ __html: safeSvg }} />;
 };
 
+const MarkdownListDepthContext = React.createContext(0);
+
+const MarkdownOrderedList: NonNullable<Components["ol"]> = ({ node: _node, children, ...props }) => {
+  const depth = React.useContext(MarkdownListDepthContext);
+  return <MarkdownListDepthContext.Provider value={depth + 1}>
+    <ol {...props}>{children}</ol>
+  </MarkdownListDepthContext.Provider>;
+};
+
+const MarkdownUnorderedList: NonNullable<Components["ul"]> = ({ node: _node, children, className, ...props }) => {
+  const depth = React.useContext(MarkdownListDepthContext);
+  const markerClass = depth % 2 === 0 ? "markdown-list-marker-even" : "markdown-list-marker-odd";
+  return <MarkdownListDepthContext.Provider value={depth + 1}>
+    <ul {...props} className={[className, markerClass].filter(Boolean).join(" ")}>{children}</ul>
+  </MarkdownListDepthContext.Provider>;
+};
+
 const markdownComponents: Components = {
   section: MarkdownSection,
   code: MarkdownCode,
@@ -300,6 +318,8 @@ const markdownComponents: Components = {
   a: MarkdownLink,
   img: MarkdownImage,
   svg: MarkdownSvg as Components["svg"],
+  ol: MarkdownOrderedList,
+  ul: MarkdownUnorderedList,
 };
 
 const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
@@ -330,6 +350,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   diffChangedLines,
   staticMode = false,
 }) => {
+  const renderedContent = React.useMemo(() => normalizeStructuredListIndentationForRendering(content), [content]);
   const mermaidFenceOffsets = React.useMemo(() => collectMermaidFenceOffsets(content), [content]);
   const mermaidIndexByOffset = React.useMemo(
     () => new Map(mermaidFenceOffsets.map((offset, index) => [offset, index])),
@@ -394,7 +415,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
           components={markdownComponents}
           urlTransform={markdownUrlTransform}
         >
-          {content}
+          {renderedContent}
         </ReactMarkdown>
       </div>
     </MarkdownRenderContext.Provider>

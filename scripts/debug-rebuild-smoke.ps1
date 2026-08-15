@@ -187,6 +187,7 @@ if ($LASTEXITCODE -ne 0) { throw "実画面解析に失敗しました（終了�
 Write-Output "DEBUG_EXECUTABLE=$debugExecutable"
 Write-Output "RESTORED_FILES=$($restoreFiles.Count)"
 Write-Output "REPORT=$(Join-Path $runDirectory 'preview-report.json')"
+Write-Output "STRUCTURED_LIST_SCREENSHOT=$(Join-Path $runDirectory 'structured-list.png')"
 Write-Output "MERMAID_SCREENSHOT=$(Join-Path $runDirectory 'mermaid-popup.png')"
 Write-Output "DRAWIO_SCREENSHOT=$(Join-Path $runDirectory 'drawio-popup.png')"
 Write-Output "DIFF_CODE_SCREENSHOT=$(Join-Path $runDirectory 'diff-code.png')"

@@ -102,6 +102,46 @@ export function renumberOrderedLists(source: string): string {
   return joinLines(lines);
 }
 
+/**
+ * Converts the editor's compact list indentation to an equal-length tab form for
+ * CommonMark parsing. Keeping every line and offset the same lets renderers
+ * continue to map images, code fences, and diff lines back to the source.
+ */
+export function normalizeStructuredListIndentationForRendering(source: string): string {
+  const lines = documentLines(source);
+  let activeListBlock = false;
+  let rootIndent = Number.POSITIVE_INFINITY;
+
+  for (const line of lines) {
+    if (line.inFence) continue;
+    const item = line.list;
+    if (item) {
+      if (!activeListBlock) {
+        if (item.indentWidth > 3) continue;
+        activeListBlock = true;
+        rootIndent = item.indentWidth;
+      } else {
+        rootIndent = Math.min(rootIndent, item.indentWidth);
+      }
+      if (item.indent.length >= 2 && /^ +$/.test(item.indent)) {
+        const normalizedIndent = "\t ".repeat(Math.floor(item.indent.length / 2))
+          + (item.indent.length % 2 === 0 ? "" : "\t");
+        line.text = normalizedIndent + line.text.slice(item.indent.length);
+      }
+      continue;
+    }
+
+    if (line.text.trim() === "") continue;
+    const continuationIndent = indentationWidth(line.text.match(/^\s*/)?.[0] ?? "");
+    if (continuationIndent <= rootIndent) {
+      activeListBlock = false;
+      rootIndent = Number.POSITIVE_INFINITY;
+    }
+  }
+
+  return joinLines(lines);
+}
+
 export function buildOrderedListNormalization(source: string, anchor: number, head = anchor): MarkdownEditChange | null {
   const after = normalizeNumberedHeadings(renumberOrderedLists(source));
   if (after === source) return null;
@@ -216,6 +256,26 @@ export function buildStructuredListEnter(source: string, from: number, to: numbe
   const replacement = `${beforeCursor}${ending}${insertedLine}${afterCursor}`;
   const intermediate = source.slice(0, line.start) + replacement + source.slice(line.start + line.text.length + line.ending.length);
   return applyAndRenumber(source, intermediate, line.start + beforeCursor.length + ending.length + insertedLine.length);
+}
+
+export function buildStructuredListSoftEnter(source: string, from: number, to: number): MarkdownEditChange | null {
+  if (from !== to) return null;
+  const lines = documentLines(source);
+  const line = lines[lineIndexAt(lines, from)];
+  const item = line.list;
+  if (!item || line.inFence) return null;
+  const ending = line.ending || (source.includes("\r\n") ? "\r\n" : "\n");
+  const column = Math.max(item.prefixLength, from - line.start);
+  const beforeCursor = line.text.slice(0, column);
+  const afterCursor = line.text.slice(column);
+  const continuationIndent = `${item.indent}  `;
+  const replacement = `${beforeCursor}${ending}${continuationIndent}${afterCursor}`;
+  const insertTo = line.start + line.text.length + line.ending.length;
+  return minimalChange(
+    source,
+    source.slice(0, line.start) + replacement + source.slice(insertTo),
+    line.start + beforeCursor.length + ending.length + continuationIndent.length,
+  );
 }
 
 export function buildStructuredListIndent(source: string, from: number, to: number, outdent = false): MarkdownEditChange | null {
