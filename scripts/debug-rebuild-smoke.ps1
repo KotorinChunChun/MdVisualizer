@@ -191,6 +191,7 @@ Write-Output "MERMAID_SCREENSHOT=$(Join-Path $runDirectory 'mermaid-popup.png')"
 Write-Output "DRAWIO_SCREENSHOT=$(Join-Path $runDirectory 'drawio-popup.png')"
 Write-Output "DIFF_CODE_SCREENSHOT=$(Join-Path $runDirectory 'diff-code.png')"
 Write-Output "DIFF_RENDERED_SCREENSHOT=$(Join-Path $runDirectory 'diff-rendered.png')"
+Write-Output "DIFF_SPLIT_SCREENSHOT=$(Join-Path $runDirectory 'diff-split.png')"
 
 if ($StopAfterTest) {
     Stop-Process -Id $process.Id -Force

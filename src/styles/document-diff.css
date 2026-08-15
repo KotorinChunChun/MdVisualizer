@@ -1,29 +1,15 @@
-.document-diff-backdrop {
-  position: fixed;
-  z-index: 120;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 2vh 2vw;
-  background: #000a;
-}
-
-.document-diff {
+.document-diff-workspace {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  width: 96vw;
-  height: 96vh;
   min-width: 0;
   min-height: 0;
   color: var(--text-primary);
   background: var(--panel-bg);
-  border: 1px solid var(--border-color);
-  border-radius: .65rem;
-  box-shadow: 0 1rem 3rem #0009;
   overflow: hidden;
 }
 
-.document-diff__header,
+.document-diff-workspace__header,
 .document-diff__pane > header {
   display: flex;
   align-items: center;
@@ -32,13 +18,9 @@
   border-bottom: 1px solid var(--border-color);
 }
 
-.document-diff__header { padding: .6rem .8rem; }
-.document-diff__header > div:first-child { display: grid; }
-.document-diff__header small,
+.document-diff-workspace__header { min-height: 2.4rem; padding: .4rem .7rem; background: var(--header-bg); }
+.document-diff-workspace__header small,
 .document-diff__pane > header small { color: var(--text-muted); font-weight: 400; }
-.document-diff__actions { display: flex; }
-.document-diff__actions button { min-height: 2rem; padding: .25rem .7rem; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); }
-.document-diff__actions button[aria-pressed="true"] { color: #fff; background: var(--accent-color); border-color: var(--accent-color); }
 
 .document-diff__panes {
   display: grid;
@@ -49,6 +31,7 @@
 }
 .document-diff__panes--two-way { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .document-diff__panes--three-way { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.document-diff__panes--four-way { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .document-diff__pane { min-width: 0; min-height: 0; overflow: hidden; border-right: 1px solid var(--border-color); }
 .document-diff__pane:last-child { border-right: 0; }
 .document-diff__pane > header { min-height: 2.4rem; padding: .4rem .65rem; background: var(--header-bg); font-weight: 700; }
@@ -64,6 +47,7 @@
 .document-diff__rendered .markdown-body { max-width: none; }
 .document-diff__rendered .markdown-diff-line { background: color-mix(in srgb, #f59e0b 22%, transparent); box-shadow: inset 4px 0 #f59e0b; }
 .document-diff__rendered a { pointer-events: none; }
+.document-actions button[aria-pressed="true"] { color: #fff; font-weight: 600; background: var(--accent-color); border-color: var(--accent-color); }
 
 @media (max-width: 900px) {
   .document-diff__panes { display: flex; overflow-x: auto; }

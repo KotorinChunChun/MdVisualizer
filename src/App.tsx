@@ -21,7 +21,7 @@ import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
-import { DocumentDiffModal, type DocumentDiffTarget } from "./components/DocumentDiffModal";
+import { DocumentDiffWorkspace, type DocumentDiffTarget } from "./components/DocumentDiffWorkspace";
 import { useCropEditor, type ImageEditTarget } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -503,7 +503,11 @@ export function App() {
     if (activeTab?.document) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
 
-  const openDocumentDiff = useCallback(async () => {
+  const toggleDocumentDiff = useCallback(async () => {
+    if (documentDiff) {
+      setDocumentDiff(null);
+      return;
+    }
     const tabId = tabsStateRef.current.activeId;
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId);
     if (!tab?.document || tab.document.kind !== "markdown") return;
@@ -524,7 +528,9 @@ export function App() {
     } finally {
       setDiffLoading(false);
     }
-  }, []);
+  }, [documentDiff]);
+
+  useEffect(() => { setDocumentDiff(null); }, [activeTab?.id]);
 
   const saveTab = useCallback(async (id: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
@@ -1311,7 +1317,12 @@ export function App() {
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
           <button type="button" disabled={!activeTab?.document} onClick={reload}>再読込</button>
           <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
-          <button type="button" disabled={!canEditActive || diffLoading} onClick={() => void openDocumentDiff()}>{diffLoading ? "差分取得中…" : "差分"}</button>
+          <button
+            type="button"
+            aria-pressed={documentDiff !== null}
+            disabled={!canEditActive || diffLoading}
+            onClick={() => void toggleDocumentDiff()}
+          >{diffLoading ? "差分取得中…" : "差分"}</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <span className="control-group__title">画面</span>
@@ -1344,6 +1355,11 @@ export function App() {
       </div>}
 
       <div className={`document-workspace editor-workspace-${editorMode}`}>
+      {documentDiff && activeTab?.document?.kind === "markdown" ? <DocumentDiffWorkspace
+        target={{ ...documentDiff, editingContent: activeTab.draft }}
+        editorMode={editorMode}
+        theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+      /> : <>
       {editorMode === "preview" && activeTab?.document && <DocumentSidePanel
         activeTab={documentSidePanel}
         onTabChange={changeDocumentSidePanel}
@@ -1484,6 +1500,7 @@ export function App() {
           </div>
         )}
       </main>}
+      </>}
       </div>
 
       {cropTarget && (
@@ -1563,12 +1580,6 @@ export function App() {
           setToast({ id: String(Date.now()), message: `${svgEditorTarget.filename} のSVG編集をSharePointへ保存しました`, type: "success" });
         }}
         onCancel={() => setSvgEditorTarget(null)}
-      />}
-
-      {documentDiff && <DocumentDiffModal
-        target={documentDiff}
-        theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
-        onClose={() => setDocumentDiff(null)}
       />}
 
       <Toast
