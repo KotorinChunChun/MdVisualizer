@@ -59,6 +59,8 @@ describe("structured Markdown lists", () => {
     expect(normalized).toBe("1. outer\r\n\t 1. child\r\n\t \t \t- odd bullet\r\n\t \t \t \t- odd child\r\n2. next");
     expect(normalized).toHaveLength(source.length);
     expect(normalizeStructuredListIndentationForRendering("    1. code\n\n```md\n  1. literal\n```")).toBe("    1. code\n\n```md\n  1. literal\n```");
+    expect(normalizeStructuredListIndentationForRendering("1. parent\n   1. standard child\n2. next"))
+      .toBe("1. parent\n   1. standard child\n2. next");
   });
 
   it("indents an item and renumbers its old and new levels", () => {

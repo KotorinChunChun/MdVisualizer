@@ -111,6 +111,7 @@ export function normalizeStructuredListIndentationForRendering(source: string): 
   const lines = documentLines(source);
   let activeListBlock = false;
   let rootIndent = Number.POSITIVE_INFINITY;
+  let compactIndentation = false;
 
   for (const line of lines) {
     if (line.inFence) continue;
@@ -121,9 +122,10 @@ export function normalizeStructuredListIndentationForRendering(source: string): 
         activeListBlock = true;
         rootIndent = item.indentWidth;
       } else {
+        if (item.indentWidth === rootIndent + 2) compactIndentation = true;
         rootIndent = Math.min(rootIndent, item.indentWidth);
       }
-      if (item.indent.length >= 2 && /^ +$/.test(item.indent)) {
+      if (compactIndentation && item.indent.length >= 2 && /^ +$/.test(item.indent)) {
         const normalizedIndent = "\t ".repeat(Math.floor(item.indent.length / 2))
           + (item.indent.length % 2 === 0 ? "" : "\t");
         line.text = normalizedIndent + line.text.slice(item.indent.length);
@@ -136,6 +138,7 @@ export function normalizeStructuredListIndentationForRendering(source: string): 
     if (continuationIndent <= rootIndent) {
       activeListBlock = false;
       rootIndent = Number.POSITIVE_INFINITY;
+      compactIndentation = false;
     }
   }
 

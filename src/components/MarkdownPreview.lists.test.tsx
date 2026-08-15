@@ -34,4 +34,13 @@ describe("MarkdownPreview structured lists", () => {
       "markdown-list-marker-odd",
     ]);
   });
+
+  it("keeps standard three-space ordered children nested", () => {
+    const content = "1. 親A\n   1. 子A-1\n   2. 子A-2\n2. 親B\n   1. 子B-1";
+    const { container } = render(<MarkdownPreview content={content} baseDir="" imageVersions={{}} />);
+    const root = container.querySelector(".markdown-body > ol");
+    expect(root?.querySelectorAll(":scope > li")).toHaveLength(2);
+    expect(root?.querySelectorAll(":scope > li:first-child > ol > li")).toHaveLength(2);
+    expect(container.textContent).not.toContain("親A 1. 子A-1");
+  });
 });
