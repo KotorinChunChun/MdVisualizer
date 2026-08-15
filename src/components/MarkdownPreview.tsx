@@ -80,6 +80,7 @@ interface MarkdownPreviewProps {
   onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
   stagedAssetPreviews?: Record<string, string>;
   diffChangedLines?: ReadonlySet<number>;
+  staticMode?: boolean;
 }
 
 type DiffHastNode = {
@@ -145,6 +146,7 @@ interface MarkdownRenderContextValue {
   imageOccurrenceByOffset: Map<number, ImageMarkdownOccurrence>;
   inlineSvgByOffset: Map<number, InlineSvgOccurrence>;
   stagedAssetPreviews: Record<string, string>;
+  staticMode: boolean;
 }
 
 const MarkdownRenderContext = React.createContext<MarkdownRenderContextValue | null>(null);
@@ -173,6 +175,9 @@ const MarkdownSection: NonNullable<Components["section"]> = ({ node, children })
 const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, children, ...props }) => {
   const context = useMarkdownRenderContext();
   const language = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
+  if (context.staticMode && language) {
+    return <code className={className} {...props}>{children}</code>;
+  }
   if (language === "drawio") {
     const sourceOffset = node?.position?.start.offset;
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
@@ -323,6 +328,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onCodeFenceBodyChange,
   stagedAssetPreviews = {},
   diffChangedLines,
+  staticMode = false,
 }) => {
   const mermaidFenceOffsets = React.useMemo(() => collectMermaidFenceOffsets(content), [content]);
   const mermaidIndexByOffset = React.useMemo(
@@ -365,11 +371,12 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     imageOccurrenceByOffset,
     inlineSvgByOffset,
     stagedAssetPreviews,
+    staticMode,
   }), [
     baseDir, codeFenceByOffset, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
     onCodeFenceBodyChange, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
-    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, tabId, theme, windowId,
+    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, staticMode, tabId, theme, windowId,
   ]);
 
   return (

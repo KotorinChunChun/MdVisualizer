@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { buildDocumentDiff } from "../lib/documentDiff";
 import { MarkdownPreview } from "./MarkdownPreview";
@@ -23,6 +23,7 @@ export function DocumentDiffModal({ target, theme, onClose }: {
   onClose: () => void;
 }) {
   const [display, setDisplay] = useState<"code" | "rendered">("code");
+  const [rendering, startRenderingTransition] = useTransition();
   const model = useMemo(
     () => buildDocumentDiff(target.openedContent, target.storageContent, target.editingContent),
     [target.editingContent, target.openedContent, target.storageContent],
@@ -44,7 +45,12 @@ export function DocumentDiffModal({ target, theme, onClose }: {
           </div>
           <div className="document-diff__actions" role="group" aria-label="差分表示">
             <button type="button" aria-pressed={display === "code"} onClick={() => setDisplay("code")}>コード</button>
-            <button type="button" aria-pressed={display === "rendered"} onClick={() => setDisplay("rendered")}>レンダリング</button>
+            <button
+              type="button"
+              aria-pressed={display === "rendered"}
+              disabled={rendering}
+              onClick={() => startRenderingTransition(() => setDisplay("rendered"))}
+            >{rendering ? "レンダリング中…" : "レンダリング"}</button>
             <button type="button" aria-label="差分を閉じる" onClick={onClose}>×</button>
           </div>
         </header>
@@ -69,6 +75,7 @@ export function DocumentDiffModal({ target, theme, onClose }: {
                     theme={theme}
                     mermaidMode="always-code"
                     diffChangedLines={version.changedLines}
+                    staticMode
                   />
                 </div>
               )}

@@ -181,21 +181,37 @@ const diff = await evaluate(`new Promise((resolve) => {
 })`);
 const diffCodeScreenshot = await screenshot("diff-code.png");
 const renderedDiff = await evaluate(`new Promise((resolve) => {
+  const startedAt = performance.now();
   const button = [...document.querySelectorAll('.document-diff__actions button')].find((candidate) => candidate.textContent.trim() === 'レンダリング');
   button?.click();
   const deadline = Date.now() + 5000;
   const poll = () => {
     const panes = document.querySelectorAll('.document-diff__rendered');
     if (panes.length > 0 || Date.now() >= deadline) {
-      resolve({ panes: panes.length, highlightedBlocks: document.querySelectorAll('.markdown-diff-line').length });
+      resolve({
+        panes: panes.length,
+        highlightedBlocks: document.querySelectorAll('.markdown-diff-line').length,
+        interactiveDiagrams: document.querySelectorAll('.document-diff .mermaid-container, .document-diff .drawio-block').length,
+        durationMs: performance.now() - startedAt,
+      });
     } else setTimeout(poll, 50);
   };
   poll();
 })`);
 await delay(150);
 const diffRenderedScreenshot = await screenshot("diff-rendered.png");
+const diffClosed = await evaluate(`new Promise((resolve) => {
+  document.querySelector('[aria-label="差分を閉じる"]')?.click();
+  const deadline = Date.now() + 2000;
+  const poll = () => {
+    if (!document.querySelector('.document-diff')) resolve(true);
+    else if (Date.now() >= deadline) resolve(false);
+    else setTimeout(poll, 25);
+  };
+  poll();
+})`);
 
-const report = { initialScreenshot, mermaidScreenshot, drawioScreenshot, diffCodeScreenshot, diffRenderedScreenshot, mermaid, drawio, diff, renderedDiff };
+const report = { initialScreenshot, mermaidScreenshot, drawioScreenshot, diffCodeScreenshot, diffRenderedScreenshot, mermaid, drawio, diff, renderedDiff, diffClosed };
 if (!mermaid.opened || !mermaid.maximumFit || mermaid.extraScrollableCanvas) {
   throw new Error(`Mermaid maximum-fit verification failed: ${JSON.stringify(mermaid)}`);
 }
@@ -205,8 +221,8 @@ if (mermaid.canvasBackground !== "rgb(255, 255, 255)" || mermaid.inlineBackgroun
 if (!drawio.opened || !drawio.maximumFit || drawio.extraRightBottomWhitespace) {
   throw new Error(`draw.io popup verification failed: ${JSON.stringify(drawio)}`);
 }
-if (!diff.opened || ![2, 3].includes(diff.panes) || renderedDiff.panes !== diff.panes) {
-  throw new Error(`Document diff verification failed: ${JSON.stringify({ diff, renderedDiff })}`);
+if (!diff.opened || ![2, 3].includes(diff.panes) || renderedDiff.panes !== diff.panes || renderedDiff.interactiveDiagrams !== 0 || renderedDiff.durationMs > 5000 || !diffClosed) {
+  throw new Error(`Document diff verification failed: ${JSON.stringify({ diff, renderedDiff, diffClosed })}`);
 }
 await writeFile(`${outputDirectory}/preview-report.json`, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 socket.close();
