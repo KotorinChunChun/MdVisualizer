@@ -38,6 +38,18 @@ export {
   type MarkdownHeadingBlock,
 } from "./structuredHeadings";
 
+export {
+  buildShortcutKeySvg,
+  isShortcutKeySource,
+  normalizeShortcutKeyToken,
+  parseShortcutKeySequence,
+  type ShortcutKeyGroup,
+  type ShortcutKeySequence,
+  type ShortcutKeySvgOptions,
+  type ShortcutKeyToken,
+  type ShortcutKeyTokenKind,
+} from "./shortcutKeys";
+
 export interface MarkdownEditChange {
   from: number;
   to: number;

@@ -118,6 +118,39 @@
   background: #f5f5f5;
 }
 
+.spfxMarkdownShortcutKeyInline {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: -0.3em;
+  line-height: 0;
+}
+
+.spfxMarkdownShortcutKeyBlock {
+  margin-bottom: 1em;
+  padding: 8px 0;
+  overflow-x: auto;
+}
+
+.spfxMarkdownPreview .shortcut-key-svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  color: var(--bodyText, #242424);
+}
+
+.spfxMarkdownPreview .shortcut-key-svg--inline {
+  width: auto;
+  height: 1.65em;
+}
+
+.spfxMarkdownPreview .shortcut-key-svg__group { fill: var(--md-accent, #314867); opacity: 0.92; }
+.spfxMarkdownPreview .shortcut-key-svg__edge { fill: #a9b2ba; }
+.spfxMarkdownPreview .shortcut-key-svg__face { fill: #ffffff; stroke: #bcc4cc; stroke-width: 1; }
+.spfxMarkdownPreview .shortcut-key-svg__highlight { fill: #ffffff; opacity: 0.68; }
+.spfxMarkdownPreview .shortcut-key-svg__label { fill: #30343a; font-family: "Segoe UI", sans-serif; font-weight: 600; }
+.spfxMarkdownPreview .shortcut-key-svg__separator { fill: var(--bodyText, #242424); font-family: "Segoe UI", sans-serif; font-weight: 700; }
+.spfxMarkdownShortcutKeyBlock .shortcut-key-svg { width: auto; min-width: min-content; height: 62px; }
+
 .spfxMarkdownEditorHost[data-view-mode="edit"] .spfxMarkdownPanes {
   grid-template-columns: minmax(0, 1fr);
 }

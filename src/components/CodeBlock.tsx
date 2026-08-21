@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { LanguageFn } from "highlight.js";
 import { runPowerShell, type PowerShellRunResult } from "../lib/commands";
+import { ShortcutKeySvg } from "./ShortcutKeySvg";
 
 interface CodeBlockProps {
   className?: string;
@@ -56,6 +57,7 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
   const rawLanguage = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
   const language = rawLanguage ? languageAliases[rawLanguage] ?? rawLanguage : undefined;
   const source = String(children ?? "").replace(/\n$/, "");
+  const shortcutKeyBlock = rawLanguage === "key";
   useEffect(() => {
     let cancelled = false;
     void Promise.all([
@@ -117,6 +119,17 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
       }
     }
   };
+
+  if (shortcutKeyBlock) {
+    return <div className="code-block shortcut-key-block">
+      <div className="code-actions">
+        <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
+      </div>
+      <div className="shortcut-key-block__preview">
+        <ShortcutKeySvg source={source} variant="block" />
+      </div>
+    </div>;
+  }
 
   return <div className="code-block">
     <div className="code-actions">

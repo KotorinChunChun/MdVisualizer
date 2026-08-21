@@ -26,6 +26,8 @@ import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetCon
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { DrawioBlock } from "./DrawioBlock";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
+import { ShortcutKeySvg } from "./ShortcutKeySvg";
+import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
 
 type MarkdownNode = {
   type?: string;
@@ -178,6 +180,10 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
   const language = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
   if (context.staticMode && language) {
     return <code className={className} {...props}>{children}</code>;
+  }
+  const source = String(children ?? "");
+  if (!language && isShortcutKeySource(source)) {
+    return <ShortcutKeySvg source={source} variant="inline" />;
   }
   if (language === "drawio") {
     const sourceOffset = node?.position?.start.offset;

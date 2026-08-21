@@ -107,6 +107,14 @@ describe("MarkdownPreview sanitization", () => {
 
     expect(view.container.querySelector(".mermaid-source")).toBe(block);
   });
+
+  it("renders modifier inline code and key fences with the same SVG model", () => {
+    const content = "インラインの `Ctrl+S` と `Windows`。\n\n```key\nCtrl+Shift+S\n```";
+    const { container } = render(<MarkdownPreview content={content} baseDir="" imageVersions={{}} />);
+    expect(container.querySelectorAll("svg.shortcut-key-svg")).toHaveLength(3);
+    expect(container.querySelector("svg.shortcut-key-svg--inline")?.getAttribute("aria-label")).toBe("キーボードショートカット: Ctrl + S");
+    expect(container.querySelector("svg.shortcut-key-svg--block")?.getAttribute("aria-label")).toBe("キーボードショートカット: Ctrl + Shift + S");
+  });
 });
 
 describe("countMermaidFences", () => {

@@ -1,4 +1,6 @@
 import {
+  buildShortcutKeySvg,
+  isShortcutKeySource,
   buildMarkdownEdit,
   buildOrderedListNormalization,
   buildStructuredListEnter,
@@ -203,6 +205,7 @@ export class MarkdownEditorController {
   private _render(value: string): void {
     const sequence = ++this._renderSequence;
     this._preview.innerHTML = this._renderer.render(value);
+    this._renderShortcutKeys();
     this._drawioSources = [];
     this._preview.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(link => {
       if (/^https?:/i.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
@@ -236,6 +239,25 @@ export class MarkdownEditorController {
         code.parentElement?.replaceWith(card);
       } else {
         hljs.highlightElement(code);
+      }
+    });
+  }
+
+  private _renderShortcutKeys(): void {
+    const codeNodes = Array.from(this._preview.querySelectorAll<HTMLElement>('code'));
+    codeNodes.forEach(code => {
+      const isBlock = code.parentElement?.tagName === 'PRE';
+      const source = code.textContent || '';
+      if (isBlock && code.classList.contains('language-key')) {
+        const host = document.createElement('div');
+        host.className = 'spfxMarkdownShortcutKeyBlock';
+        host.innerHTML = buildShortcutKeySvg(source, { variant: 'block' });
+        code.parentElement?.replaceWith(host);
+      } else if (!isBlock && isShortcutKeySource(source)) {
+        const host = document.createElement('span');
+        host.className = 'spfxMarkdownShortcutKeyInline';
+        host.innerHTML = buildShortcutKeySvg(source, { variant: 'inline' });
+        code.replaceWith(host);
       }
     });
   }

@@ -62,4 +62,12 @@ describe("CodeBlock", () => {
     rerender(<CodeBlock className="language-powershell">Write-Output no-path</CodeBlock>);
     expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
   });
+
+  it("renders a key language block with the shared shortcut SVG", () => {
+    const { container } = render(<CodeBlock className="language-key">{"Ctrl+Shift+S"}</CodeBlock>);
+    expect(container.querySelector(".shortcut-key-block")).not.toBeNull();
+    expect(container.querySelector("svg.shortcut-key-svg--block")).not.toBeNull();
+    expect(screen.getByRole("img", { name: "キーボードショートカット: Ctrl + Shift + S" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Copy" })).not.toBeNull();
+  });
 });
