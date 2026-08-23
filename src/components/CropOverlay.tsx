@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { cropImage } from "../lib/commands";
 import { CropTarget } from "../hooks/useCropEditor";
-import { cropPixels } from "../lib/cropGeometry";
+import { cropBoxWithPadding, cropPixels, resizeCropBox, type CropHandle } from "../lib/cropGeometry";
 
 interface CropOverlayProps {
   target: CropTarget;
@@ -12,7 +12,6 @@ interface CropOverlayProps {
   equalPadding?: number;
 }
 
-type HandleType = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "move";
 type PaddingMode = "auto" | "transparent" | "white" | "gray" | "black";
 
 interface Box {
@@ -38,10 +37,10 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const supportsTransparency = /\.(?:png|webp|gif|tiff?|tga|avif)$/i.test(target.fullPath);
   const [paddingMode, setPaddingMode] = useState<PaddingMode>("auto");
-  const [paddingPixels, setPaddingPixels] = useState(equalPadding);
+  const [paddingPixels, setPaddingPixels] = useState({ top: equalPadding, right: equalPadding, bottom: equalPadding, left: equalPadding });
 
   const activeHandle = useRef<{
-    type: HandleType;
+    type: CropHandle;
     startX: number;
     startY: number;
     startBox: Box;
@@ -53,7 +52,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
     setDisplayedSize({ w: img.clientWidth, h: img.clientHeight });
   };
 
-  const handleMouseDown = (e: React.MouseEvent, type: HandleType) => {
+  const handleMouseDown = (e: React.MouseEvent, type: CropHandle) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -78,33 +77,9 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
     const dxPercent = ((e.clientX - startX) / imgRect.width) * 100;
     const dyPercent = ((e.clientY - startY) / imgRect.height) * 100;
 
-    let { x, y, w, h } = startBox;
     const minW = (20 / imgRect.width) * 100;
     const minH = (20 / imgRect.height) * 100;
-
-    if (type === "move") {
-      x = Math.max(-100, Math.min(200 - w, startBox.x + dxPercent));
-      y = Math.max(-100, Math.min(200 - h, startBox.y + dyPercent));
-    } else {
-      if (type.includes("w")) {
-        const newX = Math.max(-100, Math.min(startBox.x + startBox.w - minW, startBox.x + dxPercent));
-        w = startBox.w + (startBox.x - newX);
-        x = newX;
-      }
-      if (type.includes("e")) {
-        w = Math.max(minW, Math.min(200 - startBox.x, startBox.w + dxPercent));
-      }
-      if (type.includes("n")) {
-        const newY = Math.max(-100, Math.min(startBox.y + startBox.h - minH, startBox.y + dyPercent));
-        h = startBox.h + (startBox.y - newY);
-        y = newY;
-      }
-      if (type.includes("s")) {
-        h = Math.max(minH, Math.min(200 - startBox.y, startBox.h + dyPercent));
-      }
-    }
-
-    setBox({ x, y, w, h });
+    setBox(resizeCropBox(startBox, type, dxPercent, dyPercent, { w: minW, h: minH }, e.ctrlKey));
   }, []);
 
   const handleMouseUp = useCallback(() => {
@@ -158,13 +133,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
 
   const applyEqualPaddingPreset = () => {
     if (naturalSize.w === 0 || naturalSize.h === 0) return;
-    const pixels = Math.max(0, Math.round(paddingPixels));
-    setBox({
-      x: -(pixels / naturalSize.w) * 100,
-      y: -(pixels / naturalSize.h) * 100,
-      w: ((naturalSize.w + pixels * 2) / naturalSize.w) * 100,
-      h: ((naturalSize.h + pixels * 2) / naturalSize.h) * 100,
-    });
+    setBox(cropBoxWithPadding(naturalSize, paddingPixels));
   };
 
   useEffect(() => {
@@ -199,20 +168,21 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
           <button type="button" className="btn btn-secondary" onClick={applyA4WidthPreset} disabled={isSaving || naturalSize.w === 0}>
             A4横幅（{a4TargetWidth}px）
           </button>
-          <label className="crop-padding-mode">
-            四辺
-            <input
-              aria-label="四辺の余白"
-              type="number"
-              min="0"
-              value={paddingPixels}
-              onChange={(event) => setPaddingPixels(Math.max(0, Number(event.target.value) || 0))}
-              disabled={isSaving}
-            />
-            px
-          </label>
+          <fieldset className="crop-padding-sides" disabled={isSaving}>
+            <legend>余白 px</legend>
+            {(["top", "right", "bottom", "left"] as const).map((side) => <label key={side}>
+              {{ top: "上", right: "右", bottom: "下", left: "左" }[side]}
+              <input
+                aria-label={`${{ top: "上", right: "右", bottom: "下", left: "左" }[side]}の余白`}
+                type="number"
+                min="0"
+                value={paddingPixels[side]}
+                onChange={(event) => setPaddingPixels((current) => ({ ...current, [side]: Math.max(0, Number(event.target.value) || 0) }))}
+              />
+            </label>)}
+          </fieldset>
           <button type="button" className="btn btn-secondary" onClick={applyEqualPaddingPreset} disabled={isSaving || naturalSize.w === 0}>
-            四辺へ追加
+            余白を適用
           </button>
           <button className="btn btn-primary" onClick={handleApply} disabled={isSaving}>
             {isSaving ? "保存中..." : "✅ 適用 (Enter)"}

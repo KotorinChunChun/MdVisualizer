@@ -1777,6 +1777,10 @@ export function App() {
         initialViewState={mediaPreviewInitialViewState}
         onViewStateChange={handleMediaPreviewViewState}
         onClose={closeMediaPreview}
+        onMediaClick={mediaPreview.cropTarget ? () => {
+          closeMediaPreview();
+          startCrop(mediaPreview.cropTarget!);
+        } : undefined}
         onActivate={mediaPreview.editTarget ? () => {
           setAnnotationReturnPreview(mediaPreview);
           setMediaPreview(null);
@@ -1787,7 +1791,7 @@ export function App() {
         } : undefined}
         editDisabledReason={mediaPreview.editDisabledReason}
         onCrop={mediaPreview.cropTarget ? () => {
-          setMediaPreview(null);
+          closeMediaPreview();
           startCrop(mediaPreview.cropTarget!);
         } : undefined}
       />}

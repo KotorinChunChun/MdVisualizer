@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { ImageEditTarget } from "../hooks/useCropEditor";
+import { cropBoxFromDrag } from "../lib/cropGeometry";
 import { saveRenderedImage } from "../lib/commands";
 import {
   resizeImageCanvasCentered,
@@ -424,7 +425,7 @@ export function ImageAnnotationEditor({
     };
   };
 
-  const gestureAnnotation = (gesture: DrawingGesture, point: StrokePoint): ImageAnnotation => {
+  const gestureAnnotation = (gesture: DrawingGesture, point: StrokePoint, symmetricCrop = false): ImageAnnotation => {
     const points = gesture.tool === "line" || gesture.tool === "crop" ? [gesture.start, point] : [...gesture.points, point];
     const xs = points.map((candidate) => candidate.x);
     const ys = points.map((candidate) => candidate.y);
@@ -436,10 +437,10 @@ export function ImageAnnotationEditor({
       id: newAnnotationId(), type: "line", x, y, width: gestureWidth, height: gestureHeight,
       color, lineWidth, reverse: (point.x - gesture.start.x) * (point.y - gesture.start.y) < 0,
     };
-    if (gesture.tool === "crop") return {
-      id: "crop-preview", type: "frame", x, y, width: gestureWidth, height: gestureHeight,
-      color: "#38bdf8", lineWidth: 2,
-    };
+    if (gesture.tool === "crop") {
+      const crop = cropBoxFromDrag(gesture.start, point, symmetricCrop);
+      return { id: "crop-preview", type: "frame", x: crop.x, y: crop.y, width: crop.w, height: crop.h, color: "#38bdf8", lineWidth: 2 };
+    }
     return {
       id: newAnnotationId(), type: "stroke", mode: gesture.tool, x, y,
       width: gestureWidth, height: gestureHeight, color,
@@ -515,7 +516,7 @@ export function ImageAnnotationEditor({
     const drawing = drawingRef.current;
     if (drawing?.pointerId === event.pointerId) {
       if (drawing.tool === "pencil" || drawing.tool === "brush" || drawing.tool === "eraser") drawing.points.push(point);
-      setDrawingPreview(gestureAnnotation(drawing, point));
+      setDrawingPreview(gestureAnnotation(drawing, point, event.ctrlKey));
       return;
     }
     const drag = dragRef.current;
@@ -533,7 +534,7 @@ export function ImageAnnotationEditor({
     const drawing = drawingRef.current;
     if (drawing?.pointerId === event.pointerId) {
       const point = imagePoint(event);
-      const annotation = gestureAnnotation(drawing, point);
+      const annotation = gestureAnnotation(drawing, point, event.ctrlKey);
       recordEdit();
       if (drawing.tool === "crop") {
         const next = {

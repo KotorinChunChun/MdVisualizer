@@ -64,6 +64,7 @@ export function MediaPreviewModal({
   content,
   onClose,
   onActivate,
+  onMediaClick,
   editDisabledReason,
   onCrop,
   mermaidSource,
@@ -80,6 +81,7 @@ export function MediaPreviewModal({
   content: MediaPreviewContent;
   onClose: () => void;
   onActivate?: () => void;
+  onMediaClick?: () => void;
   editDisabledReason?: string;
   onCrop?: () => void;
   mermaidSource?: string;
@@ -227,7 +229,6 @@ export function MediaPreviewModal({
       onScroll={(event) => onViewStateChange?.({ mode, scale, display, scrollLeft: event.currentTarget.scrollLeft, scrollTop: event.currentTarget.scrollTop })}
       onClick={(event) => event.stopPropagation()}
       onWheel={(event) => {
-        if (!event.ctrlKey) return;
         event.preventDefault(); event.stopPropagation();
         const viewport = event.currentTarget;
         const rect = viewport.getBoundingClientRect();
@@ -282,7 +283,7 @@ export function MediaPreviewModal({
             }}
             onClick={(event) => {
               event.stopPropagation();
-              onActivate?.();
+              onMediaClick?.();
             }}
           >
             {content.kind === "image"

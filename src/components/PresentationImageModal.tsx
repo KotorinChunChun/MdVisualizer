@@ -14,6 +14,6 @@ export function PresentationImageModal({
   return <MediaPreviewModal
     content={{ kind: "image", src: target.src, alt: target.alt }}
     onClose={onClose}
-    onActivate={target.cropTarget ? () => onEdit(target.cropTarget!) : undefined}
+    onMediaClick={target.cropTarget ? () => onEdit(target.cropTarget!) : undefined}
   />;
 }

@@ -37,6 +37,13 @@ describe("MediaPreviewModal", () => {
     expect(screen.queryByRole("button", { name: "注釈" })).toBeNull();
   });
 
+  it("uses a click on the expanded raster image for the second-step crop action", () => {
+    const onMediaClick = vi.fn();
+    render(<MediaPreviewModal content={{ kind: "image", src: "asset://sample.png", alt: "図" }} onClose={vi.fn()} onMediaClick={onMediaClick} />);
+    fireEvent.click(screen.getByAltText("図"));
+    expect(onMediaClick).toHaveBeenCalledOnce();
+  });
+
   it("disables image editing and explains how to resolve missing permissions", () => {
     render(<MediaPreviewModal
       content={{ kind: "image", src: "asset://readonly.png", alt: "読取り専用" }}
@@ -98,7 +105,7 @@ describe("MediaPreviewModal", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps the diagram point under the pointer fixed during smooth ctrl-wheel zoom", () => {
+  it("keeps the diagram point under the pointer fixed during smooth unmodified-wheel zoom", () => {
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callback(0); return 1; });
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
     render(<MediaPreviewModal content={{ kind: "svg", svg: '<svg viewBox="0 0 400 200" />', alt: "図" }} onClose={vi.fn()} />);
@@ -112,7 +119,7 @@ describe("MediaPreviewModal", () => {
     });
     act(() => { window.dispatchEvent(new Event("resize")); });
 
-    fireEvent.wheel(viewport, { ctrlKey: true, deltaY: -100, deltaMode: 0, clientX: 200, clientY: 150 });
+    fireEvent.wheel(viewport, { deltaY: -100, deltaMode: 0, clientX: 200, clientY: 150 });
 
     expect(viewport.scrollLeft).toBeCloseTo(44.28, 1);
     expect(viewport.scrollTop).toBe(0);
