@@ -16,6 +16,8 @@
 .annotation-editor__tools label { display: grid; gap: 4px; color: var(--text-secondary); font-size: 12px; }
 .annotation-editor__tools input,.annotation-editor__tools select { min-width: 0; padding: 7px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 5px; }
 .annotation-editor__tools input[type="color"] { width: 100%; height: 34px; padding: 3px; }
+.annotation-editor__tools .annotation-editor__check { display: flex; align-items: center; gap: 7px; }
+.annotation-editor__tools .annotation-editor__check input { width: auto; }
 .annotation-editor__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .annotation-editor__hint { margin: 0; color: var(--text-secondary); font-size: 11px; line-height: 1.6; }
 .annotation-editor__replacement-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -50,4 +52,16 @@
 .annotation-editor__conflict { position: fixed; inset: auto 24px 24px auto; z-index: 3; max-width: 360px; padding: 14px; background: var(--panel-bg); border: 1px solid #f59e0b; border-radius: 10px; box-shadow: 0 12px 36px #0008; }
 .annotation-editor__conflict p { margin-top: 0; }
 .annotation-editor__conflict button + button { margin-left: 8px; }
+.annotation-editor__settings { position: fixed; z-index: 6; top: 68px; right: 18px; width: min(390px,calc(100vw - 36px)); padding: 16px; box-sizing: border-box; color: var(--text-primary); background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 11px; box-shadow: 0 18px 50px #000a; }
+.annotation-editor__settings header { display: flex; align-items: center; justify-content: space-between; }
+.annotation-editor__settings h2 { margin: 0; font-size: 16px; }
+.annotation-editor__settings-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 14px; }
+.annotation-editor__settings-fields label { display: grid; gap: 4px; color: var(--text-secondary); font-size: 12px; }
+.annotation-editor__settings-fields label:last-child { grid-column: 1 / -1; }
+.annotation-editor__settings input { min-width: 0; padding: 7px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 5px; }
+.annotation-editor__settings p { color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+.annotation-editor__settings dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px; }
+.annotation-editor__settings dt { font-weight: 600; }
+.annotation-editor__settings dd { margin: 0; color: var(--text-secondary); }
+.annotation-editor__settings footer { display: flex; justify-content: flex-end; margin-top: 14px; }
 @media (max-width:720px) { .annotation-editor { grid-template: auto auto auto 1fr / 1fr; } .annotation-editor__header { align-items: flex-start; } .annotation-editor__header-actions { flex-wrap: wrap; justify-content: flex-end; } .annotation-editor__tools { grid-template-columns: repeat(2,minmax(0,1fr)); max-height: 240px; border-right: 0; border-bottom: 1px solid var(--border-color); } }

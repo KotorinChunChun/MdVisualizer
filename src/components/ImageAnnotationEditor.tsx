@@ -17,13 +17,22 @@ import {
   drawImageAnnotations,
   duplicateImageAnnotation,
   hitTestAnnotation,
+  isStampAnnotation,
   imageAnnotationReducer,
+  normalizeAnnotationRotation,
   type AnnotationKind,
   type ArrowDirection,
   type ImageAnnotation,
   type MaskStyle,
   type StrokePoint,
 } from "../lib/imageAnnotations";
+import {
+  loadImageEditorSettings,
+  nextWheelStep,
+  saveImageEditorSettings,
+  type ImageEditorSettings,
+  type WheelSequenceState,
+} from "../lib/imageEditorSettings";
 import "../styles/image-annotation.css";
 
 type Tool = "select" | AnnotationKind | "pencil" | "brush" | "eraser" | "line" | "fill" | "eyedropper" | "crop";
@@ -103,11 +112,13 @@ export function ImageAnnotationEditor({
   const drawingRef = useRef<DrawingGesture | null>(null);
   const canvasResizeDragRef = useRef<CanvasResizeDragState | null>(null);
   const canvasResizePreviewRef = useRef<ImageCanvasResize | null>(null);
+  const wheelSequenceRef = useRef<WheelSequenceState>({ count: 0, lastTimestamp: null });
   const originalSourceSizeRef = useRef<{ width: number; height: number } | null>(null);
   const [state, dispatch] = useReducer(imageAnnotationReducer, undefined, () => createImageAnnotationState());
   const [tool, setTool] = useState<Tool>("frame");
   const [stampSizes, setStampSizes] = useState(DEFAULT_STAMP_SIZES);
   const [lineWidth, setLineWidth] = useState(6);
+  const [frameRounded, setFrameRounded] = useState(false);
   const [color, setColor] = useState("#ef4444");
   const [maskStyle, setMaskStyle] = useState<MaskStyle>("blur");
   const [arrowDirection, setArrowDirection] = useState<ArrowDirection>("right");
@@ -131,6 +142,8 @@ export function ImageAnnotationEditor({
   const [resizeDimensions, setResizeDimensions] = useState({ width: 0, height: 0 });
   const [undoSnapshots, setUndoSnapshots] = useState<EditorSnapshot[]>([]);
   const [redoSnapshots, setRedoSnapshots] = useState<EditorSnapshot[]>([]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editorSettings, setEditorSettings] = useState<ImageEditorSettings>(() => loadImageEditorSettings());
   const lastRenderError = useRef<string | null>(null);
   const selected = useMemo(
     () => state.annotations.find((annotation) => annotation.id === state.selectedId),
@@ -251,7 +264,8 @@ export function ImageAnnotationEditor({
       width,
       height,
     };
-    if (tool === "frame" || tool === "ellipse") return { ...common, type: tool, color, lineWidth };
+    if (tool === "frame") return { ...common, type: "frame", color, lineWidth, cornerRadius: frameRounded ? 24 : 0 };
+    if (tool === "ellipse") return { ...common, type: "ellipse", color, lineWidth };
     if (tool === "arrow") return { ...common, type: "arrow", color, lineWidth, direction: arrowDirection };
     if (tool === "mask") return { ...common, type: "mask", style: maskStyle, color };
     return { ...common, type: "label", text: labelText, textColor, backgroundColor, fontSize };
@@ -300,6 +314,13 @@ export function ImageAnnotationEditor({
       }
       if (effectiveSelected) {
         context.save();
+        if (isStampAnnotation(effectiveSelected) && effectiveSelected.rotation) {
+          const centerX = effectiveSelected.x + effectiveSelected.width / 2;
+          const centerY = effectiveSelected.y + effectiveSelected.height / 2;
+          context.translate(centerX, centerY);
+          context.rotate(effectiveSelected.rotation * Math.PI / 180);
+          context.translate(-centerX, -centerY);
+        }
         context.strokeStyle = "#38bdf8";
         context.lineWidth = Math.max(2, canvas.width / 500);
         context.setLineDash([10, 6]);
@@ -324,7 +345,7 @@ export function ImageAnnotationEditor({
     }
   };
 
-  useEffect(render, [state.annotations, state.selectedId, loadedVersion, canvasGeometry, canvasResizePreview, cursor, dragPreview, drawingPreview, tool, width, height, lineWidth, color, arrowDirection, maskStyle, labelText, textColor, backgroundColor, fontSize]);
+  useEffect(render, [state.annotations, state.selectedId, loadedVersion, canvasGeometry, canvasResizePreview, cursor, dragPreview, drawingPreview, tool, width, height, lineWidth, color, arrowDirection, maskStyle, labelText, textColor, backgroundColor, fontSize, frameRounded]);
 
   useEffect(() => {
     if (imageVersion === acceptedVersionRef.current) return;
@@ -789,6 +810,7 @@ export function ImageAnnotationEditor({
         <button type="button" disabled={undoSnapshots.length === 0} onClick={undoEdit}>元に戻す</button>
         <button type="button" disabled={redoSnapshots.length === 0} onClick={redoEdit}>やり直す</button>
         <button type="button" disabled={saving || !dirty} onClick={resetEdits}>編集をリセット</button>
+        <button type="button" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((current) => !current)}>設定</button>
         <button type="button" disabled={saving || !hasOutputChanges} onClick={() => void apply()}>{saving ? "保存中…" : "適用"}</button>
         <button type="button" disabled={saving} onClick={onCancel}>閉じる</button>
       </div>
@@ -838,6 +860,23 @@ export function ImageAnnotationEditor({
         </div>
         <p className="annotation-editor__hint">ホイール: 高さ　Shift+ホイール: 幅<br />選択中: 拡縮、ドラッグ移動</p>
       </section>
+
+      {activeKind === "frame" && <section>
+        <h2>四角形</h2>
+        <label className="annotation-editor__check"><input
+          type="checkbox"
+          checked={selected?.type === "frame" ? (selected.cornerRadius ?? 0) > 0 : frameRounded}
+          onChange={(event) => selected?.type === "frame"
+            ? updateSelected({ cornerRadius: event.target.checked ? 24 : 0 })
+            : setFrameRounded(event.target.checked)}
+        />角丸四角形</label>
+      </section>}
+
+      {selected && isStampAnnotation(selected) && <section>
+        <h2>スタンプ回転</h2>
+        <label>角度<input type="number" min="-180" max="179" value={Math.round(selected.rotation ?? 0)} onChange={(event) => updateSelected({ rotation: normalizeAnnotationRotation(Number(event.target.value)) })} /></label>
+        <p className="annotation-editor__hint">Alt+ホイールでも回転できます。</p>
+      </section>}
 
       {(activeKind === "frame" || activeKind === "ellipse" || activeKind === "arrow" || activeKind === "line" || activeKind === "stroke") && <section>
         <h2>線</h2>
@@ -1030,8 +1069,12 @@ export function ImageAnnotationEditor({
               const maximumHeight = event.currentTarget.height;
               const deltaPixels = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? Math.max(1, event.currentTarget.clientHeight) : 1);
               if (deltaPixels === 0) return;
-              const delta = deltaPixels < 0 ? 2 : -2;
-              if (selected) {
+              const wheelResult = nextWheelStep(wheelSequenceRef.current, event.timeStamp, editorSettings);
+              wheelSequenceRef.current = wheelResult.state;
+              const delta = deltaPixels < 0 ? wheelResult.step : -wheelResult.step;
+              if (event.altKey && selected && isStampAnnotation(selected)) {
+                updateSelected({ rotation: normalizeAnnotationRotation((selected.rotation ?? 0) + delta) });
+              } else if (selected) {
                 resizeSelected(event.shiftKey ? "width" : "height", delta);
               } else if (event.shiftKey) {
                 setWidth((current) => Math.max(1, Math.min(maximumWidth, current + delta)));
@@ -1065,6 +1108,27 @@ export function ImageAnnotationEditor({
         </div>
       </div>
     </main>
+
+    {settingsOpen && <section className="annotation-editor__settings" role="dialog" aria-modal="false" aria-label="画像編集設定">
+      <header><h2>画像編集設定</h2><button type="button" aria-label="画像編集設定を閉じる" onClick={() => setSettingsOpen(false)}>×</button></header>
+      <div className="annotation-editor__settings-fields">
+        <label>通常の変化量<input type="number" min="1" max="90" value={editorSettings.normalWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, normalWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>
+        <label>高速時の変化量<input type="number" min="1" max="180" value={editorSettings.fastWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>
+        <label>連続判定時間 (ms)<input type="number" min="1" max="2000" value={editorSettings.fastWheelWindowMs} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelWindowMs: Math.max(1, Number(event.target.value)) }))} /></label>
+      </div>
+      <p>最初の2回は通常の変化量、設定時間内に3回以上続けると高速時の変化量を使います。</p>
+      <dl>
+        <dt>ホイール</dt><dd>高さを変更</dd>
+        <dt>Shift+ホイール</dt><dd>幅を変更</dd>
+        <dt>Alt+ホイール</dt><dd>選択中のスタンプを回転</dd>
+        <dt>Ctrl+クロップ</dt><dd>上下または左右を対称に変更</dd>
+      </dl>
+      <footer><button type="button" onClick={() => {
+        setEditorSettings(saveImageEditorSettings(editorSettings));
+        wheelSequenceRef.current = { count: 0, lastTimestamp: null };
+        setSettingsOpen(false);
+      }}>設定を保存</button></footer>
+    </section>}
 
     {contextMenu && <div
       ref={contextMenuRef}

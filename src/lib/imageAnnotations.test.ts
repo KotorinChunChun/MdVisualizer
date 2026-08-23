@@ -8,6 +8,7 @@ import {
   drawImageAnnotations,
   hitTestAnnotation,
   imageAnnotationReducer,
+  normalizeAnnotationRotation,
   type FrameAnnotation,
   type ArrowAnnotation,
   type ImageAnnotation,
@@ -34,8 +35,9 @@ describe("image annotation geometry", () => {
   });
 
   it("clamps type-specific annotation values", () => {
-    expect(clampAnnotation({ ...frame(), x: -5, width: 200, lineWidth: 0 }, bounds)).toMatchObject({ x: 0, width: 100, lineWidth: 1 });
+    expect(clampAnnotation({ ...frame(), x: -5, width: 200, lineWidth: 0, cornerRadius: 80, rotation: 450 }, bounds)).toMatchObject({ x: 0, width: 100, lineWidth: 1, cornerRadius: 10, rotation: 90 });
     expect(clampAnnotation({ id: "l", type: "label", x: 0, y: 0, width: 2, height: 2, text: "x", textColor: "#fff", backgroundColor: "#000", fontSize: 0 }, bounds)).toMatchObject({ fontSize: 1 });
+    expect(normalizeAnnotationRotation(-540)).toBe(-180);
   });
 
   it("returns the uppermost annotation hit", () => {
@@ -55,9 +57,16 @@ describe("image annotation geometry", () => {
     expect(hitTestAnnotation([arrow()], 25, 20)).toBeUndefined();
   });
 
+  it("hit-tests rounded corners and rotated stamp coordinates", () => {
+    expect(hitTestAnnotation([{ ...frame(), cornerRadius: 8 }], 10, 20)).toBeUndefined();
+    expect(hitTestAnnotation([{ ...frame(), cornerRadius: 8 }], 18, 20)?.id).toBe("frame");
+    expect(hitTestAnnotation([{ ...frame(), rotation: 90 }], 25, 44)?.id).toBe("frame");
+    expect(hitTestAnnotation([{ ...frame(), rotation: 90 }], 39, 30)).toBeUndefined();
+  });
+
   it("duplicates an annotation with a new identity and bounded offset", () => {
-    expect(duplicateImageAnnotation(frame(), "copy", 16, bounds)).toMatchObject({
-      id: "copy", x: 26, y: 36, width: 30, height: 20,
+    expect(duplicateImageAnnotation({ ...frame(), cornerRadius: 9, rotation: 24 }, "copy", 16, bounds)).toMatchObject({
+      id: "copy", x: 26, y: 36, width: 30, height: 20, cornerRadius: 9, rotation: 24,
     });
     expect(duplicateImageAnnotation({ ...frame(), x: 80, y: 70 }, "edge", 16, bounds)).toMatchObject({
       id: "edge", x: 96, y: 80, width: 4, height: 0,
@@ -97,6 +106,16 @@ describe("image annotation reducer", () => {
     const undone = imageAnnotationReducer(updated, { type: "undo" });
     expect(undone.annotations[0]).toMatchObject({ color: "#d00", width: 30 });
     expect(imageAnnotationReducer(undone, { type: "redo" }).annotations[0]).toMatchObject({ color: "#000", width: 44 });
+  });
+
+  it("keeps frame shape and rotation through undo and redo", () => {
+    const placed = imageAnnotationReducer(createImageAnnotationState(), { type: "place", annotation: frame() });
+    const updated = imageAnnotationReducer(placed, { type: "update", changes: { cornerRadius: 8, rotation: 35 } });
+    expect(updated.annotations[0]).toMatchObject({ cornerRadius: 8, rotation: 35 });
+    const undone = imageAnnotationReducer(updated, { type: "undo" });
+    expect(undone.annotations[0]).not.toHaveProperty("cornerRadius");
+    expect(undone.annotations[0]).not.toHaveProperty("rotation");
+    expect(imageAnnotationReducer(undone, { type: "redo" }).annotations[0]).toMatchObject({ cornerRadius: 8, rotation: 35 });
   });
 
   it("restores a deleted selected annotation through undo", () => {
@@ -164,10 +183,14 @@ class FakeContext {
   ]);
   save() { this.calls.push("save"); }
   restore() { this.calls.push("restore"); }
+  translate() { this.calls.push("translate"); }
+  rotate() { this.calls.push("rotate"); }
   fillRect() { this.calls.push("fillRect"); }
   strokeRect() { this.calls.push("strokeRect"); }
   fillText() { this.calls.push("fillText"); }
   beginPath() { this.calls.push("beginPath"); }
+  rect() { this.calls.push("rect"); }
+  roundRect() { this.calls.push("roundRect"); }
   ellipse() { this.calls.push("ellipse"); }
   moveTo() { this.calls.push("moveTo"); }
   lineTo() { this.calls.push("lineTo"); }
@@ -198,6 +221,12 @@ describe("image annotation drawing", () => {
     const ctx = new FakeContext();
     drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...frame(), type: "ellipse" }]);
     expect(ctx.calls).toEqual(expect.arrayContaining(["beginPath", "ellipse", "stroke"]));
+  });
+
+  it("draws a rounded frame with its saved rotation", () => {
+    const ctx = new FakeContext();
+    drawImageAnnotations(ctx as unknown as CanvasRenderingContext2D, [{ ...frame(), x: 0, y: 0, width: 4, height: 2, cornerRadius: 1, rotation: 30 }]);
+    expect(ctx.calls).toEqual(expect.arrayContaining(["translate", "rotate", "roundRect", "stroke"]));
   });
 
   it("draws an arrow shaft and arrowhead", () => {
