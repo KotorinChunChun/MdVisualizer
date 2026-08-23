@@ -2537,6 +2537,7 @@ dependencies = [
  "base64 0.22.1",
  "chardetng",
  "chrono",
+ "dirs",
  "encoding_rs",
  "fs4",
  "image",
