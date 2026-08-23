@@ -31,7 +31,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { createMarkdown, diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { createMarkdown, diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -53,6 +53,7 @@ import { moveZoomLevel } from "./lib/zoom";
 import { moveHeadingBlock } from "./lib/markdownEditing";
 import { buildPresentationModel } from "./lib/presentationModel";
 import { buildDebugWindowState } from "./lib/debugState";
+import { clipboardImageDestination, formatClipboardImageFilename, type ClipboardImageData, type ResolvedClipboardImage } from "./lib/clipboardImage";
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { sourceBlockIndexForLine, sourceLineAtViewportTop } from "./lib/paneSync";
@@ -154,6 +155,7 @@ export function App() {
     presentationLineThreshold,
     imageA4TargetWidth,
     imageEqualPadding,
+    clipboardImage,
     syntaxHighlight,
     printStyle,
     markdownStyle,
@@ -166,6 +168,7 @@ export function App() {
     reloadMarkdownStyle,
     openMarkdownStyleFile,
   } = useApplicationSettings(setToast);
+
   const {
     sharePointAuthPrompt,
     openAuthenticationPage,
@@ -216,6 +219,28 @@ export function App() {
   const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
   const tabsStateRef = useRef(tabsState);
   tabsStateRef.current = tabsState;
+  const resolvePastedImage = useCallback(async (image: ClipboardImageData): Promise<ResolvedClipboardImage> => {
+    const embedded = { source: `data:${image.mediaType};base64,${image.base64}` };
+    if (clipboardImage.storage === "base64") return embedded;
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    if (!tab?.document || tab.untitled || isSharePointDocument(tab.document)) {
+      setToast({ id: crypto.randomUUID(), message: "保存先が未確定のため、画像をBase64で埋め込みました。", type: "info" });
+      return embedded;
+    }
+    const staged = await stageClipboardImage({
+      documentPath: tab.document.path,
+      preferredFilename: formatClipboardImageFilename(new Date()),
+      base64: image.base64,
+      ...clipboardImageDestination(clipboardImage.pngLocation, clipboardImage.absoluteDirectory),
+    });
+    return {
+      source: staged.filename,
+      asset: {
+        ...staged,
+        previewSource: `data:${staged.mediaType ?? "image/png"};base64,${staged.base64}`,
+      },
+    };
+  }, [clipboardImage, setToast]);
   mediaPreviewRef.current = mediaPreview;
   const [imageVersions, setImageVersions] = useState<Record<string, number>>({});
   const activeTab = tabsState.tabs.find((tab) => tab.id === tabsState.activeId) ?? null;
@@ -1579,6 +1604,10 @@ export function App() {
           saving={activeTab.saving}
           onChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
           onSave={() => void saveTab(activeTab.id)}
+          onResolvePastedImage={resolvePastedImage}
+          onStagedAssetAdded={(content, asset) => dispatch({ type: "STAGED_ASSET_ADDED", id: activeTab.id, content, asset })}
+          onStagedAssetAbandoned={(asset) => void discardStagedAssets([asset.id])}
+          onPasteImageError={(error) => setToast({ id: crypto.randomUUID(), message: `画像の貼り付けに失敗しました: ${String(error)}`, type: "error" })}
           onScrollLine={editorMode === "split" ? handleEditorScrollLine : undefined}
         />
       </Suspense>}
@@ -1600,6 +1629,7 @@ export function App() {
             presentationLineThreshold={presentationLineThreshold}
             imageA4TargetWidth={imageA4TargetWidth}
             imageEqualPadding={imageEqualPadding}
+            clipboardImage={clipboardImage}
             syntaxHighlight={syntaxHighlight}
             printStyle={printStyle}
             markdownStyle={markdownStyle}

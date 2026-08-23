@@ -71,4 +71,35 @@ describe("MarkdownEditor", () => {
     fireEvent.keyDown(editor, { key: "Enter" });
     await waitFor(() => expect(onChange).toHaveBeenCalledWith("1. item\n2. "));
   });
+
+  it("inserts a clipboard image instead of its accompanying plain text", async () => {
+    const onChange = vi.fn();
+    const onResolvePastedImage = vi.fn().mockResolvedValue({ source: "data:image/png;base64,AAEC" });
+    const { container } = render(<MarkdownEditor documentId="tab-1:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolvePastedImage={onResolvePastedImage} />);
+    const file = new File([new Uint8Array([0, 1, 2])], "clipboard.png", { type: "image/png" });
+
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, {
+      clipboardData: {
+        items: [{ kind: "file", type: "image/png", getAsFile: () => file }],
+        files: [file],
+        getData: () => "text fallback",
+      },
+    });
+
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("![クリップボード画像](data:image/png;base64,AAEC)before"));
+    expect(onResolvePastedImage).toHaveBeenCalledWith({ mediaType: "image/png", base64: "AAEC" });
+  });
+
+  it("registers a staged PNG with the exact content inserted into the editor", async () => {
+    const onStagedAssetAdded = vi.fn();
+    const asset = { id: "stage-1", filename: "images/20260824_090507.png", mediaType: "image/png", base64: "AAEC" };
+    const { container } = render(<MarkdownEditor documentId="tab-1:1" value="" dirty={false} saving={false} onChange={() => {}} onSave={() => {}} onResolvePastedImage={async () => ({ source: asset.filename, asset })} onStagedAssetAdded={onStagedAssetAdded} />);
+    const file = new File([new Uint8Array([0, 1, 2])], "clipboard.png", { type: "image/png" });
+
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, {
+      clipboardData: { items: [{ kind: "file", type: "image/png", getAsFile: () => file }], files: [file], getData: () => "" },
+    });
+
+    await waitFor(() => expect(onStagedAssetAdded).toHaveBeenCalledWith("![クリップボード画像](images/20260824_090507.png)", asset));
+  });
 });

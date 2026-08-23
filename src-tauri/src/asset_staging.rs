@@ -15,7 +15,8 @@ const MAX_ASSET_BYTES: usize = 50 * 1024 * 1024;
 struct StagedAsset {
     document: PathBuf,
     temp_path: PathBuf,
-    filename: String,
+    destination: PathBuf,
+    markdown_source: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -73,18 +74,65 @@ impl AssetStagingManager {
                 "Asset data is empty or exceeds 50 MiB.".into(),
             ));
         }
+        self.stage_at(document_path, preferred_filename, "document", None, bytes)
+    }
+
+    pub fn stage_at(
+        &self,
+        document_path: &str,
+        preferred_filename: &str,
+        destination: &str,
+        absolute_directory: Option<&str>,
+        bytes: &[u8],
+    ) -> AppResult<StagedAssetResult> {
+        if bytes.is_empty() || bytes.len() > MAX_ASSET_BYTES {
+            return Err(AppError::IoError(
+                "Asset data is empty or exceeds 50 MiB.".into(),
+            ));
+        }
         let document = canonical_markdown(document_path)?;
         validate_filename(preferred_filename)?;
-        let parent = document
+        let document_parent = document
             .parent()
             .ok_or_else(|| AppError::IoError("Markdown parent folder is unavailable.".into()))?;
+        let (parent, relative_prefix) = match destination {
+            "document" => (document_parent.to_path_buf(), None),
+            "images" => (document_parent.join("images"), Some("images")),
+            "absolute" => {
+                let configured = absolute_directory.unwrap_or_default().trim();
+                let directory = PathBuf::from(configured);
+                if configured.is_empty() || !directory.is_absolute() {
+                    return Err(AppError::PermissionDenied(
+                        "Absolute image folder must be an absolute path.".into(),
+                    ));
+                }
+                (directory, None)
+            }
+            _ => {
+                return Err(AppError::PermissionDenied(
+                    "Image destination setting is invalid.".into(),
+                ))
+            }
+        };
         let mut entries = self.entries.lock().unwrap();
         let reserved = entries
             .values()
             .filter(|entry| entry.document == document)
-            .map(|entry| entry.filename.to_lowercase())
+            .filter_map(|entry| {
+                entry.destination.parent().filter(|value| *value == parent)
+                    .and_then(|_| entry.destination.file_name())
+                    .map(|value| value.to_string_lossy().to_lowercase())
+            })
             .collect::<HashSet<_>>();
-        let filename = available_filename(parent, preferred_filename, &reserved)?;
+        let filename = available_filename(&parent, preferred_filename, &reserved)?;
+        let file_destination = parent.join(&filename);
+        let markdown_source = if destination == "absolute" {
+            file_destination.to_string_lossy().replace('\\', "/")
+        } else if let Some(prefix) = relative_prefix {
+            format!("{prefix}/{filename}")
+        } else {
+            filename.clone()
+        };
         let sequence = self.sequence.fetch_add(1, Ordering::Relaxed);
         let id = format!("{}-{sequence}", std::process::id());
         let temp_path = self.session_dir.join(format!("{id}.stage"));
@@ -100,10 +148,11 @@ impl AssetStagingManager {
             StagedAsset {
                 document,
                 temp_path,
-                filename: filename.clone(),
+                destination: file_destination,
+                markdown_source: markdown_source.clone(),
             },
         );
-        Ok(StagedAssetResult { id, filename })
+        Ok(StagedAssetResult { id, filename: markdown_source })
     }
 
     pub fn discard(&self, ids: &[String]) {
@@ -141,12 +190,14 @@ impl AssetStagingManager {
                 "Staged asset belongs to another Markdown document.".into(),
             ));
         }
-        let parent = document
-            .parent()
-            .ok_or_else(|| AppError::IoError("Markdown parent folder is unavailable.".into()))?;
         let mut created = Vec::new();
         for entry in &staged {
-            let destination = parent.join(&entry.filename);
+            let destination = &entry.destination;
+            let parent = destination.parent().ok_or_else(|| {
+                AppError::IoError("Image destination folder is unavailable.".into())
+            })?;
+            fs::create_dir_all(parent)
+                .map_err(|error| AppError::IoError(format!("create image folder: {error}")))?;
             let bytes = fs::read(&entry.temp_path)
                 .map_err(|error| AppError::IoError(format!("read staged asset: {error}")))?;
             let mut output = match OpenOptions::new()
@@ -161,7 +212,7 @@ impl AssetStagingManager {
                     }
                     return Err(AppError::Conflict(format!(
                         "Asset filename is no longer available ({}): {error}",
-                        entry.filename
+                        entry.markdown_source
                     )));
                 }
             };
@@ -393,5 +444,36 @@ mod tests {
         let loaded = read_document_asset(&document.to_string_lossy(), "shape.svg").unwrap();
         assert_eq!(loaded.text.as_deref(), Some("<svg/>"));
         assert!(read_document_asset(&document.to_string_lossy(), "../outside.png").is_err());
+    }
+
+    #[test]
+    fn stages_images_subfolder_and_absolute_folder_references() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        let absolute = dir.path().join("Shared Images");
+        fs::write(&document, "old").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let relative = manager
+            .stage_at(&document.to_string_lossy(), "20260824_090507.png", "images", None, b"relative")
+            .unwrap();
+        let external = manager
+            .stage_at(&document.to_string_lossy(), "20260824_090507.png", "absolute", Some(&absolute.to_string_lossy()), b"absolute")
+            .unwrap();
+        assert_eq!(relative.filename, "images/20260824_090507.png");
+        assert!(external.filename.replace('\\', "/").ends_with("/Shared Images/20260824_090507.png"));
+        manager
+            .commit_with(&document, &[relative.id, external.id], || Ok(()))
+            .unwrap();
+        assert_eq!(fs::read(dir.path().join("images/20260824_090507.png")).unwrap(), b"relative");
+        assert_eq!(fs::read(absolute.join("20260824_090507.png")).unwrap(), b"absolute");
+    }
+
+    #[test]
+    fn rejects_a_non_absolute_configured_folder() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        fs::write(&document, "old").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        assert!(manager.stage_at(&document.to_string_lossy(), "image.png", "absolute", Some("relative"), b"image").is_err());
     }
 }

@@ -8,14 +8,17 @@ import { normalizeZoom } from "../lib/zoom";
 import type { ToastState } from "../types/app";
 import {
   DEFAULT_EXTERNAL_APPS,
+  DEFAULT_CLIPBOARD_IMAGE_SETTINGS,
   DEFAULT_IMAGE_A4_TARGET_WIDTH,
   DEFAULT_IMAGE_EQUAL_PADDING,
   DEFAULT_PRESENTATION_LINE_THRESHOLD,
   normalizeExternalApps,
+  normalizeClipboardImageSettings,
   normalizeImageA4TargetWidth,
   normalizeImageEqualPadding,
   normalizePresentationLineThreshold,
   type ExternalAppConfig,
+  type ClipboardImageSettings,
 } from "../types/settings";
 
 export type AutoReloadSetting = "on" | "off" | "manual";
@@ -30,6 +33,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
   const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
   const [imageA4TargetWidth, setImageA4TargetWidth] = useState(DEFAULT_IMAGE_A4_TARGET_WIDTH);
   const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
+  const [clipboardImage, setClipboardImage] = useState<ClipboardImageSettings>(DEFAULT_CLIPBOARD_IMAGE_SETTINGS);
   const [syntaxHighlight, setSyntaxHighlight] = useState<SyntaxHighlightSettings>(DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS);
   const [printStyle, setPrintStyle] = useState<PrintStyleSettings>(DEFAULT_PRINT_STYLE_SETTINGS);
   const [markdownStyle, setMarkdownStyle] = useState<MarkdownStyleSettings>(DEFAULT_MARKDOWN_STYLE_SETTINGS);
@@ -129,6 +133,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
       const lineThreshold = normalizePresentationLineThreshold(settings.presentationLineThreshold);
       const a4TargetWidth = normalizeImageA4TargetWidth(settings.imageA4TargetWidth);
       const equalPadding = normalizeImageEqualPadding(settings.imageEqualPadding);
+      const normalizedClipboardImage = normalizeClipboardImageSettings(settings.clipboardImage);
       const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(settings.syntaxHighlight);
       const normalizedPrintStyle = normalizePrintStyleSettings(settings.printStyle);
       const normalizedMarkdownStyle = normalizeMarkdownStyleSettings(settings.markdownStyle);
@@ -136,6 +141,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
       setPresentationLineThreshold(lineThreshold);
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
+      setClipboardImage(normalizedClipboardImage);
       setSyntaxHighlight(normalizedSyntaxHighlight);
       setPrintStyle(normalizedPrintStyle);
       setMarkdownStyle(normalizedMarkdownStyle);
@@ -147,17 +153,19 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
         || settings.externalApps.some((app) => !app || typeof app !== "object" || !("target" in app))
         || settings.imageA4TargetWidth === undefined
         || settings.imageEqualPadding === undefined
+        || settings.clipboardImage === undefined
         || settings.syntaxHighlight === undefined
         || settings.printStyle === undefined
         || settings.markdownStyle === undefined
         || JSON.stringify(settings.documentViewModes) !== JSON.stringify(normalizedDocumentViewModes);
       if (needsSettingsMigration) {
         void saveSettings({
-          schemaVersion: 6,
+          schemaVersion: 7,
           externalApps: apps,
           presentationLineThreshold: lineThreshold,
           imageA4TargetWidth: a4TargetWidth,
           imageEqualPadding: equalPadding,
+          clipboardImage: normalizedClipboardImage,
           syntaxHighlight: normalizedSyntaxHighlight,
           printStyle: normalizedPrintStyle,
           markdownStyle: normalizedMarkdownStyle,
@@ -198,6 +206,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
     nextSyntaxHighlight: SyntaxHighlightSettings,
     nextPrintStyle: PrintStyleSettings,
     nextMarkdownStyle: MarkdownStyleSettings,
+    nextClipboardImage: ClipboardImageSettings,
   ) => {
     try {
       const previousById = new Map(externalApps.map((app) => [app.id, app]));
@@ -208,8 +217,9 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
       const normalizedSyntaxHighlight = normalizeSyntaxHighlightSettings(nextSyntaxHighlight);
       const normalizedPrintStyle = normalizePrintStyleSettings(nextPrintStyle);
       const normalizedMarkdownStyle = normalizeMarkdownStyleSettings(nextMarkdownStyle);
+      const normalizedClipboardImage = normalizeClipboardImageSettings(nextClipboardImage);
       const styleFile = await saveMarkdownStyle(generateMarkdownStyleCss(normalizedMarkdownStyle));
-      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, markdownStyle: normalizedMarkdownStyle });
+      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, markdownStyle: normalizedMarkdownStyle, clipboardImage: normalizedClipboardImage });
       setExternalApps(normalizeExternalApps(saved.externalApps));
       setPresentationLineThreshold(lineThreshold);
       setImageA4TargetWidth(a4TargetWidth);
@@ -217,6 +227,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
       setSyntaxHighlight(normalizedSyntaxHighlight);
       setPrintStyle(normalizedPrintStyle);
       setMarkdownStyle(normalizedMarkdownStyle);
+      setClipboardImage(normalizedClipboardImage);
       acceptMarkdownStyleFile(styleFile);
       setToast({ id: String(Date.now()), message: "設定を保存しました", type: "success" });
     } catch (error) {
@@ -246,6 +257,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
     presentationLineThreshold,
     imageA4TargetWidth,
     imageEqualPadding,
+    clipboardImage,
     syntaxHighlight,
     printStyle,
     markdownStyle,

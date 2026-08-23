@@ -65,6 +65,9 @@ export async function createMarkdown(request: CreateMarkdownRequest): Promise<Ma
 export async function stageDocumentAsset(request: { documentPath: string; preferredFilename: string; base64?: string; text?: string }): Promise<import("../types/app").StagedDocumentAsset> {
   return await invoke("stage_document_asset", { request });
 }
+export async function stageClipboardImage(request: { documentPath: string; preferredFilename: string; base64: string; destination: import("../types/settings").ClipboardImagePngLocation; absoluteDirectory?: string }): Promise<import("../types/app").StagedDocumentAsset> {
+  return await invoke("stage_clipboard_image", { request });
+}
 export async function discardStagedAssets(ids: string[]): Promise<void> { await invoke("discard_staged_assets", { ids }); }
 export async function readDocumentAsset(documentPath: string, source: string): Promise<import("../types/app").DocumentAssetData> {
   return await invoke("read_document_asset", { documentPath, source });

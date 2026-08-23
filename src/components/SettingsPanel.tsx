@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { ExternalAppConfig, ExternalAppTarget } from "../types/settings";
-import { DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, validateExternalApp } from "../types/settings";
+import type { ClipboardImagePngLocation, ClipboardImageSettings, ExternalAppConfig, ExternalAppTarget } from "../types/settings";
+import { DEFAULT_CLIPBOARD_IMAGE_SETTINGS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, isAbsoluteDirectory, normalizeClipboardImageSettings, validateExternalApp } from "../types/settings";
 import { DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, SYNTAX_HIGHLIGHT_THEMES, type SyntaxHighlightSettings, type SyntaxHighlightTheme } from "../lib/syntaxHighlight";
 import { DEFAULT_PRINT_STYLE_SETTINGS, PRINT_FONT_FAMILIES, type PrintFontFamily, type PrintStyleSettings } from "../lib/printStyle";
 import {
@@ -20,6 +20,7 @@ export function SettingsPanel({
   presentationLineThreshold,
   imageA4TargetWidth = DEFAULT_IMAGE_A4_TARGET_WIDTH,
   imageEqualPadding = DEFAULT_IMAGE_EQUAL_PADDING,
+  clipboardImage = DEFAULT_CLIPBOARD_IMAGE_SETTINGS,
   syntaxHighlight = DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS,
   printStyle = DEFAULT_PRINT_STYLE_SETTINGS,
   markdownStyle = DEFAULT_MARKDOWN_STYLE_SETTINGS,
@@ -33,6 +34,7 @@ export function SettingsPanel({
   presentationLineThreshold: number;
   imageA4TargetWidth?: number;
   imageEqualPadding?: number;
+  clipboardImage?: ClipboardImageSettings;
   syntaxHighlight?: SyntaxHighlightSettings;
   printStyle?: PrintStyleSettings;
   markdownStyle?: MarkdownStyleSettings;
@@ -40,12 +42,13 @@ export function SettingsPanel({
   markdownStylePath?: string;
   onOpenMarkdownStyle?: () => Promise<void>;
   onReloadMarkdownStyle?: () => Promise<void>;
-  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings, markdownStyle: MarkdownStyleSettings) => Promise<void>;
+  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings, markdownStyle: MarkdownStyleSettings, clipboardImage: ClipboardImageSettings) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => apps.map((app) => ({ ...app, args: [...app.args] })));
   const [lineThreshold, setLineThreshold] = useState(presentationLineThreshold);
   const [a4TargetWidth, setA4TargetWidth] = useState(imageA4TargetWidth);
   const [equalPadding, setEqualPadding] = useState(imageEqualPadding);
+  const [clipboardImageDraft, setClipboardImageDraft] = useState<ClipboardImageSettings>(() => ({ ...clipboardImage }));
   const [syntaxDraft, setSyntaxDraft] = useState<SyntaxHighlightSettings>(() => ({ ...syntaxHighlight }));
   const [printDraft, setPrintDraft] = useState<PrintStyleSettings>(() => ({ ...printStyle }));
   const [markdownStyleDraft, setMarkdownStyleDraft] = useState<MarkdownStyleSettings>(() => ({ ...markdownStyle }));
@@ -56,6 +59,7 @@ export function SettingsPanel({
   useEffect(() => setLineThreshold(presentationLineThreshold), [presentationLineThreshold]);
   useEffect(() => setA4TargetWidth(imageA4TargetWidth), [imageA4TargetWidth]);
   useEffect(() => setEqualPadding(imageEqualPadding), [imageEqualPadding]);
+  useEffect(() => setClipboardImageDraft({ ...clipboardImage }), [clipboardImage]);
   useEffect(() => setSyntaxDraft({ ...syntaxHighlight }), [syntaxHighlight]);
   useEffect(() => setPrintDraft({ ...printStyle }), [printStyle]);
   useEffect(() => { setMarkdownStyleDraft({ ...markdownStyle }); setMarkdownStyleDirty(false); }, [markdownStyle, markdownStyleCss]);
@@ -88,10 +92,14 @@ export function SettingsPanel({
   const save = async () => {
     const validation = draft.map(validateExternalApp).find(Boolean);
     if (validation) { setError(validation); return; }
+    if (clipboardImageDraft.storage === "png" && clipboardImageDraft.pngLocation === "absolute" && !isAbsoluteDirectory(clipboardImageDraft.absoluteDirectory)) {
+      setError("PNGの絶対保存フォルダーには絶対パスを入力してください。");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, printDraft, normalizeMarkdownStyleSettings(markdownStyleDraft));
+      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, printDraft, normalizeMarkdownStyleSettings(markdownStyleDraft), normalizeClipboardImageSettings(clipboardImageDraft));
       setMarkdownStyleDirty(false);
     } catch (reason) {
       setError(String(reason));
@@ -156,6 +164,28 @@ export function SettingsPanel({
       <div className="print-style-preview" aria-label="印刷スタイルプレビュー" style={{ color: printDraft.headingColor, background: printDraft.monochrome ? "#ffffff" : printDraft.backgroundColor, borderColor: printDraft.monochrome ? "#000000" : printDraft.borderColor }}>
         <strong>見出しプレビュー</strong><p>本文と罫線の印刷イメージ</p>
       </div>
+    </fieldset>
+    <fieldset className="settings-section clipboard-image-settings">
+      <legend>クリップボード画像の貼り付け</legend>
+      <label>保存形式
+        <select aria-label="貼り付け画像の保存形式" value={clipboardImageDraft.storage} onChange={(event) => setClipboardImageDraft((current) => ({ ...current, storage: event.target.value as ClipboardImageSettings["storage"] }))}>
+          <option value="base64">Base64でMarkdownへ埋め込む（既定）</option>
+          <option value="png">PNGファイルとして保存する</option>
+        </select>
+      </label>
+      {clipboardImageDraft.storage === "png" && <>
+        <label>PNG保存先
+          <select aria-label="貼り付け画像のPNG保存先" value={clipboardImageDraft.pngLocation} onChange={(event) => setClipboardImageDraft((current) => ({ ...current, pngLocation: event.target.value as ClipboardImagePngLocation }))}>
+            <option value="absolute">指定した絶対パス</option>
+            <option value="document">Markdownと同じフォルダー</option>
+            <option value="images">Markdownと同じフォルダーのimages</option>
+          </select>
+        </label>
+        {clipboardImageDraft.pngLocation === "absolute" && <label>絶対保存フォルダー
+          <input aria-label="貼り付け画像の絶対保存フォルダー" value={clipboardImageDraft.absoluteDirectory} onChange={(event) => setClipboardImageDraft((current) => ({ ...current, absoluteDirectory: event.target.value }))} placeholder="C:\\Documents\\MarkdownImages" />
+        </label>}
+        <p>ファイル名: <code>yyyymmdd_hhnnss.png</code>（同名時は連番を付加）</p>
+      </>}
     </fieldset>
     <fieldset className="settings-section markdown-style-settings">
       <legend>Markdown本文スタイル</legend>

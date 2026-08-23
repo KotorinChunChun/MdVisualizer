@@ -275,6 +275,7 @@ pub fn run() {
             create_markdown,
             save_markdown,
             stage_document_asset,
+            stage_clipboard_image,
             discard_staged_assets,
             read_document_asset,
             save_sharepoint_asset,

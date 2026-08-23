@@ -19,6 +19,8 @@ import {
   type StructuredListKind,
 } from "../lib/markdownEditing";
 import { findBase64FoldRange } from "../lib/base64Folding";
+import { clipboardImageFile, clipboardImageMarkdown, readClipboardImage, type ClipboardImageData, type ResolvedClipboardImage } from "../lib/clipboardImage";
+import type { StagedDocumentAsset } from "../types/app";
 import "../styles/markdown-editor.css";
 
 interface MarkdownEditorProps {
@@ -28,6 +30,10 @@ interface MarkdownEditorProps {
   saving: boolean;
   onChange: (value: string) => void;
   onSave: () => void;
+  onResolvePastedImage?: (image: ClipboardImageData) => Promise<ResolvedClipboardImage>;
+  onStagedAssetAdded?: (content: string, asset: StagedDocumentAsset) => void;
+  onStagedAssetAbandoned?: (asset: StagedDocumentAsset) => void;
+  onPasteImageError?: (error: unknown) => void;
   compact?: boolean;
   onScrollLine?: (line: number) => void;
 }
@@ -102,17 +108,25 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, compact = false, onScrollLine }, ref) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, compact = false, onScrollLine }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
   const onScrollLineRef = useRef(onScrollLine);
+  const onResolvePastedImageRef = useRef(onResolvePastedImage);
+  const onStagedAssetAddedRef = useRef(onStagedAssetAdded);
+  const onStagedAssetAbandonedRef = useRef(onStagedAssetAbandoned);
+  const onPasteImageErrorRef = useRef(onPasteImageError);
   const applyingExternal = useRef(false);
   const normalizingLists = useRef(false);
   onChangeRef.current = onChange;
   onSaveRef.current = onSave;
   onScrollLineRef.current = onScrollLine;
+  onResolvePastedImageRef.current = onResolvePastedImage;
+  onStagedAssetAddedRef.current = onStagedAssetAdded;
+  onStagedAssetAbandonedRef.current = onStagedAssetAbandoned;
+  onPasteImageErrorRef.current = onPasteImageError;
   const lineSeparator = useMemo(() => value.includes("\r\n") ? "\r\n" : value.includes("\r") ? "\r" : "\n", [documentId]);
 
   const clampedLine = (view: EditorView, line: number) => view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, Math.round(line))));
@@ -167,6 +181,38 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         ])),
         EditorView.domEventHandlers({
           paste: (event, view) => {
+            const imageFile = clipboardImageFile(event.clipboardData);
+            const resolveImage = onResolvePastedImageRef.current;
+            if (imageFile && resolveImage) {
+              event.preventDefault();
+              const selection = view.state.selection.main;
+              const originalDocument = view.state.sliceDoc();
+              let stagedAsset: StagedDocumentAsset | undefined;
+              void readClipboardImage(imageFile)
+                .then(resolveImage)
+                .then((resolved) => {
+                  stagedAsset = resolved.asset;
+                  const current = viewRef.current;
+                  if (!current || current !== view || current.state.sliceDoc() !== originalDocument) {
+                    throw new Error("画像の読込中に文書が変更されたため、貼り付けを中止しました。");
+                  }
+                  const markdown = clipboardImageMarkdown(resolved.source);
+                  dispatchEdit(current, {
+                    from: selection.from,
+                    to: selection.to,
+                    insert: markdown,
+                    anchor: selection.from + markdown.length,
+                    head: selection.from + markdown.length,
+                  }, "input.image.paste");
+                  if (resolved.asset) onStagedAssetAddedRef.current?.(current.state.sliceDoc(), resolved.asset);
+                  if (resolved.source.toLowerCase().startsWith("data:")) foldBase64Data(current);
+                })
+                .catch((error) => {
+                  if (stagedAsset) onStagedAssetAbandonedRef.current?.(stagedAsset);
+                  onPasteImageErrorRef.current?.(error);
+                });
+              return true;
+            }
             const text = event.clipboardData?.getData("text/plain");
             if (!text) return false;
             const selection = view.state.selection.main;

@@ -25,7 +25,7 @@ use crate::sharepoint::{
 use crate::watcher::FileWatcher;
 use serde::Deserialize;
 use serde::Serialize;
-use std::io::Write;
+use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -298,6 +298,25 @@ pub struct StageDocumentAssetRequest {
     text: Option<String>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StageClipboardImageRequest {
+    document_path: String,
+    preferred_filename: String,
+    base64: String,
+    destination: String,
+    absolute_directory: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StagedClipboardImageResult {
+    id: String,
+    filename: String,
+    media_type: &'static str,
+    base64: String,
+}
+
 #[tauri::command]
 pub fn stage_document_asset(
     state: State<'_, AppState>,
@@ -320,6 +339,43 @@ pub fn stage_document_asset(
             &bytes,
         )
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn stage_clipboard_image(
+    state: State<'_, AppState>,
+    request: StageClipboardImageRequest,
+) -> Result<StagedClipboardImageResult, String> {
+    let source = base64::Engine::decode(
+        &base64::engine::general_purpose::STANDARD,
+        request.base64,
+    )
+    .map_err(|_| "Base64 clipboard image data is invalid.".to_string())?;
+    let image = image::load_from_memory(&source)
+        .map_err(|_| "Clipboard image data is not a supported raster image.".to_string())?;
+    let mut png = Cursor::new(Vec::new());
+    image
+        .write_to(&mut png, image::ImageFormat::Png)
+        .map_err(|error| format!("Convert clipboard image to PNG: {error}"))?;
+    let staged = state
+        .asset_staging
+        .stage_at(
+            &request.document_path,
+            &request.preferred_filename,
+            &request.destination,
+            request.absolute_directory.as_deref(),
+            png.get_ref(),
+        )
+        .map_err(|error| error.to_string())?;
+    Ok(StagedClipboardImageResult {
+        id: staged.id,
+        filename: staged.filename,
+        media_type: "image/png",
+        base64: base64::Engine::encode(
+            &base64::engine::general_purpose::STANDARD,
+            png.get_ref(),
+        ),
+    })
 }
 
 #[tauri::command]
