@@ -40,6 +40,25 @@ describe("structured Markdown lists", () => {
     expect(apply("1. one\n2. ", buildStructuredListEnter("1. one\n2. ", 11, 11))).toBe("1. one\n");
   });
 
+  it("preserves the following line and original line ending when Enter splits a list item", () => {
+    const lf = "1. one\n2. next";
+    const lfChange = buildStructuredListEnter(lf, "1. one".length, "1. one".length);
+    expect(apply(lf, lfChange)).toBe("1. one\n2. \n3. next");
+    expect(lfChange?.anchor).toBe("1. one\n2. ".length);
+
+    const crlf = "1. one\r\n2. next";
+    const crlfChange = buildStructuredListEnter(crlf, "1. one".length, "1. one".length);
+    expect(apply(crlf, crlfChange)).toBe("1. one\r\n2. \r\n3. next");
+    expect(crlfChange?.anchor).toBe("1. one\r\n2. ".length);
+  });
+
+  it("preserves the following line when Shift+Enter inserts a continuation", () => {
+    const source = "1. one\n2. next";
+    const change = buildStructuredListSoftEnter(source, "1. one".length, "1. one".length);
+    expect(apply(source, change)).toBe("1. one\n  \n2. next");
+    expect(change?.anchor).toBe("1. one\n  ".length);
+  });
+
   it("continues numbered items at every indentation depth", () => {
     const source = "1. outer\n  1. child\n    1. deep";
     expect(apply(source, buildStructuredListEnter(source, source.length, source.length)))
@@ -68,6 +87,33 @@ describe("structured Markdown lists", () => {
     expect(apply(source, buildStructuredListIndent(source, 12, 12))).toBe("1. first\n  1. second\n2. third");
   });
 
+  it("inserts Tab indentation at the current line start and maps the caret by the inserted width", () => {
+    const source = "alpha\nbeta";
+    const position = source.indexOf("t");
+    const change = buildStructuredListIndent(source, position, position);
+    expect(apply(source, change)).toBe("alpha\n  beta");
+    expect(change?.anchor).toBe(position + 2);
+    expect(change?.head).toBe(position + 2);
+
+    const lineStart = source.indexOf("beta");
+    const atStart = buildStructuredListIndent(source, lineStart, lineStart);
+    expect(apply(source, atStart)).toBe("alpha\n  beta");
+    expect(atStart?.anchor).toBe(lineStart + 2);
+  });
+
+  it("indents every selected line at its start and outdents without shifting text incorrectly", () => {
+    const source = "alpha\r\nbeta\r\ngamma";
+    const change = buildStructuredListIndent(source, 2, source.indexOf("gamma") - 2);
+    expect(apply(source, change)).toBe("  alpha\r\n  beta\r\ngamma");
+    expect(change?.anchor).toBe(4);
+
+    const indented = "  alpha\n\tbeta";
+    const outdent = buildStructuredListIndent(indented, 1, indented.length, true);
+    expect(apply(indented, outdent)).toBe("alpha\nbeta");
+    expect(outdent?.anchor).toBe(0);
+    expect(outdent?.head).toBe("alpha\nbeta".length);
+  });
+
   it("replaces an empty marker when a list is pasted", () => {
     expect(apply("- ", buildStructuredListPaste("- ", 2, 2, "- alpha\n- beta"))).toBe("- alpha\n- beta");
   });
@@ -76,5 +122,11 @@ describe("structured Markdown lists", () => {
     const source = "1. first\n   1. child\n2. second\n3. third";
     expect(apply(source, buildStructuredListMove(source, 3, 1))).toBe("1. second\n2. first\n   1. child\n3. third");
     expect(buildStructuredListMove(source, source.indexOf("child"), -1)).toBeNull();
+  });
+
+  it("moves CRLF item blocks without losing or joining neighboring line data", () => {
+    const source = "1. first\r\n   1. child\r\n2. second\r\n3. third\r\nafter";
+    const change = buildStructuredListMove(source, source.indexOf("first"), 1);
+    expect(apply(source, change)).toBe("1. second\r\n2. first\r\n   1. child\r\n3. third\r\nafter");
   });
 });

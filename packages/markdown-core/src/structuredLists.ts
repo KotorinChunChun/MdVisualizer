@@ -257,7 +257,9 @@ export function buildStructuredListEnter(source: string, from: number, to: numbe
   const task = item.task ? `[ ] ` : "";
   const insertedLine = `${item.indent}${marker} ${task}`;
   const replacement = `${beforeCursor}${ending}${insertedLine}${afterCursor}`;
-  const intermediate = source.slice(0, line.start) + replacement + source.slice(line.start + line.text.length + line.ending.length);
+  // Replace only the line text. The existing line ending still separates the
+  // newly inserted list item from the following source line.
+  const intermediate = source.slice(0, line.start) + replacement + source.slice(line.start + line.text.length);
   return applyAndRenumber(source, intermediate, line.start + beforeCursor.length + ending.length + insertedLine.length);
 }
 
@@ -273,7 +275,7 @@ export function buildStructuredListSoftEnter(source: string, from: number, to: n
   const afterCursor = line.text.slice(column);
   const continuationIndent = `${item.indent}  `;
   const replacement = `${beforeCursor}${ending}${continuationIndent}${afterCursor}`;
-  const insertTo = line.start + line.text.length + line.ending.length;
+  const insertTo = line.start + line.text.length;
   return minimalChange(
     source,
     source.slice(0, line.start) + replacement + source.slice(insertTo),
@@ -282,18 +284,37 @@ export function buildStructuredListSoftEnter(source: string, from: number, to: n
 }
 
 export function buildStructuredListIndent(source: string, from: number, to: number, outdent = false): MarkdownEditChange | null {
+  const originalLines = documentLines(source);
   const lines = documentLines(source);
   const [first, last] = targetLineRange(lines, from, to);
-  if (!lines.slice(first, last + 1).some((line) => line.list && !line.inFence)) return null;
+  const indentDeltas = new Map<number, number>();
+  let changed = false;
+  let structuredListChanged = false;
   for (let index = first; index <= last; index += 1) {
     const line = lines[index];
-    if (line.inFence || !line.list) continue;
+    const beforeLength = line.text.length;
+    const wasList = Boolean(line.list && !line.inFence);
     if (outdent) line.text = line.text.startsWith("\t") ? line.text.slice(1) : line.text.replace(/^ {1,2}/, "");
     else line.text = `  ${line.text}`;
+    const delta = line.text.length - beforeLength;
+    if (delta === 0) continue;
+    indentDeltas.set(index, delta);
+    changed = true;
+    structuredListChanged ||= wasList;
   }
-  renumberLines(lines);
+  if (!changed) return null;
+  if (structuredListChanged) renumberLines(lines);
   const after = joinLines(lines);
-  return minimalChange(source, after, mapPosition(source, after, from), mapPosition(source, after, to));
+  const afterLines = documentLines(after);
+  const mapIndentPosition = (position: number): number => {
+    const index = lineIndexAt(originalLines, position);
+    const originalLine = originalLines[index];
+    const nextLine = afterLines[index];
+    const column = Math.max(0, Math.min(originalLine.text.length, position - originalLine.start));
+    const delta = indentDeltas.get(index) ?? 0;
+    return nextLine.start + Math.max(0, Math.min(nextLine.text.length, column + delta));
+  };
+  return minimalChange(source, after, mapIndentPosition(from), mapIndentPosition(to));
 }
 
 export function buildStructuredListPaste(source: string, from: number, to: number, pasted: string): MarkdownEditChange | null {
