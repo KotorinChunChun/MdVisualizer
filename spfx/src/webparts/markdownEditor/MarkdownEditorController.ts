@@ -1,6 +1,9 @@
 import {
   buildShortcutKeySvg,
   isShortcutKeySource,
+  isPlantUmlFenceLanguage,
+  plantUmlToMermaid,
+  resolveExpandedExportReference,
   buildMarkdownEdit,
   buildOrderedListNormalization,
   buildStructuredListEnter,
@@ -205,21 +208,29 @@ export class MarkdownEditorController {
   private _render(value: string): void {
     const sequence = ++this._renderSequence;
     this._preview.innerHTML = this._renderer.render(value);
+    this._rewriteRelativeNotionReferences();
     this._renderShortcutKeys();
     this._drawioSources = [];
     this._preview.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(link => {
       if (/^https?:/i.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
     });
     this._preview.querySelectorAll<HTMLElement>('pre > code').forEach(code => {
-      if (code.classList.contains('language-mermaid')) {
-        const source = code.textContent || '';
+      const language = Array.from(code.classList).find(value => value.startsWith('language-'))?.slice('language-'.length);
+      const plantUml = isPlantUmlFenceLanguage(language);
+      if (code.classList.contains('language-mermaid') || plantUml) {
+        const originalSource = code.textContent || '';
         const host = document.createElement('div');
-        host.className = 'spfxMarkdownMermaid';
+        host.className = plantUml ? 'spfxMarkdownPlantUml' : 'spfxMarkdownMermaid';
         code.parentElement?.replaceWith(host);
-        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
-        void mermaid.render(`spfx-markdown-${sequence}-${Math.random().toString(36).slice(2)}`, source)
-          .then(result => { if (sequence === this._renderSequence) host.innerHTML = result.svg; })
-          .catch(error => { host.textContent = `Mermaidを描画できません: ${String(error)}`; });
+        try {
+          const source = plantUml ? plantUmlToMermaid(originalSource).mermaid : originalSource;
+          mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
+          void mermaid.render(`spfx-markdown-${sequence}-${Math.random().toString(36).slice(2)}`, source)
+            .then(result => { if (sequence === this._renderSequence) host.innerHTML = result.svg; })
+            .catch(error => { host.textContent = `${plantUml ? 'PlantUML' : 'Mermaid'}を描画できません: ${String(error)}`; });
+        } catch (error) {
+          host.textContent = `PlantUMLを描画できません: ${String(error)}`;
+        }
       } else if (code.classList.contains('language-drawio')) {
         const source = code.textContent || '';
         const index = this._drawioSources.push(source.replace(/\n$/, '')) - 1;
@@ -240,6 +251,22 @@ export class MarkdownEditorController {
       } else {
         hljs.highlightElement(code);
       }
+    });
+  }
+
+  private _documentPath = '';
+
+  public setDocumentPath(path: string): void {
+    this._documentPath = path;
+  }
+
+  private _rewriteRelativeNotionReferences(): void {
+    if (!this._documentPath) return;
+    this._preview.querySelectorAll<HTMLElement>('a[href],img[src]').forEach(element => {
+      const attribute = element.tagName === 'IMG' ? 'src' : 'href';
+      const reference = element.getAttribute(attribute) || '';
+      const resolved = resolveExpandedExportReference(reference, this._documentPath, window.location.origin);
+      if (resolved) element.setAttribute(attribute, resolved);
     });
   }
 

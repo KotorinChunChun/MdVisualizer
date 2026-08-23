@@ -108,6 +108,12 @@ describe("MarkdownPreview sanitization", () => {
     expect(view.container.querySelector(".mermaid-source")).toBe(block);
   });
 
+  it("recognizes both PlantUML fence names with local rendering controls", () => {
+    render(<MarkdownPreview content={"```plantuml\nA -> B: one\n```\n\n```puml\nB --> A: two\n```"} baseDir="" imageVersions={{}} mermaidMode="off" />);
+    expect(screen.getAllByText("PlantUML（ローカル）")).toHaveLength(2);
+    expect(screen.getByText(/A -> B: one/)).toBeTruthy();
+  });
+
   it("renders modifier inline code and key fences with the same SVG model", () => {
     const content = "インラインの `Ctrl+S` と `Windows`。\n\n```key\nCtrl+Shift+S\n```";
     const { container } = render(<MarkdownPreview content={content} baseDir="" imageVersions={{}} />);

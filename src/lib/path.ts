@@ -19,11 +19,12 @@ export function resolveImageSrc(src: string, baseDir: string): string {
     return src;
   }
 
-  let fullPath = src;
-  if (!isAbsoluteLocalPath(src)) {
+  const decodedSrc = decodePath(src);
+  let fullPath = decodedSrc;
+  if (!isAbsoluteLocalPath(decodedSrc)) {
     // 相対パスの場合
     const normalizedBase = baseDir.replace(/\\/g, "/").replace(/\/$/, "");
-    const normalizedSrc = src.replace(/\\/g, "/").replace(/^\.\//, "");
+    const normalizedSrc = decodedSrc.replace(/\\/g, "/").replace(/^\.\//, "");
     fullPath = `${normalizedBase}/${normalizedSrc}`;
   }
 

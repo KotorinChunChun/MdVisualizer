@@ -17,6 +17,9 @@ interface MermaidBlockProps {
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   showToolbar?: boolean;
   onRenderedSvg?: (svg: string | undefined) => void;
+  /** Original source shown by the shared popup when a local translator is used. */
+  mediaSource?: string;
+  diagramAlt?: string;
 }
 
 type RenderState = { svg: string | null; error: string | null; pending: boolean };
@@ -33,6 +36,8 @@ export function MermaidBlock({
   onMediaOpen,
   showToolbar = true,
   onRenderedSvg,
+  mediaSource,
+  diagramAlt = "Mermaid図",
 }: MermaidBlockProps) {
   const [state, setState] = useState<RenderState>({ svg: null, error: null, pending: false });
   const [showDetails, setShowDetails] = useState(false);
@@ -116,6 +121,6 @@ export function MermaidBlock({
     {displayedContent === "code" && <pre className="mermaid-source"><code>{source}</code></pre>}
     {displayedContent === "diagram" && !state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
     {displayedContent === "diagram" && !state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
-    {displayedContent === "diagram" && state.svg && <button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: "Mermaid図" }, mermaidSource: source })} dangerouslySetInnerHTML={{ __html: state.svg }} />}
+    {displayedContent === "diagram" && state.svg && <button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: diagramAlt }, mermaidSource: mediaSource ?? source })} dangerouslySetInnerHTML={{ __html: state.svg }} />}
   </div>;
 }

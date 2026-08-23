@@ -20,6 +20,13 @@ describe("Windows image paths", () => {
     expect(resolveImageSrc("file:///C:/images/a.png", "C:\\docs")).toBe("file:///C:/images/a.png");
   });
 
+  it("resolves URL-encoded Notion export links and relative image folders", () => {
+    expect(resolveLocalDocumentPath("Project%20Notes%20abcdef1234567890abcdef1234567890.md", "C:\\exports\\Workspace"))
+      .toBe("C:/exports/Workspace/Project Notes abcdef1234567890abcdef1234567890.md");
+    expect(resolveImageSrc("Project%20Notes%20abcdef/image%201.png", "C:\\exports\\Workspace"))
+      .toBe("asset://C:/exports/Workspace/Project Notes abcdef/image 1.png");
+  });
+
   it("resolves relative and tauri.localhost Markdown links inside the document directory", () => {
     expect(resolveLocalMarkdownPath("../guide/next.md", "C:\\docs\\current")).toBe("C:/docs/guide/next.md");
     expect(resolveLocalMarkdownPath("http://tauri.localhost/v0.0.1-imp.md", "C:\\docs")).toBe("C:/docs/v0.0.1-imp.md");

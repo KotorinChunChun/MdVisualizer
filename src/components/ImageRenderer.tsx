@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getCacheBusterUrl } from "../lib/image";
-import { getFileName, isAbsoluteLocalPath, resolveImageSrc } from "../lib/path";
+import { getFileName, resolveImageSrc, resolveLocalImagePath } from "../lib/path";
 import { readDocumentAsset } from "../lib/commands";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import type { CropTarget } from "../hooks/useCropEditor";
@@ -125,12 +125,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   const canInlineResize = isEditableLocalImage && !presentationMode && !headingMode;
   const hasDisplaySize = !headingMode && Boolean(size);
 
-  let fullPath = src;
-  if (!isRemote && !isAbsoluteLocalPath(src)) {
-    const normalizedBase = baseDir.replace(/\\/g, "/").replace(/\/$/, "");
-    const normalizedSrc = src.replace(/\\/g, "/").replace(/^\.\//, "");
-    fullPath = `${normalizedBase}/${normalizedSrc}`;
-  }
+  const fullPath = isRemote ? src : resolveLocalImagePath(src, baseDir) ?? src;
 
   const version = imageVersions[fullPath] || 0;
   const displaySrc = getCacheBusterUrl(resolvedSrc, version);

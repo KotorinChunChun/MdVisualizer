@@ -50,6 +50,15 @@ export {
   type ShortcutKeyTokenKind,
 } from "./shortcutKeys";
 
+export {
+  isPlantUmlFenceLanguage,
+  plantUmlToMermaid,
+  type PlantUmlConversion,
+  type PlantUmlDiagramKind,
+} from "./plantUml";
+
+export { resolveExpandedExportReference } from "./notionExport";
+
 export interface MarkdownEditChange {
   from: number;
   to: number;

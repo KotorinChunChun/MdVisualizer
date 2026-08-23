@@ -25,6 +25,8 @@ import { collectEditableMarkdownOccurrences, type CodeFenceOccurrence, type Imag
 import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { DrawioBlock } from "./DrawioBlock";
+import { PlantUmlBlock } from "./PlantUmlBlock";
+import { isPlantUmlFenceLanguage } from "@markdown-viewer/markdown-core";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
@@ -203,6 +205,18 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       language={language}
       source={String(children ?? "").replace(/\n$/, "")}
       onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
+    />;
+  }
+  if (isPlantUmlFenceLanguage(language)) {
+    const sourceOffset = node?.position?.start.offset;
+    return <PlantUmlBlock
+      source={String(children ?? "").replace(/\n$/, "")}
+      theme={context.theme}
+      mode={context.mermaidMode}
+      windowId={context.windowId}
+      tabId={context.tabId}
+      blockId={`plantuml-offset-${sourceOffset ?? 0}`}
+      onMediaOpen={context.onMediaOpen}
     />;
   }
   if (className?.toLowerCase().includes("language-mermaid")) {
