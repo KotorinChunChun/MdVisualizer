@@ -240,7 +240,7 @@ const diffCode = await evaluate(`new Promise((resolve) => {
   const poll = () => {
     const workspace = document.querySelector('.document-diff-workspace');
     const panes = workspace?.querySelectorAll('.document-diff__pane').length ?? 0;
-    const codePanes = workspace?.querySelectorAll('.document-diff__code').length ?? 0;
+    const codePanes = workspace?.querySelectorAll('.document-diff__code, .document-diff__pane > .markdown-editor').length ?? 0;
     if ((panes > 0 && codePanes === panes) || Date.now() >= deadline) {
       resolve({
         panes,
@@ -262,7 +262,7 @@ const diffSplit = await evaluate(`new Promise((resolve) => {
   const poll = () => {
     const workspace = document.querySelector('.document-diff-workspace');
     const panes = workspace?.querySelectorAll('.document-diff__pane').length ?? 0;
-    const codePanes = workspace?.querySelectorAll('.document-diff__code').length ?? 0;
+    const codePanes = workspace?.querySelectorAll('.document-diff__code, .document-diff__pane > .markdown-editor').length ?? 0;
     const renderedPanes = workspace?.querySelectorAll('.document-diff__rendered').length ?? 0;
     if ((panes === 4 && codePanes === 2 && renderedPanes === 2) || Date.now() >= deadline) {
       resolve({ panes, codePanes, renderedPanes, interactiveDiagrams: workspace?.querySelectorAll('.mermaid-container, .drawio-block').length ?? 0, durationMs: performance.now() - startedAt });

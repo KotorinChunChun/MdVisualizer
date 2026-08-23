@@ -1,7 +1,7 @@
 {
   "name": "markdown-viewer",
   "private": true,
-  "version": "0.0.10",
+  "version": "0.0.11",
   "author": "KotorinChunChun",
   "repository": "https://github.com/KotorinChunChun/MarkdownViewer",
   "type": "module",
@@ -24,7 +24,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@markdown-viewer/markdown-core": "0.0.10",
+    "@markdown-viewer/markdown-core": "0.0.11",
     "@codemirror/commands": "^6.10.4",
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/language": "^6.12.4",
