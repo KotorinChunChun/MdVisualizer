@@ -2,7 +2,10 @@ use crate::app_state::{AppState, DebugWindowState};
 use crate::asset_staging::{
     read_document_asset as do_read_document_asset, DocumentAssetData, StagedAssetResult,
 };
-use crate::document_edit::{save_markdown_with_assets as do_save_markdown, SaveMarkdownRequest};
+use crate::document_edit::{
+    create_markdown as do_create_markdown, save_markdown_with_assets as do_save_markdown,
+    CreateMarkdownRequest, SaveMarkdownRequest,
+};
 use crate::errors::AppError;
 use crate::image_ops::{
     crop_image as do_crop_image, save_rendered_image as do_save_rendered_image, CropImageRequest,
@@ -250,6 +253,11 @@ pub async fn save_markdown(
         })
         .await
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn create_markdown(request: CreateMarkdownRequest) -> Result<MarkdownLoadResult, String> {
+    do_create_markdown(request).map_err(|error| error.to_string())
 }
 
 #[derive(Deserialize)]

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { save as showSaveDialog } from "@tauri-apps/plugin-dialog";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
 import { StatusBar } from "./components/StatusBar";
@@ -29,7 +30,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { createMarkdown, diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
 import { ToastState } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -51,6 +52,7 @@ import { moveZoomLevel } from "./lib/zoom";
 import { moveHeadingBlock } from "./lib/markdownEditing";
 import { buildPresentationModel } from "./lib/presentationModel";
 import { buildDebugWindowState } from "./lib/debugState";
+import { saveUntitledDocument } from "./lib/untitledDocument";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -349,13 +351,13 @@ export function App() {
   const search = useSearch(markdownRef, `${windowLabel}-${tabsState.activeId ?? "empty"}`, updateSearchExpandedIds, searchRefreshKey, previewContent);
   const { cropTarget, startCrop, cancelCrop } = useCropEditor();
   useEffect(() => {
-    if (!activeTab?.document || activeSharePoint) { setDiagnostics([]); return; }
+    if (!activeTab?.document || activeTab.untitled || activeSharePoint) { setDiagnostics([]); return; }
     let disposed = false;
     void diagnoseDocument(activeTab.document.path).then((items) => { if (!disposed) setDiagnostics(items); }).catch((error) => {
       if (!disposed) setDiagnostics([{ severity: "warning", kind: "診断", line: 1, reference: activeTab.document!.path, message: `診断を完了できません: ${String(error)}` }]);
     });
     return () => { disposed = true; };
-  }, [activeSharePoint, activeTab?.document?.path, activeTab?.generation]);
+  }, [activeSharePoint, activeTab?.document?.path, activeTab?.generation, activeTab?.untitled]);
   const restoringSearchFor = useRef<string | null>(null);
 
   useLayoutEffect(() => {
@@ -454,7 +456,7 @@ export function App() {
   }, [tabsState.tabs, loadTab]);
 
   const watchTargetKey = JSON.stringify(
-    [...new Set(tabsState.tabs.flatMap((tab) => tab.document && !isSharePointDocument(tab.document) ? [tab.document.path, ...tab.document.image_paths] : []))].sort(),
+    [...new Set(tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document) ? [tab.document.path, ...tab.document.image_paths] : []))].sort(),
   );
 
   useEffect(() => {
@@ -500,7 +502,7 @@ export function App() {
   }, []);
 
   const reload = useCallback(() => {
-    if (activeTab?.document) reloadTab(activeTab.id);
+    if (activeTab?.document && !activeTab.untitled) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
 
   const toggleDocumentDiff = useCallback(async () => {
@@ -540,22 +542,50 @@ export function App() {
       return;
     }
     dispatch({ type: "SAVE_STARTED", id });
-    const identity = isSharePointDocument(tab.document) ? null : localPathIdentity(tab.document.path);
+    let identity = !tab.untitled && !isSharePointDocument(tab.document) ? localPathIdentity(tab.document.path) : null;
     const selfSaveUntil = Date.now() + 2000;
-    if (identity) {
-      recentSelfSaves.current.set(identity, selfSaveUntil);
+    const markSelfSave = (nextIdentity: string | null) => {
+      if (!nextIdentity) return;
+      const key = nextIdentity;
+      identity = key;
+      recentSelfSaves.current.set(key, selfSaveUntil);
       window.setTimeout(() => {
-        if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
+        if (recentSelfSaves.current.get(key) === selfSaveUntil) recentSelfSaves.current.delete(key);
       }, 2100);
-    }
+    };
+    markSelfSave(identity);
     try {
       const stagedAssetIds = (tab.pendingAssets ?? []).map((asset) => asset.id);
-      const document = await saveMarkdown({
-        path: tab.document.path,
-        content: tab.draft,
-        expectedRevision: tab.document.revision,
-        stagedAssetIds,
-      });
+      let document;
+      if (tab.untitled) {
+        const result = await saveUntitledDocument({
+          defaultPath: tab.path,
+          content: tab.draft,
+          openDocumentPaths: tabsStateRef.current.tabs.flatMap((candidate) => candidate.id !== id && !candidate.untitled
+            ? [candidate.document?.path ?? candidate.path]
+            : []),
+        }, {
+          choosePath: (defaultPath) => showSaveDialog({
+            title: "Markdownに名前を付けて保存",
+            defaultPath,
+            filters: [{ name: "Markdown", extensions: ["md", "markdown"] }],
+          }),
+          createDocument: (path, content) => createMarkdown({ path, content }),
+        });
+        if (result.status === "cancelled") {
+          dispatch({ type: "SAVE_CANCELLED", id });
+          return;
+        }
+        markSelfSave(localPathIdentity(result.path));
+        document = result.document;
+      } else {
+        document = await saveMarkdown({
+          path: tab.document.path,
+          content: tab.draft,
+          expectedRevision: tab.document.revision,
+          stagedAssetIds,
+        });
+      }
       dispatch({ type: "SAVED", id, document, committedAssetIds: stagedAssetIds });
       setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
     } catch (error) {
@@ -968,7 +998,7 @@ export function App() {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
     if (tab?.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄してタブを閉じますか？`)) return false;
     if (tab?.pendingAssets?.length) void discardStagedAssets(tab.pendingAssets.map((asset) => asset.id));
-    if (tab && tab.kind !== "settings") setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
+    if (tab && tab.kind !== "settings" && !tab.untitled) setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
     dispatch({ type: "CLOSE", id });
     return true;
   }, []);
@@ -1140,6 +1170,11 @@ export function App() {
       }
       if (shortcutHelpOpen) return;
       if (annotationTarget) return;
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        dispatch({ type: "NEW_MARKDOWN" });
+        return;
+      }
       if (event.altKey && !event.ctrlKey && !event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
         event.preventDefault();
         if (event.key === "ArrowLeft") goBack();
@@ -1315,12 +1350,12 @@ export function App() {
         <div className="control-group document-actions">
           <button type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷/PDF</button>
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
-          <button type="button" disabled={!activeTab?.document} onClick={reload}>再読込</button>
+          <button type="button" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
           <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
           <button
             type="button"
             aria-pressed={documentDiff !== null}
-            disabled={!canEditActive || diffLoading}
+            disabled={!canEditActive || activeTab?.untitled || diffLoading}
             onClick={() => void toggleDocumentDiff()}
           >{diffLoading ? "差分取得中…" : "差分"}</button>
         </div>
@@ -1344,7 +1379,7 @@ export function App() {
         </div>}
         <ExternalActions
           apps={activeSharePoint ? [] : externalApps.filter((app) => app.target === "document")}
-          disabled={!activeTab?.document}
+          disabled={!activeTab?.document || activeTab.untitled}
           onExecute={executeExternalApp}
           onOpenInNewWindow={() => {
             if (!activeTab?.document) return;
@@ -1642,7 +1677,7 @@ export function App() {
         if (!tab) return null;
         const index = tabsState.tabs.indexOf(tab);
         const close = (id: string) => { closeTab(id); setContextTab(null); };
-        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={() => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
+        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={tab.untitled ? undefined : () => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
       })()}
     </div>
   );

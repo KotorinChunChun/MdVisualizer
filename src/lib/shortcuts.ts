@@ -4,6 +4,7 @@ export interface ShortcutDefinition {
 }
 
 export const SHORTCUTS: ShortcutDefinition[] = [
+  { keys: "Ctrl + N", description: "新しい未保存Markdownを作成" },
   { keys: "Ctrl + S", description: "編集中のローカルMarkdownを保存" },
   { keys: "Ctrl + F", description: "文書内を検索" },
   { keys: "Ctrl + P", description: "印刷／PDF" },

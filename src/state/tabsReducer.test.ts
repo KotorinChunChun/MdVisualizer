@@ -14,6 +14,26 @@ const loadedDocument = (path: string) => ({
 });
 
 describe("tabsReducer", () => {
+  it("creates independent dirty untitled Markdown tabs in Edit mode", () => {
+    let state = tabsReducer(initialTabsState, { type: "NEW_MARKDOWN" });
+    state = tabsReducer(state, { type: "NEW_MARKDOWN" });
+
+    expect(state.tabs).toHaveLength(2);
+    expect(state.tabs[0]).toMatchObject({ path: "無題-1.md", untitled: true, dirty: true, loading: false, editorMode: "edit", draft: "" });
+    expect(state.tabs[1]).toMatchObject({ path: "無題-2.md", untitled: true, dirty: true, loading: false, editorMode: "edit", draft: "" });
+    expect(state.activeId).toBe(state.tabs[1].id);
+  });
+
+  it("keeps an untitled tab dirty until save succeeds and adopts the saved path", () => {
+    let state = tabsReducer(initialTabsState, { type: "NEW_MARKDOWN" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "SAVE_STARTED", id });
+    expect(state.tabs[0].saving).toBe(true);
+    state = tabsReducer(state, { type: "SAVE_CANCELLED", id });
+    expect(state.tabs[0]).toMatchObject({ untitled: true, dirty: true, saving: false });
+    state = tabsReducer(state, { type: "SAVED", id, document: { ...loadedDocument("C:\\docs\\saved.md"), content: "" } });
+    expect(state.tabs[0]).toMatchObject({ path: "C:\\docs\\saved.md", untitled: false, dirty: false, saving: false });
+  });
   it("keeps each tab scroll position independently", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;

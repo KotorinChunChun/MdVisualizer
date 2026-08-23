@@ -12,6 +12,14 @@ describe("application window title", () => {
   });
 });
 
+describe("new Markdown shortcut wiring", () => {
+  it("maps Ctrl+N to the untitled Markdown reducer action", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    expect(source).toContain('event.key.toLowerCase() === "n"');
+    expect(source).toContain('dispatch({ type: "NEW_MARKDOWN" })');
+  });
+});
+
 describe("Markdown editing availability", () => {
   it("enables editing for both local and SharePoint Markdown documents", () => {
     expect(canEditMarkdownDocument({ kind: "markdown" })).toBe(true);

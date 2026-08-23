@@ -41,4 +41,11 @@ describe("ContextMenu", () => {
     expect(onDismiss).toHaveBeenCalledOnce();
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith("Error: 起動失敗"));
   });
+
+  it("disables filesystem actions for an untitled tab", () => {
+    render(<ContextMenu tab={{ ...tab, untitled: true }} x={0} y={0} onDismiss={() => {}} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onResult={() => {}} onError={() => {}} />);
+    expect((screen.getByRole("button", { name: "フォルダを開く" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "VS Code で開く" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "別ウィンドウで開く" }) as HTMLButtonElement).disabled).toBe(true);
+  });
 });

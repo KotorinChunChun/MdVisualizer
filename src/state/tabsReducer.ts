@@ -9,6 +9,8 @@ export interface TabState {
   id: string;
   kind?: "document" | "settings";
   path: string;
+  /** True until a Ctrl+N document is assigned a filesystem path. */
+  untitled?: boolean;
   document: MarkdownLoadResult | null;
   /** The immutable text captured by the first successful load of this tab. */
   openedContent?: string;
@@ -44,6 +46,7 @@ export interface ClosedTabState {
 
 export type TabsAction =
   | { type: "OPEN"; path: string }
+  | { type: "NEW_MARKDOWN" }
   | { type: "OPEN_SETTINGS" }
   | { type: "RESTORE"; tab: ClosedTabState }
   | { type: "ACTIVATE"; id: string }
@@ -59,6 +62,7 @@ export type TabsAction =
   | { type: "SAVE_STARTED"; id: string }
   | { type: "SAVED"; id: string; document: MarkdownLoadResult; committedAssetIds?: string[] }
   | { type: "SAVE_FAILED"; id: string; error: string }
+  | { type: "SAVE_CANCELLED"; id: string }
   | { type: "EDITOR_MODE"; id: string; mode: EditorWorkspaceMode }
   | { type: "STAGED_ASSET_ADDED"; id: string; content: string; asset: StagedDocumentAsset }
   | { type: "STAGED_ASSET_REMOVED"; id: string; content: string; stagingId: string }
@@ -71,6 +75,50 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
   switch (action.type) {
     case "OPEN": {
       return openTab(state, { path: action.path, scrollTop: 0, searchOpen: false, imageDisplaySizes: {}, search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 } });
+    }
+    case "NEW_MARKDOWN": {
+      const id = `tab-${state.nextId}`;
+      const path = `無題-${state.nextId}.md`;
+      const document: MarkdownLoadResult = {
+        path,
+        kind: "markdown",
+        content: "",
+        base_dir: "",
+        image_paths: [],
+        encoding: "UTF-8",
+        size_bytes: 0,
+        modified_at: "",
+        revision: "",
+        source: "local",
+        web_url: null,
+        etag: null,
+      };
+      return {
+        tabs: [...state.tabs, {
+          id,
+          kind: "document",
+          path,
+          untitled: true,
+          document,
+          openedContent: "",
+          error: null,
+          loading: false,
+          scrollTop: 0,
+          generation: 1,
+          externalChanged: false,
+          draft: "",
+          dirty: true,
+          saving: false,
+          saveError: null,
+          editorMode: "edit",
+          pendingAssets: [],
+          searchOpen: false,
+          imageDisplaySizes: {},
+          search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 },
+        }],
+        activeId: id,
+        nextId: state.nextId + 1,
+      };
     }
     case "OPEN_SETTINGS": {
       const existing = state.tabs.find((tab) => tab.kind === "settings");
@@ -106,7 +154,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "ACTIVATE":
       return state.tabs.some((tab) => tab.id === action.id) ? { ...state, activeId: action.id } : state;
     case "RELOAD":
-      return updateTab(state, action.id, (tab) => ({ ...tab, loading: true, externalChanged: false, generation: tab.generation + 1 }));
+      return updateTab(state, action.id, (tab) => tab.untitled ? tab : ({ ...tab, loading: true, externalChanged: false, generation: tab.generation + 1 }));
     case "CLOSE": {
       const index = state.tabs.findIndex((tab) => tab.id === action.id);
       if (index < 0) return state;
@@ -177,6 +225,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         return {
           ...tab,
           path: action.document.path,
+          untitled: false,
           document: action.document,
           draft,
           dirty: draft !== action.document.content,
@@ -188,6 +237,8 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       });
     case "SAVE_FAILED":
       return updateTab(state, action.id, (tab) => ({ ...tab, saving: false, saveError: action.error }));
+    case "SAVE_CANCELLED":
+      return updateTab(state, action.id, (tab) => ({ ...tab, saving: false, saveError: null }));
     case "EDITOR_MODE":
       return updateTab(state, action.id, (tab) => tab.editorMode === action.mode ? tab : { ...tab, editorMode: action.mode });
     case "STAGED_ASSET_ADDED":

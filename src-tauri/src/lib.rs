@@ -201,6 +201,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(state)
         .on_window_event(|window, event| {
             let state = window.state::<AppState>();
@@ -268,6 +269,7 @@ pub fn run() {
             get_initial_files,
             open_in_new_window,
             load_markdown,
+            create_markdown,
             save_markdown,
             stage_document_asset,
             discard_staged_assets,

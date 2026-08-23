@@ -21,6 +21,13 @@ pub struct SaveMarkdownRequest {
     pub staged_asset_ids: Vec<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateMarkdownRequest {
+    pub path: String,
+    pub content: String,
+}
+
 struct OriginalDocument {
     text: String,
     encoding: &'static Encoding,
@@ -40,6 +47,22 @@ pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResu
     })?;
     let loaded = with_lock(&path, || save_locked(&path, &request))?;
     Ok(loaded)
+}
+
+pub fn create_markdown(request: CreateMarkdownRequest) -> AppResult<MarkdownLoadResult> {
+    let requested = PathBuf::from(&request.path);
+    if document_kind(&requested) != Some(DocumentKind::Markdown) {
+        return Err(AppError::UnsupportedDocument(request.path));
+    }
+    if !requested.is_absolute() {
+        return Err(AppError::IoError(
+            "A new Markdown document requires an absolute save path.".into(),
+        ));
+    }
+    with_lock(&requested, || {
+        atomic_write(&requested, request.content.as_bytes())?;
+        load_markdown(&requested.to_string_lossy())
+    })
 }
 
 pub fn save_markdown_with_assets(
@@ -178,6 +201,35 @@ fn contains_japanese(value: &str) -> bool {
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    #[test]
+    fn creates_a_new_utf8_markdown_document_and_returns_its_revision() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("new.md");
+        let loaded = create_markdown(CreateMarkdownRequest {
+            path: path.to_string_lossy().into_owned(),
+            content: "# 新規\n本文".into(),
+        })
+        .unwrap();
+
+        assert_eq!(fs::read_to_string(&path).unwrap(), "# 新規\n本文");
+        assert_eq!(loaded.content, "# 新規\n本文");
+        assert!(!loaded.revision.is_empty());
+        assert_eq!(loaded.encoding, "UTF-8");
+    }
+
+    #[test]
+    fn rejects_a_non_markdown_create_target_without_writing() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("new.txt");
+        let result = create_markdown(CreateMarkdownRequest {
+            path: path.to_string_lossy().into_owned(),
+            content: "text".into(),
+        });
+
+        assert!(matches!(result, Err(AppError::UnsupportedDocument(_))));
+        assert!(!path.exists());
+    }
 
     fn request(path: &Path, content: &str) -> SaveMarkdownRequest {
         let bytes = fs::read(path).unwrap();
