@@ -23,6 +23,7 @@ import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
 import { DocumentDiffWorkspace, type DocumentDiffTarget } from "./components/DocumentDiffWorkspace";
+import type { MarkdownEditorHandle } from "./components/MarkdownEditor";
 import { useCropEditor, type ImageEditTarget } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -53,6 +54,7 @@ import { moveHeadingBlock } from "./lib/markdownEditing";
 import { buildPresentationModel } from "./lib/presentationModel";
 import { buildDebugWindowState } from "./lib/debugState";
 import { saveUntitledDocument } from "./lib/untitledDocument";
+import { sourceBlockIndexForLine, sourceLineAtViewportTop } from "./lib/paneSync";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -120,6 +122,10 @@ export async function handleWindowCloseRequest(
 export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markdownRef = useRef<HTMLDivElement | null>(null);
+  const editorRef = useRef<MarkdownEditorHandle | null>(null);
+  const paneSyncOrigin = useRef<"edit" | "view" | null>(null);
+  const paneSyncFrame = useRef(0);
+  const pendingEditorLine = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
   const recentSelfSaves = useRef(new Map<string, number>());
@@ -840,10 +846,68 @@ export function App() {
     target?.scrollIntoView({ block: "center" });
   }, [activeTab?.document, recordNavigationPoint]);
 
+  const releasePaneSync = useCallback(() => {
+    if (paneSyncFrame.current) window.cancelAnimationFrame(paneSyncFrame.current);
+    paneSyncFrame.current = window.requestAnimationFrame(() => {
+      paneSyncFrame.current = 0;
+      paneSyncOrigin.current = null;
+    });
+  }, []);
+
+  const handleEditorScrollLine = useCallback((line: number) => {
+    if (paneSyncOrigin.current === "view") return;
+    const container = containerRef.current;
+    const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
+      .filter((block) => block.getClientRects().length > 0);
+    const index = sourceBlockIndexForLine(blocks.map((block) => Number(block.dataset.sourceLine) || 1), line);
+    const target = blocks[index];
+    if (!container || !target) return;
+    paneSyncOrigin.current = "edit";
+    container.scrollTop += target.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    releasePaneSync();
+  }, [releasePaneSync]);
+
   const handlePreviewScroll = useCallback((element: HTMLElement) => {
     if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: element.scrollTop });
     if (viewModeRef.current === "presentation") return;
-  }, [activeTab?.id]);
+    if (editorMode !== "split" || paneSyncOrigin.current === "edit") return;
+    const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
+      .filter((block) => block.getClientRects().length > 0);
+    const line = sourceLineAtViewportTop(blocks.map((block) => ({
+      line: Number(block.dataset.sourceLine) || 1,
+      top: block.getBoundingClientRect().top,
+    })), element.getBoundingClientRect().top);
+    paneSyncOrigin.current = "view";
+    editorRef.current?.scrollToLine(line);
+    releasePaneSync();
+  }, [activeTab?.id, editorMode, releasePaneSync]);
+
+  const handlePreviewClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    if (!canEditActive || viewModeRef.current === "presentation") return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target || target.closest("a, button, input, textarea, select")) return;
+    const block = target.closest<HTMLElement>("[data-source-line]");
+    const line = Number(block?.dataset.sourceLine);
+    if (!Number.isFinite(line) || line < 1) return;
+    if (editorMode === "preview") {
+      pendingEditorLine.current = line;
+      if (activeTab) dispatch({ type: "EDITOR_MODE", id: activeTab.id, mode: "split" });
+      return;
+    }
+    editorRef.current?.focusLine(line);
+  }, [activeTab?.id, canEditActive, editorMode]);
+
+  useEffect(() => {
+    if (editorMode === "preview" || pendingEditorLine.current === null) return;
+    const line = pendingEditorLine.current;
+    pendingEditorLine.current = null;
+    const frame = window.requestAnimationFrame(() => editorRef.current?.focusLine(line));
+    return () => window.cancelAnimationFrame(frame);
+  }, [editorMode]);
+
+  useEffect(() => () => {
+    if (paneSyncFrame.current) window.cancelAnimationFrame(paneSyncFrame.current);
+  }, []);
 
   const handlePreviewPointerMove = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (viewModeRef.current === "presentation") return;
@@ -1247,6 +1311,18 @@ export function App() {
         return;
       }
 
+      if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.key === "Tab") {
+        event.preventDefault();
+        if (editorMode === "split") {
+          const focused = document.activeElement instanceof Element ? document.activeElement : null;
+          if (editorRef.current?.contains(focused)) containerRef.current?.focus();
+          else editorRef.current?.focus();
+        } else {
+          activateRelativeTab(-1);
+        }
+        return;
+      }
+
       if (!event.ctrlKey || event.altKey || event.metaKey) return;
       if (event.key.toLowerCase() === "w") {
         event.preventDefault();
@@ -1267,7 +1343,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, goBack, goForward, openSearch, printDocument, reload, saveTab, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
+  }, [activeTab, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, editorMode, goBack, goForward, openSearch, printDocument, reload, saveTab, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
 
   useEffect(() => {
     const onMouseUp = (event: MouseEvent) => {
@@ -1451,18 +1527,22 @@ export function App() {
       />}
       {canEditActive && editorMode !== "preview" && activeTab?.document && <Suspense fallback={<div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
         <MarkdownEditor
+          ref={editorRef}
           documentId={`${activeTab.id}:${activeTab.generation}`}
           value={activeTab.draft}
           dirty={activeTab.dirty}
           saving={activeTab.saving}
           onChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
           onSave={() => void saveTab(activeTab.id)}
+          onScrollLine={editorMode === "split" ? handleEditorScrollLine : undefined}
         />
       </Suspense>}
       {(editorMode !== "edit" || !canEditActive) && <main
         className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`}
         ref={containerRef}
+        tabIndex={-1}
         onScroll={(event) => handlePreviewScroll(event.currentTarget)}
+        onClickCapture={handlePreviewClick}
         onPointerMove={handlePreviewPointerMove}
         onPointerLeave={handlePreviewPointerLeave}
         onFocusCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.target))}

@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createRef } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { MarkdownEditor } from "./MarkdownEditor";
+import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 
 beforeAll(() => {
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
@@ -10,6 +11,15 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("MarkdownEditor", () => {
+  it("moves focus and the cursor to a requested source line through its imperative API", async () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const { container } = render(<MarkdownEditor ref={ref} documentId="tab-1:1" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    act(() => ref.current?.focusLine(3));
+
+    await waitFor(() => expect(container.querySelector(".cm-activeLine")?.textContent).toBe("three"));
+    expect(ref.current?.contains(document.activeElement)).toBe(true);
+  });
+
   it("applies toolbar edits to the draft callback", async () => {
     const onChange = vi.fn();
     render(<MarkdownEditor documentId="tab-1:1" value="# Test" dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);

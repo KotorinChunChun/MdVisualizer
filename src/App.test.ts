@@ -29,6 +29,16 @@ describe("save conflict wiring", () => {
   });
 });
 
+describe("Edit and View pane coordination", () => {
+  it("connects source-line clicks, synchronized scrolling, and the EV focus shortcut", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    expect(source).toContain("onClickCapture={handlePreviewClick}");
+    expect(source).toContain("onScrollLine={editorMode === \"split\" ? handleEditorScrollLine : undefined}");
+    expect(source).toContain('event.ctrlKey && event.shiftKey');
+    expect(source).toContain('editorMode === "split"');
+  });
+});
+
 describe("Markdown editing availability", () => {
   it("enables editing for both local and SharePoint Markdown documents", () => {
     expect(canEditMarkdownDocument({ kind: "markdown" })).toBe(true);

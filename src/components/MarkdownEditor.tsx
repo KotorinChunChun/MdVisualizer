@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { basicSetup } from "codemirror";
 import { indentWithTab } from "@codemirror/commands";
 import { foldAll, foldEffect, foldService, unfoldAll } from "@codemirror/language";
@@ -29,6 +29,15 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void;
   onSave: () => void;
   compact?: boolean;
+  onScrollLine?: (line: number) => void;
+}
+
+export interface MarkdownEditorHandle {
+  focus: () => void;
+  focusLine: (line: number) => void;
+  scrollToLine: (line: number) => void;
+  topLine: () => number;
+  contains: (element: Element | null) => boolean;
 }
 
 const TOOLBAR_ACTIONS: Array<{ action: MarkdownEditAction; label: string; title: string }> = [
@@ -93,16 +102,42 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, compact = false }: MarkdownEditorProps) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, compact = false, onScrollLine }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
+  const onScrollLineRef = useRef(onScrollLine);
   const applyingExternal = useRef(false);
   const normalizingLists = useRef(false);
   onChangeRef.current = onChange;
   onSaveRef.current = onSave;
+  onScrollLineRef.current = onScrollLine;
   const lineSeparator = useMemo(() => value.includes("\r\n") ? "\r\n" : value.includes("\r") ? "\r" : "\n", [documentId]);
+
+  const clampedLine = (view: EditorView, line: number) => view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, Math.round(line))));
+  useImperativeHandle(ref, () => ({
+    focus: () => viewRef.current?.focus(),
+    focusLine: (line) => {
+      const view = viewRef.current;
+      if (!view) return;
+      const target = clampedLine(view, line);
+      view.dispatch({ selection: { anchor: target.from }, effects: EditorView.scrollIntoView(target.from, { y: "center" }) });
+      view.focus();
+    },
+    scrollToLine: (line) => {
+      const view = viewRef.current;
+      if (!view) return;
+      const target = clampedLine(view, line);
+      view.dispatch({ effects: EditorView.scrollIntoView(target.from, { y: "start" }) });
+    },
+    topLine: () => {
+      const view = viewRef.current;
+      if (!view) return 1;
+      return view.state.doc.lineAt(view.lineBlockAtHeight(view.scrollDOM.scrollTop).from).number;
+    },
+    contains: (element) => Boolean(element && hostRef.current?.contains(element)),
+  }), []);
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -141,6 +176,10 @@ export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onS
           },
         }),
         EditorView.updateListener.of((update) => {
+          if (update.viewportChanged) {
+            const line = update.state.doc.lineAt(update.view.lineBlockAtHeight(update.view.scrollDOM.scrollTop).from).number;
+            onScrollLineRef.current?.(line);
+          }
           if (!update.docChanged || applyingExternal.current) return;
           const value = update.state.sliceDoc();
           onChangeRef.current(value);
@@ -198,4 +237,4 @@ export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onS
     </div>
     <div className="markdown-editor__surface" ref={hostRef} />
   </section>;
-}
+});
