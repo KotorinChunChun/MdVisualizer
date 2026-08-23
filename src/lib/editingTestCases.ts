@@ -1,4 +1,4 @@
-import { moveLineDown, moveLineUp } from "@codemirror/commands";
+import { history, moveLineDown, moveLineUp, redo, undo } from "@codemirror/commands";
 import { EditorSelection, EditorState, findClusterBreak, type StateCommand, type Transaction } from "@codemirror/state";
 import {
   buildMarkdownEdit,
@@ -37,7 +37,9 @@ export type EditingTestCategory =
   | "見出し入替"
   | "Markdown構文"
   | "Unicode"
-  | "境界値";
+  | "境界値"
+  | "履歴"
+  | "特殊文字";
 
 type EditingOperation =
   | { type: "insert"; text: string }
@@ -53,7 +55,8 @@ type EditingOperation =
   | { type: "normalize" }
   | { type: "move-lines"; direction: -1 | 1 }
   | { type: "cut-paste" }
-  | { type: "move-heading"; position: "before" | "after" };
+  | { type: "move-heading"; position: "before" | "after" }
+  | { type: "history"; insert: string; undoCount: number; redoCount: number };
 
 export interface EditingTestCase {
   id: string;
@@ -154,6 +157,27 @@ function moveAnnotatedHeading(source: string, sourcePosition: number, destinatio
   return moveHeadingBlock(source, sourceHeading.start, targetHeading.start, position) ?? source;
 }
 
+function executeHistory(source: string, from: number, to: number, insert: string, undoCount: number, redoCount: number): string {
+  const internalPosition = (position: number) => source.slice(0, position).replace(/\r\n|\r/g, "\n").length;
+  let state = EditorState.create({
+    doc: source,
+    selection: EditorSelection.single(internalPosition(from), internalPosition(to)),
+    extensions: [EditorState.lineSeparator.of(documentLineEnding(source)), history()],
+  });
+  state = state.update({
+    changes: { from: state.selection.main.from, to: state.selection.main.to, insert },
+    selection: { anchor: state.selection.main.from + insert.length },
+    userEvent: "input.type",
+  }).state;
+  const commandTarget = () => ({
+    state,
+    dispatch: (transaction: Transaction) => { state = transaction.state; },
+  });
+  for (let index = 0; index < undoCount; index += 1) undo(commandTarget());
+  for (let index = 0; index < redoCount; index += 1) redo(commandTarget());
+  return state.sliceDoc();
+}
+
 function replaceRange(source: string, from: number, to: number, insert: string): string {
   return source.slice(0, from) + insert + source.slice(to);
 }
@@ -240,6 +264,9 @@ export function executeEditingTestCase(testCase: EditingTestCase): EditingTestRe
         break;
       case "move-heading":
         actualAfter = moveAnnotatedHeading(source, to, destination, testCase.operation.position);
+        break;
+      case "history":
+        actualAfter = executeHistory(source, from, to, testCase.operation.insert, testCase.operation.undoCount, testCase.operation.redoCount);
         break;
     }
     return { ...testCase, actualAfter, passed: actualAfter === testCase.expectedAfter };
@@ -862,6 +889,156 @@ const INDENTED_LIST_PASTE_MATRIX_CASES = [
   ...buildIndentedListPasteCases("\r\n"),
 ];
 
+const HISTORY_CASES: readonly EditingTestCase[] = [
+  ...CURSOR_CONTEXTS.slice(0, 40).flatMap((context, index) => {
+    const token = INPUT_TOKENS[index % INPUT_TOKENS.length];
+    const before = `${context.left}${EDITING_CARET_MARKER}${context.right}`;
+    const edited = `${context.left}${token.value}${context.right}`;
+    return [
+      testCase(
+        `history-insert-${context.id}-undo`,
+        "履歴",
+        `${context.label}への${token.label}入力を元に戻す`,
+        before,
+        `${token.value} → Ctrl+Z`,
+        `${context.left}${context.right}`,
+        { type: "history", insert: token.value, undoCount: 1, redoCount: 0 },
+      ),
+      testCase(
+        `history-insert-${context.id}-redo`,
+        "履歴",
+        `${context.label}への${token.label}入力を元に戻してやり直す`,
+        before,
+        `${token.value} → Ctrl+Z → Ctrl+Y`,
+        edited,
+        { type: "history", insert: token.value, undoCount: 1, redoCount: 1 },
+      ),
+    ];
+  }),
+  ...SELECTION_CONTEXTS.slice(0, 20).flatMap((context, index) => {
+    const token = REPLACEMENT_TOKENS[index % REPLACEMENT_TOKENS.length];
+    const before = `${context.left}${EDITING_SELECTION_START}${context.selected}${EDITING_SELECTION_END}${context.right}`;
+    return [
+      testCase(
+        `history-replace-${context.id}-undo`,
+        "履歴",
+        `${context.label}の置換を元に戻す`,
+        before,
+        `${token.value} → Ctrl+Z`,
+        `${context.left}${context.selected}${context.right}`,
+        { type: "history", insert: token.value, undoCount: 1, redoCount: 0 },
+      ),
+      testCase(
+        `history-replace-${context.id}-redo`,
+        "履歴",
+        `${context.label}の置換を元に戻してやり直す`,
+        before,
+        `${token.value} → Ctrl+Z → Ctrl+Y`,
+        `${context.left}${token.value}${context.right}`,
+        { type: "history", insert: token.value, undoCount: 1, redoCount: 1 },
+      ),
+    ];
+  }),
+];
+
+const SPECIAL_CURSOR_CONTEXTS: readonly CursorContext[] = [
+  { id: "bom-start", label: "BOM直後", left: "\uFEFF", right: "text", category: "特殊文字" },
+  { id: "nul-around", label: "NUL文字の間", left: "before\0", right: "after", category: "特殊文字" },
+  { id: "rtl-arabic", label: "アラビア語中央", left: "مرح", right: "با", category: "Unicode" },
+  { id: "rtl-hebrew", label: "ヘブライ語中央", left: "של", right: "ום", category: "Unicode" },
+  { id: "bidi-control", label: "双方向制御文字の内側", left: "A\u202E", right: "B\u202C", category: "特殊文字" },
+  { id: "supplementary-kanji", label: "補助漢字の間", left: "𠮷", right: "野家", category: "Unicode" },
+  { id: "devanagari", label: "デーヴァナーガリー中央", left: "नम", right: "स्ते", category: "Unicode" },
+  { id: "thai", label: "タイ語中央", left: "สวั", right: "สดี", category: "Unicode" },
+  { id: "hangul-jamo", label: "ハングル字母の間", left: "하", right: "ᆫ", category: "Unicode" },
+  { id: "variation-selector", label: "異体字セレクターの後", left: "❤️", right: "text", category: "Unicode" },
+  { id: "zwj-family", label: "ZWJ絵文字の後", left: "👨‍👩‍👧‍👦", right: "family", category: "Unicode" },
+  { id: "regional-flags", label: "国旗絵文字の間", left: "🇯🇵", right: "🇺🇸", category: "Unicode" },
+  { id: "combining-stack", label: "複数結合文字の後", left: "a\u0301\u0327", right: "b", category: "Unicode" },
+  { id: "zero-width-space", label: "ゼロ幅空白の後", left: "a\u200B", right: "b", category: "特殊文字" },
+  { id: "word-joiner", label: "word joinerの後", left: "a\u2060", right: "b", category: "特殊文字" },
+  { id: "non-breaking-space", label: "改行不可空白の後", left: "a\u00A0", right: "b", category: "特殊文字" },
+  { id: "line-separator", label: "Unicode行区切りの後", left: "a\u2028", right: "b", category: "特殊文字" },
+  { id: "paragraph-separator", label: "Unicode段落区切りの後", left: "a\u2029", right: "b", category: "特殊文字" },
+  { id: "trailing-spaces", label: "行末2空白の間", left: "text ", right: " \nnext", category: "境界値" },
+  { id: "empty-last-line", label: "末尾空行", left: "text\n", right: "", category: "境界値" },
+  { id: "mixed-lf-crlf", label: "LFとCRLF混在位置", left: "one\ntwo\r\n", right: "three", category: "境界値" },
+  { id: "mixed-cr-lf", label: "CRとLF混在位置", left: "one\rtwo\n", right: "three", category: "境界値" },
+  { id: "atx-closing", label: "閉じハッシュ付き見出し", left: "# Heading ", right: "###", category: "Markdown構文" },
+  { id: "escaped-link", label: "エスケープを含むリンク", left: "[a\\]b](ur", right: "l)", category: "Markdown構文" },
+  { id: "nested-emphasis", label: "入れ子強調", left: "***bo", right: "ld***", category: "Markdown構文" },
+];
+
+const SPECIAL_INPUT_TOKENS = INPUT_TOKENS.slice(0, 12);
+const SPECIAL_CHARACTER_CASES = SPECIAL_CURSOR_CONTEXTS.flatMap((context) => SPECIAL_INPUT_TOKENS.map((token) => testCase(
+  `imagined-special-${context.id}-${token.id}`,
+  context.category ?? "特殊文字",
+  `${context.label}へ${token.label}を入力する想定`,
+  `${context.left}${EDITING_CARET_MARKER}${context.right}`,
+  token.value,
+  `${context.left}${token.value}${context.right}`,
+  { type: "insert", text: token.value },
+)));
+
+interface ListEnterMarker {
+  id: string;
+  marker: string;
+  firstMarker: string;
+  nextMarker: string;
+  taskPrefix?: string;
+  nextTaskPrefix?: string;
+}
+
+const LIST_ENTER_MARKERS: readonly ListEnterMarker[] = [
+  { id: "dash", marker: "-", firstMarker: "-", nextMarker: "-" },
+  { id: "plus", marker: "+", firstMarker: "+", nextMarker: "+" },
+  { id: "asterisk", marker: "*", firstMarker: "*", nextMarker: "*" },
+  { id: "ordered-dot", marker: "7.", firstMarker: "1.", nextMarker: "2." },
+  { id: "ordered-paren", marker: "7)", firstMarker: "1)", nextMarker: "2)" },
+  { id: "task-open", marker: "-", firstMarker: "-", nextMarker: "-", taskPrefix: "[ ] ", nextTaskPrefix: "[ ] " },
+  { id: "task-done", marker: "-", firstMarker: "-", nextMarker: "-", taskPrefix: "[x] ", nextTaskPrefix: "[ ] " },
+];
+
+const LIST_ENTER_INDENTS = ["", "  ", "    ", "\t"] as const;
+const LIST_ENTER_BODIES = ["text", "日本語", "**bold**", "[link](url)", "`code`", "✅", "a  b", "trailing  ", "- nested-like", "1. number-like"] as const;
+
+const IMAGINED_LIST_ENTER_CASES = (["\n", "\r\n"] as const).flatMap((ending) => LIST_ENTER_MARKERS.flatMap((marker) => LIST_ENTER_INDENTS.flatMap((indent, indentIndex) => LIST_ENTER_BODIES.map((body, bodyIndex) => {
+  const suffix = `${ending}tail`;
+  const beforeLine = `${indent}${marker.marker} ${marker.taskPrefix ?? ""}${body}${EDITING_CARET_MARKER}`;
+  const firstLine = `${indent}${marker.firstMarker} ${marker.taskPrefix ?? ""}${body}`;
+  const nextLine = `${indent}${marker.nextMarker} ${marker.nextTaskPrefix ?? ""}`;
+  return testCase(
+    `imagined-list-enter-${ending === "\n" ? "lf" : "crlf"}-${marker.id}-${indentIndex}-${bodyIndex}`,
+    "改行",
+    `${marker.id}の深さ${indentIndex}・本文パターン${bodyIndex + 1}をEnterで継続`,
+    beforeLine + suffix,
+    "Enter",
+    `${firstLine}${ending}${nextLine}${suffix}`,
+    { type: "enter" },
+  );
+}))));
+
+const LARGE_BOUNDARY_CASES: readonly EditingTestCase[] = [10, 100, 1000, 10000].flatMap((length) => {
+  const source = "a".repeat(length);
+  const middle = Math.floor(length / 2);
+  return [
+    testCase(`large-${length}-insert-start`, "境界値", `${length}文字文書の先頭へ入力`, `${EDITING_CARET_MARKER}${source}`, "X", `X${source}`, { type: "insert", text: "X" }),
+    testCase(`large-${length}-insert-middle`, "境界値", `${length}文字文書の中央へ入力`, `${source.slice(0, middle)}${EDITING_CARET_MARKER}${source.slice(middle)}`, "X", `${source.slice(0, middle)}X${source.slice(middle)}`, { type: "insert", text: "X" }),
+    testCase(`large-${length}-insert-end`, "境界値", `${length}文字文書の末尾へ入力`, `${source}${EDITING_CARET_MARKER}`, "X", `${source}X`, { type: "insert", text: "X" }),
+    testCase(`large-${length}-replace-all`, "境界値", `${length}文字文書全体を置換`, `${EDITING_SELECTION_START}${source}${EDITING_SELECTION_END}`, "replaced", "replaced", { type: "insert", text: "replaced" }),
+    testCase(`large-${length}-delete-middle`, "境界値", `${length}文字文書中央の1文字を削除`, `${source.slice(0, middle)}${EDITING_CARET_MARKER}${source.slice(middle)}`, "Delete", source.slice(0, -1), { type: "delete" }),
+  ];
+});
+
+const IMAGINED_CUT_EDGE_CASES: readonly EditingTestCase[] = [
+  testCase("imagined-cut-empty-selection", "切り取り・貼り付け", "空選択の切り取り貼り付け", `a${EDITING_SELECTION_START}${EDITING_SELECTION_END}b${EDITING_DESTINATION_MARKER}c`, "Ctrl+X → Ctrl+V", "abc", { type: "cut-paste" }),
+  testCase("imagined-cut-destination-inside", "切り取り・貼り付け", "選択範囲内を貼り付け先に指定", `a${EDITING_SELECTION_START}b${EDITING_DESTINATION_MARKER}c${EDITING_SELECTION_END}d`, "Ctrl+X → Ctrl+V", "abcd", { type: "cut-paste" }),
+  testCase("imagined-cut-bom", "切り取り・貼り付け", "BOMを残して本文を移動", `\uFEFF${EDITING_DESTINATION_MARKER}one ${EDITING_SELECTION_START}two${EDITING_SELECTION_END}`, "Ctrl+X → Ctrl+V", "\uFEFFtwoone ", { type: "cut-paste" }),
+  testCase("imagined-cut-rtl", "切り取り・貼り付け", "RTL文字列を移動", `${EDITING_DESTINATION_MARKER}שלום ${EDITING_SELECTION_START}مرحبا${EDITING_SELECTION_END}`, "Ctrl+X → Ctrl+V", "مرحباשלום ", { type: "cut-paste" }),
+  testCase("imagined-cut-emoji", "切り取り・貼り付け", "複合絵文字を移動", `${EDITING_SELECTION_START}👨‍👩‍👧‍👦${EDITING_SELECTION_END} family ${EDITING_DESTINATION_MARKER}end`, "Ctrl+X → Ctrl+V", " family 👨‍👩‍👧‍👦end", { type: "cut-paste" }),
+  testCase("imagined-cut-final-newline", "切り取り・貼り付け", "末尾改行を含む行を移動", `${EDITING_SELECTION_START}one\n${EDITING_SELECTION_END}${EDITING_DESTINATION_MARKER}two\n`, "Ctrl+X → Ctrl+V", "one\ntwo\n", { type: "cut-paste" }),
+];
+
 export const EDITING_TEST_CASES: readonly EditingTestCase[] = [
   ...BASE_EDITING_TEST_CASES,
   ...MATRIX_INSERT_CASES,
@@ -873,4 +1050,9 @@ export const EDITING_TEST_CASES: readonly EditingTestCase[] = [
   ...CUT_PASTE_MATRIX_CASES,
   ...HEADING_MOVE_MATRIX_CASES,
   ...INDENTED_LIST_PASTE_MATRIX_CASES,
+  ...HISTORY_CASES,
+  ...SPECIAL_CHARACTER_CASES,
+  ...IMAGINED_LIST_ENTER_CASES,
+  ...LARGE_BOUNDARY_CASES,
+  ...IMAGINED_CUT_EDGE_CASES,
 ];
