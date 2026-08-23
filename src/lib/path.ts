@@ -3,7 +3,7 @@ import { isSupportedDocumentPath } from "./pathIdentity";
 
 /** Windows drive paths are absolute even when written with forward slashes. */
 export function isWindowsAbsolutePath(value: string): boolean {
-  return /^[a-zA-Z]:[\\/]/.test(value);
+  return /^[a-zA-Z]:[\\/]/.test(stripWindowsExtendedPathPrefix(value));
 }
 
 export function isAbsoluteLocalPath(value: string): boolean {
@@ -20,13 +20,9 @@ export function resolveImageSrc(src: string, baseDir: string): string {
   }
 
   const decodedSrc = decodePath(src);
-  let fullPath = decodedSrc;
-  if (!isAbsoluteLocalPath(decodedSrc)) {
-    // 相対パスの場合
-    const normalizedBase = baseDir.replace(/\\/g, "/").replace(/\/$/, "");
-    const normalizedSrc = decodedSrc.replace(/\\/g, "/").replace(/^\.\//, "");
-    fullPath = `${normalizedBase}/${normalizedSrc}`;
-  }
+  const fullPath = isAbsoluteLocalPath(decodedSrc)
+    ? normalizeLocalPath(decodedSrc)
+    : normalizeLocalPath(`${baseDir.replace(/[\\/]$/, "")}/${decodedSrc}`);
 
   try {
     return convertFileSrc(fullPath);
@@ -47,7 +43,7 @@ export function resolveLocalImagePath(src: string, baseDir: string): string | nu
       return null;
     }
   }
-  const candidate = decodePath(src.split(/[?#]/, 1)[0]);
+  const candidate = stripWindowsExtendedPathPrefix(decodePath(src)).split(/[?#]/, 1)[0];
   return isAbsoluteLocalPath(candidate)
     ? normalizeLocalPath(candidate)
     : normalizeLocalPath(`${baseDir.replace(/[\\/]$/, "")}/${candidate}`);
@@ -68,11 +64,16 @@ function decodePath(value: string): string {
   }
 }
 
-function normalizeLocalPath(value: string): string {
-  const normalized = value
-    .replace(/\\/g, "/")
-    // WebView2's app-local URL can survive URL decoding as /?/C:/...
+/** Removes the Windows extended-length prefix returned by canonicalize. */
+function stripWindowsExtendedPathPrefix(value: string): string {
+  return value
+    .replace(/^\\\\\?\\(?=[a-zA-Z]:[\\/])/, "")
+    .replace(/^\/\/\?\/(?=[a-zA-Z]:\/)/, "")
     .replace(/^\/\?\/(?=[a-zA-Z]:\/)/, "");
+}
+
+function normalizeLocalPath(value: string): string {
+  const normalized = stripWindowsExtendedPathPrefix(value).replace(/\\/g, "/");
   const drive = normalized.match(/^[a-zA-Z]:/)?.[0] ?? "";
   const absolute = normalized.startsWith("/") || Boolean(drive);
   const body = drive ? normalized.slice(drive.length) : normalized;
@@ -132,8 +133,7 @@ export function resolveLocalDocumentPath(href: string, baseDir: string): string 
     return null;
   }
 
-  candidate = decodePath(candidate.split(/[?#]/, 1)[0])
-    .replace(/^\/\?\/(?=[a-zA-Z]:\/)/, "");
+  candidate = stripWindowsExtendedPathPrefix(decodePath(candidate)).split(/[?#]/, 1)[0];
   if (!isSupportedLocalDocumentPath(candidate)) return null;
   if (isAbsoluteLocalPath(candidate)) return normalizeLocalPath(candidate);
   return normalizeLocalPath(`${baseDir.replace(/[\\/]$/, "")}/${candidate}`);

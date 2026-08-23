@@ -1,4 +1,6 @@
 import type { ClipboardImagePngLocation } from "../types/settings";
+import type { StagedDocumentAsset } from "../types/app";
+import { collectImageOccurrences } from "./imageOccurrences";
 
 export interface ClipboardImageData {
   mediaType: string;
@@ -7,15 +9,21 @@ export interface ClipboardImageData {
 
 export interface ResolvedClipboardImage {
   source: string;
-  asset?: import("../types/app").StagedDocumentAsset;
+  asset?: StagedDocumentAsset;
 }
 
 export function clipboardImageFile(dataTransfer: DataTransfer | null): File | null {
   if (!dataTransfer) return null;
-  for (const item of Array.from(dataTransfer.items)) {
-    if (item.kind === "file" && item.type.toLowerCase().startsWith("image/")) return item.getAsFile();
-  }
-  return Array.from(dataTransfer.files).find((file) => file.type.toLowerCase().startsWith("image/")) ?? null;
+  const itemFiles = Array.from(dataTransfer.items).flatMap((item) => {
+    if (item.kind !== "file") return [];
+    const file = item.getAsFile();
+    return file?.type.toLowerCase().startsWith("image/") ? [file] : [];
+  });
+  const files = itemFiles.length > 0
+    ? itemFiles
+    : Array.from(dataTransfer.files).filter((file) => file.type.toLowerCase().startsWith("image/"));
+  const priority = (file: File) => file.type.toLowerCase() === "image/png" ? 0 : file.type.toLowerCase() === "image/svg+xml" ? 2 : 1;
+  return files.sort((left, right) => priority(left) - priority(right))[0] ?? null;
 }
 
 export async function readClipboardImage(file: Blob): Promise<ClipboardImageData> {
@@ -42,4 +50,9 @@ export function clipboardImageMarkdown(source: string): string {
 
 export function clipboardImageDestination(location: ClipboardImagePngLocation, absoluteDirectory: string) {
   return { destination: location, absoluteDirectory: location === "absolute" ? absoluteDirectory.trim() : undefined };
+}
+
+export function referencedStagedAssetIds(content: string, baseDir: string, assets: StagedDocumentAsset[]): string[] {
+  const sources = new Set(collectImageOccurrences(content, baseDir).map((occurrence) => occurrence.source));
+  return assets.filter((asset) => sources.has(asset.filename)).map((asset) => asset.id);
 }

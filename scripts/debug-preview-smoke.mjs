@@ -56,6 +56,11 @@ const screenshot = async (filename) => {
 
 await command("Page.enable");
 await command("Runtime.enable");
+await evaluate(`new Promise((resolve) => {
+  const target = [...document.querySelectorAll('.tab[title]')].find((tab) => /[\\\\/]v0\.0\.10-editing\.md$/i.test(tab.title));
+  target?.click();
+  setTimeout(resolve, 150);
+})`);
 await evaluate(`document.querySelector('.media-preview__close')?.click()`);
 await evaluate(`(() => {
   const button = [...document.querySelectorAll('.document-actions button')].find((candidate) => candidate.textContent.trim() === '差分');

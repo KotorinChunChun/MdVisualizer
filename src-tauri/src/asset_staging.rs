@@ -193,37 +193,35 @@ impl AssetStagingManager {
         let mut created = Vec::new();
         for entry in &staged {
             let destination = &entry.destination;
-            let parent = destination.parent().ok_or_else(|| {
-                AppError::IoError("Image destination folder is unavailable.".into())
-            })?;
-            fs::create_dir_all(parent)
-                .map_err(|error| AppError::IoError(format!("create image folder: {error}")))?;
-            let bytes = fs::read(&entry.temp_path)
-                .map_err(|error| AppError::IoError(format!("read staged asset: {error}")))?;
-            let mut output = match OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(&destination)
-            {
-                Ok(output) => output,
-                Err(error) => {
-                    for path in &created {
-                        let _ = fs::remove_file(path);
-                    }
-                    return Err(AppError::Conflict(format!(
+            let write_result = (|| {
+                let parent = destination.parent().ok_or_else(|| {
+                    AppError::IoError("Image destination folder is unavailable.".into())
+                })?;
+                fs::create_dir_all(parent)
+                    .map_err(|error| AppError::IoError(format!("create image folder: {error}")))?;
+                let bytes = fs::read(&entry.temp_path)
+                    .map_err(|error| AppError::IoError(format!("read staged asset: {error}")))?;
+                let mut output = OpenOptions::new()
+                    .create_new(true)
+                    .write(true)
+                    .open(destination)
+                    .map_err(|error| AppError::Conflict(format!(
                         "Asset filename is no longer available ({}): {error}",
                         entry.markdown_source
-                    )));
+                    )))?;
+                if let Err(error) = output.write_all(&bytes).and_then(|_| output.sync_all()) {
+                    let _ = fs::remove_file(destination);
+                    return Err(AppError::IoError(format!("commit staged asset: {error}")));
                 }
-            };
-            if let Err(error) = output.write_all(&bytes).and_then(|_| output.sync_all()) {
-                let _ = fs::remove_file(&destination);
+                Ok::<(), AppError>(())
+            })();
+            if let Err(error) = write_result {
                 for path in &created {
                     let _ = fs::remove_file(path);
                 }
-                return Err(AppError::IoError(format!("commit staged asset: {error}")));
+                return Err(error);
             }
-            created.push(destination);
+            created.push(destination.clone());
         }
         match save() {
             Ok(result) => {
@@ -475,5 +473,30 @@ mod tests {
         fs::write(&document, "old").unwrap();
         let manager = AssetStagingManager::new().unwrap();
         assert!(manager.stage_at(&document.to_string_lossy(), "image.png", "absolute", Some("relative"), b"image").is_err());
+    }
+
+    #[test]
+    fn rolls_back_prior_assets_when_a_later_destination_folder_fails() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        let blocked_folder = dir.path().join("blocked");
+        fs::write(&document, "old").unwrap();
+        fs::write(&blocked_folder, "not a folder").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let first = manager
+            .stage_at(&document.to_string_lossy(), "first.png", "images", None, b"first")
+            .unwrap();
+        let second = manager
+            .stage_at(
+                &document.to_string_lossy(),
+                "second.png",
+                "absolute",
+                Some(&blocked_folder.to_string_lossy()),
+                b"second",
+            )
+            .unwrap();
+
+        assert!(manager.commit_with(&document, &[first.id, second.id], || Ok(())).is_err());
+        assert!(!dir.path().join("images/first.png").exists());
     }
 }

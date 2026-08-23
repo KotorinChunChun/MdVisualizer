@@ -53,7 +53,7 @@ import { moveZoomLevel } from "./lib/zoom";
 import { moveHeadingBlock } from "./lib/markdownEditing";
 import { buildPresentationModel } from "./lib/presentationModel";
 import { buildDebugWindowState } from "./lib/debugState";
-import { clipboardImageDestination, formatClipboardImageFilename, type ClipboardImageData, type ResolvedClipboardImage } from "./lib/clipboardImage";
+import { clipboardImageDestination, formatClipboardImageFilename, referencedStagedAssetIds, type ClipboardImageData, type ResolvedClipboardImage } from "./lib/clipboardImage";
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { sourceBlockIndexForLine, sourceLineAtViewportTop } from "./lib/paneSync";
@@ -595,7 +595,7 @@ export function App() {
     };
     markSelfSave(identity);
     try {
-      const stagedAssetIds = (tab.pendingAssets ?? []).map((asset) => asset.id);
+      const stagedAssetIds = referencedStagedAssetIds(tab.draft, tab.document.base_dir, tab.pendingAssets ?? []);
       let document;
       if (tab.untitled) {
         const result = await saveUntitledDocument({

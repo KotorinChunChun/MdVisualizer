@@ -2,6 +2,7 @@ param(
     [string[]]$FallbackMarkdownPaths = @("$PSScriptRoot\..\samples\v0.0.10-editing.md"),
     [string]$OutputDirectory = (Join-Path ([IO.Path]::GetTempPath()) "markdownviewer-debug-smoke"),
     [int]$RemoteDebuggingPort = 9333,
+    [switch]$AllSamples,
     [switch]$SkipBuild,
     [switch]$StopAfterTest
 )
@@ -10,7 +11,9 @@ $ErrorActionPreference = "Stop"
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $debugExecutable = Join-Path $projectRoot "src-tauri\target\debug\markdown-viewer.exe"
 $analyzer = Join-Path $PSScriptRoot "debug-preview-smoke.mjs"
+$sampleAnalyzer = Join-Path $PSScriptRoot "debug-sample-suite.mjs"
 $runDirectory = Join-Path $OutputDirectory (Get-Date -Format "yyyyMMdd-HHmmss")
+New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 
 Add-Type @"
 using System;
@@ -124,6 +127,23 @@ if ($restoreFiles.Count -eq 0) {
     }
 }
 
+$base64Fixture = $null
+$pngFixture = $null
+if ($AllSamples) {
+    $samplesDirectory = (Resolve-Path (Join-Path $projectRoot "samples")).Path
+    Get-ChildItem -LiteralPath $samplesDirectory -Recurse -File | Where-Object {
+        $_.Extension.ToLowerInvariant() -in @(".md", ".markdown", ".svg", ".mmd", ".mermaid")
+    } | Sort-Object FullName | ForEach-Object {
+        if (-not $restoreFiles.Contains($_.FullName)) { $restoreFiles.Add($_.FullName) }
+    }
+    $base64Fixture = Join-Path $runDirectory "clipboard-base64-smoke.md"
+    $pngFixture = Join-Path $runDirectory "clipboard-png-smoke.md"
+    [IO.File]::WriteAllText($base64Fixture, "# Base64 clipboard smoke`r`n`r`n", [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllText($pngFixture, "# PNG clipboard smoke`r`n`r`n", [Text.UTF8Encoding]::new($false))
+    $restoreFiles.Add($base64Fixture)
+    $restoreFiles.Add($pngFixture)
+}
+
 if (-not $SkipBuild) {
     $previousDebugApi = $env:VITE_MARKDOWNVIEWER_DEBUG_API
     $env:VITE_MARKDOWNVIEWER_DEBUG_API = "1"
@@ -141,7 +161,6 @@ if (-not $SkipBuild) {
 }
 if (-not (Test-Path -LiteralPath $debugExecutable)) { throw "デバッグ実行ファイルがありません: $debugExecutable" }
 
-New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 $previousWebViewArguments = $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS
 $remoteArgument = "--remote-debugging-port=$RemoteDebuggingPort"
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = (@($previousWebViewArguments, $remoteArgument) | Where-Object { $_ }) -join " "
@@ -169,6 +188,12 @@ do {
 } while ([DateTime]::UtcNow -lt $stateDeadline)
 if (-not $restoredState) { throw "再起動後のデバッグ状態APIに接続できませんでした。" }
 Write-Output ("OPEN_STATE_AFTER_BUILD=" + ($restoredState | ConvertTo-Json -Depth 8 -Compress))
+if ($AllSamples) {
+    $failedTabs = @($restoredState.windows | ForEach-Object { $_.tabs } | Where-Object { $_.loading -or $_.error })
+    if ($failedTabs.Count -gt 0) {
+        throw "サンプルタブの読込に失敗しました: $($failedTabs | ConvertTo-Json -Depth 5 -Compress)"
+    }
+}
 
 $activeTab = @($restoredState.windows | ForEach-Object { $_.tabs } | Where-Object active)[0]
 if ($activeTab -and $activeTab.path) {
@@ -182,7 +207,18 @@ if ($activeTab -and $activeTab.path) {
 
 $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
 & $nodePath $analyzer $RemoteDebuggingPort $runDirectory
-if ($LASTEXITCODE -ne 0) { throw "実画面解析に失敗しました（終了コード: $LASTEXITCODE）。" }
+if ($LASTEXITCODE -ne 0) {
+    if ($StopAfterTest -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+    throw "実画面解析に失敗しました（終了コード: $LASTEXITCODE）。"
+}
+if ($AllSamples) {
+    & $nodePath $sampleAnalyzer $RemoteDebuggingPort $runDirectory $samplesDirectory $base64Fixture $pngFixture
+    if ($LASTEXITCODE -ne 0) {
+        if ($StopAfterTest -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+        throw "全サンプル実画面解析に失敗しました（終了コード: $LASTEXITCODE）。"
+    }
+    Write-Output "SAMPLE_SUITE_REPORT=$(Join-Path $runDirectory 'sample-suite-report.json')"
+}
 
 Write-Output "DEBUG_EXECUTABLE=$debugExecutable"
 Write-Output "RESTORED_FILES=$($restoreFiles.Count)"

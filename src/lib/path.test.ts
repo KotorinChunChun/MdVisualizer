@@ -4,7 +4,7 @@ vi.mock("@tauri-apps/api/core", () => ({
   convertFileSrc: (path: string) => `asset://${path}`,
 }));
 
-import { isAbsoluteLocalPath, isWindowsAbsolutePath, resolveImageSrc, resolveLocalDocumentPath, resolveLocalMarkdownPath, resolveSharePointDocumentPath } from "./path";
+import { isAbsoluteLocalPath, isWindowsAbsolutePath, resolveImageSrc, resolveLocalDocumentPath, resolveLocalImagePath, resolveLocalMarkdownPath, resolveSharePointDocumentPath } from "./path";
 
 describe("Windows image paths", () => {
   it.each(["C:/images/a.png", "C:\\images\\a.png", "z:/x/y.png"])("recognizes %s as an absolute Windows path", (path) => {
@@ -14,6 +14,20 @@ describe("Windows image paths", () => {
 
   it("does not prepend baseDir to a drive path written with forward slashes", () => {
     expect(resolveImageSrc("C:/images/a.png", "C:\\docs")).toBe("asset://C:/images/a.png");
+  });
+
+  it("normalizes canonical Windows extended-length paths", () => {
+    const imagePath = "\\\\?\\C:\\images\\sample.svg";
+    expect(isWindowsAbsolutePath(imagePath)).toBe(true);
+    expect(isAbsoluteLocalPath(imagePath)).toBe(true);
+    expect(resolveImageSrc(imagePath, "\\\\?\\C:\\ignored")).toBe("asset://C:/images/sample.svg");
+    expect(resolveLocalImagePath(imagePath, "C:\\ignored")).toBe("C:/images/sample.svg");
+    expect(resolveLocalDocumentPath(imagePath, "C:\\ignored")).toBe("C:/images/sample.svg");
+  });
+
+  it("normalizes a canonical base directory when resolving relative images", () => {
+    expect(resolveImageSrc("images/a.png", "\\\\?\\C:\\docs"))
+      .toBe("asset://C:/docs/images/a.png");
   });
 
   it("keeps file URLs directly viewable without treating them as local paths", () => {
