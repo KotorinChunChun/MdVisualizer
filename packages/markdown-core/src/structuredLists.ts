@@ -342,6 +342,17 @@ function itemEnd(lines: DocumentLine[], index: number): number {
   return cursor;
 }
 
+function splitTrailingLineEnding(block: string): [string, string] {
+  const match = /(\r\n|\r|\n)$/.exec(block);
+  return match ? [block.slice(0, -match[1].length), match[1]] : [block, ""];
+}
+
+function swapAdjacentBlocks(first: string, second: string): string {
+  const [firstBody, separator] = splitTrailingLineEnding(first);
+  const [secondBody, trailingEnding] = splitTrailingLineEnding(second);
+  return secondBody + separator + firstBody + trailingEnding;
+}
+
 export function buildStructuredListMove(source: string, position: number, direction: -1 | 1): MarkdownEditChange | null {
   const lines = documentLines(source);
   const index = lineIndexAt(lines, position);
@@ -362,7 +373,7 @@ export function buildStructuredListMove(source: string, position: number, direct
     const previousStart = lines[previous].start;
     const previousBlock = source.slice(previousStart, currentStart);
     const currentBlock = source.slice(currentStart, currentEnd);
-    intermediate = source.slice(0, previousStart) + currentBlock + previousBlock + source.slice(currentEnd);
+    intermediate = source.slice(0, previousStart) + swapAdjacentBlocks(previousBlock, currentBlock) + source.slice(currentEnd);
     movedPosition = previousStart + (position - currentStart);
   } else {
     const next = currentEndIndex;
@@ -371,7 +382,7 @@ export function buildStructuredListMove(source: string, position: number, direct
     const nextEnd = lines[nextEndIndex]?.start ?? source.length;
     const currentBlock = source.slice(currentStart, currentEnd);
     const nextBlock = source.slice(currentEnd, nextEnd);
-    intermediate = source.slice(0, currentStart) + nextBlock + currentBlock + source.slice(nextEnd);
+    intermediate = source.slice(0, currentStart) + swapAdjacentBlocks(currentBlock, nextBlock) + source.slice(nextEnd);
     movedPosition = currentStart + nextBlock.length + (position - currentStart);
   }
   return applyAndRenumber(source, intermediate, movedPosition);
