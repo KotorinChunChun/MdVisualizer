@@ -36,6 +36,7 @@ interface MarkdownEditorProps {
   onPasteImageError?: (error: unknown) => void;
   compact?: boolean;
   onScrollLine?: (line: number) => void;
+  onActiveLineChange?: (line: number) => void;
 }
 
 export interface MarkdownEditorHandle {
@@ -108,12 +109,13 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, compact = false, onScrollLine }, ref) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, compact = false, onScrollLine, onActiveLineChange }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
   const onScrollLineRef = useRef(onScrollLine);
+  const onActiveLineChangeRef = useRef(onActiveLineChange);
   const onResolvePastedImageRef = useRef(onResolvePastedImage);
   const onStagedAssetAddedRef = useRef(onStagedAssetAdded);
   const onStagedAssetAbandonedRef = useRef(onStagedAssetAbandoned);
@@ -123,6 +125,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   onChangeRef.current = onChange;
   onSaveRef.current = onSave;
   onScrollLineRef.current = onScrollLine;
+  onActiveLineChangeRef.current = onActiveLineChange;
   onResolvePastedImageRef.current = onResolvePastedImage;
   onStagedAssetAddedRef.current = onStagedAssetAdded;
   onStagedAssetAbandonedRef.current = onStagedAssetAbandoned;
@@ -222,6 +225,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           },
         }),
         EditorView.updateListener.of((update) => {
+          if (update.selectionSet || update.docChanged) {
+            onActiveLineChangeRef.current?.(update.state.doc.lineAt(update.state.selection.main.head).number);
+          }
           if (update.viewportChanged) {
             const line = update.state.doc.lineAt(update.view.lineBlockAtHeight(update.view.scrollDOM.scrollTop).from).number;
             onScrollLineRef.current?.(line);
@@ -245,6 +251,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     });
     const view = new EditorView({ state, parent: hostRef.current });
     viewRef.current = view;
+    onActiveLineChangeRef.current?.(view.state.doc.lineAt(view.state.selection.main.head).number);
     foldBase64Data(view);
     return () => {
       view.destroy();

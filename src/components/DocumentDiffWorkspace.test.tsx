@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildWorkspaceDiffPanes, DocumentDiffWorkspace, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
+import { buildWorkspaceDiffPanes, DocumentDiffWorkspace, synchronizedDiffScrollTop, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
 
 afterEach(cleanup);
 
@@ -13,6 +13,17 @@ const target: DocumentDiffTarget = {
 };
 
 describe("DocumentDiffWorkspace", () => {
+  it("maps the relative scroll position between different pane heights", () => {
+    expect(synchronizedDiffScrollTop(
+      { scrollTop: 250, scrollHeight: 600, clientHeight: 100 },
+      { scrollTop: 0, scrollHeight: 1200, clientHeight: 200 },
+    )).toBe(500);
+    expect(synchronizedDiffScrollTop(
+      { scrollTop: 50, scrollHeight: 100, clientHeight: 100 },
+      { scrollTop: 0, scrollHeight: 1200, clientHeight: 200 },
+    )).toBe(0);
+  });
+
   it("uses storage/opened/current code columns in edit mode", () => {
     const threeWay = buildWorkspaceDiffPanes({ ...target, storageContent: "# Storage" }, "edit");
     expect(threeWay.mode).toBe("three-way");
@@ -58,5 +69,18 @@ describe("DocumentDiffWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "確認した内容で上書き保存" }));
     expect(onOverwrite).toHaveBeenCalledOnce();
     expect(screen.getByText(/保存競合/)).toBeTruthy();
+  });
+
+  it("synchronizes scrolling across rendered DIFF panes", () => {
+    const { container } = render(<DocumentDiffWorkspace target={target} editorMode="preview" theme="dark" />);
+    const panes = [...container.querySelectorAll<HTMLElement>(".document-diff__rendered")];
+    expect(panes).toHaveLength(2);
+    Object.defineProperties(panes[0], { scrollHeight: { value: 600 }, clientHeight: { value: 100 } });
+    Object.defineProperties(panes[1], { scrollHeight: { value: 1200 }, clientHeight: { value: 200 } });
+    panes[0].scrollTop = 250;
+
+    fireEvent.scroll(panes[0]);
+
+    expect(panes[1].scrollTop).toBe(500);
   });
 });

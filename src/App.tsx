@@ -3,6 +3,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { save as showSaveDialog } from "@tauri-apps/plugin-dialog";
 import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
+import { PreviewContextMenu } from "./components/PreviewContextMenu";
 import { StatusBar } from "./components/StatusBar";
 import { MarkdownPreview } from "./components/MarkdownPreview";
 import { StandaloneDocumentPreview } from "./components/StandaloneDocumentPreview";
@@ -57,6 +58,7 @@ import { clipboardImageDestination, formatClipboardImageFilename, referencedStag
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { sourceBlockIndexForLine, sourceLineAtViewportTop } from "./lib/paneSync";
+import { markdownForPreviewRange } from "./lib/previewContext";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -100,6 +102,44 @@ export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: 
 
 export function canEditMarkdownDocument(document: { kind: string } | null | undefined): boolean {
   return document?.kind === "markdown";
+}
+
+interface PreviewContextState {
+  x: number;
+  y: number;
+  line: number;
+  plainText: string;
+  markdownText: string;
+}
+
+function previewSourceBlocks(root: HTMLElement | null, visibleOnly = false): HTMLElement[] {
+  const seen = new Set<number>();
+  return [...(root?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])].filter((block) => {
+    const line = Number(block.dataset.sourceLine);
+    if (!Number.isFinite(line) || line < 1 || seen.has(line)) return false;
+    if (visibleOnly && block.getClientRects().length === 0) return false;
+    seen.add(line);
+    return true;
+  });
+}
+
+function previewSourceLineAtNode(node: Node | null, root: HTMLElement): number | null {
+  const element = node instanceof Element ? node : node?.parentElement;
+  const block = element?.closest<HTMLElement>("[data-source-line]");
+  if (!block || !root.contains(block)) return null;
+  const line = Number(block.dataset.sourceLine);
+  return Number.isFinite(line) && line >= 1 ? line : null;
+}
+
+export function previewSelectionSourceRange(selection: Selection | null, root: HTMLElement, sourceLines: readonly number[], fallbackLine: number): { inside: boolean; firstLine: number; lastLine: number } {
+  const inside = Boolean(selection && !selection.isCollapsed && selection.anchorNode && selection.focusNode
+    && root.contains(selection.anchorNode) && root.contains(selection.focusNode));
+  const range = inside && selection!.rangeCount > 0 ? selection!.getRangeAt(0) : null;
+  return {
+    inside,
+    firstLine: range ? previewSourceLineAtNode(range.startContainer, root) ?? sourceLines[0] ?? fallbackLine : fallbackLine,
+    lastLine: range ? previewSourceLineAtNode(range.endContainer, root) ?? sourceLines[sourceLines.length - 1] ?? fallbackLine : fallbackLine,
+  };
 }
 
 export function applicationWindowTitle(tab: { kind?: "document" | "settings"; path: string } | null | undefined): string {
@@ -191,6 +231,8 @@ export function App() {
   const [activeTocHeadingId, setActiveTocHeadingId] = useState<string | null>(null);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
   const [focusedLinkTarget, setFocusedLinkTarget] = useState<string | null>(null);
+  const [activeEditorLine, setActiveEditorLine] = useState<number | null>(null);
+  const [previewContext, setPreviewContext] = useState<PreviewContextState | null>(null);
   const tocPointerFrame = useRef(0);
   const pendingTocHeadingId = useRef<string | null>(null);
   const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
@@ -321,7 +363,20 @@ export function App() {
   useEffect(() => {
     setActiveImageOccurrenceId(null);
     setActiveTocHeadingId(null);
+    setActiveEditorLine(null);
+    setPreviewContext(null);
   }, [activeTab?.id]);
+
+  useLayoutEffect(() => {
+    const root = markdownRef.current;
+    root?.querySelectorAll(".is-editor-current-line").forEach((element) => element.classList.remove("is-editor-current-line"));
+    if (!root || editorMode !== "split" || activeEditorLine === null) return;
+    const blocks = previewSourceBlocks(root, true);
+    const index = sourceBlockIndexForLine(blocks.map((block) => Number(block.dataset.sourceLine)), activeEditorLine);
+    const target = blocks[index];
+    target?.classList.add("is-editor-current-line");
+    return () => target?.classList.remove("is-editor-current-line");
+  }, [activeEditorLine, activeTab?.generation, editorMode, previewContent]);
 
   useEffect(() => {
     if (!activeTab?.document || viewMode === "presentation") return;
@@ -927,13 +982,56 @@ export function App() {
     const block = target.closest<HTMLElement>("[data-source-line]");
     const line = Number(block?.dataset.sourceLine);
     if (!Number.isFinite(line) || line < 1) return;
+    if (editorMode === "preview") return;
+    editorRef.current?.focusLine(line);
+  }, [canEditActive, editorMode]);
+
+  const handlePreviewContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    if (!activeTab?.document || activeTab.document.kind !== "markdown" || viewModeRef.current === "presentation") return;
+    const root = markdownRef.current;
+    const target = event.target instanceof Node ? event.target : null;
+    if (!root || !target) return;
+    event.preventDefault();
+    const blocks = previewSourceBlocks(root);
+    const sourceLines = blocks.map((block) => Number(block.dataset.sourceLine));
+    const clickedLine = previewSourceLineAtNode(target, root) ?? sourceLines[0] ?? 1;
+    const clickedBlock = blocks.find((block) => Number(block.dataset.sourceLine) === clickedLine);
+    const selection = window.getSelection();
+    const selectedRange = previewSelectionSourceRange(selection, root, sourceLines, clickedLine);
+    setPreviewContext({
+      x: event.clientX,
+      y: event.clientY,
+      line: clickedLine,
+      plainText: selectedRange.inside ? selection!.toString().trim() : clickedBlock?.textContent?.trim() ?? "",
+      markdownText: markdownForPreviewRange(previewContent, sourceLines, selectedRange.firstLine, selectedRange.lastLine),
+    });
+  }, [activeTab?.document, previewContent]);
+
+  const editPreviewContextLine = useCallback(() => {
+    if (!previewContext || !activeTab || !canEditActive) return;
+    const line = previewContext.line;
+    setPreviewContext(null);
     if (editorMode === "preview") {
       pendingEditorLine.current = line;
-      if (activeTab) dispatch({ type: "EDITOR_MODE", id: activeTab.id, mode: "split" });
-      return;
+      dispatch({ type: "EDITOR_MODE", id: activeTab.id, mode: "split" });
+    } else {
+      editorRef.current?.focusLine(line);
     }
-    editorRef.current?.focusLine(line);
-  }, [activeTab?.id, canEditActive, editorMode]);
+  }, [activeTab?.id, canEditActive, editorMode, previewContext]);
+
+  const selectPreviewContent = useCallback((line?: number) => {
+    const root = markdownRef.current;
+    if (!root) return;
+    const target = line === undefined
+      ? root
+      : previewSourceBlocks(root).find((block) => Number(block.dataset.sourceLine) === line);
+    if (!target) return;
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(target);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }, []);
 
   useEffect(() => {
     if (editorMode === "preview" || pendingEditorLine.current === null) return;
@@ -1609,6 +1707,7 @@ export function App() {
           onStagedAssetAbandoned={(asset) => void discardStagedAssets([asset.id])}
           onPasteImageError={(error) => setToast({ id: crypto.randomUUID(), message: `画像の貼り付けに失敗しました: ${String(error)}`, type: "error" })}
           onScrollLine={editorMode === "split" ? handleEditorScrollLine : undefined}
+          onActiveLineChange={editorMode === "split" ? setActiveEditorLine : undefined}
         />
       </Suspense>}
       {(editorMode !== "edit" || !canEditActive) && <main
@@ -1617,6 +1716,7 @@ export function App() {
         tabIndex={-1}
         onScroll={(event) => handlePreviewScroll(event.currentTarget)}
         onClickCapture={handlePreviewClick}
+        onContextMenu={handlePreviewContextMenu}
         onPointerMove={handlePreviewPointerMove}
         onPointerLeave={handlePreviewPointerLeave}
         onFocusCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.target))}
@@ -1870,6 +1970,19 @@ export function App() {
         const close = (id: string) => { closeTab(id); setContextTab(null); };
         return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={tab.untitled ? undefined : () => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
       })()}
+      {previewContext && <PreviewContextMenu
+        x={previewContext.x}
+        y={previewContext.y}
+        plainText={previewContext.plainText}
+        markdownText={previewContext.markdownText}
+        canEdit={canEditActive}
+        onEdit={editPreviewContextLine}
+        onSelectLine={() => selectPreviewContent(previewContext.line)}
+        onSelectAll={() => selectPreviewContent()}
+        onDismiss={() => setPreviewContext(null)}
+        onResult={(message) => setToast({ id: crypto.randomUUID(), message, type: "success" })}
+        onError={(message) => setToast({ id: crypto.randomUUID(), message, type: "error" })}
+      />}
     </div>
   );
 }

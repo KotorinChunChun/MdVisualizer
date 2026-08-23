@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useCallback, useMemo, useRef, type UIEvent } from "react";
 import { applyStorageHunk, buildDocumentDiff, changedLineNumbers, documentDiffHunks } from "../lib/documentDiff";
 import type { EditorWorkspaceMode } from "../state/tabsReducer";
 import { MarkdownPreview } from "./MarkdownPreview";
@@ -27,6 +27,21 @@ interface DiffPane {
 function filename(path: string): string {
   const segments = path.split(/[\\/]/).filter(Boolean);
   return segments[segments.length - 1] ?? path;
+}
+
+interface ScrollMetric {
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
+}
+
+/** Maps one DIFF pane's relative vertical position to another pane. */
+export function synchronizedDiffScrollTop(source: ScrollMetric, target: ScrollMetric): number {
+  const sourceMaximum = Math.max(0, source.scrollHeight - source.clientHeight);
+  const targetMaximum = Math.max(0, target.scrollHeight - target.clientHeight);
+  if (sourceMaximum === 0 || targetMaximum === 0) return 0;
+  const ratio = Math.max(0, Math.min(1, source.scrollTop / sourceMaximum));
+  return ratio * targetMaximum;
 }
 
 export function buildWorkspaceDiffPanes(target: DocumentDiffTarget, editorMode: EditorWorkspaceMode): {
@@ -123,7 +138,26 @@ export function DocumentDiffWorkspace({ target, editorMode, theme, onEditingChan
 }) {
   const workspace = useMemo(() => buildWorkspaceDiffPanes(target, editorMode), [editorMode, target]);
   const storageHunks = useMemo(() => documentDiffHunks(target.openedContent, target.storageContent), [target.openedContent, target.storageContent]);
-  return <section className="document-diff-workspace" aria-label={`${filename(target.path)}の差分`}>
+  const workspaceRef = useRef<HTMLElement>(null);
+  const programmedScrolls = useRef(new WeakMap<HTMLElement, number>());
+  const synchronizeScroll = useCallback((event: UIEvent<HTMLElement>) => {
+    const source = event.target instanceof HTMLElement ? event.target : null;
+    if (!source?.matches(".document-diff__code, .document-diff__rendered, .cm-scroller")) return;
+    const expected = programmedScrolls.current.get(source);
+    if (expected !== undefined) {
+      programmedScrolls.current.delete(source);
+      if (Math.abs(source.scrollTop - expected) < 1) return;
+    }
+    const scrollElements = workspaceRef.current?.querySelectorAll<HTMLElement>(
+      ".document-diff__code, .document-diff__rendered, .cm-scroller",
+    ) ?? [];
+    scrollElements.forEach((element) => {
+      if (element === source) return;
+      element.scrollTop = synchronizedDiffScrollTop(source, element);
+      programmedScrolls.current.set(element, element.scrollTop);
+    });
+  }, []);
+  return <section ref={workspaceRef} className="document-diff-workspace" aria-label={`${filename(target.path)}の差分`} onScrollCapture={synchronizeScroll}>
     <header className="document-diff-workspace__header">
       <strong>{filename(target.path)}の差分</strong>
       <span className="document-diff-workspace__summary">

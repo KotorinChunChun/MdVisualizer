@@ -78,6 +78,8 @@ body {
 .context-menu { position: fixed; z-index: 50; display: grid; min-width: 180px; padding: 4px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 8px 24px #0008; }
 .context-menu button { padding: 7px 10px; border: 0; color: var(--text-primary); background: transparent; text-align: left; cursor: pointer; }
 .context-menu button:hover { background: var(--btn-hover); }
+.context-menu button:disabled { opacity: .5; cursor: not-allowed; }
+.preview-context-menu [role="separator"] { height: 1px; margin: 4px 2px; background: var(--border-color); }
 .status-bar { min-height: 28px; padding: 5px 12px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 12px; background: var(--panel-bg); }
 .view-controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; padding:7px 12px; background:var(--panel-bg); border-bottom:1px solid var(--border-color); font-size:12px; }
 .view-controls select { margin-left:4px; min-height:26px; padding:2px 5px; background:var(--btn-bg); color:var(--text-primary); border:1px solid var(--border-color); border-radius:4px; }
@@ -303,6 +305,12 @@ body {
 .fold-chevron { flex: 0 0 1em; width: 1em; color: var(--text-muted); font-size: 0.7em; }
 .fold-heading__content { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .fold-content { padding-left: 4px; }
+
+.markdown-body [data-source-line].is-editor-current-line {
+  background: color-mix(in srgb, #fde68a 42%, transparent);
+  box-shadow: inset 3px 0 #eab308;
+  border-radius: 3px;
+}
 
 .markdown-body p {
   margin-bottom: 1em;

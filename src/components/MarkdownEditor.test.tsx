@@ -13,10 +13,12 @@ afterEach(cleanup);
 describe("MarkdownEditor", () => {
   it("moves focus and the cursor to a requested source line through its imperative API", async () => {
     const ref = createRef<MarkdownEditorHandle>();
-    const { container } = render(<MarkdownEditor ref={ref} documentId="tab-1:1" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    const onActiveLineChange = vi.fn();
+    const { container } = render(<MarkdownEditor ref={ref} documentId="tab-1:1" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} onActiveLineChange={onActiveLineChange} />);
     act(() => ref.current?.focusLine(3));
 
     await waitFor(() => expect(container.querySelector(".cm-activeLine")?.textContent).toBe("three"));
+    expect(onActiveLineChange).toHaveBeenLastCalledWith(3);
     expect(ref.current?.contains(document.activeElement)).toBe(true);
   });
 

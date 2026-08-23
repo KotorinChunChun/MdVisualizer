@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, previewSelectionSourceRange, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
 
 describe("application window title", () => {
   it("uses the active tab filename followed by the application name", () => {
@@ -30,12 +30,30 @@ describe("save conflict wiring", () => {
 });
 
 describe("Edit and View pane coordination", () => {
-  it("connects source-line clicks, synchronized scrolling, and the EV focus shortcut", () => {
+  it("connects source-line focus, current-line highlighting, the View menu, and the EV focus shortcut", () => {
     const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
     expect(source).toContain("onClickCapture={handlePreviewClick}");
+    expect(source).toContain("onContextMenu={handlePreviewContextMenu}");
     expect(source).toContain("onScrollLine={editorMode === \"split\" ? handleEditorScrollLine : undefined}");
+    expect(source).toContain("onActiveLineChange={editorMode === \"split\" ? setActiveEditorLine : undefined}");
+    expect(source).toContain('if (editorMode === "preview") return;');
+    expect(source).toContain("<PreviewContextMenu");
     expect(source).toContain('event.ctrlKey && event.shiftKey');
     expect(source).toContain('editorMode === "split"');
+  });
+
+  it("maps a complete View selection to the complete Markdown source range", () => {
+    const root = document.createElement("div");
+    root.innerHTML = '<p data-source-line="1">first</p><p data-source-line="3">last</p>';
+    document.body.append(root);
+    const range = document.createRange();
+    range.selectNodeContents(root);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    expect(previewSelectionSourceRange(selection, root, [1, 3], 1)).toEqual({ inside: true, firstLine: 1, lastLine: 3 });
+    root.remove();
   });
 });
 

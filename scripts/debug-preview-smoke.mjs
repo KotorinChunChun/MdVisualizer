@@ -65,6 +65,7 @@ await evaluate(`document.querySelector('.media-preview__close')?.click()`);
 await evaluate(`(() => {
   const button = [...document.querySelectorAll('.document-actions button')].find((candidate) => candidate.textContent.trim() === '差分');
   if (button?.getAttribute('aria-pressed') === 'true') button.click();
+  [...document.querySelectorAll('.editor-mode-segments button')].find((candidate) => candidate.textContent.trim() === '閲覧のみ')?.click();
 })()`);
 await delay(150);
 const documentReady = await evaluate(`new Promise((resolve) => {
@@ -79,6 +80,51 @@ const documentReady = await evaluate(`new Promise((resolve) => {
   poll();
 })`);
 if (!documentReady) throw new Error("Mermaid or draw.io block did not appear within 20 seconds");
+
+const viewContext = await evaluate(`new Promise((resolve) => {
+  const target = document.querySelector('.markdown-body p[data-source-line]');
+  const previewButton = [...document.querySelectorAll('.editor-mode-segments button')].find((candidate) => candidate.textContent.trim() === '閲覧のみ');
+  if (!target || !previewButton) { resolve({ ok: false, reason: '対象行または閲覧のみボタンがありません' }); return; }
+  const line = Number(target.dataset.sourceLine);
+  target.scrollIntoView({ block: 'center' });
+  target.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 300, clientY: 300 }));
+  setTimeout(() => {
+    const stayedPreview = previewButton.getAttribute('aria-pressed') === 'true' && !document.querySelector('.markdown-editor');
+    target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 320, clientY: 320 }));
+    setTimeout(() => {
+      const labels = [...document.querySelectorAll('.preview-context-menu [role=menuitem]')].map((button) => button.textContent.trim());
+      const lineSelect = [...document.querySelectorAll('.preview-context-menu [role=menuitem]')].find((button) => button.textContent.trim() === '行選択');
+      lineSelect?.click();
+      setTimeout(() => {
+        const selectedText = window.getSelection()?.toString().trim() ?? '';
+        target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 320, clientY: 320 }));
+        setTimeout(() => {
+          const edit = [...document.querySelectorAll('.preview-context-menu [role=menuitem]')].find((button) => button.textContent.trim() === '編集');
+          edit?.click();
+          const deadline = Date.now() + 5000;
+          const poll = () => {
+            const highlighted = document.querySelector('.is-editor-current-line');
+            if (document.querySelector('.markdown-editor') && highlighted) {
+              resolve({ ok: true, stayedPreview, labels, selectedText, requestedLine: line, highlightedLine: Number(highlighted.dataset.sourceLine) });
+            } else if (Date.now() >= deadline) resolve({ ok: false, stayedPreview, labels, selectedText, requestedLine: line, reason: '編集切替または現在行強調が完了しませんでした' });
+            else setTimeout(poll, 50);
+          };
+          poll();
+        }, 50);
+      }, 50);
+    }, 50);
+  }, 150);
+})`);
+const viewContextScreenshot = await screenshot("view-context-menu-edit.png");
+if (!viewContext.ok || !viewContext.stayedPreview || !viewContext.selectedText
+  || JSON.stringify(viewContext.labels) !== JSON.stringify(['コピー', 'Markdownでコピー', '編集', '行選択', 'すべて選択'])
+  || viewContext.highlightedLine > viewContext.requestedLine) {
+  throw new Error(`View context verification failed: ${JSON.stringify(viewContext)}`);
+}
+await evaluate(`new Promise((resolve) => {
+  [...document.querySelectorAll('.editor-mode-segments button')].find((candidate) => candidate.textContent.trim() === '閲覧のみ')?.click();
+  setTimeout(resolve, 150);
+})`);
 
 const structuredList = await evaluate(`(() => {
   const root = [...document.querySelectorAll('.markdown-body ol')].find((list) =>
@@ -276,6 +322,21 @@ const diffSplit = await evaluate(`new Promise((resolve) => {
   poll();
 })`);
 const diffSplitScreenshot = await screenshot("diff-split.png");
+const diffScroll = await evaluate(`new Promise((resolve) => {
+  const scrollers = [...document.querySelectorAll('.document-diff__code, .document-diff__rendered, .document-diff-workspace .cm-scroller')];
+  const source = scrollers.find((element) => element.scrollHeight - element.clientHeight > 20);
+  if (!source) { resolve({ synced: false, reason: 'スクロール可能なDIFFペインがありません' }); return; }
+  const maximum = source.scrollHeight - source.clientHeight;
+  source.scrollTop = maximum * 0.6;
+  source.dispatchEvent(new Event('scroll'));
+  setTimeout(() => {
+    const ratios = scrollers.filter((element) => element.scrollHeight - element.clientHeight > 20).map((element) => ({
+      className: element.className,
+      ratio: element.scrollTop / (element.scrollHeight - element.clientHeight),
+    }));
+    resolve({ synced: ratios.length >= 2 && ratios.every((item) => Math.abs(item.ratio - 0.6) < 0.08), ratios });
+  }, 100);
+})`);
 
 const diffClosed = await evaluate(`new Promise((resolve) => {
   const previewButton = [...document.querySelectorAll('.editor-mode-segments button')].find((candidate) => candidate.textContent.trim() === '閲覧のみ');
@@ -291,7 +352,7 @@ const diffClosed = await evaluate(`new Promise((resolve) => {
   poll();
 })`);
 
-const report = { initialScreenshot, structuredListScreenshot, mermaidScreenshot, drawioScreenshot, diffCodeScreenshot, diffRenderedScreenshot, diffSplitScreenshot, structuredList, mermaid, drawio, diffPreview, diffCode, diffSplit, diffClosed };
+const report = { initialScreenshot, structuredListScreenshot, mermaidScreenshot, drawioScreenshot, viewContextScreenshot, diffCodeScreenshot, diffRenderedScreenshot, diffSplitScreenshot, structuredList, mermaid, drawio, viewContext, diffPreview, diffCode, diffSplit, diffScroll, diffClosed };
 if (!mermaid.opened || !mermaid.maximumFit || mermaid.extraScrollableCanvas) {
   throw new Error(`Mermaid maximum-fit verification failed: ${JSON.stringify(mermaid)}`);
 }
@@ -304,8 +365,9 @@ if (!drawio.opened || !drawio.maximumFit || drawio.extraRightBottomWhitespace) {
 if (!diffPreview.opened || ![2, 3].includes(diffPreview.panes) || diffPreview.interactiveDiagrams !== 0 || diffPreview.durationMs > 5000
   || diffCode.codePanes !== diffCode.panes || diffCode.durationMs > 5000
   || diffSplit.panes !== 4 || diffSplit.codePanes !== 2 || diffSplit.renderedPanes !== 2 || diffSplit.interactiveDiagrams !== 0 || diffSplit.durationMs > 5000
+  || !diffScroll.synced
   || !diffClosed) {
-  throw new Error(`Document diff verification failed: ${JSON.stringify({ diffPreview, diffCode, diffSplit, diffClosed })}`);
+  throw new Error(`Document diff verification failed: ${JSON.stringify({ diffPreview, diffCode, diffSplit, diffScroll, diffClosed })}`);
 }
 await writeFile(`${outputDirectory}/preview-report.json`, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 socket.close();
