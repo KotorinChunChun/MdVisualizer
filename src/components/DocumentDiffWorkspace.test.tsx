@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildWorkspaceDiffPanes, DocumentDiffWorkspace, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
 
 afterEach(cleanup);
@@ -37,5 +37,26 @@ describe("DocumentDiffWorkspace", () => {
     expect(screen.getByText("現在のレンダリング")).toBeTruthy();
     expect(document.querySelectorAll(".document-diff__pane")).toHaveLength(4);
     expect(document.querySelectorAll(".document-diff .mermaid-container, .document-diff .drawio-block")).toHaveLength(0);
+  });
+
+  it("adopts one storage change hunk into the editing content", async () => {
+    const onEditingChange = vi.fn();
+    render(<DocumentDiffWorkspace
+      target={{ ...target, openedContent: "a\nb\nc", storageContent: "a\nstorage\nc", editingContent: "a\nediting\nc" }}
+      editorMode="edit"
+      theme="dark"
+      onEditingChange={onEditingChange}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: /行変更を採用/ }));
+    expect(onEditingChange).toHaveBeenCalledWith("a\nstorage\nc");
+    expect(await screen.findByLabelText("Markdown編集")).toBeTruthy();
+  });
+
+  it("shows an explicit overwrite action only for a save conflict", () => {
+    const onOverwrite = vi.fn();
+    render(<DocumentDiffWorkspace target={{ ...target, conflict: true, storageRevision: "r2" }} editorMode="preview" theme="dark" onOverwrite={onOverwrite} />);
+    fireEvent.click(screen.getByRole("button", { name: "確認した内容で上書き保存" }));
+    expect(onOverwrite).toHaveBeenCalledOnce();
+    expect(screen.getByText(/保存競合/)).toBeTruthy();
   });
 });

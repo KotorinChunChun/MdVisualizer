@@ -524,6 +524,7 @@ export function App() {
         openedContent: latestTab.openedContent ?? tab.openedContent ?? tab.document.content,
         storageContent: storageDocument.content,
         editingContent: latestTab.draft,
+        storageRevision: storageDocument.revision,
       });
     } catch (error) {
       setToast({ id: String(Date.now()), message: `差分の取得に失敗しました: ${String(error)}`, type: "error" });
@@ -534,7 +535,7 @@ export function App() {
 
   useEffect(() => { setDocumentDiff(null); }, [activeTab?.id]);
 
-  const saveTab = useCallback(async (id: string) => {
+  const saveTab = useCallback(async (id: string, reviewedStorageRevision?: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
     if (!tab?.document || !tab.dirty || tab.saving) return;
     if (tab.document.kind !== "markdown") {
@@ -579,14 +580,33 @@ export function App() {
         markSelfSave(localPathIdentity(result.path));
         document = result.document;
       } else {
-        document = await saveMarkdown({
+        const result = await saveMarkdown({
           path: tab.document.path,
           content: tab.draft,
-          expectedRevision: tab.document.revision,
+          expectedRevision: reviewedStorageRevision ?? tab.document.revision,
           stagedAssetIds,
         });
+        if (result.status === "conflict") {
+          if (identity) recentSelfSaves.current.delete(identity);
+          const latestTab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id) ?? tab;
+          dispatch({ type: "SAVE_FAILED", id, error: "保存先が更新されています。差分を確認してください。" });
+          dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
+          setDocumentDiff({
+            path: result.latest.path,
+            baseDir: result.latest.base_dir,
+            openedContent: latestTab.openedContent ?? tab.document.content,
+            storageContent: result.latest.content,
+            editingContent: latestTab.draft,
+            storageRevision: result.latest.revision,
+            conflict: true,
+          });
+          setToast({ id: String(Date.now()), message: "保存先が更新されています。DIFFで確認してから上書きしてください。", type: "error" });
+          return;
+        }
+        document = result.document;
       }
       dispatch({ type: "SAVED", id, document, committedAssetIds: stagedAssetIds });
+      setDocumentDiff(null);
       setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
     } catch (error) {
       if (identity) recentSelfSaves.current.delete(identity);
@@ -1394,6 +1414,11 @@ export function App() {
         target={{ ...documentDiff, editingContent: activeTab.draft }}
         editorMode={editorMode}
         theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+        onEditingChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
+        onSave={() => void saveTab(activeTab.id)}
+        onOverwrite={documentDiff.conflict && documentDiff.storageRevision
+          ? () => void saveTab(activeTab.id, documentDiff.storageRevision)
+          : undefined}
       /> : <>
       {editorMode === "preview" && activeTab?.document && <DocumentSidePanel
         activeTab={documentSidePanel}

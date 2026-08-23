@@ -238,21 +238,49 @@ pub async fn save_markdown(
     window: WebviewWindow,
     state: State<'_, AppState>,
     request: SaveMarkdownRequest,
-) -> Result<MarkdownLoadResult, String> {
+) -> Result<MarkdownSaveResult, String> {
     if !is_spmd_uri(&request.path) {
-        return do_save_markdown(request, &state.asset_staging)
-            .map_err(|error| error.to_string());
+        return match do_save_markdown(request.clone(), &state.asset_staging) {
+            Ok(document) => Ok(MarkdownSaveResult::Saved { document }),
+            Err(AppError::Conflict(_)) => do_load_markdown(&request.path)
+                .map(|latest| MarkdownSaveResult::Conflict { latest })
+                .map_err(|error| error.to_string()),
+            Err(error) => Err(error.to_string()),
+        };
     }
     let config = SharePointAuthConfig::embedded();
-    state
+    let saved = state
         .sharepoint
-        .save_markdown(request, &config, |prompt| {
+        .save_markdown(request.clone(), &config, |prompt| {
             window
                 .emit("sharepoint-authentication-required", prompt)
                 .map_err(|error| SharePointError::Authentication(error.to_string()))
         })
-        .await
-        .map_err(|error| error.to_string())
+        .await;
+    match saved {
+        Ok(document) => Ok(MarkdownSaveResult::Saved { document }),
+        Err(SharePointError::MarkdownConflict) => {
+            let source = parse_spmd_uri(&request.path).map_err(|error| error.to_string())?;
+            state
+                .sharepoint
+                .load_markdown(&source, &config, |prompt| {
+                    window
+                        .emit("sharepoint-authentication-required", prompt)
+                        .map_err(|error| SharePointError::Authentication(error.to_string()))
+                })
+                .await
+                .map(|latest| MarkdownSaveResult::Conflict { latest })
+                .map_err(|error| error.to_string())
+        }
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "status", rename_all = "camelCase")]
+pub enum MarkdownSaveResult {
+    Saved { document: MarkdownLoadResult },
+    Conflict { latest: MarkdownLoadResult },
 }
 
 #[tauri::command]
@@ -1154,6 +1182,19 @@ fn vscode_install_directories() -> Vec<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn markdown_save_conflict_serializes_with_the_latest_document() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("latest.md");
+        std::fs::write(&path, "# latest").unwrap();
+        let latest = do_load_markdown(&path.to_string_lossy()).unwrap();
+        let value = serde_json::to_value(MarkdownSaveResult::Conflict { latest }).unwrap();
+
+        assert_eq!(value["status"], "conflict");
+        assert_eq!(value["latest"]["content"], "# latest");
+        assert!(!value["latest"]["revision"].as_str().unwrap().is_empty());
+    }
 
     #[test]
     fn vscode_lookup_checks_path_and_install_layout_executables() {

@@ -19,6 +19,8 @@
 }
 
 .document-diff-workspace__header { min-height: 2.4rem; padding: .4rem .7rem; background: var(--header-bg); }
+.document-diff-workspace__summary { display: flex; align-items: center; gap: .65rem; }
+.document-diff-workspace__overwrite { color: var(--accent-contrast, #fff); background: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 4px; padding: .35rem .65rem; cursor: pointer; }
 .document-diff-workspace__header small,
 .document-diff__pane > header small { color: var(--text-muted); font-weight: 400; }
 
@@ -29,15 +31,20 @@
   min-height: 0;
   overflow: hidden;
 }
+.document-diff__hunk-actions { display: flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: .45rem; min-height: 2.5rem; padding: .35rem .6rem; overflow-x: auto; border-bottom: 1px solid var(--border-color); background: var(--panel-bg); }
+.document-diff__hunk-actions strong { white-space: nowrap; font-size: .85rem; }
+.document-diff__hunk-actions button { white-space: nowrap; padding: .3rem .55rem; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
+.document-diff__hunk-actions button:hover:not(:disabled) { background: var(--btn-hover); }
 .document-diff__panes--two-way { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .document-diff__panes--three-way { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .document-diff__panes--four-way { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.document-diff__pane { min-width: 0; min-height: 0; overflow: hidden; border-right: 1px solid var(--border-color); }
+.document-diff__pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-right: 1px solid var(--border-color); }
 .document-diff__pane:last-child { border-right: 0; }
 .document-diff__pane > header { min-height: 2.4rem; padding: .4rem .65rem; background: var(--header-bg); font-weight: 700; }
 
 .document-diff__code,
 .document-diff__rendered { height: calc(100% - 2.4rem); overflow: auto; }
+.document-diff__pane > .markdown-editor { height: calc(100% - 2.4rem); }
 .document-diff__code { margin: 0; padding: .5rem 0 .5rem 3.8rem; background: var(--code-block-bg); font: 13px/1.55 Consolas, "Cascadia Code", monospace; }
 .document-diff__code li { min-height: 1.55em; padding: 0 .6rem; white-space: pre; color: var(--text-muted); border-left: 3px solid transparent; }
 .document-diff__code li::marker { color: var(--text-muted); }

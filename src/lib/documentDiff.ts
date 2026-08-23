@@ -12,6 +12,16 @@ export interface DocumentDiffModel {
   versions: DocumentDiffVersion[];
 }
 
+export interface DocumentDiffHunk {
+  id: string;
+  kind: "add" | "change" | "delete";
+  baseStart: number;
+  baseEnd: number;
+  targetStart: number;
+  targetEnd: number;
+  targetLines: readonly string[];
+}
+
 interface ChangedLinePair {
   base: Set<number>;
   target: Set<number>;
@@ -19,6 +29,105 @@ interface ChangedLinePair {
 
 function sourceLines(content: string): string[] {
   return content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+}
+
+function commonEdgeHunk(baseLines: string[], targetLines: string[]): DocumentDiffHunk[] {
+  let prefix = 0;
+  while (prefix < baseLines.length && prefix < targetLines.length && baseLines[prefix] === targetLines[prefix]) prefix += 1;
+  let baseEnd = baseLines.length;
+  let targetEnd = targetLines.length;
+  while (baseEnd > prefix && targetEnd > prefix && baseLines[baseEnd - 1] === targetLines[targetEnd - 1]) {
+    baseEnd -= 1;
+    targetEnd -= 1;
+  }
+  if (prefix === baseEnd && prefix === targetEnd) return [];
+  return [{
+    id: `hunk-${prefix}-${baseEnd}-${targetEnd}`,
+    kind: prefix === baseEnd ? "add" : prefix === targetEnd ? "delete" : "change",
+    baseStart: prefix,
+    baseEnd,
+    targetStart: prefix,
+    targetEnd,
+    targetLines: targetLines.slice(prefix, targetEnd),
+  }];
+}
+
+/** Groups consecutive line additions, changes, and deletions from base to target. */
+export function documentDiffHunks(baseContent: string, targetContent: string): DocumentDiffHunk[] {
+  if (baseContent === targetContent) return [];
+  const baseLines = sourceLines(baseContent);
+  const targetLines = sourceLines(targetContent);
+  if (baseLines.length * targetLines.length > 2_000_000) return commonEdgeHunk(baseLines, targetLines);
+  const lengths = Array.from({ length: baseLines.length + 1 }, () => new Uint32Array(targetLines.length + 1));
+  for (let baseIndex = baseLines.length - 1; baseIndex >= 0; baseIndex -= 1) {
+    for (let targetIndex = targetLines.length - 1; targetIndex >= 0; targetIndex -= 1) {
+      lengths[baseIndex][targetIndex] = baseLines[baseIndex] === targetLines[targetIndex]
+        ? lengths[baseIndex + 1][targetIndex + 1] + 1
+        : Math.max(lengths[baseIndex + 1][targetIndex], lengths[baseIndex][targetIndex + 1]);
+    }
+  }
+  const hunks: DocumentDiffHunk[] = [];
+  let baseIndex = 0;
+  let targetIndex = 0;
+  while (baseIndex < baseLines.length || targetIndex < targetLines.length) {
+    if (baseIndex < baseLines.length && targetIndex < targetLines.length && baseLines[baseIndex] === targetLines[targetIndex]) {
+      baseIndex += 1;
+      targetIndex += 1;
+      continue;
+    }
+    const baseStart = baseIndex;
+    const targetStart = targetIndex;
+    while (baseIndex < baseLines.length || targetIndex < targetLines.length) {
+      if (baseIndex < baseLines.length && targetIndex < targetLines.length && baseLines[baseIndex] === targetLines[targetIndex]) break;
+      if (targetIndex >= targetLines.length || (baseIndex < baseLines.length && lengths[baseIndex + 1][targetIndex] >= lengths[baseIndex][targetIndex + 1])) {
+        baseIndex += 1;
+      } else {
+        targetIndex += 1;
+      }
+    }
+    hunks.push({
+      id: `hunk-${baseStart}-${baseIndex}-${targetStart}-${targetIndex}`,
+      kind: baseStart === baseIndex ? "add" : targetStart === targetIndex ? "delete" : "change",
+      baseStart,
+      baseEnd: baseIndex,
+      targetStart,
+      targetEnd: targetIndex,
+      targetLines: targetLines.slice(targetStart, targetIndex),
+    });
+  }
+  return hunks;
+}
+
+function mapBaseBoundary(hunks: readonly DocumentDiffHunk[], baseIndex: number, edge: "start" | "end"): number {
+  let delta = 0;
+  for (const hunk of hunks) {
+    if (baseIndex < hunk.baseStart) break;
+    if (baseIndex > hunk.baseEnd || (baseIndex === hunk.baseEnd && hunk.baseStart !== hunk.baseEnd)) {
+      delta += (hunk.targetEnd - hunk.targetStart) - (hunk.baseEnd - hunk.baseStart);
+      continue;
+    }
+    return edge === "start" ? hunk.targetStart : hunk.targetEnd;
+  }
+  return baseIndex + delta;
+}
+
+/** Applies one storage hunk to the corresponding region in the current edit. */
+export function applyStorageHunk(
+  openedContent: string,
+  editingContent: string,
+  hunk: DocumentDiffHunk,
+): string {
+  const editingLines = sourceLines(editingContent);
+  const editingHunks = documentDiffHunks(openedContent, editingContent);
+  const from = mapBaseBoundary(editingHunks, hunk.baseStart, "start");
+  const to = mapBaseBoundary(editingHunks, hunk.baseEnd, "end");
+  const nextLines = [
+    ...editingLines.slice(0, from),
+    ...hunk.targetLines,
+    ...editingLines.slice(to),
+  ];
+  const separator = editingContent.includes("\r\n") ? "\r\n" : editingContent.includes("\r") ? "\r" : "\n";
+  return nextLines.join(separator);
 }
 
 /** Returns one-based changed line numbers for both sides of a line diff. */

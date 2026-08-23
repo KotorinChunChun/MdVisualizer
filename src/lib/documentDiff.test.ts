@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDocumentDiff, changedLineNumbers } from "./documentDiff";
+import { applyStorageHunk, buildDocumentDiff, changedLineNumbers, documentDiffHunks } from "./documentDiff";
 
 describe("document diff", () => {
   it("reports one-based changed lines on both sides", () => {
@@ -20,5 +20,26 @@ describe("document diff", () => {
     expect(model.mode).toBe("three-way");
     expect(model.versions.map((version) => version.id)).toEqual(["opened", "storage", "editing"]);
     expect(model.versions.map((version) => [...version.changedLines])).toEqual([[2], [2], [2]]);
+  });
+
+  it("groups consecutive storage additions, changes, and deletions into hunks", () => {
+    const hunks = documentDiffHunks("a\nb\nc\nd\ne", "a\nB\nC\nd\nf");
+    expect(hunks.map((hunk) => ({ kind: hunk.kind, base: [hunk.baseStart, hunk.baseEnd], target: hunk.targetLines }))).toEqual([
+      { kind: "change", base: [1, 3], target: ["B", "C"] },
+      { kind: "change", base: [4, 5], target: ["f"] },
+    ]);
+  });
+
+  it("applies a storage hunk over the corresponding independently edited region", () => {
+    const [storageHunk] = documentDiffHunks("a\nb\nc", "a\nstorage\nc");
+    expect(applyStorageHunk("a\nb\nc", "mine\na\nediting\nc", storageHunk)).toBe("mine\na\nstorage\nc");
+  });
+
+  it("applies additions and deletions while preserving CRLF and the final newline", () => {
+    const add = documentDiffHunks("a\r\nb\r\n", "a\r\nnew\r\nb\r\n")[0];
+    const added = applyStorageHunk("a\r\nb\r\n", "a\r\nb\r\n", add);
+    expect(added).toBe("a\r\nnew\r\nb\r\n");
+    const remove = documentDiffHunks("a\r\nnew\r\nb\r\n", "a\r\nb\r\n")[0];
+    expect(applyStorageHunk("a\r\nnew\r\nb\r\n", added, remove)).toBe("a\r\nb\r\n");
   });
 });

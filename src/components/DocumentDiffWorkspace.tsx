@@ -1,8 +1,10 @@
-import { useMemo } from "react";
-import { buildDocumentDiff, changedLineNumbers } from "../lib/documentDiff";
+import { lazy, Suspense, useMemo } from "react";
+import { applyStorageHunk, buildDocumentDiff, changedLineNumbers, documentDiffHunks } from "../lib/documentDiff";
 import type { EditorWorkspaceMode } from "../state/tabsReducer";
 import { MarkdownPreview } from "./MarkdownPreview";
 import "../styles/document-diff.css";
+
+const MarkdownEditor = lazy(() => import("./MarkdownEditor").then((module) => ({ default: module.MarkdownEditor })));
 
 export interface DocumentDiffTarget {
   path: string;
@@ -10,6 +12,8 @@ export interface DocumentDiffTarget {
   openedContent: string;
   storageContent: string;
   editingContent: string;
+  storageRevision?: string;
+  conflict?: boolean;
 }
 
 interface DiffPane {
@@ -69,7 +73,23 @@ export function buildWorkspaceDiffPanes(target: DocumentDiffTarget, editorMode: 
   };
 }
 
-function CodePane({ pane }: { pane: DiffPane }) {
+function CodePane({ pane, target, onEditingChange, onSave }: {
+  pane: DiffPane;
+  target: DocumentDiffTarget;
+  onEditingChange?: (content: string) => void;
+  onSave?: () => void;
+}) {
+  if (pane.key.startsWith("editing-") && onEditingChange) {
+    return <Suspense fallback={<div className="markdown-editor-loading">エディターを読み込んでいます…</div>}><MarkdownEditor
+      documentId={`diff:${target.path}`}
+      value={pane.content}
+      dirty
+      saving={false}
+      onChange={onEditingChange}
+      onSave={() => onSave?.()}
+      compact
+    /></Suspense>;
+  }
   return <ol className="document-diff__code">
     {pane.content.replace(/\r\n?/g, "\n").split("\n").map((line, index) => (
       <li key={index} className={pane.changedLines.has(index + 1) ? "is-changed" : undefined}>
@@ -93,21 +113,37 @@ function RenderedPane({ pane, target, theme }: { pane: DiffPane; target: Documen
   </div>;
 }
 
-export function DocumentDiffWorkspace({ target, editorMode, theme }: {
+export function DocumentDiffWorkspace({ target, editorMode, theme, onEditingChange, onSave, onOverwrite }: {
   target: DocumentDiffTarget;
   editorMode: EditorWorkspaceMode;
   theme: string;
+  onEditingChange?: (content: string) => void;
+  onSave?: () => void;
+  onOverwrite?: () => void;
 }) {
   const workspace = useMemo(() => buildWorkspaceDiffPanes(target, editorMode), [editorMode, target]);
+  const storageHunks = useMemo(() => documentDiffHunks(target.openedContent, target.storageContent), [target.openedContent, target.storageContent]);
   return <section className="document-diff-workspace" aria-label={`${filename(target.path)}の差分`}>
     <header className="document-diff-workspace__header">
       <strong>{filename(target.path)}の差分</strong>
-      <small>{workspace.summary}</small>
+      <span className="document-diff-workspace__summary">
+        <small>{target.conflict ? `保存競合・${workspace.summary}` : workspace.summary}</small>
+        {target.conflict && onOverwrite && <button type="button" className="document-diff-workspace__overwrite" onClick={onOverwrite}>確認した内容で上書き保存</button>}
+      </span>
     </header>
+    {storageHunks.length > 0 && <div className="document-diff__hunk-actions" aria-label="ストレージ変更の採用">
+      <strong>ストレージ最新版から採用</strong>
+      {storageHunks.map((hunk, index) => <button
+        type="button"
+        key={hunk.id}
+        onClick={() => onEditingChange?.(applyStorageHunk(target.openedContent, target.editingContent, hunk))}
+        disabled={!onEditingChange}
+      >{index + 1}: {hunk.kind === "add" ? "行追加" : hunk.kind === "delete" ? "行削除" : "行変更"}を採用</button>)}
+    </div>}
     <div className={`document-diff__panes document-diff__panes--${workspace.mode}`}>
       {workspace.panes.map((pane) => <article className="document-diff__pane" key={pane.key}>
         <header>{pane.label}<small>{pane.changedLines.size}変更行</small></header>
-        {pane.display === "code" ? <CodePane pane={pane} /> : <RenderedPane pane={pane} target={target} theme={theme} />}
+        {pane.display === "code" ? <CodePane pane={pane} target={target} onEditingChange={onEditingChange} onSave={onSave} /> : <RenderedPane pane={pane} target={target} theme={theme} />}
       </article>)}
     </div>
   </section>;

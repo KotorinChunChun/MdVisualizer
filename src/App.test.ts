@@ -20,6 +20,15 @@ describe("new Markdown shortcut wiring", () => {
   });
 });
 
+describe("save conflict wiring", () => {
+  it("opens a typed conflict result in DIFF and retries against the reviewed revision", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    expect(source).toContain('result.status === "conflict"');
+    expect(source).toContain("storageRevision: result.latest.revision");
+    expect(source).toContain("saveTab(activeTab.id, documentDiff.storageRevision)");
+  });
+});
+
 describe("Markdown editing availability", () => {
   it("enables editing for both local and SharePoint Markdown documents", () => {
     expect(canEditMarkdownDocument({ kind: "markdown" })).toBe(true);

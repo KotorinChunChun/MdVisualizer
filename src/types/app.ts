@@ -20,6 +20,10 @@ export interface SaveMarkdownRequest {
   stagedAssetIds?: string[];
 }
 
+export type MarkdownSaveResult =
+  | { status: "saved"; document: MarkdownLoadResult }
+  | { status: "conflict"; latest: MarkdownLoadResult };
+
 export interface CreateMarkdownRequest {
   path: string;
   content: string;

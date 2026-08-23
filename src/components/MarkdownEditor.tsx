@@ -28,6 +28,7 @@ interface MarkdownEditorProps {
   saving: boolean;
   onChange: (value: string) => void;
   onSave: () => void;
+  compact?: boolean;
 }
 
 const TOOLBAR_ACTIONS: Array<{ action: MarkdownEditAction; label: string; title: string }> = [
@@ -92,7 +93,7 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave }: MarkdownEditorProps) {
+export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, compact = false }: MarkdownEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -187,7 +188,7 @@ export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onS
     view.focus();
   };
 
-  return <section className="markdown-editor" aria-label="Markdown編集">
+  return <section className={`markdown-editor${compact ? " markdown-editor--compact" : ""}`} aria-label="Markdown編集">
     <div className="markdown-editor__toolbar" role="toolbar" aria-label="Markdown書式">
       {TOOLBAR_ACTIONS.map((item) => <button key={item.action} type="button" title={item.title} aria-label={item.title} onClick={() => apply(item.action)}>{item.label}</button>)}
       <span className="markdown-editor__toolbar-spacer" />

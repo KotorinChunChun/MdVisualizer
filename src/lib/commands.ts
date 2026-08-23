@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { CreateMarkdownRequest, CropImageRequest, CropImageResult, MarkdownLoadResult, SaveMarkdownRequest } from "../types/app";
+import { CreateMarkdownRequest, CropImageRequest, CropImageResult, MarkdownLoadResult, MarkdownSaveResult, SaveMarkdownRequest } from "../types/app";
 import type { DiagnosticItem } from "../components/DiagnosticsPanel";
 import type { DebugWindowState } from "./debugState";
 
@@ -47,8 +47,8 @@ export async function openInNewWindow(path: string): Promise<void> { await invok
 export async function loadMarkdown(path: string): Promise<MarkdownLoadResult> {
   return await invoke<MarkdownLoadResult>("load_markdown", { path });
 }
-export async function saveMarkdown(request: SaveMarkdownRequest): Promise<MarkdownLoadResult> {
-  return await invoke<MarkdownLoadResult>("save_markdown", { request });
+export async function saveMarkdown(request: SaveMarkdownRequest): Promise<MarkdownSaveResult> {
+  return await invoke<MarkdownSaveResult>("save_markdown", { request });
 }
 export async function createMarkdown(request: CreateMarkdownRequest): Promise<MarkdownLoadResult> {
   return await invoke<MarkdownLoadResult>("create_markdown", { request });
