@@ -113,6 +113,8 @@
 }
 
 .document-toc li > button:hover { background: var(--btn-hover); }
+.document-toc li > button.is-movable { cursor: grab; user-select: none; }
+.document-toc li.is-dragging > button.is-movable { cursor: grabbing; }
 .document-toc li > button[aria-current="location"] {
   color: var(--text-primary);
   font-weight: 750;

@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { buildPresentationModel } from "../lib/presentationModel";
 import "../styles/document-toc.css";
 
@@ -32,6 +32,15 @@ export function DocumentToc({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const pointerDragRef = useRef<{
+    sourceId: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    dragging: boolean;
+  } | null>(null);
+  const dropTargetRef = useRef<{ id: string; position: "before" | "after" } | null>(null);
+  const suppressClickUntilRef = useRef(0);
 
   const siblingIds = (id: string): string[] => {
     const heading = model.headings[id];
@@ -54,6 +63,17 @@ export function DocumentToc({
     setAnnouncement(moved === false ? "見出しを移動できませんでした。" : `${model.headings[sourceId].title}を移動しました。`);
   };
 
+  const updateDropTarget = (next: { id: string; position: "before" | "after" } | null) => {
+    dropTargetRef.current = next;
+    setDropTarget((current) => current?.id === next?.id && current?.position === next?.position ? current : next);
+  };
+
+  const resetPointerDrag = () => {
+    pointerDragRef.current = null;
+    setDraggedId(null);
+    updateDropTarget(null);
+  };
+
   const renderItems = (ids: string[]): React.ReactNode => <ul>
     {ids.map((id) => {
       const heading = model.headings[id];
@@ -63,30 +83,59 @@ export function DocumentToc({
       return <li key={id} className={`${draggedId === id ? "is-dragging" : ""}${insertion ? ` is-drop-${insertion}` : ""}`}>
         <button
           type="button"
-          draggable={Boolean(onMove)}
+          className={onMove ? "is-movable" : undefined}
+          data-toc-heading-id={id}
           aria-current={active ? "location" : undefined}
           title={heading.title}
-          onClick={() => onJump(id)}
-          onDragStart={(event) => {
-            if (!onMove) return;
-            setDraggedId(id);
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("text/plain", id);
+          onClick={(event) => {
+            if (performance.now() < suppressClickUntilRef.current) {
+              event.preventDefault();
+              return;
+            }
+            onJump(id);
           }}
-          onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
-          onDragOver={(event) => {
-            if (!draggedId || !canMoveTogether(draggedId, id)) return;
+          onPointerDown={(event) => {
+            if (!onMove || event.button !== 0 || event.isPrimary === false) return;
+            pointerDragRef.current = {
+              sourceId: id,
+              pointerId: event.pointerId,
+              startX: event.clientX,
+              startY: event.clientY,
+              dragging: false,
+            };
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+          }}
+          onPointerMove={(event) => {
+            const drag = pointerDragRef.current;
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            if (!drag.dragging) {
+              if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5) return;
+              drag.dragging = true;
+              setDraggedId(drag.sourceId);
+            }
             event.preventDefault();
-            event.dataTransfer.dropEffect = "move";
-            const bounds = event.currentTarget.getBoundingClientRect();
-            setDropTarget({ id, position: event.clientY < bounds.top + bounds.height / 2 ? "before" : "after" });
+            const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-toc-heading-id]");
+            const targetId = target?.dataset.tocHeadingId;
+            if (!targetId || !canMoveTogether(drag.sourceId, targetId)) {
+              updateDropTarget(null);
+              return;
+            }
+            const bounds = target.getBoundingClientRect();
+            updateDropTarget({ id: targetId, position: event.clientY < bounds.top + bounds.height / 2 ? "before" : "after" });
           }}
-          onDrop={(event) => {
+          onPointerUp={(event) => {
+            const drag = pointerDragRef.current;
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+            const target = dropTargetRef.current;
+            const dragged = drag.dragging;
+            resetPointerDrag();
+            if (!dragged) return;
             event.preventDefault();
-            if (draggedId && dropTarget?.id === id) move(draggedId, id, dropTarget.position);
-            setDraggedId(null);
-            setDropTarget(null);
+            suppressClickUntilRef.current = performance.now() + 250;
+            if (target) move(drag.sourceId, target.id, target.position);
           }}
+          onPointerCancel={resetPointerDrag}
           onKeyDown={(event) => {
             if (!onMove || !event.altKey || (event.key !== "ArrowUp" && event.key !== "ArrowDown")) return;
             const siblings = siblingIds(id);
