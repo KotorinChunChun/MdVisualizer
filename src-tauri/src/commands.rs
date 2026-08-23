@@ -40,9 +40,10 @@ pub use external::{
     PowerShellRunResult, RunPowerShellRequest,
 };
 pub use window_settings::{
-    get_initial_files, load_settings, load_settings_status, open_in_new_window,
-    restore_saved_window_geometry, save_fold_state, save_settings, save_window_geometry,
-    update_external_app_settings, window_geometry,
+    get_initial_files, load_markdown_style, load_settings, load_settings_status,
+    open_in_new_window, open_markdown_style, restore_saved_window_geometry, save_fold_state,
+    save_markdown_style, save_settings, save_window_geometry, update_external_app_settings,
+    window_geometry,
 };
 
 #[cfg(test)]

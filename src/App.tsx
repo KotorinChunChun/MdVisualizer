@@ -53,6 +53,7 @@ import { moveZoomLevel } from "./lib/zoom";
 import { moveHeadingBlock } from "./lib/markdownEditing";
 import { buildPresentationModel } from "./lib/presentationModel";
 import { buildDebugWindowState } from "./lib/debugState";
+import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { sourceBlockIndexForLine, sourceLineAtViewportTop } from "./lib/paneSync";
 import "./styles/app.css";
@@ -155,10 +156,15 @@ export function App() {
     imageEqualPadding,
     syntaxHighlight,
     printStyle,
+    markdownStyle,
+    markdownStyleCss,
+    markdownStylePath,
     updateTheme,
     updateZoom,
     updateAutoReload,
     saveExternalAppSettings,
+    reloadMarkdownStyle,
+    openMarkdownStyleFile,
   } = useApplicationSettings(setToast);
   const {
     sharePointAuthPrompt,
@@ -1475,9 +1481,11 @@ export function App() {
   const documentSidePanel = activeTab?.document
     ? resolveDocumentSidePanel(Boolean(activeTab.searchOpen), requestedPanelForView)
     : null;
+  const scopedMarkdownStyle = scopeMarkdownStyleCss(markdownStyleCss) ?? "";
 
   return (
     <div className={`app-container${printing ? " is-printing" : ""}`}>
+      <style data-markdown-custom-style>{scopedMarkdownStyle}</style>
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
@@ -1594,6 +1602,11 @@ export function App() {
             imageEqualPadding={imageEqualPadding}
             syntaxHighlight={syntaxHighlight}
             printStyle={printStyle}
+            markdownStyle={markdownStyle}
+            markdownStyleCss={markdownStyleCss}
+            markdownStylePath={markdownStylePath}
+            onOpenMarkdownStyle={openMarkdownStyleFile}
+            onReloadMarkdownStyle={reloadMarkdownStyle}
             onSave={saveExternalAppSettings}
           />
         ) : activeTab?.loading ? (

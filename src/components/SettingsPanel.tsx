@@ -3,6 +3,16 @@ import type { ExternalAppConfig, ExternalAppTarget } from "../types/settings";
 import { DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, validateExternalApp } from "../types/settings";
 import { DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, SYNTAX_HIGHLIGHT_THEMES, type SyntaxHighlightSettings, type SyntaxHighlightTheme } from "../lib/syntaxHighlight";
 import { DEFAULT_PRINT_STYLE_SETTINGS, PRINT_FONT_FAMILIES, type PrintFontFamily, type PrintStyleSettings } from "../lib/printStyle";
+import {
+  DEFAULT_MARKDOWN_STYLE_SETTINGS,
+  generateMarkdownStyleCss,
+  MARKDOWN_FONT_FAMILIES,
+  normalizeMarkdownStyleSettings,
+  scopeMarkdownStyleCss,
+  type MarkdownBreakMode,
+  type MarkdownFontFamily,
+  type MarkdownStyleSettings,
+} from "../lib/markdownStyle";
 import "../styles/settings.css";
 
 export function SettingsPanel({
@@ -12,6 +22,11 @@ export function SettingsPanel({
   imageEqualPadding = DEFAULT_IMAGE_EQUAL_PADDING,
   syntaxHighlight = DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS,
   printStyle = DEFAULT_PRINT_STYLE_SETTINGS,
+  markdownStyle = DEFAULT_MARKDOWN_STYLE_SETTINGS,
+  markdownStyleCss = generateMarkdownStyleCss(markdownStyle),
+  markdownStylePath = "",
+  onOpenMarkdownStyle = async () => undefined,
+  onReloadMarkdownStyle = async () => undefined,
   onSave,
 }: {
   apps: ExternalAppConfig[];
@@ -20,7 +35,12 @@ export function SettingsPanel({
   imageEqualPadding?: number;
   syntaxHighlight?: SyntaxHighlightSettings;
   printStyle?: PrintStyleSettings;
-  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings) => Promise<void>;
+  markdownStyle?: MarkdownStyleSettings;
+  markdownStyleCss?: string;
+  markdownStylePath?: string;
+  onOpenMarkdownStyle?: () => Promise<void>;
+  onReloadMarkdownStyle?: () => Promise<void>;
+  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings, markdownStyle: MarkdownStyleSettings) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => apps.map((app) => ({ ...app, args: [...app.args] })));
   const [lineThreshold, setLineThreshold] = useState(presentationLineThreshold);
@@ -28,6 +48,8 @@ export function SettingsPanel({
   const [equalPadding, setEqualPadding] = useState(imageEqualPadding);
   const [syntaxDraft, setSyntaxDraft] = useState<SyntaxHighlightSettings>(() => ({ ...syntaxHighlight }));
   const [printDraft, setPrintDraft] = useState<PrintStyleSettings>(() => ({ ...printStyle }));
+  const [markdownStyleDraft, setMarkdownStyleDraft] = useState<MarkdownStyleSettings>(() => ({ ...markdownStyle }));
+  const [markdownStyleDirty, setMarkdownStyleDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   useEffect(() => setDraft(apps.map((app) => ({ ...app, args: [...app.args] }))), [apps]);
@@ -36,6 +58,7 @@ export function SettingsPanel({
   useEffect(() => setEqualPadding(imageEqualPadding), [imageEqualPadding]);
   useEffect(() => setSyntaxDraft({ ...syntaxHighlight }), [syntaxHighlight]);
   useEffect(() => setPrintDraft({ ...printStyle }), [printStyle]);
+  useEffect(() => { setMarkdownStyleDraft({ ...markdownStyle }); setMarkdownStyleDirty(false); }, [markdownStyle, markdownStyleCss]);
 
   const update = (id: string, patch: Partial<ExternalAppConfig>) => {
     setDraft((current) => current.map((app) => app.id === id ? { ...app, ...patch } : app));
@@ -68,7 +91,8 @@ export function SettingsPanel({
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, printDraft);
+      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, printDraft, normalizeMarkdownStyleSettings(markdownStyleDraft));
+      setMarkdownStyleDirty(false);
     } catch (reason) {
       setError(String(reason));
     } finally {
@@ -132,6 +156,41 @@ export function SettingsPanel({
       <div className="print-style-preview" aria-label="印刷スタイルプレビュー" style={{ color: printDraft.headingColor, background: printDraft.monochrome ? "#ffffff" : printDraft.backgroundColor, borderColor: printDraft.monochrome ? "#000000" : printDraft.borderColor }}>
         <strong>見出しプレビュー</strong><p>本文と罫線の印刷イメージ</p>
       </div>
+    </fieldset>
+    <fieldset className="settings-section markdown-style-settings">
+      <legend>Markdown本文スタイル</legend>
+      <label>改行と段落
+        <select aria-label="Markdown改行モード" value={markdownStyleDraft.breakMode} onChange={(event) => {
+          setMarkdownStyleDraft((current) => ({ ...current, breakMode: event.target.value as MarkdownBreakMode }));
+          setMarkdownStyleDirty(true);
+        }}>
+          <option value="commonmark">CommonMark（空白行で段落）</option>
+          <option value="soft-break">単一改行も表示</option>
+        </select>
+      </label>
+      <div className="markdown-style-settings__grid">
+        <label className="markdown-style-settings__toggle"><span>テーマの文字色を使用</span><input aria-label="Markdownテーマ文字色" type="checkbox" checked={markdownStyleDraft.useThemeColor} onChange={(event) => { setMarkdownStyleDraft((current) => ({ ...current, useThemeColor: event.target.checked })); setMarkdownStyleDirty(true); }} /></label>
+        <label>文字色<input aria-label="Markdown文字色" type="color" disabled={markdownStyleDraft.useThemeColor} value={markdownStyleDraft.color} onChange={(event) => { setMarkdownStyleDraft((current) => ({ ...current, color: event.target.value })); setMarkdownStyleDirty(true); }} /></label>
+        <label>文字サイズ (px)<input aria-label="Markdown文字サイズ" type="number" min="8" max="72" value={markdownStyleDraft.fontSize} onChange={(event) => { setMarkdownStyleDraft((current) => ({ ...current, fontSize: Number(event.target.value) })); setMarkdownStyleDirty(true); }} /></label>
+        <label>フォント<select aria-label="Markdownフォント" value={markdownStyleDraft.fontFamily} onChange={(event) => { setMarkdownStyleDraft((current) => ({ ...current, fontFamily: event.target.value as MarkdownFontFamily })); setMarkdownStyleDirty(true); }}>
+          {MARKDOWN_FONT_FAMILIES.map((value) => <option key={value} value={value}>{({ system: "システム", serif: "明朝／セリフ", "sans-serif": "ゴシック／サンセリフ", monospace: "等幅" } as const)[value]}</option>)}
+        </select></label>
+        <label>行間<input aria-label="Markdown行間" type="number" min="1" max="3" step="0.05" value={markdownStyleDraft.lineHeight} onChange={(event) => { setMarkdownStyleDraft((current) => ({ ...current, lineHeight: Number(event.target.value) })); setMarkdownStyleDirty(true); }} /></label>
+      </div>
+      <style>{scopeMarkdownStyleCss(markdownStyleDirty ? generateMarkdownStyleCss(markdownStyleDraft) : markdownStyleCss, ".markdown-style-preview") ?? ""}</style>
+      <div className="markdown-style-preview" aria-label="Markdownスタイルプレビュー">
+        <h3>見出しプレビュー</h3><p>{"単一改行の前\n単一改行の後"}</p><p>空白行で分かれた段落</p>
+      </div>
+      <label className="markdown-style-settings__css">適用するCSS
+        <textarea aria-label="Markdown CSS内容" readOnly value={markdownStyleDirty ? generateMarkdownStyleCss(markdownStyleDraft) : markdownStyleCss} />
+      </label>
+      {markdownStylePath && <output className="markdown-style-settings__path">保存先: {markdownStylePath}</output>}
+      <div className="markdown-style-settings__actions">
+        <button type="button" onClick={() => { setMarkdownStyleDraft({ ...DEFAULT_MARKDOWN_STYLE_SETTINGS }); setMarkdownStyleDirty(true); }}>既定値へ戻す</button>
+        <button type="button" onClick={() => void onOpenMarkdownStyle().catch((reason) => setError(String(reason)))}>CSSファイルを開く</button>
+        <button type="button" onClick={() => void onReloadMarkdownStyle().then(() => setMarkdownStyleDirty(false)).catch((reason) => setError(String(reason)))}>外部変更を再読込</button>
+      </div>
+      <p>CSSはMarkdown本文の範囲だけへ適用されます。外部編集では<code>:scope</code>を本文ルートとして使用してください。</p>
     </fieldset>
     <div className="settings-app-groups">
       {(["document", "image"] as const).map((target) => {

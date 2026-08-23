@@ -13,9 +13,18 @@ export interface SettingsLoadStatus {
   recoveredFiles: CorruptFileInfo[];
 }
 
+export interface MarkdownStyleFile {
+  css: string;
+  path: string;
+  revision: string;
+}
+
 export async function loadSettings(): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("load_settings"); }
 export async function loadSettingsStatus(): Promise<SettingsLoadStatus> { return await invoke<SettingsLoadStatus>("load_settings_status"); }
 export async function saveSettings(updates: Record<string, unknown>): Promise<Record<string, unknown>> { return await invoke<Record<string, unknown>>("save_settings", { updates }); }
+export async function loadMarkdownStyle(defaultCss: string): Promise<MarkdownStyleFile> { return await invoke<MarkdownStyleFile>("load_markdown_style", { defaultCss }); }
+export async function saveMarkdownStyle(css: string): Promise<MarkdownStyleFile> { return await invoke<MarkdownStyleFile>("save_markdown_style", { css }); }
+export async function openMarkdownStyle(): Promise<void> { await invoke<void>("open_markdown_style"); }
 export async function copyMermaidFile(request: { kind: "code" | "png" | "svg"; source: string; svg: string; pngBytes: number[] }): Promise<string> {
   return await invoke<string>("copy_mermaid_file", { request });
 }

@@ -18,6 +18,7 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][3]).toBe(32);
     expect(onSave.mock.calls[0][4]).toMatchObject({ theme: "adaptive", customColors: false });
     expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#1f2328", monochrome: false });
+    expect(onSave.mock.calls[0][6]).toMatchObject({ breakMode: "commonmark", useThemeColor: true, fontSize: 16, lineHeight: 1.65 });
   });
 
   it("keeps required built-ins undeletable and validates a new document app", async () => {
@@ -85,6 +86,35 @@ describe("SettingsPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][5]).toEqual({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true });
+  });
+
+  it("previews and saves Markdown layout settings with a generated CSS file", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const onOpenMarkdownStyle = vi.fn().mockResolvedValue(undefined);
+    const onReloadMarkdownStyle = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel
+      apps={DEFAULT_EXTERNAL_APPS}
+      presentationLineThreshold={10}
+      markdownStylePath="C:\\AppData\\markdown-style.css"
+      onOpenMarkdownStyle={onOpenMarkdownStyle}
+      onReloadMarkdownStyle={onReloadMarkdownStyle}
+      onSave={onSave}
+    />);
+    fireEvent.change(screen.getByLabelText("Markdown改行モード"), { target: { value: "soft-break" } });
+    fireEvent.click(screen.getByLabelText("Markdownテーマ文字色"));
+    fireEvent.change(screen.getByLabelText("Markdown文字色"), { target: { value: "#123456" } });
+    fireEvent.change(screen.getByLabelText("Markdown文字サイズ"), { target: { value: "19" } });
+    fireEvent.change(screen.getByLabelText("Markdownフォント"), { target: { value: "serif" } });
+    fireEvent.change(screen.getByLabelText("Markdown行間"), { target: { value: "1.8" } });
+    expect((screen.getByLabelText("Markdown CSS内容") as HTMLTextAreaElement).value).toContain("white-space: pre-line");
+    expect(screen.getByText(/markdown-style\.css/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "CSSファイルを開く" }));
+    fireEvent.click(screen.getByRole("button", { name: "外部変更を再読込" }));
+    await waitFor(() => expect(onOpenMarkdownStyle).toHaveBeenCalled());
+    await waitFor(() => expect(onReloadMarkdownStyle).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][6]).toEqual({ breakMode: "soft-break", useThemeColor: false, color: "#123456", fontSize: 19, fontFamily: "serif", lineHeight: 1.8 });
   });
 
   it("does not ask users for SharePoint application registration values", () => {
