@@ -1,3 +1,5 @@
+import { moveLineDown, moveLineUp } from "@codemirror/commands";
+import { EditorSelection, EditorState, findClusterBreak, type StateCommand, type Transaction } from "@codemirror/state";
 import {
   buildMarkdownEdit,
   buildOrderedListNormalization,
@@ -7,6 +9,8 @@ import {
   buildStructuredListPaste,
   buildStructuredListSoftEnter,
   buildStructuredListToggle,
+  moveHeadingBlock,
+  parseMarkdownHeadingBlocks,
   type MarkdownEditAction,
   type MarkdownEditChange,
   type StructuredListKind,
@@ -15,6 +19,7 @@ import {
 export const EDITING_CARET_MARKER = "¦";
 export const EDITING_SELECTION_START = "⟦";
 export const EDITING_SELECTION_END = "⟧";
+export const EDITING_DESTINATION_MARKER = "◆";
 
 export type EditingTestCategory =
   | "文字入力"
@@ -26,7 +31,13 @@ export type EditingTestCategory =
   | "リスト移動"
   | "貼り付け"
   | "ツールバー"
-  | "自動正規化";
+  | "自動正規化"
+  | "行入替"
+  | "切り取り・貼り付け"
+  | "見出し入替"
+  | "Markdown構文"
+  | "Unicode"
+  | "境界値";
 
 type EditingOperation =
   | { type: "insert"; text: string }
@@ -39,7 +50,10 @@ type EditingOperation =
   | { type: "move-list"; direction: -1 | 1 }
   | { type: "paste"; text: string }
   | { type: "toolbar"; action: MarkdownEditAction }
-  | { type: "normalize" };
+  | { type: "normalize" }
+  | { type: "move-lines"; direction: -1 | 1 }
+  | { type: "cut-paste" }
+  | { type: "move-heading"; position: "before" | "after" };
 
 export interface EditingTestCase {
   id: string;
@@ -61,27 +75,35 @@ interface ParsedAnnotatedText {
   text: string;
   from: number;
   to: number;
+  destination: number | null;
 }
 
 function parseAnnotatedText(value: string): ParsedAnnotatedText {
-  const caret = value.indexOf(EDITING_CARET_MARKER);
-  const selectionStart = value.indexOf(EDITING_SELECTION_START);
-  const selectionEnd = value.indexOf(EDITING_SELECTION_END);
-  if (caret >= 0) {
-    if (value.indexOf(EDITING_CARET_MARKER, caret + 1) >= 0 || selectionStart >= 0 || selectionEnd >= 0) {
-      throw new Error("カーソル目印は1個だけ指定してください。");
+  let text = "";
+  let caret: number | null = null;
+  let selectionStart: number | null = null;
+  let selectionEnd: number | null = null;
+  let destination: number | null = null;
+  for (const character of value) {
+    if (character === EDITING_CARET_MARKER) {
+      if (caret !== null) throw new Error("カーソル目印は1個だけ指定してください。");
+      caret = text.length;
+    } else if (character === EDITING_SELECTION_START) {
+      if (selectionStart !== null) throw new Error("選択開始目印は1個だけ指定してください。");
+      selectionStart = text.length;
+    } else if (character === EDITING_SELECTION_END) {
+      if (selectionEnd !== null) throw new Error("選択終了目印は1個だけ指定してください。");
+      selectionEnd = text.length;
+    } else if (character === EDITING_DESTINATION_MARKER) {
+      if (destination !== null) throw new Error("移動先目印は1個だけ指定してください。");
+      destination = text.length;
+    } else {
+      text += character;
     }
-    return { text: value.slice(0, caret) + value.slice(caret + EDITING_CARET_MARKER.length), from: caret, to: caret };
   }
-  if (selectionStart >= 0 && selectionEnd > selectionStart) {
-    const text = value.slice(0, selectionStart)
-      + value.slice(selectionStart + EDITING_SELECTION_START.length, selectionEnd)
-      + value.slice(selectionEnd + EDITING_SELECTION_END.length);
-    return {
-      text,
-      from: selectionStart,
-      to: selectionEnd - EDITING_SELECTION_START.length,
-    };
+  if (caret !== null && selectionStart === null && selectionEnd === null) return { text, from: caret, to: caret, destination };
+  if (caret === null && selectionStart !== null && selectionEnd !== null && selectionEnd >= selectionStart) {
+    return { text, from: selectionStart, to: selectionEnd, destination };
   }
   throw new Error("入力前テキストには¦または⟦選択範囲⟧を指定してください。");
 }
@@ -93,13 +115,43 @@ function applyChange(source: string, change: MarkdownEditChange | null): string 
 
 function previousCharacterStart(source: string, position: number): number {
   if (position >= 2 && source.slice(position - 2, position) === "\r\n") return position - 2;
-  const points = Array.from(source.slice(0, position));
-  return position - (points[points.length - 1]?.length ?? 0);
+  return position <= 0 ? 0 : findClusterBreak(source, position, false);
 }
 
 function nextCharacterEnd(source: string, position: number): number {
   if (source.slice(position, position + 2) === "\r\n") return position + 2;
-  return position + (Array.from(source.slice(position))[0]?.length ?? 0);
+  return position >= source.length ? source.length : findClusterBreak(source, position, true);
+}
+
+function executeStateCommand(source: string, from: number, to: number, command: StateCommand): string {
+  const internalPosition = (position: number) => source.slice(0, position).replace(/\r\n|\r/g, "\n").length;
+  let state = EditorState.create({
+    doc: source,
+    selection: EditorSelection.single(internalPosition(from), internalPosition(to)),
+    extensions: [EditorState.lineSeparator.of(documentLineEnding(source))],
+  });
+  const handled = command({
+    state,
+    dispatch: (transaction: Transaction) => { state = transaction.state; },
+  });
+  return handled ? state.sliceDoc() : source;
+}
+
+function cutAndPaste(source: string, from: number, to: number, destination: number | null): string {
+  if (from === to || destination === null) return source;
+  const cut = source.slice(from, to);
+  const without = source.slice(0, from) + source.slice(to);
+  const mappedDestination = destination <= from ? destination : destination >= to ? destination - (to - from) : from;
+  return without.slice(0, mappedDestination) + cut + without.slice(mappedDestination);
+}
+
+function moveAnnotatedHeading(source: string, sourcePosition: number, destination: number | null, position: "before" | "after"): string {
+  if (destination === null) return source;
+  const headings = parseMarkdownHeadingBlocks(source);
+  const sourceHeading = headings.find((heading) => sourcePosition >= heading.start && sourcePosition <= heading.lineEnd);
+  const targetHeading = headings.find((heading) => destination >= heading.start && destination <= heading.lineEnd);
+  if (!sourceHeading || !targetHeading) return source;
+  return moveHeadingBlock(source, sourceHeading.start, targetHeading.start, position) ?? source;
 }
 
 function replaceRange(source: string, from: number, to: number, insert: string): string {
@@ -124,7 +176,7 @@ function toolbarChange(source: string, from: number, to: number, action: Markdow
 
 export function executeEditingTestCase(testCase: EditingTestCase): EditingTestResult {
   try {
-    const { text: source, from, to } = parseAnnotatedText(testCase.before);
+    const { text: source, from, to, destination } = parseAnnotatedText(testCase.before);
     let actualAfter = source;
     switch (testCase.operation.type) {
       case "insert":
@@ -176,6 +228,19 @@ export function executeEditingTestCase(testCase: EditingTestCase): EditingTestRe
       case "normalize":
         actualAfter = applyChange(source, buildOrderedListNormalization(source, from, to));
         break;
+      case "move-lines": {
+        const structured = buildStructuredListMove(source, to, testCase.operation.direction);
+        actualAfter = structured
+          ? applyChange(source, structured)
+          : executeStateCommand(source, from, to, testCase.operation.direction < 0 ? moveLineUp : moveLineDown);
+        break;
+      }
+      case "cut-paste":
+        actualAfter = cutAndPaste(source, from, to, destination);
+        break;
+      case "move-heading":
+        actualAfter = moveAnnotatedHeading(source, to, destination, testCase.operation.position);
+        break;
     }
     return { ...testCase, actualAfter, passed: actualAfter === testCase.expectedAfter };
   } catch (error) {
@@ -202,7 +267,7 @@ const testCase = (
   operation: EditingOperation,
 ): EditingTestCase => ({ id, category, description, before, key, expectedAfter, operation });
 
-export const EDITING_TEST_CASES: readonly EditingTestCase[] = [
+const BASE_EDITING_TEST_CASES: readonly EditingTestCase[] = [
   testCase("input-empty-ascii", "文字入力", "空文書へ英字", "¦", "a", "a", { type: "insert", text: "a" }),
   testCase("input-start", "文字入力", "行頭へ入力", "¦beta", "alpha ", "alpha beta", { type: "insert", text: "alpha " }),
   testCase("input-middle", "文字入力", "単語の途中へ入力", "mark¦down", "-", "mark-down", { type: "insert", text: "-" }),
@@ -340,4 +405,472 @@ export const EDITING_TEST_CASES: readonly EditingTestCase[] = [
   testCase("normalize-heading", "自動正規化", "番号付き見出しを兄弟順に再採番", "# 8. One\n# 3. T¦wo", "自動再採番", "# 1. One\n# 2. Two", { type: "normalize" }),
   testCase("normalize-fence-guard", "自動正規化", "コードフェンス内の番号は変更しない", "```text\n9. it¦em\n```", "自動再採番", "```text\n9. item\n```", { type: "normalize" }),
   testCase("normalize-separated", "自動正規化", "段落で分離したリストは個別に1から開始", "5. one\n\ntext\n\n8. t¦wo", "自動再採番", "1. one\n\ntext\n\n1. two", { type: "normalize" }),
+];
+
+interface CursorContext {
+  id: string;
+  label: string;
+  left: string;
+  right: string;
+  category?: EditingTestCategory;
+}
+
+interface InputToken {
+  id: string;
+  label: string;
+  value: string;
+}
+
+const CURSOR_CONTEXTS: readonly CursorContext[] = [
+  { id: "empty", label: "空文書", left: "", right: "", category: "境界値" },
+  { id: "ascii-start", label: "英字行頭", left: "", right: "alpha" },
+  { id: "ascii-middle", label: "英単語中央", left: "al", right: "pha" },
+  { id: "ascii-end", label: "英字行末", left: "alpha", right: "" },
+  { id: "japanese-start", label: "日本語行頭", left: "", right: "日本語", category: "Unicode" },
+  { id: "japanese-middle", label: "日本語中央", left: "日本", right: "語", category: "Unicode" },
+  { id: "japanese-end", label: "日本語行末", left: "日本語", right: "", category: "Unicode" },
+  { id: "emoji-between", label: "絵文字の間", left: "✅", right: "❌", category: "Unicode" },
+  { id: "lf-line-start", label: "LFの2行目行頭", left: "one\n", right: "two", category: "境界値" },
+  { id: "lf-line-middle", label: "LFの2行目中央", left: "one\nt", right: "wo", category: "境界値" },
+  { id: "lf-line-end", label: "LFの2行目行末", left: "one\ntwo", right: "\nthree", category: "境界値" },
+  { id: "crlf-line-start", label: "CRLFの2行目行頭", left: "one\r\n", right: "two", category: "境界値" },
+  { id: "crlf-line-middle", label: "CRLFの2行目中央", left: "one\r\nt", right: "wo", category: "境界値" },
+  { id: "crlf-line-end", label: "CRLFの2行目行末", left: "one\r\ntwo", right: "\r\nthree", category: "境界値" },
+  { id: "heading-h1", label: "H1本文", left: "# Head", right: "ing" },
+  { id: "heading-h6", label: "H6本文", left: "###### Head", right: "ing" },
+  { id: "setext", label: "Setext見出し", left: "Head", right: "ing\n======" },
+  { id: "bold", label: "太字本文", left: "**bo", right: "ld**" },
+  { id: "italic", label: "斜体本文", left: "_ita", right: "lic_" },
+  { id: "strike", label: "取消線本文", left: "~~ol", right: "d~~" },
+  { id: "inline-code", label: "インラインコード本文", left: "`co", right: "de`" },
+  { id: "link-label", label: "リンクラベル", left: "[la", right: "bel](url)" },
+  { id: "link-url", label: "リンクURL", left: "[label](https://exa", right: "mple.com)" },
+  { id: "image-alt", label: "画像代替テキスト", left: "![al", right: "t](image.png)" },
+  { id: "image-path", label: "画像パス", left: "![alt](images/", right: "image.png)" },
+  { id: "blockquote", label: "引用本文", left: "> quo", right: "te" },
+  { id: "unordered", label: "箇条書き本文", left: "- it", right: "em" },
+  { id: "ordered", label: "番号付き本文", left: "1. it", right: "em" },
+  { id: "task", label: "タスク本文", left: "- [ ] it", right: "em" },
+  { id: "nested-list", label: "入れ子箇条書き本文", left: "- parent\n  - ch", right: "ild" },
+  { id: "table-header", label: "表ヘッダーセル", left: "| hea", right: "der | value |" },
+  { id: "table-cell", label: "表データセル", left: "| one | t", right: "wo |" },
+  { id: "fence-info", label: "コードフェンス言語名", left: "```type", right: "script\ncode\n```" },
+  { id: "fence-body", label: "コードフェンス本文", left: "```text\nco", right: "de\n```" },
+  { id: "tilde-fence", label: "チルダフェンス本文", left: "~~~text\nco", right: "de\n~~~" },
+  { id: "mermaid", label: "Mermaid本文", left: "```mermaid\ngraph TD\n  A -", right: "-> B\n```" },
+  { id: "drawio", label: "draw.io XML属性", left: "```drawio\n<mxCell id=\"", right: "0\"/>\n```" },
+  { id: "yaml-key", label: "YAMLキー", left: "---\ntit", right: "le: Sample\n---" },
+  { id: "yaml-value", label: "YAML値", left: "---\ntitle: Sam", right: "ple\n---" },
+  { id: "html-text", label: "HTML要素本文", left: "<span>te", right: "xt</span>" },
+  { id: "html-attribute", label: "HTML属性値", left: "<span class=\"na", right: "me\">text</span>" },
+  { id: "html-comment", label: "HTMLコメント", left: "<!-- com", right: "ment -->" },
+  { id: "escaped", label: "エスケープ済み記号の後", left: "\\*literal", right: "*" },
+  { id: "autolink", label: "自動リンク", left: "<https://exa", right: "mple.com>" },
+  { id: "footnote", label: "脚注本文", left: "[^1]: no", right: "te" },
+  { id: "reference", label: "参照リンク定義", left: "[ref]: https://exa", right: "mple.com" },
+  { id: "windows-path", label: "Windowsパス", left: "C:\\docs\\sam", right: "ple.md" },
+  { id: "url-query", label: "URLクエリー", left: "https://example.com?a=", right: "1&b=2" },
+  { id: "parentheses", label: "丸括弧内部", left: "text (in", right: "side)" },
+  { id: "fullwidth", label: "全角記号の間", left: "「前", right: "後」", category: "Unicode" },
+];
+
+const INPUT_TOKENS: readonly InputToken[] = [
+  { id: "lower", label: "英小文字", value: "a" },
+  { id: "upper", label: "英大文字", value: "Z" },
+  { id: "digit", label: "数字", value: "7" },
+  { id: "hiragana", label: "ひらがな", value: "かな" },
+  { id: "kanji", label: "漢字", value: "編集" },
+  { id: "fullwidth", label: "全角英数", value: "Ａ１" },
+  { id: "emoji", label: "絵文字", value: "✅" },
+  { id: "family", label: "ZWJ絵文字", value: "👨‍👩‍👧‍👦" },
+  { id: "skin-tone", label: "肌色付き絵文字", value: "👍🏽" },
+  { id: "flag", label: "国旗絵文字", value: "🇯🇵" },
+  { id: "combining", label: "結合文字", value: "e\u0301" },
+  { id: "space", label: "空白", value: " " },
+  { id: "tab", label: "タブ", value: "\t" },
+  { id: "asterisk", label: "アスタリスク", value: "*" },
+  { id: "underscore", label: "アンダースコア", value: "_" },
+  { id: "backtick", label: "バッククォート", value: "`" },
+  { id: "brackets", label: "角括弧", value: "[x]" },
+  { id: "url", label: "URL", value: "https://example.com" },
+  { id: "html", label: "HTML断片", value: "<br>" },
+  { id: "backslash", label: "バックスラッシュ", value: "\\" },
+];
+
+const MATRIX_INSERT_CASES = CURSOR_CONTEXTS.flatMap((context) => INPUT_TOKENS.map((token) => testCase(
+  `matrix-input-${context.id}-${token.id}`,
+  context.category ?? "Markdown構文",
+  `${context.label}へ${token.label}を入力`,
+  `${context.left}${EDITING_CARET_MARKER}${context.right}`,
+  token.value,
+  `${context.left}${token.value}${context.right}`,
+  { type: "insert", text: token.value },
+)));
+
+interface SelectionContext extends CursorContext { selected: string }
+
+const SELECTION_CONTEXTS: readonly SelectionContext[] = CURSOR_CONTEXTS.slice(0, 30).map((context, index) => ({
+  ...context,
+  id: `${context.id}-selection`,
+  label: `${context.label}の選択範囲`,
+  selected: ["x", "old", "日本", "✅", "text"][index % 5],
+}));
+
+const REPLACEMENT_TOKENS = INPUT_TOKENS.slice(0, 12);
+const MATRIX_REPLACEMENT_CASES = SELECTION_CONTEXTS.flatMap((context) => REPLACEMENT_TOKENS.map((token) => testCase(
+  `matrix-replace-${context.id}-${token.id}`,
+  context.category ?? "選択置換",
+  `${context.label}を${token.label}で置換`,
+  `${context.left}${EDITING_SELECTION_START}${context.selected}${EDITING_SELECTION_END}${context.right}`,
+  token.value,
+  `${context.left}${token.value}${context.right}`,
+  { type: "insert", text: token.value },
+)));
+
+const DELETE_UNITS: readonly InputToken[] = [
+  { id: "ascii", label: "ASCII", value: "a" },
+  { id: "digit", label: "数字", value: "7" },
+  { id: "hiragana", label: "ひらがな", value: "あ" },
+  { id: "kanji", label: "漢字", value: "漢" },
+  { id: "fullwidth", label: "全角英字", value: "Ａ" },
+  { id: "emoji", label: "絵文字", value: "✅" },
+  { id: "family", label: "ZWJ絵文字", value: "👨‍👩‍👧‍👦" },
+  { id: "skin-tone", label: "肌色付き絵文字", value: "👍🏽" },
+  { id: "flag", label: "国旗絵文字", value: "🇯🇵" },
+  { id: "variation", label: "異体字セレクター付き絵文字", value: "❤️" },
+  { id: "keycap", label: "キーキャップ絵文字", value: "1️⃣" },
+  { id: "combining", label: "結合アクセント", value: "e\u0301" },
+  { id: "combining-kana", label: "結合濁点", value: "か\u3099" },
+  { id: "space", label: "空白", value: " " },
+  { id: "tab", label: "タブ", value: "\t" },
+  { id: "asterisk", label: "Markdown記号", value: "*" },
+  { id: "lf", label: "LF改行", value: "\n" },
+  { id: "crlf", label: "CRLF改行", value: "\r\n" },
+];
+
+const DELETE_CONTEXTS = CURSOR_CONTEXTS.slice(0, 20);
+const MATRIX_DELETE_CASES = DELETE_CONTEXTS.flatMap((context) => DELETE_UNITS.flatMap((unit) => [
+  testCase(
+    `matrix-backspace-${context.id}-${unit.id}`,
+    unit.id.includes("emoji") || ["family", "skin-tone", "flag", "variation", "keycap", "combining", "combining-kana"].includes(unit.id) ? "Unicode" : "削除",
+    `${context.label}で直前の${unit.label}を削除`,
+    `${context.left}${unit.value}${EDITING_CARET_MARKER}${context.right}`,
+    "Backspace",
+    `${context.left}${context.right}`,
+    { type: "backspace" },
+  ),
+  testCase(
+    `matrix-delete-${context.id}-${unit.id}`,
+    unit.id.includes("emoji") || ["family", "skin-tone", "flag", "variation", "keycap", "combining", "combining-kana"].includes(unit.id) ? "Unicode" : "削除",
+    `${context.label}で直後の${unit.label}を削除`,
+    `${context.left}${EDITING_CARET_MARKER}${unit.value}${context.right}`,
+    "Delete",
+    `${context.left}${context.right}`,
+    { type: "delete" },
+  ),
+]));
+
+const PASTE_VALUES: readonly InputToken[] = [
+  { id: "single", label: "単一行", value: "pasted" },
+  { id: "japanese", label: "日本語", value: "貼り付け" },
+  { id: "emoji", label: "絵文字", value: "✅📌" },
+  { id: "lf", label: "LF複数行", value: "one\ntwo" },
+  { id: "crlf", label: "CRLF複数行", value: "one\r\ntwo" },
+  { id: "markdown", label: "Markdown断片", value: "**bold**" },
+  { id: "table", label: "表断片", value: "| a | b |\n| - | - |" },
+  { id: "fence", label: "コードフェンス", value: "```text\ncode\n```" },
+];
+
+const MATRIX_PASTE_CASES = CURSOR_CONTEXTS.slice(0, 20).flatMap((context) => PASTE_VALUES.map((value) => testCase(
+  `matrix-paste-${context.id}-${value.id}`,
+  "貼り付け",
+  `${context.label}へ${value.label}を貼り付け`,
+  `${context.left}${EDITING_CARET_MARKER}${context.right}`,
+  `Ctrl+V: ${value.label}`,
+  `${context.left}${value.value}${context.right}`,
+  { type: "paste", text: value.value },
+)));
+
+const STRUCTURAL_EDITING_CASES: readonly EditingTestCase[] = [
+  testCase("line-move-middle-up", "行入替", "中間行を1行上へ", "one\nt¦wo\nthree", "Alt+↑", "two\none\nthree", { type: "move-lines", direction: -1 }),
+  testCase("line-move-middle-down", "行入替", "中間行を1行下へ", "one\nt¦wo\nthree", "Alt+↓", "one\nthree\ntwo", { type: "move-lines", direction: 1 }),
+  testCase("line-move-first-up", "行入替", "先頭行を上へ移動しても変更なし", "fi¦rst\nsecond", "Alt+↑", "first\nsecond", { type: "move-lines", direction: -1 }),
+  testCase("line-move-last-down", "行入替", "末尾行を下へ移動しても変更なし", "first\nsec¦ond", "Alt+↓", "first\nsecond", { type: "move-lines", direction: 1 }),
+  testCase("line-move-first-down", "行入替", "先頭行を下へ", "fi¦rst\nsecond\nthird", "Alt+↓", "second\nfirst\nthird", { type: "move-lines", direction: 1 }),
+  testCase("line-move-last-up", "行入替", "末尾行を上へ", "first\nsecond\nthi¦rd", "Alt+↑", "first\nthird\nsecond", { type: "move-lines", direction: -1 }),
+  testCase("line-move-selection-up", "行入替", "選択した2行を上へ", "one\n⟦two\nthree⟧\nfour", "Alt+↑", "two\nthree\none\nfour", { type: "move-lines", direction: -1 }),
+  testCase("line-move-selection-down", "行入替", "選択した2行を下へ", "one\n⟦two\nthree⟧\nfour", "Alt+↓", "one\nfour\ntwo\nthree", { type: "move-lines", direction: 1 }),
+  testCase("line-move-blank-up", "行入替", "空行を上へ", "one\n¦\ntwo", "Alt+↑", "\none\ntwo", { type: "move-lines", direction: -1 }),
+  testCase("line-move-blank-down", "行入替", "空行を下へ", "one\n¦\ntwo", "Alt+↓", "one\ntwo\n", { type: "move-lines", direction: 1 }),
+  testCase("line-move-crlf-up", "行入替", "CRLF中間行を上へ", "one\r\nt¦wo\r\nthree", "Alt+↑", "two\r\none\r\nthree", { type: "move-lines", direction: -1 }),
+  testCase("line-move-crlf-down", "行入替", "CRLF中間行を下へ", "one\r\nt¦wo\r\nthree", "Alt+↓", "one\r\nthree\r\ntwo", { type: "move-lines", direction: 1 }),
+  testCase("line-move-heading", "行入替", "見出し行だけを下へ", "# Hea¦ding\nbody", "Alt+↓", "body\n# Heading", { type: "move-lines", direction: 1 }),
+  testCase("line-move-table", "行入替", "表データ行を上へ", "| a |\n| - |\n| t¦wo |\n| three |", "Alt+↑", "| a |\n| two |\n| - |\n| three |", { type: "move-lines", direction: -1 }),
+  testCase("line-move-fence-body", "行入替", "コードフェンス本文行を上へ", "```text\none\nt¦wo\n```", "Alt+↑", "```text\ntwo\none\n```", { type: "move-lines", direction: -1 }),
+
+  testCase("cut-paste-line-down", "切り取り・貼り付け", "先頭行を切り取り3行目の前へ貼り付け", "⟦one\n⟧two\n◆three", "Ctrl+X → Ctrl+V", "two\none\nthree", { type: "cut-paste" }),
+  testCase("cut-paste-line-up", "切り取り・貼り付け", "中間行を切り取り先頭へ貼り付け", "◆one\n⟦two\n⟧three", "Ctrl+X → Ctrl+V", "two\none\nthree", { type: "cut-paste" }),
+  testCase("cut-paste-two-lines-down", "切り取り・貼り付け", "2行を切り取り末尾行の前へ貼り付け", "⟦one\ntwo\n⟧three\n◆four", "Ctrl+X → Ctrl+V", "three\none\ntwo\nfour", { type: "cut-paste" }),
+  testCase("cut-paste-two-lines-up", "切り取り・貼り付け", "末尾側2行を切り取り先頭へ貼り付け", "◆one\n⟦two\nthree\n⟧four", "Ctrl+X → Ctrl+V", "two\nthree\none\nfour", { type: "cut-paste" }),
+  testCase("cut-paste-word-forward", "切り取り・貼り付け", "単語を後方の空白位置へ移動", "⟦alpha⟧ beta ◆gamma", "Ctrl+X → Ctrl+V", " beta alphagamma", { type: "cut-paste" }),
+  testCase("cut-paste-word-backward", "切り取り・貼り付け", "単語を文頭へ移動", "◆alpha beta ⟦gamma⟧", "Ctrl+X → Ctrl+V", "gammaalpha beta ", { type: "cut-paste" }),
+  testCase("cut-paste-markdown-bold", "切り取り・貼り付け", "太字構文全体を移動", "before ⟦**bold** ⟧after ◆end", "Ctrl+X → Ctrl+V", "before after **bold** end", { type: "cut-paste" }),
+  testCase("cut-paste-link", "切り取り・貼り付け", "リンク構文全体を移動", "◆start [x](a) and ⟦[y](b)⟧", "Ctrl+X → Ctrl+V", "[y](b)start [x](a) and ", { type: "cut-paste" }),
+  testCase("cut-paste-list-item", "切り取り・貼り付け", "箇条書き1項目を移動", "- one\n⟦- two\n⟧◆- three", "Ctrl+X → Ctrl+V", "- one\n- two\n- three", { type: "cut-paste" }),
+  testCase("cut-paste-crlf", "切り取り・貼り付け", "CRLF行を切り取り貼り付け", "⟦one\r\n⟧two\r\n◆three", "Ctrl+X → Ctrl+V", "two\r\none\r\nthree", { type: "cut-paste" }),
+  testCase("cut-paste-code-block", "切り取り・貼り付け", "コードブロック全体を別段落へ移動", "⟦```text\ncode\n```\n\n⟧paragraph\n\n◆tail", "Ctrl+X → Ctrl+V", "paragraph\n\n```text\ncode\n```\n\ntail", { type: "cut-paste" }),
+
+  testCase("heading-move-h1-before", "見出し入替", "H1ブロックを前へ", "# One\nbody 1\n\n# ◆Two\nbody 2\n\n# Th¦ree\nbody 3", "見出しを前へ移動", "# One\nbody 1\n\n# Three\nbody 3# Two\nbody 2\n\n", { type: "move-heading", position: "before" }),
+  testCase("heading-move-h1-after", "見出し入替", "H1ブロックを後ろへ", "# O¦ne\nbody 1\n\n# ◆Two\nbody 2\n\n# Three\nbody 3", "見出しを後ろへ移動", "# Two\nbody 2\n\n# One\nbody 1\n\n# Three\nbody 3", { type: "move-heading", position: "after" }),
+  testCase("heading-move-with-child", "見出し入替", "子見出しと本文を含むH1ブロックを移動", "# O¦ne\n## Child\nchild body\n\n# ◆Two\ntwo body", "見出しを後ろへ移動", "# Two\ntwo body# One\n## Child\nchild body\n\n", { type: "move-heading", position: "after" }),
+  testCase("heading-move-sibling-h2", "見出し入替", "同じ親のH2同士を入れ替え", "# Root\n## O¦ne\none\n## ◆Two\ntwo", "見出しを後ろへ移動", "# Root\n## Two\ntwo## One\none\n", { type: "move-heading", position: "after" }),
+  testCase("heading-move-different-parent-noop", "見出し入替", "異なる親のH2は移動不可", "# A\n## O¦ne\n# B\n## ◆Two", "見出しを前へ移動", "# A\n## One\n# B\n## Two", { type: "move-heading", position: "before" }),
+  testCase("heading-move-different-level-noop", "見出し入替", "異なるレベルの見出しは移動不可", "# O¦ne\n## ◆Child", "見出しを前へ移動", "# One\n## Child", { type: "move-heading", position: "before" }),
+  testCase("heading-move-numbered", "見出し入替", "番号付き見出しを移動して再採番", "# 1. O¦ne\n# 2. ◆Two\n# 3. Three", "見出しを後ろへ移動", "# 1. Two\n# 2. One\n# 3. Three", { type: "move-heading", position: "after" }),
+  testCase("heading-move-fenced-heading", "見出し入替", "コードフェンス内の疑似見出しを無視", "# O¦ne\n```text\n# Fake\n```\n# ◆Two", "見出しを後ろへ移動", "# Two# One\n```text\n# Fake\n```\n", { type: "move-heading", position: "after" }),
+
+  testCase("paste-indented-unordered-root", "貼り付け", "インデント済み箇条書きを空のルート項目へ貼り付け", "- ¦", "Ctrl+V:   - child↵    - grandchild", "  - child\n    - grandchild", { type: "paste", text: "  - child\n    - grandchild" }),
+  testCase("paste-indented-unordered-child", "貼り付け", "インデント済み箇条書きを空の子項目へ貼り付け", "- parent\n  - ¦", "Ctrl+V:   - child↵    - grandchild", "- parent\n    - child\n      - grandchild", { type: "paste", text: "  - child\n    - grandchild" }),
+  testCase("paste-indented-ordered-root", "貼り付け", "インデント済み番号付きリストを貼り付けて再採番", "1. ¦", "Ctrl+V:   8. child↵    4. grandchild", "  1. child\n    1. grandchild", { type: "paste", text: "  8. child\n    4. grandchild" }),
+  testCase("paste-indented-task-root", "貼り付け", "インデント済みタスクリストを貼り付け", "- [ ] ¦", "Ctrl+V:   - [x] done↵    - [ ] child", "  - [x] done\n    - [ ] child", { type: "paste", text: "  - [x] done\n    - [ ] child" }),
+  testCase("paste-indented-mixed", "貼り付け", "種類が混在するインデント済みリストを貼り付け", "- ¦", "Ctrl+V: - one↵  1. child↵    - [ ] task", "- one\n  1. child\n    - [ ] task", { type: "paste", text: "- one\n  1. child\n    - [ ] task" }),
+  testCase("paste-indented-tabs", "貼り付け", "タブでインデントされたリストを貼り付け", "- ¦", "Ctrl+V: ⇥- child↵⇥⇥- grandchild", "\t- child\n\t\t- grandchild", { type: "paste", text: "\t- child\n\t\t- grandchild" }),
+  testCase("paste-indented-crlf-target", "貼り付け", "CRLF文書へインデント済みリストを貼り付け", "- parent\r\n  - ¦\r\n- tail", "Ctrl+V:   - a↵    - b", "- parent\r\n    - a\r\n      - b\r\n- tail", { type: "paste", text: "  - a\n    - b" }),
+  testCase("paste-indented-with-continuation", "貼り付け", "継続行を含むインデント済みリストを貼り付け", "- ¦", "Ctrl+V:   - child↵      continuation", "  - child\n      continuation", { type: "paste", text: "  - child\n      continuation" }),
+  testCase("paste-indented-with-blank", "貼り付け", "空行を含むインデント済みリストを貼り付け", "- ¦", "Ctrl+V: - one↵↵  - child", "- one\n\n  - child", { type: "paste", text: "- one\n\n  - child" }),
+  testCase("paste-indented-deep", "貼り付け", "4階層のインデント済みリストを貼り付け", "- ¦", "Ctrl+V: - l1↵  - l2↵    - l3↵      - l4", "- l1\n  - l2\n    - l3\n      - l4", { type: "paste", text: "- l1\n  - l2\n    - l3\n      - l4" }),
+];
+
+const LINE_MOVE_CONTENTS = [
+  ["alpha", "target", "omega"],
+  ["日本語の前", "移動対象", "日本語の後"],
+  ["# Heading", "paragraph", "## Child"],
+  ["> quote one", "> quote target", "> quote three"],
+  ["| header |", "| target |", "| tail |"],
+  ["---", "paragraph", "***"],
+  ["<!-- before -->", "<!-- target -->", "<!-- after -->"],
+  ["<div>", "text", "</div>"],
+  ["```text", "code target", "```"],
+  ["~~~text", "code target", "~~~"],
+  ["[one](a)", "[target](b)", "[three](c)"],
+  ["![one](a.png)", "![target](b.png)", "![three](c.png)"],
+  ["**bold**", "_target_", "~~strike~~"],
+  ["key: one", "target: two", "tail: three"],
+  ["C:\\one", "C:\\target", "C:\\three"],
+  ["first", "", "third"],
+  ["🙂 first", "✅ target", "📌 third"],
+  ["[^1]: first", "[^2]: target", "[^3]: third"],
+  ["[a]: /one", "[b]: /target", "[c]: /three"],
+  ["<https://one>", "<https://target>", "<https://three>"],
+  ["    code one", "    code target", "    code three"],
+  ["term", ": target definition", "tail"],
+  ["$$", "x = target", "$$"],
+  ["::: note", "target", ":::"],
+  ["before  ", "target  ", "after  "],
+] as const;
+
+const LINE_MOVE_MATRIX_CASES = (["\n", "\r\n"] as const).flatMap((ending) => LINE_MOVE_CONTENTS.flatMap(([above, target, below], index) => [
+  testCase(
+    `matrix-line-move-${ending === "\n" ? "lf" : "crlf"}-${index}-up`,
+    "行入替",
+    `${index + 1}番目の構文で中間行を上へ移動`,
+    `${above}${ending}${target}${EDITING_CARET_MARKER}${ending}${below}`,
+    "Alt+↑",
+    `${target}${ending}${above}${ending}${below}`,
+    { type: "move-lines", direction: -1 },
+  ),
+  testCase(
+    `matrix-line-move-${ending === "\n" ? "lf" : "crlf"}-${index}-down`,
+    "行入替",
+    `${index + 1}番目の構文で中間行を下へ移動`,
+    `${above}${ending}${target}${EDITING_CARET_MARKER}${ending}${below}`,
+    "Alt+↓",
+    `${above}${ending}${below}${ending}${target}`,
+    { type: "move-lines", direction: 1 },
+  ),
+]));
+
+function buildCutPasteLineCases(ending: "\n" | "\r\n"): EditingTestCase[] {
+  const lines = ["alpha", "日本語", "# Heading", "> quote", "| table |", "omega"];
+  const cases: EditingTestCase[] = [];
+  for (let source = 0; source < lines.length; source += 1) {
+    for (let destination = 0; destination < lines.length; destination += 1) {
+      if (source === destination) continue;
+      const before = lines.map((line, index) => `${index === destination ? EDITING_DESTINATION_MARKER : ""}${index === source ? EDITING_SELECTION_START : ""}${line}${ending}${index === source ? EDITING_SELECTION_END : ""}`).join("");
+      const reordered = [...lines];
+      const [moved] = reordered.splice(source, 1);
+      reordered.splice(destination > source ? destination - 1 : destination, 0, moved);
+      cases.push(testCase(
+        `matrix-cut-paste-${ending === "\n" ? "lf" : "crlf"}-line-${source}-to-${destination}`,
+        "切り取り・貼り付け",
+        `${source + 1}行目を切り取り${destination + 1}行目の前へ貼り付け`,
+        before,
+        "Ctrl+X → Ctrl+V",
+        reordered.map((line) => line + ending).join(""),
+        { type: "cut-paste" },
+      ));
+    }
+  }
+  for (let source = 0; source < lines.length - 1; source += 1) {
+    for (let destination = 0; destination < lines.length; destination += 1) {
+      if (destination === source || destination === source + 1) continue;
+      const before = lines.map((line, index) => `${index === destination ? EDITING_DESTINATION_MARKER : ""}${index === source ? EDITING_SELECTION_START : ""}${line}${ending}${index === source + 1 ? EDITING_SELECTION_END : ""}`).join("");
+      const reordered = [...lines];
+      const moved = reordered.splice(source, 2);
+      reordered.splice(destination > source + 1 ? destination - 2 : destination, 0, ...moved);
+      cases.push(testCase(
+        `matrix-cut-paste-${ending === "\n" ? "lf" : "crlf"}-block-${source}-to-${destination}`,
+        "切り取り・貼り付け",
+        `${source + 1}～${source + 2}行目を切り取り${destination + 1}行目の前へ貼り付け`,
+        before,
+        "Ctrl+X → Ctrl+V",
+        reordered.map((line) => line + ending).join(""),
+        { type: "cut-paste" },
+      ));
+    }
+  }
+  return cases;
+}
+
+const CUT_PASTE_MATRIX_CASES = [
+  ...buildCutPasteLineCases("\n"),
+  ...buildCutPasteLineCases("\r\n"),
+];
+
+interface HeadingFixture {
+  title: string;
+  body: string;
+  child?: string;
+}
+
+const HEADING_FIXTURES: readonly HeadingFixture[] = [
+  { title: "Alpha", body: "alpha body" },
+  { title: "日本語", body: "日本語本文" },
+  { title: "Images", body: "![image](a.png)" },
+  { title: "Code", body: "```text\ncode\n```" },
+  { title: "Parent", body: "parent body", child: "Child" },
+  { title: "Final", body: "final body" },
+];
+
+function headingBlock(fixture: HeadingFixture, ending: string, source: boolean, target: boolean): string {
+  const heading = `# ${target ? EDITING_DESTINATION_MARKER : ""}${fixture.title}${source ? EDITING_CARET_MARKER : ""}`;
+  const child = fixture.child ? `${ending}## ${fixture.child}${ending}child body` : "";
+  return `${heading}${ending}${fixture.body}${child}${ending}${ending}`;
+}
+
+function plainHeadingBlock(fixture: HeadingFixture, ending: string): string {
+  const child = fixture.child ? `${ending}## ${fixture.child}${ending}child body` : "";
+  return `# ${fixture.title}${ending}${fixture.body}${child}${ending}${ending}`;
+}
+
+function buildHeadingMoveCases(ending: "\n" | "\r\n"): EditingTestCase[] {
+  const cases: EditingTestCase[] = [];
+  for (let source = 0; source < HEADING_FIXTURES.length; source += 1) {
+    for (let target = 0; target < HEADING_FIXTURES.length; target += 1) {
+      if (source === target) continue;
+      for (const position of ["before", "after"] as const) {
+        const before = HEADING_FIXTURES.map((fixture, index) => headingBlock(fixture, ending, index === source, index === target)).join("");
+        const reordered = [...HEADING_FIXTURES];
+        const [moved] = reordered.splice(source, 1);
+        const targetAfterRemoval = reordered.findIndex((fixture) => fixture === HEADING_FIXTURES[target]);
+        reordered.splice(targetAfterRemoval + (position === "after" ? 1 : 0), 0, moved);
+        cases.push(testCase(
+          `matrix-heading-${ending === "\n" ? "lf" : "crlf"}-${source}-${position}-${target}`,
+          "見出し入替",
+          `${HEADING_FIXTURES[source].title}見出しブロックを${HEADING_FIXTURES[target].title}の${position === "before" ? "前" : "後"}へ移動`,
+          before,
+          `見出しを${position === "before" ? "前" : "後"}へ移動`,
+          reordered.map((fixture) => plainHeadingBlock(fixture, ending)).join(""),
+          { type: "move-heading", position },
+        ));
+      }
+    }
+  }
+  return cases;
+}
+
+const HEADING_MOVE_MATRIX_CASES = [
+  ...buildHeadingMoveCases("\n"),
+  ...buildHeadingMoveCases("\r\n"),
+];
+
+interface ListPasteTarget {
+  id: string;
+  prefix: string;
+  indent: string;
+  suffix: string;
+}
+
+const LIST_PASTE_TARGETS: readonly ListPasteTarget[] = [
+  { id: "root-unordered", prefix: "", indent: "", suffix: "" },
+  { id: "child-unordered", prefix: "- parent\n", indent: "  ", suffix: "" },
+  { id: "grandchild-unordered", prefix: "- root\n  - parent\n", indent: "    ", suffix: "" },
+  { id: "root-task", prefix: "", indent: "", suffix: "" },
+  { id: "child-task", prefix: "- [ ] parent\n", indent: "  ", suffix: "" },
+  { id: "between-items", prefix: "- before\n", indent: "  ", suffix: "\n- after" },
+];
+
+const INDENTED_LIST_FIXTURES = [
+  "- alpha\n  - child",
+  "- alpha\n    - deep",
+  "  - indented\n    - child",
+  "- [ ] task\n  - [x] done",
+  "- [x] done\n    - [ ] child",
+  "1. first\n2. second",
+  "1) first\n2) second",
+  "- parent\n  1. ordered\n  2. ordered two",
+  "1. parent\n  - child\n    - grandchild",
+  "- one\n\n  - child",
+  "- one\n    continuation",
+  "\t- tab child\n\t\t- tab grandchild",
+  "- 日本語\n  - 子項目",
+  "- emoji ✅\n  - emoji 📌",
+  "- link [x](a)\n  - image ![a](a.png)",
+  "- `code`\n  - **bold**",
+  "- level1\n  - level2\n    - level3\n      - level4",
+  "+ plus\n  * asterisk",
+  "1. starts-one\n2. starts-two",
+  "- [X] uppercase checked\n  - [ ] open",
+] as const;
+
+function normalizePastedFixtureLineEndings(value: string, ending: string): string {
+  return value.replace(/\r\n|\r|\n/g, ending);
+}
+
+function buildIndentedListPasteCases(ending: "\n" | "\r\n"): EditingTestCase[] {
+  return LIST_PASTE_TARGETS.flatMap((target) => INDENTED_LIST_FIXTURES.map((fixture, index) => {
+    const normalizedFixture = normalizePastedFixtureLineEndings(fixture, ending);
+    const pastedLines = normalizedFixture.split(ending).map((line) => target.indent + line).join(ending);
+    const emptyMarker = target.id.includes("task") ? "- [ ] " : target.id === "between-items" ? "- " : "- ";
+    const suffix = target.suffix || (ending === "\r\n" ? "\n- tail" : "");
+    const source = normalizePastedFixtureLineEndings(target.prefix, ending) + target.indent + emptyMarker + EDITING_CARET_MARKER + normalizePastedFixtureLineEndings(suffix, ending);
+    const expected = normalizePastedFixtureLineEndings(target.prefix, ending) + pastedLines + normalizePastedFixtureLineEndings(suffix, ending);
+    return testCase(
+      `matrix-indented-paste-${ending === "\n" ? "lf" : "crlf"}-${target.id}-${index}`,
+      "貼り付け",
+      `${target.id}へインデント済みリストパターン${index + 1}を貼り付け`,
+      source,
+      `Ctrl+V: インデント済みリスト${index + 1}`,
+      expected,
+      { type: "paste", text: fixture },
+    );
+  }));
+}
+
+const INDENTED_LIST_PASTE_MATRIX_CASES = [
+  ...buildIndentedListPasteCases("\n"),
+  ...buildIndentedListPasteCases("\r\n"),
+];
+
+export const EDITING_TEST_CASES: readonly EditingTestCase[] = [
+  ...BASE_EDITING_TEST_CASES,
+  ...MATRIX_INSERT_CASES,
+  ...MATRIX_REPLACEMENT_CASES,
+  ...MATRIX_DELETE_CASES,
+  ...MATRIX_PASTE_CASES,
+  ...STRUCTURAL_EDITING_CASES,
+  ...LINE_MOVE_MATRIX_CASES,
+  ...CUT_PASTE_MATRIX_CASES,
+  ...HEADING_MOVE_MATRIX_CASES,
+  ...INDENTED_LIST_PASTE_MATRIX_CASES,
 ];

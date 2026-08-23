@@ -7,10 +7,14 @@ import {
 } from "./editingTestCases";
 
 describe("Markdown編集パターン", () => {
-  it("重複しない100件以上の明示的なケースを保持する", () => {
-    expect(EDITING_TEST_CASES.length).toBeGreaterThanOrEqual(100);
+  it("重複しない2900件以上のケースを保持する", () => {
+    expect(EDITING_TEST_CASES.length).toBeGreaterThanOrEqual(2900);
     expect(new Set(EDITING_TEST_CASES.map((testCase) => testCase.id)).size).toBe(EDITING_TEST_CASES.length);
-    expect(new Set(EDITING_TEST_CASES.map((testCase) => testCase.category)).size).toBeGreaterThanOrEqual(10);
+    expect(new Set(EDITING_TEST_CASES.map((testCase) => testCase.category)).size).toBeGreaterThanOrEqual(15);
+    expect(EDITING_TEST_CASES.filter((testCase) => testCase.id.includes("line-move")).length).toBeGreaterThanOrEqual(100);
+    expect(EDITING_TEST_CASES.filter((testCase) => testCase.id.includes("cut-paste")).length).toBeGreaterThanOrEqual(100);
+    expect(EDITING_TEST_CASES.filter((testCase) => testCase.id.includes("heading-move") || testCase.id.startsWith("matrix-heading")).length).toBeGreaterThanOrEqual(120);
+    expect(EDITING_TEST_CASES.filter((testCase) => testCase.id.includes("indented-paste") || testCase.id.startsWith("paste-indented")).length).toBeGreaterThanOrEqual(240);
   });
 
   it.each(EDITING_TEST_CASES)("$id: $description", (testCase) => {
@@ -39,4 +43,3 @@ describe("Markdown編集パターン", () => {
     expect(results.map((result) => result.id)).toEqual(EDITING_TEST_CASES.map((testCase) => testCase.id));
   });
 });
-

@@ -16,7 +16,17 @@ describe("EditingTestReport", () => {
     expect(within(table).getByRole("columnheader", { name: "入力するキー" })).toBeTruthy();
     expect(within(table).getByRole("columnheader", { name: "変更後テキスト" })).toBeTruthy();
     expect(within(table).getByRole("columnheader", { name: "テスト結果" })).toBeTruthy();
-    expect(within(table).getAllByRole("row")).toHaveLength(EDITING_TEST_CASES.length + 1);
+    expect(within(table).getAllByRole("row")).toHaveLength(101);
+    expect(screen.getByText(`1 / ${Math.ceil(EDITING_TEST_CASES.length / 100)}ページ`)).toBeTruthy();
+  });
+
+  it("100件ずつページを切り替える", () => {
+    render(<EditingTestReport onClose={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "次の100件" }));
+    expect(screen.getByText(`2 / ${Math.ceil(EDITING_TEST_CASES.length / 100)}ページ`)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "前の100件" }));
+    expect(screen.getByText(`1 / ${Math.ceil(EDITING_TEST_CASES.length / 100)}ページ`)).toBeTruthy();
   });
 
   it("分類と検索語で結果を絞り込む", () => {

@@ -26,6 +26,8 @@ export function EditingTestReport({
   const [category, setCategory] = useState<EditingTestCategory | "すべて">("すべて");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 100;
   const categories = useMemo(() => [...new Set(cases.map((testCase) => testCase.category))], [cases]);
   const normalizedQuery = query.trim().toLocaleLowerCase("ja");
   const visibleResults = results.filter((result) => {
@@ -36,6 +38,9 @@ export function EditingTestReport({
   });
   const passed = results.filter((result) => result.passed).length;
   const selected = results.find((result) => result.id === selectedId) ?? null;
+  const pageCount = Math.max(1, Math.ceil(visibleResults.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pagedResults = visibleResults.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const rerunAll = () => setResults(runEditingTestCases(cases));
   const rerunOne = (testCase: EditingTestCase) => {
@@ -48,7 +53,7 @@ export function EditingTestReport({
     <header className="editing-test-report__header">
       <div>
         <h1>Markdown編集テスト結果</h1>
-        <p>カーソルは <code>¦</code>、選択範囲は <code>⟦選択⟧</code> で表示します。</p>
+        <p>カーソルは <code>¦</code>、選択範囲は <code>⟦選択⟧</code>、切り取り・見出し移動の貼り付け先は <code>◆</code> で表示します。</p>
       </div>
       <button type="button" aria-label="編集テスト結果を閉じる" onClick={onClose}>×</button>
     </header>
@@ -64,13 +69,13 @@ export function EditingTestReport({
 
     <section className="editing-test-report__filters" aria-label="結果の絞り込み">
       <label>分類
-        <select value={category} onChange={(event) => setCategory(event.target.value as EditingTestCategory | "すべて")}>
+        <select value={category} onChange={(event) => { setCategory(event.target.value as EditingTestCategory | "すべて"); setPage(1); }}>
           <option value="すべて">すべて</option>
           {categories.map((value) => <option key={value} value={value}>{value}</option>)}
         </select>
       </label>
       <label>検索
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="キー、説明、テキスト" />
+        <input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="キー、説明、テキスト" />
       </label>
       <span>{visibleResults.length}件を表示</span>
     </section>
@@ -90,6 +95,12 @@ export function EditingTestReport({
       <button type="button" onClick={() => rerunOne(selected)}>このケースを再実行</button>
     </section>}
 
+    <nav className="editing-test-report__pagination" aria-label="テスト結果のページ送り">
+      <button type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>前の100件</button>
+      <span>{currentPage} / {pageCount}ページ</span>
+      <button type="button" disabled={currentPage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>次の100件</button>
+    </nav>
+
     <div className="editing-test-report__table-wrap">
       <table>
         <thead><tr>
@@ -98,7 +109,7 @@ export function EditingTestReport({
           <th>変更後テキスト</th>
           <th>テスト結果</th>
         </tr></thead>
-        <tbody>{visibleResults.map((result) => <tr key={result.id} className={result.passed ? "is-passed" : "is-failed"}>
+        <tbody>{pagedResults.map((result) => <tr key={result.id} className={result.passed ? "is-passed" : "is-failed"}>
           <td><small>{result.category} · {result.description}</small><TextCell value={result.before} /></td>
           <td><kbd>{result.key}</kbd></td>
           <td>
@@ -114,4 +125,3 @@ export function EditingTestReport({
     </div>
   </div>;
 }
-

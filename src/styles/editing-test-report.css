@@ -27,9 +27,25 @@
 .editing-test-report__header,
 .editing-test-report__summary,
 .editing-test-report__filters,
+.editing-test-report__pagination,
 .editing-test-report__reproduction {
   flex: 0 0 auto;
   border-bottom: 1px solid var(--border-color);
+}
+
+.editing-test-report__pagination {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 7px 20px;
+  background: var(--panel-bg);
+}
+
+.editing-test-report__pagination button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
 }
 
 .editing-test-report__header {
@@ -241,4 +257,3 @@
     width: 180px;
   }
 }
-
