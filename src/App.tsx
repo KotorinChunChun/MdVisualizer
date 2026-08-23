@@ -71,6 +71,7 @@ import "./styles/syntax-highlight.css";
 export { moveZoomLevel, normalizeZoom, ZOOM_LEVELS, type ZoomLevel } from "./lib/zoom";
 
 const MarkdownEditor = lazy(() => import("./components/MarkdownEditor").then((module) => ({ default: module.MarkdownEditor })));
+const EditingTestReport = lazy(() => import("./components/EditingTestReport").then((module) => ({ default: module.EditingTestReport })));
 
 export function focusAndSelectSearchInput(input: HTMLInputElement | null): void {
   input?.focus();
@@ -222,6 +223,7 @@ export function App() {
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
   const [svgEditorTarget, setSvgEditorTarget] = useState<SvgSourceEditTarget | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+  const [editingTestReportOpen, setEditingTestReportOpen] = useState(false);
   const [documentPanels, setDocumentPanels] = useState<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
   const documentPanelsRef = useRef(documentPanels);
   const panelBeforeSearchRef = useRef<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
@@ -1939,6 +1941,7 @@ export function App() {
         } : undefined}
       />}
       {shortcutHelpOpen && <ShortcutHelpModal onClose={() => setShortcutHelpOpen(false)} />}
+      {editingTestReportOpen && <Suspense fallback={null}><EditingTestReport onClose={() => setEditingTestReportOpen(false)} /></Suspense>}
       {sharePointAuthPrompt && <SharePointAuthDialog
         prompt={sharePointAuthPrompt}
         onOpenBrowser={() => openAuthenticationPage()}
@@ -1960,6 +1963,7 @@ export function App() {
         onViewModeChange={changeViewMode}
         onOpenSettings={openSettings}
         onOpenShortcutHelp={() => setShortcutHelpOpen(true)}
+        onOpenEditingTests={() => setEditingTestReportOpen(true)}
         statusText={activeTab?.kind === "settings" ? "アプリケーション設定" : undefined}
         linkTarget={focusedLinkTarget ?? undefined}
       />
