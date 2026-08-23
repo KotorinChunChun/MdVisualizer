@@ -14,7 +14,7 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { SharePointAuthDialog } from "./components/SharePointAuthDialog";
 import { ExternalActions } from "./components/ExternalActions";
 import { PresentationView } from "./components/PresentationView";
-import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget } from "./components/MediaPreviewModal";
+import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget, type MediaPreviewViewState } from "./components/MediaPreviewModal";
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { ImageAnnotationEditor } from "./components/ImageAnnotationEditor";
 import { SvgSourceEditor, type SvgSourceEditTarget } from "./components/SvgSourceEditor";
@@ -166,6 +166,7 @@ export function App() {
     dismissAuthentication,
   } = useSharePointAuthentication(setToast);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
+  const [mediaPreviewInitialViewState, setMediaPreviewInitialViewState] = useState<MediaPreviewViewState | null>(null);
   const [documentDiff, setDocumentDiff] = useState<DocumentDiffTarget | null>(null);
   const [diffLoading, setDiffLoading] = useState(false);
   const [annotationTarget, setAnnotationTarget] = useState<ImageEditTarget | null>(null);
@@ -184,6 +185,7 @@ export function App() {
   const tocPointerFrame = useRef(0);
   const pendingTocHeadingId = useRef<string | null>(null);
   const mediaPreviewRef = useRef<MediaPreviewTarget | null>(null);
+  const mediaPreviewViewRef = useRef<MediaPreviewViewState | null>(null);
   const navigationHistoryRef = useRef(emptyNavigationHistory());
   const auxiliaryNavigationRef = useRef<AuxiliaryNavigationStamp>({ button: -1, timestamp: 0 });
   const viewModeRef = useRef(viewMode);
@@ -705,6 +707,11 @@ export function App() {
       scrollTop: activeId && containerRef.current ? containerRef.current.scrollTop : tab?.scrollTop ?? 0,
       viewMode: viewModeRef.current,
       presentationHeadingId: activeId ? presentationPositionsRef.current[activeId] ?? null : null,
+      editorMode: tab?.kind === "document" ? tab.editorMode : null,
+      editorLine: editorRef.current?.topLine() ?? null,
+      scrollAnchor: containerRef.current && markdownRef.current ? captureScrollAnchor(containerRef.current, markdownRef.current) : null,
+      mediaPreview: mediaPreviewRef.current,
+      mediaView: mediaPreviewViewRef.current,
     };
   }, []);
 
@@ -930,8 +937,11 @@ export function App() {
   useEffect(() => () => { if (tocPointerFrame.current) window.cancelAnimationFrame(tocPointerFrame.current); }, []);
 
   const restoreNavigationSnapshot = useCallback((snapshot: NavigationSnapshot) => {
+    let restoresExistingTab = false;
     if (snapshot.activeTabId && tabsStateRef.current.tabs.some((tab) => tab.id === snapshot.activeTabId)) {
+      restoresExistingTab = true;
       dispatch({ type: "SCROLL", id: snapshot.activeTabId, scrollTop: snapshot.scrollTop });
+      if (snapshot.editorMode) dispatch({ type: "EDITOR_MODE", id: snapshot.activeTabId, mode: snapshot.editorMode });
       dispatch({ type: "ACTIVATE", id: snapshot.activeTabId });
       if (snapshot.presentationHeadingId) {
         presentationPositionsRef.current[snapshot.activeTabId] = snapshot.presentationHeadingId;
@@ -953,7 +963,22 @@ export function App() {
         });
       }
     }
-    setMediaPreview(null);
+    mediaPreviewViewRef.current = snapshot.mediaView;
+    mediaPreviewRef.current = snapshot.mediaPreview;
+    setMediaPreviewInitialViewState(snapshot.mediaView);
+    setMediaPreview(snapshot.mediaPreview);
+    if (restoresExistingTab && snapshot.activeTabId) {
+      const tabId = snapshot.activeTabId;
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+        if (tabsStateRef.current.activeId !== tabId) return;
+        if (snapshot.scrollAnchor && containerRef.current && markdownRef.current) {
+          restoreScrollAnchor(containerRef.current, markdownRef.current, snapshot.scrollAnchor);
+        } else if (containerRef.current) {
+          containerRef.current.scrollTop = snapshot.scrollTop;
+        }
+        if (snapshot.editorLine !== null) editorRef.current?.scrollToLine(snapshot.editorLine);
+      }));
+    }
   }, []);
 
   const goBack = useCallback(() => {
@@ -981,12 +1006,24 @@ export function App() {
   useFileDrop((paths) => paths.forEach(handleOpenDocument));
 
   const openMediaPreview = useCallback((target: MediaPreviewTarget) => {
+    recordNavigationPoint();
+    mediaPreviewViewRef.current = null;
+    setMediaPreviewInitialViewState(null);
+    mediaPreviewRef.current = target;
     setMediaPreview(target);
-  }, []);
+  }, [recordNavigationPoint]);
 
   const closeMediaPreview = useCallback(() => {
     if (!mediaPreviewRef.current) return;
+    recordNavigationPoint();
     setMediaPreview(null);
+    mediaPreviewRef.current = null;
+    mediaPreviewViewRef.current = null;
+    setMediaPreviewInitialViewState(null);
+  }, [recordNavigationPoint]);
+
+  const handleMediaPreviewViewState = useCallback((state: MediaPreviewViewState) => {
+    mediaPreviewViewRef.current = state;
   }, []);
 
   const saveImageCaption = useCallback(async (context: ImageEditContext, caption: string) => {
@@ -1737,6 +1774,8 @@ export function App() {
         onRenameImage={renamePreviewImage}
         imageApps={externalApps.filter((app) => app.target === "image")}
         onOpenImageApp={executeImageApp}
+        initialViewState={mediaPreviewInitialViewState}
+        onViewStateChange={handleMediaPreviewViewState}
         onClose={closeMediaPreview}
         onActivate={mediaPreview.editTarget ? () => {
           setAnnotationReturnPreview(mediaPreview);

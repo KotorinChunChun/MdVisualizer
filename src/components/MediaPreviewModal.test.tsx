@@ -5,6 +5,30 @@ import { MediaPreviewModal } from "./MediaPreviewModal";
 afterEach(cleanup);
 
 describe("MediaPreviewModal", () => {
+  it("restores display mode, scale, and pan position from navigation history", async () => {
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callback(0); return 1; });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const onViewStateChange = vi.fn();
+    render(<MediaPreviewModal
+      content={{ kind: "svg", svg: '<svg viewBox="0 0 800 600" />', alt: "履歴" }}
+      onClose={vi.fn()}
+      initialViewState={{ mode: "actual", scale: 2, display: "diagram", scrollLeft: 120, scrollTop: 80 }}
+      onViewStateChange={onViewStateChange}
+    />);
+    const viewport = document.querySelector<HTMLElement>(".media-preview__viewport")!;
+    Object.defineProperties(viewport, {
+      clientWidth: { configurable: true, value: 400 },
+      clientHeight: { configurable: true, value: 300 },
+    });
+    act(() => { window.dispatchEvent(new Event("resize")); });
+
+    expect(screen.getByText(/1:1 · 200%/)).toBeTruthy();
+    expect(viewport.scrollLeft).toBe(120);
+    expect(viewport.scrollTop).toBe(80);
+    await waitFor(() => expect(onViewStateChange).toHaveBeenCalledWith(expect.objectContaining({ mode: "actual", scale: 2 })));
+    vi.unstubAllGlobals();
+  });
+
   it("opens the image editing workspace from its named action", () => {
     const onActivate = vi.fn();
     render(<MediaPreviewModal content={{ kind: "image", src: "asset://sample.png", alt: "図" }} onClose={vi.fn()} onActivate={onActivate} />);

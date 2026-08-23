@@ -29,6 +29,14 @@ export interface MediaPreviewTarget {
   editDisabledReason?: string;
 }
 
+export interface MediaPreviewViewState {
+  mode: "fit" | "actual";
+  scale: number;
+  display: "diagram" | "code";
+  scrollLeft: number;
+  scrollTop: number;
+}
+
 interface ZoomAnchor {
   viewportX: number;
   viewportY: number;
@@ -66,6 +74,8 @@ export function MediaPreviewModal({
   onOpenImageApp,
   conversionContext,
   onConvertAsset,
+  initialViewState,
+  onViewStateChange,
 }: {
   content: MediaPreviewContent;
   onClose: () => void;
@@ -80,21 +90,24 @@ export function MediaPreviewModal({
   onOpenImageApp?: (app: ExternalAppConfig, context: ImageEditContext) => void;
   conversionContext?: AssetConversionContext;
   onConvertAsset?: (context: AssetConversionContext) => Promise<void>;
+  initialViewState?: MediaPreviewViewState | null;
+  onViewStateChange?: (state: MediaPreviewViewState) => void;
 }) {
   const svgSize = useMemo(
     () => content.kind === "svg" ? svgIntrinsicSize(content.svg) : null,
     [content],
   );
-  const [mode, setMode] = useState<"fit" | "actual">("fit");
-  const [scale, setScale] = useState(1);
+  const [mode, setMode] = useState<"fit" | "actual">(initialViewState?.mode ?? "fit");
+  const [scale, setScale] = useState(initialViewState?.scale ?? 1);
   const [imageSize, setImageSize] = useState({ width: 1000, height: 600 });
-  const [display, setDisplay] = useState<"diagram" | "code">("diagram");
+  const [display, setDisplay] = useState<"diagram" | "code">(initialViewState?.display ?? "diagram");
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [converting, setConverting] = useState(false);
   const [conversionError, setConversionError] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
-  const scaleRef = useRef(1);
+  const scaleRef = useRef(initialViewState?.scale ?? 1);
+  const initialViewApplied = useRef(false);
   const zoomAnchorRef = useRef<ZoomAnchor | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [panning, setPanning] = useState(false);
@@ -128,11 +141,28 @@ export function MediaPreviewModal({
     const viewport = viewportRef.current;
     if (!viewport || display === "code" || viewportSize.width <= 0 || viewportSize.height <= 0) return;
     const frame = window.requestAnimationFrame(() => {
-      viewport.scrollLeft = Math.max(0, (stageWidth - viewport.clientWidth) / 2);
-      viewport.scrollTop = Math.max(0, (stageHeight - viewport.clientHeight) / 2);
+      if (initialViewState && !initialViewApplied.current) {
+        viewport.scrollLeft = Math.max(0, initialViewState.scrollLeft);
+        viewport.scrollTop = Math.max(0, initialViewState.scrollTop);
+        initialViewApplied.current = true;
+      } else {
+        viewport.scrollLeft = Math.max(0, (stageWidth - viewport.clientWidth) / 2);
+        viewport.scrollTop = Math.max(0, (stageHeight - viewport.clientHeight) / 2);
+      }
     });
     return () => window.cancelAnimationFrame(frame);
   }, [content.kind, content.kind === "image" ? content.src : content.svg, display, mode, intrinsic.width, intrinsic.height, viewportSize.height, viewportSize.width]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    onViewStateChange?.({
+      mode,
+      scale,
+      display,
+      scrollLeft: viewport?.scrollLeft ?? initialViewState?.scrollLeft ?? 0,
+      scrollTop: viewport?.scrollTop ?? initialViewState?.scrollTop ?? 0,
+    });
+  }, [display, mode, onViewStateChange, scale]);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -194,6 +224,7 @@ export function MediaPreviewModal({
     <div
       className={`media-preview__viewport${display === "code" ? " is-code" : ""}`}
       ref={viewportRef}
+      onScroll={(event) => onViewStateChange?.({ mode, scale, display, scrollLeft: event.currentTarget.scrollLeft, scrollTop: event.currentTarget.scrollTop })}
       onClick={(event) => event.stopPropagation()}
       onWheel={(event) => {
         if (!event.ctrlKey) return;

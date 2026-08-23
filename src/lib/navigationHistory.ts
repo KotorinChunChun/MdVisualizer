@@ -1,10 +1,18 @@
 import type { ViewMode } from "./viewMode";
+import type { SemanticScrollAnchor } from "./scrollAnchor";
+import type { EditorWorkspaceMode } from "../state/tabsReducer";
+import type { MediaPreviewTarget, MediaPreviewViewState } from "../components/MediaPreviewModal";
 
 export interface NavigationSnapshot {
   activeTabId: string | null;
   scrollTop: number;
   viewMode: ViewMode;
   presentationHeadingId: string | null;
+  editorMode: EditorWorkspaceMode | null;
+  editorLine: number | null;
+  scrollAnchor: SemanticScrollAnchor | null;
+  mediaPreview: MediaPreviewTarget | null;
+  mediaView: MediaPreviewViewState | null;
 }
 
 export interface NavigationHistory {

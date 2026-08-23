@@ -39,6 +39,16 @@ describe("Edit and View pane coordination", () => {
   });
 });
 
+describe("extended navigation history wiring", () => {
+  it("captures and restores pane, semantic scroll, and media preview state", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    expect(source).toContain("scrollAnchor: containerRef.current && markdownRef.current ? captureScrollAnchor");
+    expect(source).toContain("mediaPreview: mediaPreviewRef.current");
+    expect(source).toContain("if (snapshot.editorMode) dispatch");
+    expect(source).toContain("setMediaPreview(snapshot.mediaPreview)");
+  });
+});
+
 describe("Markdown editing availability", () => {
   it("enables editing for both local and SharePoint Markdown documents", () => {
     expect(canEditMarkdownDocument({ kind: "markdown" })).toBe(true);
