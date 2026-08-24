@@ -17,6 +17,8 @@ export function ExternalDrawioBlock({
   blockId,
   version,
   editable = true,
+  stagedSource,
+  onStorageConvert,
   onMediaOpen,
 }: {
   source: string;
@@ -26,6 +28,8 @@ export function ExternalDrawioBlock({
   blockId: string;
   version: number;
   editable?: boolean;
+  stagedSource?: string;
+  onStorageConvert?: (source: string) => boolean | void | Promise<boolean | void>;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
   const path = useMemo(() => resolveLocalImagePath(source, baseDir), [baseDir, source]);
@@ -38,6 +42,10 @@ export function ExternalDrawioBlock({
     let active = true;
     setDocument(null);
     setError(null);
+    if (stagedSource !== undefined) {
+      setLoading(false);
+      return () => { active = false; };
+    }
     if (!path) {
       setLoading(false);
       setError("ローカルdraw.ioファイルのパスを解決できません。");
@@ -57,7 +65,7 @@ export function ExternalDrawioBlock({
         if (active) setLoading(false);
       });
     return () => { active = false; };
-  }, [path, retryToken, version]);
+  }, [path, retryToken, stagedSource, version]);
 
   const save = async (content: string): Promise<boolean> => {
     if (!document) return false;
@@ -77,7 +85,7 @@ export function ExternalDrawioBlock({
   };
 
   if (loading) return <div className="drawio-block"><div className="drawio-block__preview">draw.ioファイルを読み込んでいます…</div></div>;
-  if (error || !document) return <div className="drawio-block">
+  if (error || (!document && stagedSource === undefined)) return <div className="drawio-block">
     <div className="drawio-block__preview drawio-block__fallback">
       <p>{error ?? "draw.ioファイルを読み込めません。"}</p>
       <button type="button" onClick={() => setRetryToken((value) => value + 1)}>再読込</button>
@@ -86,10 +94,12 @@ export function ExternalDrawioBlock({
 
   return <div className="external-drawio-block" data-drawio-source={source}>
     <DrawioBlock
-      source={document.content}
+      source={stagedSource ?? document!.content}
       theme={theme}
       blockId={blockId}
-      onSave={editable ? save : undefined}
+      storage="external"
+      onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(stagedSource ?? document!.content) : undefined}
+      onSave={editable && document ? save : undefined}
       onMediaOpen={onMediaOpen}
     />
     {alt?.trim() && <span className="inline-image-resize__caption">{alt}</span>}

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DrawioBlock, drawioViewerConfig, drawioViewerDocument, fitDrawioSvgToContent } from "./DrawioBlock";
 
@@ -91,6 +91,15 @@ describe("DrawioBlock", () => {
     expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "コード" }));
     expect(screen.getByText(source)).toBeTruthy();
+  });
+
+  it("switches an embedded draw.io block to external storage", async () => {
+    const onStorageConvert = vi.fn();
+    const source = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
+    render(<DrawioBlock source={source} theme="light" blockId="storage" storage="embedded" onStorageConvert={onStorageConvert} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "外部ファイルへ切替" }));
+    await waitFor(() => expect(onStorageConvert).toHaveBeenCalledOnce());
   });
 
   it("opens a draw.io SVG in the shared popup preview when the diagram is clicked", () => {

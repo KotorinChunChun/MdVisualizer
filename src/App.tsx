@@ -57,6 +57,7 @@ import { buildDebugWindowState } from "./lib/debugState";
 import { clipboardImageDestination, formatClipboardImageFilename, referencedStagedAssetIds, type ClipboardImageData, type ResolvedClipboardImage } from "./lib/clipboardImage";
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
+import { drawioEmbeddedFence, drawioExternalReference, markdownLineEnding, preferredDrawioFilename, type DrawioStorageConversionContext } from "./lib/drawioStorage";
 import { sourceBlockIndexForLine, sourceLineAtViewportTop } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
 import "./styles/app.css";
@@ -1567,6 +1568,41 @@ export function App() {
     });
   }, []);
 
+  const convertDrawioStorage = useCallback(async (context: DrawioStorageConversionContext) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document
+      && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) throw new Error("この文書は閲覧専用です。");
+
+    if (context.storage === "embedded") {
+      const staged = await stageDocumentAsset({
+        documentPath: tab.document.path,
+        preferredFilename: preferredDrawioFilename(context.occurrence),
+        text: context.source,
+      });
+      try {
+        const content = replaceMarkdownOccurrence(tab.draft, context.occurrence, drawioExternalReference(staged.filename));
+        dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, text: context.source } });
+        setToast({ id: crypto.randomUUID(), message: `${staged.filename} を一時ステージしました。Markdown保存時に外部ファイルとして確定します。`, type: "success" });
+      } catch (error) {
+        await discardStagedAssets([staged.id]);
+        throw error;
+      }
+      return;
+    }
+
+    const pending = (tab.pendingAssets ?? []).find((asset) => asset.filename === context.occurrence.source && asset.text !== undefined);
+    const content = replaceMarkdownOccurrence(
+      tab.draft,
+      context.occurrence,
+      drawioEmbeddedFence(context.source, markdownLineEnding(tab.draft)),
+    );
+    if (pending) {
+      await discardStagedAssets([pending.id]);
+      dispatch({ type: "STAGED_ASSET_REMOVED", id: tab.id, content, stagingId: pending.id });
+    } else dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+    setToast({ id: crypto.randomUUID(), message: "draw.ioをMarkdown埋め込みへ切り替えました。外部ファイルは削除していません。", type: "success" });
+  }, []);
+
   const handleMarkdownChanged = useCallback(
     ({ path, changeKind }: { path: string; changeKind: string }) => {
       const identity = localPathIdentity(path);
@@ -1850,7 +1886,9 @@ export function App() {
             sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
             onCodeFenceBodyChange={updateCodeFenceBody}
+            onDrawioStorageConvert={convertDrawioStorage}
             stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
+            stagedDrawioSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.drawio$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
           />
         ) : (
           <div className="empty-state">

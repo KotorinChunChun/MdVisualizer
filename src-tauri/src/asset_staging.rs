@@ -278,16 +278,16 @@ pub fn read_document_asset(document_path: &str, source: &str) -> AppResult<Docum
             "Asset path escaped the Markdown folder.".into(),
         ));
     }
-    let (media_type, is_svg) = media_type_for(&path)?;
+    let (media_type, is_text) = media_type_for(&path)?;
     let bytes =
         fs::read(&path).map_err(|error| AppError::IoError(format!("read asset: {error}")))?;
     if bytes.len() > MAX_ASSET_BYTES {
         return Err(AppError::IoError("Asset exceeds 50 MiB.".into()));
     }
-    let text = is_svg
+    let text = is_text
         .then(|| {
             String::from_utf8(bytes.clone())
-                .map_err(|_| AppError::IoError("SVG must be UTF-8 text.".into()))
+                .map_err(|_| AppError::IoError("Text asset must be UTF-8.".into()))
         })
         .transpose()?;
     Ok(DocumentAssetData {
@@ -353,6 +353,7 @@ fn media_type_for(path: &Path) -> AppResult<(&'static str, bool)> {
         "webp" => Ok(("image/webp", false)),
         "bmp" => Ok(("image/bmp", false)),
         "svg" => Ok(("image/svg+xml", true)),
+        "drawio" => Ok(("application/vnd.jgraph.mxfile", true)),
         _ => Err(AppError::UnsupportedDocument(
             path.to_string_lossy().into_owned(),
         )),
@@ -439,9 +440,28 @@ mod tests {
         let document = dir.path().join("note.md");
         fs::write(&document, "# note").unwrap();
         fs::write(dir.path().join("shape.svg"), "<svg/>").unwrap();
+        fs::write(dir.path().join("diagram.drawio"), "<mxGraphModel/>").unwrap();
         let loaded = read_document_asset(&document.to_string_lossy(), "shape.svg").unwrap();
         assert_eq!(loaded.text.as_deref(), Some("<svg/>"));
+        let drawio = read_document_asset(&document.to_string_lossy(), "diagram.drawio").unwrap();
+        assert_eq!(drawio.media_type, "application/vnd.jgraph.mxfile");
+        assert_eq!(drawio.text.as_deref(), Some("<mxGraphModel/>"));
         assert!(read_document_asset(&document.to_string_lossy(), "../outside.png").is_err());
+    }
+
+    #[test]
+    fn stages_drawio_text_and_commits_it_with_markdown() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        fs::write(&document, "old").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let staged = manager
+            .stage(&document.to_string_lossy(), "diagram.drawio", b"<mxGraphModel/>")
+            .unwrap();
+        assert_eq!(staged.filename, "diagram.drawio");
+        assert!(!dir.path().join("diagram.drawio").exists());
+        manager.commit_with(&document, &[staged.id], || Ok(())).unwrap();
+        assert_eq!(fs::read_to_string(dir.path().join("diagram.drawio")).unwrap(), "<mxGraphModel/>");
     }
 
     #[test]

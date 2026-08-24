@@ -76,10 +76,12 @@ export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 12): string 
   return fitted.outerHTML;
 }
 
-export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
+export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert, onSave, onMediaOpen }: {
   source: string;
   theme: string;
   blockId: string;
+  storage?: "embedded" | "external";
+  onStorageConvert?: () => boolean | void | Promise<boolean | void>;
   onSave?: (source: string) => boolean | void | Promise<boolean | void>;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
@@ -87,6 +89,7 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
   const [viewerError, setViewerError] = useState<string | null>(null);
   const [renderedSvg, setRenderedSvg] = useState<string>();
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
+  const [convertingStorage, setConvertingStorage] = useState(false);
   const viewerRef = useRef<HTMLIFrameElement>(null);
   const kind = useMemo(() => classifyDrawioSource(source), [source]);
   const load = useMemo(() => {
@@ -199,6 +202,20 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
         fileDiagramKind="drawio"
         onEdit={onSave ? () => setEditing(true) : undefined}
       />
+      {storage && onStorageConvert && <button
+        className="diagram-action-button"
+        type="button"
+        disabled={convertingStorage}
+        onClick={() => {
+          setConvertingStorage(true);
+          void Promise.resolve()
+            .then(() => onStorageConvert())
+            .catch((error) => window.dispatchEvent(new CustomEvent("markdown-toast", {
+              detail: { type: "error", message: error instanceof Error ? error.message : String(error) },
+            })))
+            .finally(() => setConvertingStorage(false));
+        }}
+      >{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button>}
     </div>
     <div className="drawio-block__preview">{preview}</div>
     {editing && !(load instanceof Error) && <DrawioEditorModal source={source} onSave={onSave!} onCancel={() => setEditing(false)} />}

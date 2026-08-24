@@ -29,6 +29,7 @@ import { ExternalDrawioBlock } from "./ExternalDrawioBlock";
 import { PlantUmlBlock } from "./PlantUmlBlock";
 import { isPlantUmlFenceLanguage } from "@markdown-viewer/markdown-core";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
+import type { DrawioStorageConversionContext } from "../lib/drawioStorage";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
 
@@ -85,6 +86,8 @@ interface MarkdownPreviewProps {
   onCodeHighlightComplete?: () => void;
   onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
   stagedAssetPreviews?: Record<string, string>;
+  stagedDrawioSources?: Record<string, string>;
+  onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
   diffChangedLines?: ReadonlySet<number>;
   staticMode?: boolean;
 }
@@ -152,6 +155,8 @@ interface MarkdownRenderContextValue {
   imageOccurrenceByOffset: Map<number, ImageMarkdownOccurrence>;
   inlineSvgByOffset: Map<number, InlineSvgOccurrence>;
   stagedAssetPreviews: Record<string, string>;
+  stagedDrawioSources: Record<string, string>;
+  onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
   staticMode: boolean;
 }
 
@@ -195,6 +200,10 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       source={String(children ?? "").replace(/\n$/, "")}
       theme={context.theme}
       blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
+      storage={occurrence ? "embedded" : undefined}
+      onStorageConvert={occurrence && context.documentPath && context.onDrawioStorageConvert
+        ? () => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence, source: String(children ?? "").replace(/\n$/, "") })
+        : undefined}
       onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
       onMediaOpen={context.onMediaOpen}
     />;
@@ -283,6 +292,10 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       blockId={imageOccurrenceId(sourceOffset ?? 0)}
       version={context.imageVersions[drawioPath] ?? 0}
       editable={!context.staticMode && !context.presentationMode}
+      stagedSource={context.stagedDrawioSources[source]}
+      onStorageConvert={occurrence && context.documentPath && context.onDrawioStorageConvert
+        ? (drawioSource) => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: drawioSource })
+        : undefined}
       onMediaOpen={context.onMediaOpen}
     />;
   }
@@ -383,6 +396,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onCodeHighlightComplete,
   onCodeFenceBodyChange,
   stagedAssetPreviews = {},
+  stagedDrawioSources = {},
+  onDrawioStorageConvert,
   diffChangedLines,
   staticMode = false,
 }) => {
@@ -428,12 +443,14 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     imageOccurrenceByOffset,
     inlineSvgByOffset,
     stagedAssetPreviews,
+    stagedDrawioSources,
+    onDrawioStorageConvert,
     staticMode,
   }), [
     baseDir, codeFenceByOffset, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onCodeFenceBodyChange, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
-    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, staticMode, tabId, theme, windowId,
+    onCodeFenceBodyChange, onDrawioStorageConvert, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, staticMode, tabId, theme, windowId,
   ]);
 
   return (

@@ -8,9 +8,10 @@ const { loadMarkdown, saveMarkdown } = vi.hoisted(() => ({
 
 vi.mock("../lib/commands", () => ({ loadMarkdown, saveMarkdown }));
 vi.mock("./DrawioBlock", () => ({
-  DrawioBlock: ({ source, onSave }: { source: string; onSave?: (content: string) => Promise<boolean | void> }) => (
+  DrawioBlock: ({ source, onSave, onStorageConvert }: { source: string; onSave?: (content: string) => Promise<boolean | void>; onStorageConvert?: () => void }) => <div>
     <button type="button" data-testid="external-drawio" data-editable={String(Boolean(onSave))} onClick={() => void onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
-  ),
+    {onStorageConvert && <button type="button" onClick={onStorageConvert}>埋め込みへ切替</button>}
+  </div>,
 }));
 
 import { ExternalDrawioBlock } from "./ExternalDrawioBlock";
@@ -63,5 +64,24 @@ describe("ExternalDrawioBlock", () => {
     render(<ExternalDrawioBlock source="diagrams/missing.drawio" baseDir="C:\\docs" theme="dark" blockId="image-3" version={0} />);
     expect(await screen.findByText("missing")).toBeTruthy();
     expect(screen.getByRole("button", { name: "再読込" })).toBeTruthy();
+  });
+
+  it("uses staged draw.io XML immediately and can switch it back to embedded storage", async () => {
+    const onStorageConvert = vi.fn();
+    const stagedSource = "<mxfile><diagram name=\"staged\"/></mxfile>";
+    render(<ExternalDrawioBlock
+      source="diagram.drawio"
+      baseDir="C:\\docs"
+      theme="dark"
+      blockId="image-4"
+      version={0}
+      stagedSource={stagedSource}
+      onStorageConvert={onStorageConvert}
+    />);
+
+    expect((await screen.findByTestId("external-drawio")).textContent).toContain("staged");
+    expect(loadMarkdown).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "埋め込みへ切替" }));
+    expect(onStorageConvert).toHaveBeenCalledWith(stagedSource);
   });
 });

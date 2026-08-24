@@ -3,13 +3,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MarkdownPreview } from "./MarkdownPreview";
 
 vi.mock("./DrawioBlock", () => ({
-  DrawioBlock: ({ source, onSave, onMediaOpen }: { source: string; onSave?: (source: string) => void; onMediaOpen?: (target: unknown) => void }) => <button type="button" data-source={source} data-media-open={String(Boolean(onMediaOpen))} onClick={() => onSave?.("<mxGraphModel><root/></mxGraphModel>")}>mock draw.io</button>,
+  DrawioBlock: ({ source, onSave, onMediaOpen, onStorageConvert }: { source: string; onSave?: (source: string) => void; onMediaOpen?: (target: unknown) => void; onStorageConvert?: () => void }) => <div>
+    <button type="button" data-source={source} data-media-open={String(Boolean(onMediaOpen))} onClick={() => onSave?.("<mxGraphModel><root/></mxGraphModel>")}>mock draw.io</button>
+    {onStorageConvert && <button type="button" onClick={onStorageConvert}>fence storage</button>}
+  </div>,
 }));
 
 vi.mock("./ExternalDrawioBlock", () => ({
-  ExternalDrawioBlock: ({ source, alt, editable }: { source: string; alt?: string; editable?: boolean }) => (
-    <div data-testid="external-drawio" data-source={source} data-alt={alt} data-editable={String(editable)} />
-  ),
+  ExternalDrawioBlock: ({ source, alt, editable, stagedSource, onStorageConvert }: { source: string; alt?: string; editable?: boolean; stagedSource?: string; onStorageConvert?: (source: string) => void }) => <div>
+    <div data-testid="external-drawio" data-source={source} data-alt={alt} data-editable={String(editable)} data-staged-source={stagedSource} />
+    {onStorageConvert && <button type="button" onClick={() => onStorageConvert("<mxfile/>")}>external storage</button>}
+  </div>,
 }));
 
 describe("MarkdownPreview draw.io fences", () => {
@@ -49,5 +53,31 @@ describe("MarkdownPreview draw.io fences", () => {
       { source: "diagrams/standard.drawio", alt: "標準", editable: "true" },
       { source: "diagrams/obsidian.drawio", alt: "Obsidian", editable: "true" },
     ]);
+  });
+
+  it("provides storage conversion contexts for embedded and external draw.io blocks", () => {
+    const onDrawioStorageConvert = vi.fn();
+    render(<MarkdownPreview
+      content={"```drawio\n<mxGraphModel/>\n```\n\n![構成図](diagram.drawio)"}
+      baseDir="C:\\docs"
+      documentPath="C:\\docs\\note.md"
+      imageVersions={{}}
+      stagedDrawioSources={{ "diagram.drawio": "<mxfile><diagram name=\"staged\"/></mxfile>" }}
+      onDrawioStorageConvert={onDrawioStorageConvert}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: "fence storage" }));
+    expect(onDrawioStorageConvert).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      storage: "embedded",
+      source: "<mxGraphModel/>",
+      occurrence: expect.objectContaining({ kind: "code-fence", language: "drawio" }),
+    }));
+    expect(screen.getByTestId("external-drawio").dataset.stagedSource).toContain("staged");
+    fireEvent.click(screen.getByRole("button", { name: "external storage" }));
+    expect(onDrawioStorageConvert).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      storage: "external",
+      source: "<mxfile/>",
+      occurrence: expect.objectContaining({ kind: "image", source: "diagram.drawio" }),
+    }));
   });
 });
