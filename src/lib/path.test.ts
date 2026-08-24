@@ -4,9 +4,14 @@ vi.mock("@tauri-apps/api/core", () => ({
   convertFileSrc: (path: string) => `asset://${path}`,
 }));
 
-import { isAbsoluteLocalPath, isWindowsAbsolutePath, resolveImageSrc, resolveLocalDocumentPath, resolveLocalImagePath, resolveLocalMarkdownPath, resolveSharePointDocumentPath } from "./path";
+import { isAbsoluteLocalPath, isWindowsAbsolutePath, resolveImageSrc, resolveLocalDocumentPath, resolveLocalImagePath, resolveLocalMarkdownPath, resolveSharePointDocumentPath, stripWindowsExtendedPathPrefix } from "./path";
 
 describe("Windows image paths", () => {
+  it("converts extended-length paths to regular local and UNC paths", () => {
+    expect(stripWindowsExtendedPathPrefix(String.raw`\\?\C:\docs\sample.md`)).toBe(String.raw`C:\docs\sample.md`);
+    expect(stripWindowsExtendedPathPrefix(String.raw`\\?\UNC\server\share\sample.md`)).toBe(String.raw`\\server\share\sample.md`);
+  });
+
   it.each(["C:/images/a.png", "C:\\images\\a.png", "z:/x/y.png"])("recognizes %s as an absolute Windows path", (path) => {
     expect(isWindowsAbsolutePath(path)).toBe(true);
     expect(isAbsoluteLocalPath(path)).toBe(true);

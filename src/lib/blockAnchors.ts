@@ -9,7 +9,7 @@ type HastNode = {
 
 const BLOCK_TAGS = new Set([
   "h1", "h2", "h3", "h4", "h5", "h6",
-  "p", "li", "pre", "table", "blockquote", "img", "hr",
+  "p", "li", "pre", "table", "tr", "blockquote", "img", "hr",
 ]);
 
 function textContent(node: HastNode): string {

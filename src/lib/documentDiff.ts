@@ -31,6 +31,28 @@ function sourceLines(content: string): string[] {
   return content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
 }
 
+/** Maps a one-based source line to its corresponding line in another document version. */
+export function mapLineBetweenDocuments(sourceContent: string, targetContent: string, sourceLine: number): number {
+  const source = sourceLines(sourceContent);
+  const target = sourceLines(targetContent);
+  const sourceIndex = Math.max(0, Math.min(source.length - 1, Math.round(sourceLine) - 1));
+  const targetLastIndex = Math.max(0, target.length - 1);
+  let delta = 0;
+  for (const hunk of documentDiffHunks(sourceContent, targetContent)) {
+    if (sourceIndex < hunk.baseStart) break;
+    const sourceSpan = hunk.baseEnd - hunk.baseStart;
+    const targetSpan = hunk.targetEnd - hunk.targetStart;
+    if (sourceSpan > 0 && sourceIndex < hunk.baseEnd) {
+      if (targetSpan === 0) return Math.min(targetLastIndex, hunk.targetStart) + 1;
+      const relative = sourceIndex - hunk.baseStart;
+      const mapped = hunk.targetStart + Math.min(targetSpan - 1, Math.floor(relative * targetSpan / sourceSpan));
+      return Math.max(0, Math.min(targetLastIndex, mapped)) + 1;
+    }
+    delta += targetSpan - sourceSpan;
+  }
+  return Math.max(0, Math.min(targetLastIndex, sourceIndex + delta)) + 1;
+}
+
 function commonEdgeHunk(baseLines: string[], targetLines: string[]): DocumentDiffHunk[] {
   let prefix = 0;
   while (prefix < baseLines.length && prefix < targetLines.length && baseLines[prefix] === targetLines[prefix]) prefix += 1;

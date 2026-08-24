@@ -34,4 +34,16 @@ describe("MarkdownPreview diff highlighting", () => {
     expect(container.textContent).toContain("flowchart LR");
     expect(container.textContent).toContain("<mxfile/>");
   });
+
+  it("adds source-line anchors to individual table rows", () => {
+    const { container } = render(
+      <MarkdownPreview
+        content={"| name | value |\n| --- | --- |\n| first | 1 |\n| second | 2 |"}
+        baseDir="C:\\docs"
+        imageVersions={{}}
+      />,
+    );
+
+    expect([...container.querySelectorAll("tr")].map((row) => row.getAttribute("data-source-line"))).toEqual(["1", "3", "4"]);
+  });
 });

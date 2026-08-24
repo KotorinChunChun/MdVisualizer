@@ -65,8 +65,10 @@ function decodePath(value: string): string {
 }
 
 /** Removes the Windows extended-length prefix returned by canonicalize. */
-function stripWindowsExtendedPathPrefix(value: string): string {
+export function stripWindowsExtendedPathPrefix(value: string): string {
   return value
+    .replace(/^\\\\\?\\UNC\\/i, "\\\\")
+    .replace(/^\/\/\?\/UNC\//i, "//")
     .replace(/^\\\\\?\\(?=[a-zA-Z]:[\\/])/, "")
     .replace(/^\/\/\?\/(?=[a-zA-Z]:\/)/, "")
     .replace(/^\/\?\/(?=[a-zA-Z]:\/)/, "");

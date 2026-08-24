@@ -21,7 +21,15 @@ export function FoldSection({ children, foldId = "", collapsed: controlledCollap
   const collapsed = forceExpanded ? false : controlledCollapsed ?? localCollapsed;
   const setCollapsed = (next: boolean) => { setLocalCollapsed(next); onCollapsedChange?.(foldId, next); };
   const parts = Children.toArray(children);
-  const heading = parts[0] as ReactElement<{ children?: ReactNode; className?: string }> | undefined;
+  const heading = parts[0] as ReactElement<{
+    children?: ReactNode;
+    className?: string;
+    id?: string;
+    title?: string;
+    "data-block-id"?: string;
+    "data-block-fold-id"?: string;
+    "data-source-line"?: string | number;
+  }> | undefined;
   const content = parts[1];
   const HeadingTag = (heading?.type ?? "h2") as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
   const headingLevel = Number(HeadingTag.slice(1));
@@ -38,7 +46,14 @@ export function FoldSection({ children, foldId = "", collapsed: controlledCollap
 
   return (
     <section className="fold-section" data-fold-id={foldId} data-fold-level={headingLevel}>
-      <HeadingTag className={heading?.props.className}>
+      <HeadingTag
+        className={heading?.props.className}
+        id={heading?.props.id}
+        title={heading?.props.title}
+        data-block-id={heading?.props["data-block-id"]}
+        data-block-fold-id={heading?.props["data-block-fold-id"]}
+        data-source-line={heading?.props["data-source-line"]}
+      >
         <button
           type="button"
           className="fold-toggle"

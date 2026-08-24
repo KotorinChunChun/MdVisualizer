@@ -249,7 +249,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
     : <code className={className} {...props}>{children}</code>;
 };
 
-const MarkdownTable: NonNullable<Components["table"]> = ({ children }) => <div className="table-scroll"><table>{children}</table></div>;
+const MarkdownTable: NonNullable<Components["table"]> = ({ node: _node, children, ...props }) => <div className="table-scroll"><table {...props}>{children}</table></div>;
 
 const MarkdownLink: NonNullable<Components["a"]> = ({ href, children, ...props }) => {
   const context = useMarkdownRenderContext();

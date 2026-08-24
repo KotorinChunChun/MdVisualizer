@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyStorageHunk, buildDocumentDiff, changedLineNumbers, documentDiffHunks } from "./documentDiff";
+import { applyStorageHunk, buildDocumentDiff, changedLineNumbers, documentDiffHunks, mapLineBetweenDocuments } from "./documentDiff";
 
 describe("document diff", () => {
   it("reports one-based changed lines on both sides", () => {
@@ -41,5 +41,12 @@ describe("document diff", () => {
     expect(added).toBe("a\r\nnew\r\nb\r\n");
     const remove = documentDiffHunks("a\r\nnew\r\nb\r\n", "a\r\nb\r\n")[0];
     expect(applyStorageHunk("a\r\nnew\r\nb\r\n", added, remove)).toBe("a\r\nb\r\n");
+  });
+
+  it("maps cursor lines between versions across inserted, removed, and changed lines", () => {
+    expect(mapLineBetweenDocuments("a\nb", "inserted\na\nb", 1)).toBe(2);
+    expect(mapLineBetweenDocuments("inserted\na\nb", "a\nb", 2)).toBe(1);
+    expect(mapLineBetweenDocuments("a\nold one\nold two\nz", "a\nnew\nz", 3)).toBe(2);
+    expect(mapLineBetweenDocuments("a\nb", "a\nb", 2)).toBe(2);
   });
 });

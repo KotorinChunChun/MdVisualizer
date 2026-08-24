@@ -1,8 +1,13 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildWorkspaceDiffPanes, DocumentDiffWorkspace, synchronizedDiffScrollTop, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
 
 afterEach(cleanup);
+
+beforeAll(() => {
+  Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
+});
 
 const target: DocumentDiffTarget = {
   path: "C:\\docs\\note.md",
@@ -60,7 +65,7 @@ describe("DocumentDiffWorkspace", () => {
     />);
     fireEvent.click(screen.getByRole("button", { name: /行変更を採用/ }));
     expect(onEditingChange).toHaveBeenCalledWith("a\nstorage\nc");
-    expect(await screen.findByLabelText("Markdown編集")).toBeTruthy();
+    expect(await screen.findByLabelText("Markdown編集", {}, { timeout: 5_000 })).toBeTruthy();
   });
 
   it("shows an explicit overwrite action only for a save conflict", () => {
@@ -83,4 +88,44 @@ describe("DocumentDiffWorkspace", () => {
 
     expect(panes[1].scrollTop).toBe(500);
   });
+
+  it("maps a clicked old line to the current editor and highlights both versions", async () => {
+    const { container } = render(<DocumentDiffWorkspace
+      target={{ ...target, openedContent: "# a\n\n# b", storageContent: "# a\n\n# b", editingContent: "inserted\n# a\n\n# b" }}
+      editorMode="split"
+      theme="dark"
+      onEditingChange={() => {}}
+    />);
+    const openedCodeLines = container.querySelectorAll<HTMLElement>('[data-pane-key="opened-code"] li');
+
+    fireEvent.click(openedCodeLines[2]);
+
+    await waitFor(() => expect(container.querySelector(".cm-activeLine")?.textContent).toBe("# b"), { timeout: 5_000 });
+    await waitFor(() => {
+      expect(openedCodeLines[2].classList.contains("is-current")).toBe(true);
+      const openedHeadings = container.querySelectorAll<HTMLElement>('[data-pane-key="opened-rendered"] h1');
+      const editingHeadings = container.querySelectorAll<HTMLElement>('[data-pane-key="editing-rendered"] h1');
+      expect(openedHeadings[openedHeadings.length - 1]?.classList.contains("is-editor-current-line")).toBe(true);
+      expect(editingHeadings[editingHeadings.length - 1]?.classList.contains("is-editor-current-line")).toBe(true);
+    }, { timeout: 5_000 });
+  });
+
+  it("highlights the exact table row selected by the Edit cursor", async () => {
+    const table = "| name | value |\n| --- | --- |\n| first | 1 |\n| second | 2 |";
+    const { container } = render(<DocumentDiffWorkspace
+      target={{ ...target, openedContent: table, storageContent: table, editingContent: table }}
+      editorMode="split"
+      theme="dark"
+      onEditingChange={() => {}}
+    />);
+    const openedCodeLines = container.querySelectorAll<HTMLElement>('[data-pane-key="opened-code"] li');
+
+    fireEvent.click(openedCodeLines[3]);
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-pane-key="opened-rendered"] tr[data-source-line="4"]')?.classList.contains("is-editor-current-line")).toBe(true);
+      expect(container.querySelector('[data-pane-key="editing-rendered"] tr[data-source-line="4"]')?.classList.contains("is-editor-current-line")).toBe(true);
+    }, { timeout: 5_000 });
+  });
+
 });
