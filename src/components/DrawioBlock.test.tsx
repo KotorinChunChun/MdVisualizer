@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DrawioBlock, drawioViewerConfig, fitDrawioSvgToContent } from "./DrawioBlock";
+import { DrawioBlock, drawioViewerConfig, drawioViewerDocument, fitDrawioSvgToContent } from "./DrawioBlock";
 
 vi.mock("./MermaidBlock", () => ({ MermaidBlock: ({ source, onRenderedSvg }: { source: string; onRenderedSvg?: (svg: string) => void }) => <div data-testid="mermaid-drawio" onClick={() => onRenderedSvg?.('<svg viewBox="0 0 10 10"/>')}>{source}</div> }));
 
@@ -33,6 +33,14 @@ describe("DrawioBlock", () => {
     expect(config).not.toHaveProperty("toolbar");
   });
 
+  it("isolates the draw.io viewer in its own document and escapes XML from HTML attributes", () => {
+    const document = drawioViewerDocument('<mxGraphModel><root value="&quot; onload=&quot;alert(1)"/></mxGraphModel>');
+    expect(document).toContain("viewer-static.min.js");
+    expect(document).toContain("class=\"mxgraph\"");
+    expect(document).not.toContain('data-mxgraph="{"');
+    expect(document).toContain("&amp;quot;");
+  });
+
   it("crops a rendered diagram to its actual bounds and keeps negative coordinates", () => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("width", "1000");
@@ -59,6 +67,18 @@ describe("DrawioBlock", () => {
     });
 
     expect(fitDrawioSvgToContent(svg)).toContain('viewBox="0 0 1 1"');
+  });
+
+  it("keeps the viewer-provided content viewBox instead of expanding to the SVG root bbox", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "79.5 119.5 442 72");
+    Object.defineProperty(svg, "getBBox", {
+      value: () => ({ x: 0, y: 0, width: 520.5, height: 190.5 }),
+    });
+
+    const result = fitDrawioSvgToContent(svg);
+    expect(result).toContain('viewBox="79.5 119.5 442 72"');
+    expect(result).not.toContain('viewBox="-12 -12 544.5 214.5"');
   });
 
   it("offers the same copy and display controls as Mermaid", () => {

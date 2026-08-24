@@ -89,22 +89,28 @@ pub fn report_debug_window_state(
 #[serde(rename_all = "camelCase")]
 pub struct MermaidFileCopyRequest {
     pub kind: String,
+    pub diagram_kind: String,
     pub source: String,
     pub svg: String,
     pub png_bytes: Vec<u8>,
 }
 
-fn mermaid_clipboard_file(request: MermaidFileCopyRequest) -> Result<(String, Vec<u8>), String> {
+fn mermaid_clipboard_file(request: MermaidFileCopyRequest) -> Result<(String, String, Vec<u8>), String> {
+    let (prefix, code_extension) = match request.diagram_kind.as_str() {
+        "mermaid" => ("mermaid", "mmd"),
+        "drawio" => ("drawio", "drawio"),
+        _ => return Err("未対応の図表ファイル種別です。".into()),
+    };
     match request.kind.as_str() {
-        "code" => Ok(("mmd".into(), request.source.into_bytes())),
-        "svg" => Ok(("svg".into(), request.svg.into_bytes())),
-        "png" if !request.png_bytes.is_empty() => Ok(("png".into(), request.png_bytes)),
+        "code" => Ok((prefix.into(), code_extension.into(), request.source.into_bytes())),
+        "svg" => Ok((prefix.into(), "svg".into(), request.svg.into_bytes())),
+        "png" if !request.png_bytes.is_empty() => Ok((prefix.into(), "png".into(), request.png_bytes)),
         "png" => Err("PNGデータが空です。".into()),
         _ => Err("未対応のMermaidコピー形式です。".into()),
     }
 }
 
-fn write_mermaid_clipboard_file(extension: &str, bytes: &[u8]) -> Result<PathBuf, String> {
+fn write_mermaid_clipboard_file(prefix: &str, extension: &str, bytes: &[u8]) -> Result<PathBuf, String> {
     let directory = std::env::temp_dir()
         .join("markdown-viewer")
         .join("clipboard");
@@ -116,7 +122,7 @@ fn write_mermaid_clipboard_file(extension: &str, bytes: &[u8]) -> Result<PathBuf
         .as_nanos();
     for _ in 0..16 {
         let sequence = CLIPBOARD_FILE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-        let path = directory.join(format!("mermaid-{timestamp}-{sequence}.{extension}"));
+        let path = directory.join(format!("{prefix}-{timestamp}-{sequence}.{extension}"));
         match std::fs::OpenOptions::new()
             .create_new(true)
             .write(true)
@@ -203,8 +209,8 @@ fn copy_file_to_clipboard(_path: &Path) -> Result<(), String> {
 
 #[tauri::command]
 pub fn copy_mermaid_file(request: MermaidFileCopyRequest) -> Result<String, String> {
-    let (extension, bytes) = mermaid_clipboard_file(request)?;
-    let path = write_mermaid_clipboard_file(&extension, &bytes)?;
+    let (prefix, extension, bytes) = mermaid_clipboard_file(request)?;
+    let path = write_mermaid_clipboard_file(&prefix, &extension, &bytes)?;
     if let Err(error) = copy_file_to_clipboard(&path) {
         let _ = std::fs::remove_file(&path);
         return Err(error);
@@ -1778,25 +1784,34 @@ mod tests {
     fn prepares_expected_file_contents_for_each_mermaid_copy_kind() {
         let request = || MermaidFileCopyRequest {
             kind: "code".into(),
+            diagram_kind: "mermaid".into(),
             source: "flowchart LR".into(),
             svg: "<svg/>".into(),
             png_bytes: vec![137, 80, 78, 71],
         };
         assert_eq!(
             mermaid_clipboard_file(request()).unwrap(),
-            ("mmd".into(), b"flowchart LR".to_vec())
+            ("mermaid".into(), "mmd".into(), b"flowchart LR".to_vec())
         );
         let mut svg = request();
         svg.kind = "svg".into();
         assert_eq!(
             mermaid_clipboard_file(svg).unwrap(),
-            ("svg".into(), b"<svg/>".to_vec())
+            ("mermaid".into(), "svg".into(), b"<svg/>".to_vec())
         );
         let mut png = request();
         png.kind = "png".into();
         assert_eq!(
             mermaid_clipboard_file(png).unwrap(),
-            ("png".into(), vec![137, 80, 78, 71])
+            ("mermaid".into(), "png".into(), vec![137, 80, 78, 71])
+        );
+
+        let mut drawio = request();
+        drawio.diagram_kind = "drawio".into();
+        drawio.source = "<mxfile/>".into();
+        assert_eq!(
+            mermaid_clipboard_file(drawio).unwrap(),
+            ("drawio".into(), "drawio".into(), b"<mxfile/>".to_vec())
         );
     }
 

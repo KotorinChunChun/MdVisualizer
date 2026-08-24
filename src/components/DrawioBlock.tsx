@@ -1,39 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { classifyDrawioSource, prepareDrawioLoad } from "../lib/drawio";
+import { normalizeSvgForClipboard } from "../lib/mermaidClipboard";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { MermaidBlock } from "./MermaidBlock";
 import { MermaidToolbar } from "./MermaidToolbar";
 import { DrawioEditorModal } from "./DrawioEditorModal";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import "../styles/drawio.css";
-
-declare global {
-  interface Window { GraphViewer?: { processElements: () => void } }
-}
-
-let viewerPromise: Promise<void> | null = null;
-function ensureDrawioViewer(): Promise<void> {
-  if (window.GraphViewer) return Promise.resolve();
-  if (viewerPromise) return viewerPromise;
-  viewerPromise = new Promise((resolve, reject) => {
-    const existing = document.getElementById("markdown-viewer-drawio-script") as HTMLScriptElement | null;
-    const script = existing ?? document.createElement("script");
-    if (!existing) {
-      script.id = "markdown-viewer-drawio-script";
-      script.src = "https://viewer.diagrams.net/js/viewer-static.min.js";
-      script.async = true;
-      script.referrerPolicy = "no-referrer";
-      document.head.appendChild(script);
-    }
-    script.addEventListener("load", () => resolve(), { once: true });
-    script.addEventListener("error", () => {
-      script.remove();
-      viewerPromise = null;
-      reject(new Error("draw.ioビューアーを読み込めませんでした。"));
-    }, { once: true });
-  });
-  return viewerPromise;
-}
 
 export function drawioViewerConfig(xml: string): Record<string, unknown> {
   return {
@@ -50,26 +23,45 @@ export function drawioViewerConfig(xml: string): Record<string, unknown> {
   };
 }
 
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+export function drawioViewerDocument(xml: string): string {
+  const config = escapeHtmlAttribute(JSON.stringify(drawioViewerConfig(xml)));
+  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;min-height:100%;overflow:hidden;background:transparent}.mxgraph{width:100%;min-height:180px}</style></head><body><div class="mxgraph" data-mxgraph="${config}"></div><script>(()=>{const send=()=>{const svg=document.querySelector('svg');if(svg)parent.postMessage({type:'markdown-viewer-drawio-svg',svg:svg.outerHTML},'*')};window.captureDrawioSvg=send;new MutationObserver(send).observe(document.body,{subtree:true,childList:true,attributes:true})})()</script><script src="https://viewer.diagrams.net/js/viewer-static.min.js" referrerpolicy="no-referrer" onload="GraphViewer.processElements();captureDrawioSvg()"></script></body></html>`;
+}
+
 export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 12): string {
   const fitted = svg.cloneNode(true) as SVGSVGElement;
-  try {
-    const bounds = svg.getBBox();
-    if ([bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite)
-      && bounds.width > 0
-      && bounds.height > 0) {
-      const viewBox = [
-        bounds.x - padding,
-        bounds.y - padding,
-        bounds.width + padding * 2,
-        bounds.height + padding * 2,
-      ].join(" ");
-      fitted.setAttribute("viewBox", viewBox);
-      fitted.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  const existingViewBox = svg.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
+  const hasUsableViewBox = existingViewBox?.length === 4
+    && existingViewBox.every(Number.isFinite)
+    && existingViewBox[2] > 0
+    && existingViewBox[3] > 0;
+  if (!hasUsableViewBox) {
+    try {
+      const bounds = svg.getBBox();
+      if ([bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite)
+        && bounds.width > 0
+        && bounds.height > 0) {
+        fitted.setAttribute("viewBox", [
+          bounds.x - padding,
+          bounds.y - padding,
+          bounds.width + padding * 2,
+          bounds.height + padding * 2,
+        ].join(" "));
+      }
+    } catch {
+      // Empty diagrams and jsdom-like SVG implementations may not expose a
+      // measurable bounding box. Existing dimensions remain usable.
     }
-  } catch {
-    // Empty diagrams and jsdom-like SVG implementations may not expose a
-    // measurable bounding box. The viewer-provided viewBox remains usable.
   }
+  fitted.setAttribute("preserveAspectRatio", "xMidYMid meet");
   fitted.removeAttribute("width");
   fitted.removeAttribute("height");
   const style = fitted.getAttribute("style");
@@ -95,7 +87,7 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
   const [viewerError, setViewerError] = useState<string | null>(null);
   const [renderedSvg, setRenderedSvg] = useState<string>();
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
-  const viewerRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<HTMLIFrameElement>(null);
   const kind = useMemo(() => classifyDrawioSource(source), [source]);
   const load = useMemo(() => {
     try { return prepareDrawioLoad(source); }
@@ -106,6 +98,10 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
     try { return sanitizeSvgXml(source); }
     catch { return undefined; }
   }, [kind, source]);
+  const viewerDocument = useMemo(
+    () => load instanceof Error || "descriptor" in load || kind === "svg" ? undefined : drawioViewerDocument(load.xml),
+    [kind, load],
+  );
 
   useEffect(() => {
     setDisplay("diagram");
@@ -114,35 +110,32 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
   }, [safeSourceSvg, source]);
 
   useEffect(() => {
-    if (display !== "diagram" || load instanceof Error || "descriptor" in load || kind === "svg") return;
-    const host = viewerRef.current;
-    if (!host) return;
-    host.replaceChildren();
-    const element = document.createElement("div");
-    element.className = "drawio-block__viewer mxgraph";
-    host.appendChild(element);
-    element.setAttribute("data-mxgraph", JSON.stringify(drawioViewerConfig(load.xml)));
-    let disposed = false;
-    let animationFrame = 0;
-    const captureRenderedSvg = () => {
-      if (disposed) return;
-      const svg = element.querySelector<SVGSVGElement>("svg");
-      if (svg) setRenderedSvg(fitDrawioSvgToContent(svg));
+    if (display !== "diagram" || !viewerDocument) return;
+    const frame = viewerRef.current;
+    if (!frame) return;
+    let timeout = 0;
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frame.contentWindow
+        || event.data?.type !== "markdown-viewer-drawio-svg"
+        || typeof event.data.svg !== "string") return;
+      try {
+        window.clearTimeout(timeout);
+        const parsed = new DOMParser().parseFromString(event.data.svg, "image/svg+xml");
+        const svg = parsed.documentElement;
+        if (parsed.querySelector("parsererror") || svg.localName !== "svg") throw new Error("draw.io SVGを解析できません。");
+        setRenderedSvg(normalizeSvgForClipboard(fitDrawioSvgToContent(svg as unknown as SVGSVGElement)));
+        setViewerError(null);
+      } catch (error) {
+        setViewerError(error instanceof Error ? error.message : String(error));
+      }
     };
-    const observer = new MutationObserver(captureRenderedSvg);
-    observer.observe(element, { childList: true, subtree: true });
-    void ensureDrawioViewer().then(() => {
-      if (disposed) return;
-      window.GraphViewer?.processElements();
-      animationFrame = window.requestAnimationFrame(captureRenderedSvg);
-    }).catch((error) => { if (!disposed) setViewerError(String(error)); });
+    window.addEventListener("message", onMessage);
+    timeout = window.setTimeout(() => setViewerError((current) => current ?? "draw.ioビューアーを読み込めませんでした。"), 20_000);
     return () => {
-      disposed = true;
-      observer.disconnect();
-      window.cancelAnimationFrame(animationFrame);
-      host.replaceChildren();
+      window.removeEventListener("message", onMessage);
+      window.clearTimeout(timeout);
     };
-  }, [display, kind, load]);
+  }, [display, viewerDocument]);
 
   const label = kind === "svg" ? "SVG → draw.io" : kind === "mermaid" ? "Mermaid → draw.io" : kind === "compressed" ? "draw.io（圧縮データ）" : "draw.io";
   const svgPreview = (svg: string, alt: string) => {
@@ -175,7 +168,14 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
   />;
   else if (viewerError) preview = <div className="drawio-block__fallback"><p>{viewerError}</p><pre><code>{source}</code></pre></div>;
   else {
-    const viewerHost = <div ref={viewerRef} className="drawio-block__viewer-host" />;
+    const viewerHost = <iframe
+      ref={viewerRef}
+      className="drawio-block__viewer-frame"
+      title="draw.ioプレビュー"
+      srcDoc={viewerDocument}
+      sandbox="allow-scripts"
+      referrerPolicy="no-referrer"
+    />;
     preview = onMediaOpen
       ? <button
         type="button"
@@ -196,7 +196,7 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
         display={display}
         onDisplayChange={setDisplay}
         ariaLabel="draw.io操作"
-        allowFileCopy={false}
+        fileDiagramKind="drawio"
         onEdit={onSave ? () => setEditing(true) : undefined}
       />
     </div>

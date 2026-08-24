@@ -43,6 +43,15 @@ function HighlightedCodeHarness() {
 describe("useSearch", () => {
   afterEach(cleanup);
 
+  it("does not normalize React-managed text nodes while the query is empty", () => {
+    const normalize = vi.spyOn(Node.prototype, "normalize");
+    render(<Harness />);
+    expect(normalize).not.toHaveBeenCalled();
+    act(() => screen.getByRole("button", { name: "refresh" }).click());
+    expect(normalize).not.toHaveBeenCalled();
+    normalize.mockRestore();
+  });
+
   it("marks matching text and removes only its owned marks", () => {
     render(<Harness />);
     act(() => screen.getByRole("button", { name: "search" }).click());

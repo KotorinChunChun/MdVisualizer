@@ -26,7 +26,9 @@ function escapeRegex(value: string) {
 }
 
 function removeOwnedMarks(root: HTMLElement) {
-  root.querySelectorAll("mark[data-markdown-search]").forEach((mark) => {
+  const marks = root.querySelectorAll("mark[data-markdown-search]");
+  if (marks.length === 0) return;
+  marks.forEach((mark) => {
     mark.replaceWith(document.createTextNode(mark.textContent ?? ""));
   });
   root.normalize();

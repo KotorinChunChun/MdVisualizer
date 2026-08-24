@@ -64,6 +64,33 @@ describe("copyMermaid", () => {
     expect(result.indexOf('class="clipboard-label-background"')).toBeLessThan(result.indexOf("<text"));
   });
 
+  it("keeps draw.io HTML labels at their styled coordinates with a visible leaf font size", () => {
+    const result = normalizeSvgForClipboard(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="79.5 119.5 442 72">
+        <foreignObject width="100%" height="100%">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;width:158px;height:1px;padding-top:155px;margin-left:81px">
+            <div style="font-size:0;color:#000000"><div style="font-size:12px;font-family:Helvetica">Markdown</div></div>
+          </div>
+        </foreignObject>
+        <foreignObject width="100%" height="100%">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;width:1px;height:1px;padding-top:155px;margin-left:300px">
+            <div style="font-size:0;background-color:#ffffff"><div style="font-size:11px;font-family:Helvetica">外部ファイル参照</div></div>
+          </div>
+        </foreignObject>
+      </svg>
+    `);
+
+    expect(result).not.toContain("foreignObject");
+    expect(result).toContain("Markdown");
+    expect(result).toContain('x="160"');
+    expect(result).toContain('y="155.5"');
+    expect(result).toContain('font-size="12px"');
+    expect(result).not.toContain('font-size="0"');
+    expect(result).toContain('class="clipboard-label-background"');
+    expect(result).toContain("外部ファイル参照");
+    expect(result).toContain('viewBox="79.5 119.5 442 72"');
+  });
+
   it("removes executable SVG content while preserving generated styles", () => {
     const result = normalizeSvgForClipboard(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">

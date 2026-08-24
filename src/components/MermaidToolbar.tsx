@@ -12,6 +12,7 @@ export function MermaidToolbar({
   onDisplayChange,
   ariaLabel = "Mermaid操作",
   allowFileCopy = true,
+  fileDiagramKind = "mermaid",
   onEdit,
 }: {
   source: string;
@@ -20,6 +21,7 @@ export function MermaidToolbar({
   onDisplayChange?: (display: "diagram" | "code") => void;
   ariaLabel?: string;
   allowFileCopy?: boolean;
+  fileDiagramKind?: "mermaid" | "drawio";
   onEdit?: () => void;
 }) {
   const copy = async (event: MouseEvent<HTMLButtonElement>, kind: MermaidCopyKind) => {
@@ -31,7 +33,7 @@ export function MermaidToolbar({
         : kind === "png" ? "ラスタ画像をコピーしました" : "ベクタ画像をコピーしました";
       const copyAsFile = allowFileCopy ? async () => {
         try {
-          await copyMermaidAsFile(kind, source, svg ?? "");
+          await copyMermaidAsFile(kind, source, svg ?? "", fileDiagramKind);
           emitToast("success", "ファイルをクリップボードにコピーしました");
         } catch {
           emitToast("error", "ファイルとしてコピーできませんでした");

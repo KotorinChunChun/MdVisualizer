@@ -25,7 +25,7 @@ export async function saveSettings(updates: Record<string, unknown>): Promise<Re
 export async function loadMarkdownStyle(defaultCss: string): Promise<MarkdownStyleFile> { return await invoke<MarkdownStyleFile>("load_markdown_style", { defaultCss }); }
 export async function saveMarkdownStyle(css: string): Promise<MarkdownStyleFile> { return await invoke<MarkdownStyleFile>("save_markdown_style", { css }); }
 export async function openMarkdownStyle(): Promise<void> { await invoke<void>("open_markdown_style"); }
-export async function copyMermaidFile(request: { kind: "code" | "png" | "svg"; source: string; svg: string; pngBytes: number[] }): Promise<string> {
+export async function copyMermaidFile(request: { kind: "code" | "png" | "svg"; diagramKind: "mermaid" | "drawio"; source: string; svg: string; pngBytes: number[] }): Promise<string> {
   return await invoke<string>("copy_mermaid_file", { request });
 }
 export async function updateExternalAppSettings(

@@ -22,6 +22,20 @@ function firstPresentationValue(element: Element, name: string): string | undefi
   return undefined;
 }
 
+function positivePresentationValue(element: Element, name: string): string | undefined {
+  const candidates = [element, ...Array.from(element.querySelectorAll("*"))].reverse();
+  for (const candidate of candidates) {
+    const value = candidate.getAttribute(name) ?? cssProperty(candidate, name);
+    if (value && (Number.parseFloat(value) > 0 || !Number.isFinite(Number.parseFloat(value)))) return value;
+  }
+  return undefined;
+}
+
+function cssNumber(element: Element, name: string): number {
+  const value = Number.parseFloat(cssProperty(element, name) ?? "");
+  return Number.isFinite(value) ? value : 0;
+}
+
 function numericAttribute(element: Element, name: string): number {
   const value = Number.parseFloat(element.getAttribute(name) ?? "");
   return Number.isFinite(value) ? value : 0;
@@ -57,31 +71,43 @@ function hasAncestorClass(element: Element, className: string): boolean {
   return false;
 }
 
+function estimatedTextWidth(text: string, fontSize: number): number {
+  return Array.from(text).reduce((width, character) => width + fontSize * (/^[\x20-\x7e]$/.test(character) ? 0.6 : 1), 0);
+}
+
 function replaceForeignObjectWithText(document: Document): void {
   for (const foreignObject of Array.from(document.querySelectorAll("foreignObject"))) {
     const lines = labelLines(foreignObject);
     const replacement = document.createElementNS(SVG_NAMESPACE, "g");
     const text = document.createElementNS(SVG_NAMESPACE, "text");
+    const layout = foreignObject.firstElementChild;
     const originX = numericAttribute(foreignObject, "x");
     const originY = numericAttribute(foreignObject, "y");
-    const width = numericAttribute(foreignObject, "width");
-    const height = numericAttribute(foreignObject, "height");
-    const x = originX + width / 2;
-    const y = originY + height / 2;
-    const fontSizeValue = firstPresentationValue(foreignObject, "font-size") ?? "16px";
+    const styledWidth = layout ? cssNumber(layout, "width") : 0;
+    const styledHeight = layout ? cssNumber(layout, "height") : 0;
+    const width = styledWidth || numericAttribute(foreignObject, "width");
+    const height = styledHeight || numericAttribute(foreignObject, "height");
+    const x = originX + (layout ? cssNumber(layout, "margin-left") + cssNumber(layout, "padding-left") : 0) + width / 2;
+    const y = originY + (layout ? cssNumber(layout, "margin-top") + cssNumber(layout, "padding-top") : 0) + height / 2;
+    const fontSizeValue = positivePresentationValue(foreignObject, "font-size") ?? "16px";
     const fontSize = Number.parseFloat(fontSizeValue) || 16;
     const lineHeight = fontSize * 1.2;
 
     // Mermaidの線上ラベルはHTML側の背景色で罫線を隠している。
     // foreignObjectを取り除く場合も同じ描画順をSVG要素で再現する。
-    if (hasAncestorClass(foreignObject, "edgeLabel") || hasAncestorClass(foreignObject, "labelBkg")) {
+    const htmlBackground = firstPresentationValue(foreignObject, "background-color");
+    if (htmlBackground || hasAncestorClass(foreignObject, "edgeLabel") || hasAncestorClass(foreignObject, "labelBkg")) {
       const background = document.createElementNS(SVG_NAMESPACE, "rect");
       background.setAttribute("class", "clipboard-label-background");
-      background.setAttribute("x", String(originX));
-      background.setAttribute("y", String(originY));
-      background.setAttribute("width", String(width));
-      background.setAttribute("height", String(height));
-      background.setAttribute("fill", "#ffffff");
+      const estimatedWidth = width > 1
+        ? width
+        : Math.max(width, ...lines.map((line) => estimatedTextWidth(line, fontSize))) + 4;
+      const estimatedHeight = height > 1 ? height : Math.max(height, lines.length * lineHeight) + 2;
+      background.setAttribute("x", String(x - estimatedWidth / 2));
+      background.setAttribute("y", String(y - estimatedHeight / 2));
+      background.setAttribute("width", String(estimatedWidth));
+      background.setAttribute("height", String(estimatedHeight));
+      background.setAttribute("fill", htmlBackground && !/^light-dark\(/i.test(htmlBackground) ? htmlBackground : "#ffffff");
       replacement.appendChild(background);
     }
 
@@ -276,10 +302,10 @@ export async function copyMermaid(kind: MermaidCopyKind, source: string, svg: st
   }
 }
 
-export async function copyMermaidAsFile(kind: MermaidCopyKind, source: string, svg: string): Promise<string> {
+export async function copyMermaidAsFile(kind: MermaidCopyKind, source: string, svg: string, diagramKind: "mermaid" | "drawio" = "mermaid"): Promise<string> {
   const normalizedSvg = kind === "code" ? svg : normalizeSvgForClipboard(svg);
   const pngBytes = kind === "png"
     ? Array.from(new Uint8Array(await (await svgToPngBlob(svg)).arrayBuffer()))
     : [];
-  return await copyMermaidFile({ kind, source, svg: normalizedSvg, pngBytes });
+  return await copyMermaidFile({ kind, diagramKind, source, svg: normalizedSvg, pngBytes });
 }
