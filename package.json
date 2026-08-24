@@ -20,6 +20,7 @@
     "release:plan": "pwsh -NoProfile -File ./scripts/publish-msix-release.ps1 -Mode Plan",
     "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
     "test": "vitest run",
+    "report:editing": "node ./scripts/generate-editing-test-report.mjs",
     "preview": "vite preview",
     "tauri": "tauri"
   },
