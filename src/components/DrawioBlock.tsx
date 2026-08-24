@@ -115,9 +115,12 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
 
   useEffect(() => {
     if (display !== "diagram" || load instanceof Error || "descriptor" in load || kind === "svg") return;
-    const element = viewerRef.current;
-    if (!element) return;
-    element.replaceChildren();
+    const host = viewerRef.current;
+    if (!host) return;
+    host.replaceChildren();
+    const element = document.createElement("div");
+    element.className = "drawio-block__viewer mxgraph";
+    host.appendChild(element);
     element.setAttribute("data-mxgraph", JSON.stringify(drawioViewerConfig(load.xml)));
     let disposed = false;
     let animationFrame = 0;
@@ -137,6 +140,7 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
       disposed = true;
       observer.disconnect();
       window.cancelAnimationFrame(animationFrame);
+      host.replaceChildren();
     };
   }, [display, kind, load]);
 
@@ -169,10 +173,19 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
     onRenderedSvg={setRenderedSvg}
     onMediaOpen={onMediaOpen}
   />;
-  else if (renderedSvg) preview = svgPreview(renderedSvg, "draw.io図");
-  else preview = viewerError
-    ? <div className="drawio-block__fallback"><p>{viewerError}</p><pre><code>{source}</code></pre></div>
-    : <div ref={viewerRef} className="drawio-block__viewer mxgraph" />;
+  else if (viewerError) preview = <div className="drawio-block__fallback"><p>{viewerError}</p><pre><code>{source}</code></pre></div>;
+  else {
+    const viewerHost = <div ref={viewerRef} className="drawio-block__viewer-host" />;
+    preview = onMediaOpen
+      ? <button
+        type="button"
+        className="drawio-block__zoom"
+        aria-label="図を拡大"
+        aria-disabled={!renderedSvg}
+        onClick={() => renderedSvg && onMediaOpen({ content: { kind: "svg", svg: renderedSvg, alt: "draw.io図" } })}
+      >{viewerHost}</button>
+      : viewerHost;
+  }
 
   return <div className="drawio-block" data-drawio-block={blockId}>
     <div className="drawio-block__toolbar">

@@ -45,7 +45,7 @@ import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
-import { resolveImageSrc } from "./lib/path";
+import { resolveImageSrc, resolveLocalImagePath } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
 import type { ViewMode } from "./lib/viewMode";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
@@ -1559,7 +1559,12 @@ export function App() {
   }, [goBack, goForward]);
 
   const updateImageVersion = useCallback((imgPath: string) => {
-    setImageVersions((previous) => ({ ...previous, [imgPath]: (previous[imgPath] || 0) + 1 }));
+    const normalizedPath = resolveLocalImagePath(imgPath, "") ?? imgPath;
+    setImageVersions((previous) => {
+      const next = { ...previous, [imgPath]: (previous[imgPath] || 0) + 1 };
+      if (normalizedPath !== imgPath) next[normalizedPath] = (previous[normalizedPath] || 0) + 1;
+      return next;
+    });
   }, []);
 
   const handleMarkdownChanged = useCallback(
@@ -1569,14 +1574,17 @@ export function App() {
       if (selfSaveUntil && selfSaveUntil >= Date.now()) return;
       if (selfSaveUntil) recentSelfSaves.current.delete(identity);
       const tabs = tabsState.tabs.filter((candidate) => localPathIdentity(candidate.path) === identity);
-      if (!tabs.length) return;
+      if (!tabs.length) {
+        if (changeKind !== "deleted" && changeKind !== "renamed") updateImageVersion(path);
+        return;
+      }
       const canReload = changeKind !== "deleted" && changeKind !== "renamed";
       tabs.forEach((tab) => {
         if (autoReload === "on" && canReload && !tab.dirty && !tab.saving) reloadTab(tab.id, false);
         else dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true });
       });
     },
-    [tabsState.tabs, autoReload, reloadTab]
+    [tabsState.tabs, autoReload, reloadTab, updateImageVersion]
   );
 
   const handleImageChanged = useCallback(

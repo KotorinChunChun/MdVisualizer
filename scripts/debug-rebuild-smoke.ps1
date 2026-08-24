@@ -132,7 +132,7 @@ $pngFixture = $null
 if ($AllSamples) {
     $samplesDirectory = (Resolve-Path (Join-Path $projectRoot "samples")).Path
     Get-ChildItem -LiteralPath $samplesDirectory -Recurse -File | Where-Object {
-        $_.Extension.ToLowerInvariant() -in @(".md", ".markdown", ".svg", ".mmd", ".mermaid")
+        $_.Extension.ToLowerInvariant() -in @(".md", ".markdown", ".svg", ".mmd", ".mermaid", ".drawio")
     } | Sort-Object FullName | ForEach-Object {
         if (-not $restoreFiles.Contains($_.FullName)) { $restoreFiles.Add($_.FullName) }
     }

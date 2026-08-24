@@ -14,7 +14,7 @@ import { CodeBlock } from "./CodeBlock";
 import { MermaidBlock } from "./MermaidBlock";
 import { openExternalUrl } from "../lib/commands";
 import { resolveSharePointBrowserUrl } from "../lib/sharePoint";
-import { resolveLocalDocumentPath, resolveSharePointDocumentPath } from "../lib/path";
+import { resolveLocalDocumentPath, resolveLocalImagePath, resolveSharePointDocumentPath } from "../lib/path";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { imageOccurrenceId } from "../lib/imageOccurrences";
@@ -25,6 +25,7 @@ import { collectEditableMarkdownOccurrences, type CodeFenceOccurrence, type Imag
 import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { DrawioBlock } from "./DrawioBlock";
+import { ExternalDrawioBlock } from "./ExternalDrawioBlock";
 import { PlantUmlBlock } from "./PlantUmlBlock";
 import { isPlantUmlFenceLanguage } from "@markdown-viewer/markdown-core";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
@@ -270,6 +271,21 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
   const occurrence = sourceOffset === undefined ? undefined : context.imageOccurrenceByOffset.get(sourceOffset);
   const source = String(src ?? "");
   const local = source && !/^(?:https?:|file:|\/\/)/i.test(source);
+  const drawioPath = local && /\.drawio(?:[?#]|$)/i.test(source)
+    ? resolveLocalImagePath(source, context.baseDir)
+    : null;
+  if (drawioPath) {
+    return <ExternalDrawioBlock
+      source={source}
+      alt={alt}
+      baseDir={context.baseDir}
+      theme={context.theme}
+      blockId={imageOccurrenceId(sourceOffset ?? 0)}
+      version={context.imageVersions[drawioPath] ?? 0}
+      editable={!context.staticMode && !context.presentationMode}
+      onMediaOpen={context.onMediaOpen}
+    />;
+  }
   const assetKind = parseRasterDataUri(source) || /\.(?:png|jpe?g|gif|webp|bmp)(?:[?#]|$)/i.test(source) ? "raster" : /\.svg(?:[?#]|$)/i.test(source) ? "svg" : null;
   const conversionContext: AssetConversionContext | undefined = occurrence && context.documentPath && local && assetKind ? {
     documentPath: context.documentPath,

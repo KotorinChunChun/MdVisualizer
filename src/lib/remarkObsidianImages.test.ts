@@ -39,8 +39,18 @@ describe("remarkObsidianImages", () => {
   });
 
   it("leaves notes, inline code, and non-image wiki links unchanged", () => {
-    const markdown = "[[設計ノート]] `[[code.png]]` [[diagram.drawio]]";
+    const markdown = "[[設計ノート]] `[[code.png]]` [[diagram.txt]]";
     expect(imageNodes(markdown)).toEqual([]);
+  });
+
+  it("treats draw.io files as Obsidian image embeds", () => {
+    expect(parseObsidianImageReference("diagrams/system.drawio|システム構成")).toEqual({
+      source: "diagrams/system.drawio",
+      alt: "システム構成",
+    });
+    expect(imageNodes("![[diagrams/system.drawio|システム構成]]")).toMatchObject([
+      { url: "diagrams/system.drawio", alt: "システム構成" },
+    ]);
   });
 
   it("converts local Markdown wiki links while leaving other wiki links alone", () => {

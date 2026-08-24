@@ -23,7 +23,7 @@ type MarkdownNode = {
 };
 
 const OBSIDIAN_EMBED_PATTERN = /!?\[\[([^\]\r\n]+)\]\]/g;
-const IMAGE_EXTENSION_PATTERN = /\.(?:avif|bmp|gif|ico|jpe?g|png|svg|tiff?|webp)(?:[?#].*)?$/i;
+const IMAGE_EXTENSION_PATTERN = /\.(?:avif|bmp|drawio|gif|ico|jpe?g|png|svg|tiff?|webp)(?:[?#].*)?$/i;
 const SIZE_ALIAS_PATTERN = /^\d+(?:x\d+)?$/i;
 const SKIPPED_PARENT_TYPES = new Set(["image", "link", "definition", "code", "inlineCode", "html"]);
 

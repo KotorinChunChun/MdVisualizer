@@ -171,7 +171,7 @@ await command("Runtime.enable");
 
 const directoryEntries = await readdir(samplesDirectory, { recursive: true, withFileTypes: true });
 const expectedSamples = directoryEntries
-  .filter((entry) => entry.isFile() && [".md", ".markdown", ".svg", ".mmd", ".mermaid"].includes(extname(entry.name).toLowerCase()))
+  .filter((entry) => entry.isFile() && [".md", ".markdown", ".svg", ".mmd", ".mermaid", ".drawio"].includes(extname(entry.name).toLowerCase()))
   .map((entry) => join(entry.parentPath ?? entry.path, entry.name))
   .sort((left, right) => left.localeCompare(right));
 const availableTabs = await evaluate(`[...document.querySelectorAll('.tab[title]')].map((tab) => tab.title)`);
