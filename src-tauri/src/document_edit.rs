@@ -1,4 +1,4 @@
-//! Encoding-preserving, conflict-safe Markdown document saves.
+//! Encoding-preserving, conflict-safe Markdown and draw.io document saves.
 
 use crate::errors::{AppError, AppResult};
 use crate::file_lock::{atomic_write, with_lock};
@@ -36,7 +36,7 @@ struct OriginalDocument {
 
 pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
-    if document_kind(&requested) != Some(DocumentKind::Markdown) {
+    if !matches!(document_kind(&requested), Some(DocumentKind::Markdown | DocumentKind::Drawio)) {
         return Err(AppError::UnsupportedDocument(request.path));
     }
     if !requested.exists() {
@@ -70,8 +70,14 @@ pub fn save_markdown_with_assets(
     staging: &crate::asset_staging::AssetStagingManager,
 ) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
-    if document_kind(&requested) != Some(DocumentKind::Markdown) {
+    let kind = document_kind(&requested);
+    if !matches!(kind, Some(DocumentKind::Markdown | DocumentKind::Drawio)) {
         return Err(AppError::UnsupportedDocument(request.path));
+    }
+    if kind == Some(DocumentKind::Drawio) && !request.staged_asset_ids.is_empty() {
+        return Err(AppError::PermissionDenied(
+            "draw.io documents cannot commit Markdown assets.".into(),
+        ));
     }
     if !requested.exists() {
         return Err(AppError::FileNotFound(request.path));
@@ -80,9 +86,11 @@ pub fn save_markdown_with_assets(
         AppError::IoError(format!("canonicalize {}: {error}", requested.display()))
     })?;
     with_lock(&path, || {
-        staging.commit_with(&path, &request.staged_asset_ids, || {
+        if kind == Some(DocumentKind::Markdown) {
+            staging.commit_with(&path, &request.staged_asset_ids, || save_locked(&path, &request))
+        } else {
             save_locked(&path, &request)
-        })
+        }
     })
 }
 
@@ -253,6 +261,20 @@ mod tests {
         assert_eq!(fs::read_to_string(&path).unwrap(), "# new\n");
         assert_ne!(result.revision, original_revision);
         assert_eq!(result.content, "# new\n");
+    }
+
+    #[test]
+    fn saves_a_drawio_document_with_revision_protection() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("system.drawio");
+        fs::write(&path, "<mxfile><diagram name=\"old\"/></mxfile>").unwrap();
+        let original_revision = content_revision(&fs::read(&path).unwrap());
+
+        let result = save_markdown(request(&path, "<mxfile><diagram name=\"new\"/></mxfile>")).unwrap();
+
+        assert_eq!(result.kind, DocumentKind::Drawio);
+        assert!(result.content.contains("name=\"new\""));
+        assert_ne!(result.revision, original_revision);
     }
 
     #[test]

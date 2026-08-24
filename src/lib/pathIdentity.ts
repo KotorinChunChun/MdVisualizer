@@ -38,5 +38,5 @@ export function isMarkdownPath(path: string): boolean {
 }
 
 export function isSupportedDocumentPath(path: string): boolean {
-  return /\.(?:md|markdown|svg|mmd|mermaid)$/i.test(path.trim());
+  return /\.(?:md|markdown|svg|mmd|mermaid|drawio)$/i.test(path.trim());
 }

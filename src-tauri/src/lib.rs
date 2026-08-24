@@ -319,6 +319,7 @@ mod tests {
                     "C:/docs/diagram.svg".into(),
                     "C:/docs/flow.mmd".into(),
                     "C:/docs/sequence.MERMAID".into(),
+                    "C:/docs/system.drawio".into(),
                     "C:/docs/image.png".into(),
                 ],
                 Path::new("C:/")
@@ -329,6 +330,7 @@ mod tests {
                 "C:\\docs\\diagram.svg",
                 "C:\\docs\\flow.mmd",
                 "C:\\docs\\sequence.MERMAID",
+                "C:\\docs\\system.drawio",
             ],
         );
     }

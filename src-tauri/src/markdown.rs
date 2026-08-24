@@ -14,6 +14,7 @@ pub enum DocumentKind {
     Markdown,
     Svg,
     Mermaid,
+    Drawio,
 }
 
 #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
@@ -53,6 +54,7 @@ pub fn document_kind(path: &Path) -> Option<DocumentKind> {
         Some("md") | Some("markdown") => Some(DocumentKind::Markdown),
         Some("svg") => Some(DocumentKind::Svg),
         Some("mmd") | Some("mermaid") => Some(DocumentKind::Mermaid),
+        Some("drawio") => Some(DocumentKind::Drawio),
         _ => None,
     }
 }
@@ -295,16 +297,19 @@ mod tests {
         assert_eq!(document_kind(Path::new("diagram.svg")), Some(DocumentKind::Svg));
         assert_eq!(document_kind(Path::new("flow.MMD")), Some(DocumentKind::Mermaid));
         assert_eq!(document_kind(Path::new("flow.mermaid")), Some(DocumentKind::Mermaid));
+        assert_eq!(document_kind(Path::new("system.DRAWIO")), Some(DocumentKind::Drawio));
         assert_eq!(document_kind(Path::new("image.png")), None);
     }
 
     #[test]
-    fn loads_svg_and_mermaid_as_standalone_documents_without_image_references() {
+    fn loads_svg_mermaid_and_drawio_as_standalone_documents_without_image_references() {
         let directory = tempfile::tempdir().unwrap();
         let svg = directory.path().join("diagram.svg");
         let mermaid = directory.path().join("flow.mmd");
+        let drawio = directory.path().join("system.drawio");
         std::fs::write(&svg, r#"<svg><image href="nested.png"/></svg>"#).unwrap();
         std::fs::write(&mermaid, "flowchart LR\n  A --> B").unwrap();
+        std::fs::write(&drawio, "<mxfile><diagram/></mxfile>").unwrap();
 
         let loaded_svg = load_markdown(&svg.to_string_lossy()).unwrap();
         assert_eq!(loaded_svg.kind, DocumentKind::Svg);
@@ -314,6 +319,11 @@ mod tests {
         assert_eq!(loaded_mermaid.kind, DocumentKind::Mermaid);
         assert!(loaded_mermaid.image_paths.is_empty());
         assert!(loaded_mermaid.content.contains("A --> B"));
+
+        let loaded_drawio = load_markdown(&drawio.to_string_lossy()).unwrap();
+        assert_eq!(loaded_drawio.kind, DocumentKind::Drawio);
+        assert!(loaded_drawio.image_paths.is_empty());
+        assert!(loaded_drawio.content.contains("mxfile"));
     }
 
     #[test]

@@ -914,6 +914,37 @@ export function App() {
     return true;
   }, []);
 
+  const saveStandaloneDrawio = useCallback(async (id: string, content: string): Promise<boolean> => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
+    if (!tab?.document || tab.document.kind !== "drawio") return false;
+    const identity = localPathIdentity(tab.document.path);
+    const selfSaveUntil = Date.now() + 2000;
+    recentSelfSaves.current.set(identity, selfSaveUntil);
+    window.setTimeout(() => {
+      if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
+    }, 2100);
+    try {
+      const result = await saveMarkdown({
+        path: tab.document.path,
+        content,
+        expectedRevision: tab.document.revision,
+        stagedAssetIds: [],
+      });
+      if (result.status === "conflict") {
+        recentSelfSaves.current.delete(identity);
+        dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
+        throw new Error("保存先のdraw.ioファイルが更新されています。再読込してから編集してください。");
+      }
+      dispatch({ type: "SAVED", id, document: result.document });
+      setToast({ id: String(Date.now()), message: `${result.document.path} を保存しました`, type: "success" });
+      return true;
+    } catch (error) {
+      recentSelfSaves.current.delete(identity);
+      setToast({ id: String(Date.now()), message: `draw.ioの保存に失敗しました: ${String(error)}`, type: "error" });
+      throw error;
+    }
+  }, []);
+
   const jumpToSearchResult = useCallback((index: number) => {
     const result = search.results[index];
     if (!result || !activeTab?.document) return;
@@ -1761,6 +1792,7 @@ export function App() {
             windowId={windowLabel}
             tabId={activeTab.id}
             onMediaOpen={openMediaPreview}
+            onDrawioSave={activeTab.document.kind === "drawio" ? (content) => saveStandaloneDrawio(activeTab.id, content) : undefined}
           />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
@@ -1817,7 +1849,7 @@ export function App() {
             <div className="empty-icon">📑</div>
             <div className="empty-title">表示するファイルが指定されていません</div>
             <div className="empty-desc">
-              <code>.md</code>、<code>.svg</code>、<code>.mmd</code> ファイルをダブルクリックして開くか、ドロップしてください。
+              <code>.md</code>、<code>.svg</code>、<code>.mmd</code>、<code>.drawio</code> ファイルをダブルクリックして開くか、ドロップしてください。
             </div>
           </div>
         )}

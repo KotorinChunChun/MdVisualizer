@@ -14,7 +14,7 @@ describe("local path identity", () => {
   });
 
   it("accepts every directly viewable document path", () => {
-    for (const path of ["guide.md", "guide.markdown", "diagram.svg", "flow.mmd", "flow.MERMAID"]) {
+    for (const path of ["guide.md", "guide.markdown", "diagram.svg", "flow.mmd", "flow.MERMAID", "system.DRAWIO"]) {
       expect(isSupportedDocumentPath(path)).toBe(true);
     }
     expect(isSupportedDocumentPath("image.png")).toBe(false);

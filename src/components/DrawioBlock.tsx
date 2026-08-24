@@ -88,7 +88,7 @@ export function DrawioBlock({ source, theme, blockId, onSave, onMediaOpen }: {
   source: string;
   theme: string;
   blockId: string;
-  onSave?: (source: string) => boolean | void;
+  onSave?: (source: string) => boolean | void | Promise<boolean | void>;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
   const [editing, setEditing] = useState(false);

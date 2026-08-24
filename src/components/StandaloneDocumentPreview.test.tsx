@@ -12,6 +12,12 @@ vi.mock("./MermaidBlock", () => ({
   ),
 }));
 
+vi.mock("./DrawioBlock", () => ({
+  DrawioBlock: ({ source, onSave }: { source: string; onSave?: (source: string) => void }) => (
+    <button type="button" data-testid="drawio-preview" onClick={() => onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
+  ),
+}));
+
 import { StandaloneDocumentPreview } from "./StandaloneDocumentPreview";
 
 function document(kind: MarkdownLoadResult["kind"], path: string, content: string): MarkdownLoadResult {
@@ -56,5 +62,21 @@ describe("StandaloneDocumentPreview", () => {
     expect(screen.getByTestId("mermaid-preview").textContent).toContain("A --> B");
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-mode")).toBe("on");
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-count")).toBe("1");
+  });
+
+  it("routes a draw.io file through the existing draw.io renderer and save callback", () => {
+    const onDrawioSave = vi.fn();
+    render(<StandaloneDocumentPreview
+      document={document("drawio", "C:\\docs\\system.drawio", "<mxfile><diagram/></mxfile>")}
+      imageVersions={{}}
+      theme="dark"
+      windowId="main"
+      tabId="tab-3"
+      onDrawioSave={onDrawioSave}
+    />);
+
+    screen.getByTestId("drawio-preview").click();
+    expect(screen.getByTestId("drawio-preview").textContent).toContain("mxfile");
+    expect(onDrawioSave).toHaveBeenCalledWith("<mxfile><diagram name=\"saved\"/></mxfile>");
   });
 });

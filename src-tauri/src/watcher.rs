@@ -338,8 +338,8 @@ mod tests {
     }
 
     #[test]
-    fn standalone_svg_and_mermaid_files_are_document_watch_targets() {
-        for path in ["readme.md", "diagram.svg", "flow.mmd", "flow.mermaid"] {
+    fn standalone_svg_mermaid_and_drawio_files_are_document_watch_targets() {
+        for path in ["readme.md", "diagram.svg", "flow.mmd", "flow.mermaid", "system.drawio"] {
             assert!(is_supported_document(Path::new(path)), "{path}");
         }
         assert!(!is_supported_document(Path::new("image.png")));
