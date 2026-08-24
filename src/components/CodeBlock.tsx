@@ -51,7 +51,6 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<PowerShellRunResult | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
-  const [workingDirectory, setWorkingDirectory] = useState(() => powerShellWorkingDirectory(documentPath ?? ""));
   const runGeneration = useRef(0);
   const runInFlight = useRef(false);
   const rawLanguage = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
@@ -82,7 +81,6 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
     setRunResult(null);
     setRunError(null);
     setConfirmationOpen(false);
-    setWorkingDirectory(powerShellWorkingDirectory(documentPath ?? ""));
   }, [documentPath, source]);
   useEffect(() => () => { runGeneration.current += 1; }, []);
   const copy = async (button: HTMLButtonElement) => {
@@ -108,7 +106,7 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
     setRunResult(null);
     setRunError(null);
     try {
-      const result = await runPowerShell({ documentPath, language: rawLanguage, source, workingDirectory });
+      const result = await runPowerShell({ documentPath, language: rawLanguage, source });
       if (runGeneration.current === generation) setRunResult(result);
     } catch (error) {
       if (runGeneration.current === generation) setRunError(String(error));
@@ -134,7 +132,6 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
   return <div className="code-block">
     <div className="code-actions">
       {executable && <button type="button" className="code-run" disabled={running} onClick={() => {
-        setWorkingDirectory(powerShellWorkingDirectory(documentPath ?? ""));
         setConfirmationOpen(true);
       }}>{running ? "実行中…" : "PowerShellを実行"}</button>}
       <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
@@ -149,8 +146,8 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
     {confirmationOpen && <div className="code-run-confirmation-backdrop">
       <section className="code-run-confirmation" role="dialog" aria-modal="true" aria-labelledby="code-run-confirmation-title">
         <h2 id="code-run-confirmation-title">PowerShellコードを実行しますか？</h2>
-        <p>このMarkdownに書かれたコードが、次のフォルダーで実行されます。内容を確認できる場合だけ続行してください。</p>
-        <label className="code-run-confirmation__directory">作業フォルダー<input type="text" value={workingDirectory} onChange={(event) => setWorkingDirectory(event.target.value)} /></label>
+        <p>このMarkdownに書かれたコードが、Markdownファイルと同じフォルダーへ移動してから実行されます。内容を確認できる場合だけ続行してください。</p>
+        <label className="code-run-confirmation__directory">作業フォルダー<input type="text" value={powerShellWorkingDirectory(documentPath ?? "")} readOnly /></label>
         <dl><dt>実行環境</dt><dd>pwsh（PowerShell 7）</dd><dt>制限</dt><dd>非対話・30秒・出力1MiB</dd></dl>
         <pre>{source}</pre>
         <footer><button type="button" onClick={() => setConfirmationOpen(false)}>キャンセル</button><button type="button" className="code-run-confirmation__execute" onClick={() => void execute()}>実行する</button></footer>
@@ -164,6 +161,14 @@ export function isPowerShellLanguage(language: string): boolean {
 }
 
 export function powerShellWorkingDirectory(documentPath: string): string {
-  const separator = Math.max(documentPath.lastIndexOf("/"), documentPath.lastIndexOf("\\"));
-  return separator > 0 ? documentPath.slice(0, separator) : documentPath;
+  const normalizedPath = documentPath.startsWith("\\\\?\\UNC\\")
+    ? `\\\\${documentPath.slice(8)}`
+    : documentPath.startsWith("\\\\?\\")
+      ? documentPath.slice(4)
+      : documentPath;
+  const separator = Math.max(normalizedPath.lastIndexOf("/"), normalizedPath.lastIndexOf("\\"));
+  if (separator < 0) return normalizedPath;
+  if (separator === 0) return normalizedPath.slice(0, 1);
+  if (separator === 2 && /^[a-z]:[\\/]/i.test(normalizedPath)) return normalizedPath.slice(0, 3);
+  return normalizedPath.slice(0, separator);
 }

@@ -14,12 +14,24 @@ describe("MarkdownEditor", () => {
   it("moves focus and the cursor to a requested source line through its imperative API", async () => {
     const ref = createRef<MarkdownEditorHandle>();
     const onActiveLineChange = vi.fn();
-    const { container } = render(<MarkdownEditor ref={ref} documentId="tab-1:1" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} onActiveLineChange={onActiveLineChange} />);
+    const onCursorPositionChange = vi.fn();
+    const { container } = render(<MarkdownEditor ref={ref} documentId="tab-1:1" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} onActiveLineChange={onActiveLineChange} onCursorPositionChange={onCursorPositionChange} />);
     act(() => ref.current?.focusLine(3));
 
     await waitFor(() => expect(container.querySelector(".cm-activeLine")?.textContent).toBe("three"));
     expect(onActiveLineChange).toHaveBeenLastCalledWith(3);
+    await waitFor(() => expect(onCursorPositionChange).toHaveBeenLastCalledWith(expect.objectContaining({ line: 3 })));
+    expect(Number.isFinite(onCursorPositionChange.mock.lastCall?.[0].screenY)).toBe(true);
     expect(ref.current?.contains(document.activeElement)).toBe(true);
+  });
+
+  it("reports pure Edit-pane scrolling separately from cursor movement", () => {
+    const onScrollLine = vi.fn();
+    const { container } = render(<MarkdownEditor documentId="tab-1:1" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} onScrollLine={onScrollLine} />);
+
+    fireEvent.scroll(container.querySelector(".cm-scroller")!);
+
+    expect(onScrollLine).toHaveBeenCalledWith(1);
   });
 
   it("applies toolbar edits to the draft callback", async () => {

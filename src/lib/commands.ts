@@ -165,6 +165,6 @@ export interface PowerShellRunResult {
   durationMs: number;
 }
 
-export async function runPowerShell(request: { documentPath: string; language: string; source: string; workingDirectory?: string }): Promise<PowerShellRunResult> {
+export async function runPowerShell(request: { documentPath: string; language: string; source: string }): Promise<PowerShellRunResult> {
   return await invoke<PowerShellRunResult>("run_powershell", { request });
 }

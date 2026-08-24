@@ -48,8 +48,8 @@ pub use window_settings::{
 
 #[cfg(test)]
 use external::{
-    expand_external_app_value, is_allowed_external_url, run_powershell_process,
-    validate_powershell_request, ValidatedPowerShellRequest,
+    expand_external_app_value, is_allowed_external_url, normalize_powershell_path,
+    run_powershell_process, validate_powershell_request, ValidatedPowerShellRequest,
 };
 #[cfg(test)]
 use std::time::Duration;
@@ -1312,18 +1312,16 @@ mod tests {
             document_path: document.to_string_lossy().into_owned(),
             language: "pwsh".into(),
             source: "Get-Location".into(),
-            working_directory: None,
         })
         .unwrap();
         assert_eq!(
             validated.working_directory,
-            std::fs::canonicalize(directory.path()).unwrap()
+            normalize_powershell_path(&std::fs::canonicalize(directory.path()).unwrap())
         );
         assert!(validate_powershell_request(RunPowerShellRequest {
             document_path: document.to_string_lossy().into_owned(),
             language: "bash".into(),
             source: "echo unsafe".into(),
-            working_directory: None,
         })
         .is_err());
         let text_file = directory.path().join("sample.txt");
@@ -1332,18 +1330,32 @@ mod tests {
             document_path: text_file.to_string_lossy().into_owned(),
             language: "pwsh".into(),
             source: "Get-Location".into(),
-            working_directory: None,
         })
         .is_err());
     }
 
     #[cfg(target_os = "windows")]
     #[test]
+    fn powershell_path_normalization_removes_verbatim_prefixes() {
+        assert_eq!(
+            normalize_powershell_path(Path::new(r"\\?\C:\docs\sample")),
+            PathBuf::from(r"C:\docs\sample")
+        );
+        assert_eq!(
+            normalize_powershell_path(Path::new(r"\\?\UNC\server\share\sample")),
+            PathBuf::from(r"\\server\share\sample")
+        );
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
     fn powershell_process_captures_output_and_enforces_timeout() {
         let directory = tempfile::tempdir().unwrap();
+        let special_directory = directory.path().join("日本語 & O'Brien");
+        std::fs::create_dir(&special_directory).unwrap();
         let output = run_powershell_process(
             ValidatedPowerShellRequest {
-                working_directory: directory.path().to_path_buf(),
+                working_directory: special_directory.clone(),
                 source: "Write-Output 'safe-output'".into(),
             },
             Duration::from_secs(30),
@@ -1358,6 +1370,19 @@ mod tests {
         );
         assert!(output.stdout.contains("safe-output"));
         assert!(!output.timed_out);
+
+        let location = run_powershell_process(
+            ValidatedPowerShellRequest {
+                working_directory: special_directory.clone(),
+                source: "(Get-Location).Path".into(),
+            },
+            Duration::from_secs(30),
+        )
+        .unwrap();
+        assert_eq!(
+            normalize_powershell_path(Path::new(location.stdout.trim())),
+            normalize_powershell_path(&special_directory)
+        );
 
         let timed_out = run_powershell_process(
             ValidatedPowerShellRequest {

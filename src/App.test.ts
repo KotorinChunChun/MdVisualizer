@@ -36,6 +36,7 @@ describe("Edit and View pane coordination", () => {
     expect(source).toContain("onContextMenu={handlePreviewContextMenu}");
     expect(source).toContain("onScrollLine={editorMode === \"split\" ? handleEditorScrollLine : undefined}");
     expect(source).toContain("onActiveLineChange={editorMode === \"split\" ? setActiveEditorLine : undefined}");
+    expect(source).toContain("onCursorPositionChange={editorMode === \"split\" ? handleEditorCursorPosition : undefined}");
     expect(source).toContain('if (editorMode === "preview") return;');
     expect(source).toContain("<PreviewContextMenu");
     expect(source).toContain('event.ctrlKey && event.shiftKey');

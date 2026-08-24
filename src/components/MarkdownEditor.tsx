@@ -21,6 +21,7 @@ import {
 import { findBase64FoldRange } from "../lib/base64Folding";
 import { clipboardImageFile, clipboardImageMarkdown, readClipboardImage, type ClipboardImageData, type ResolvedClipboardImage } from "../lib/clipboardImage";
 import type { StagedDocumentAsset } from "../types/app";
+import type { EditorCursorPosition } from "../lib/paneSync";
 import "../styles/markdown-editor.css";
 
 interface MarkdownEditorProps {
@@ -37,6 +38,7 @@ interface MarkdownEditorProps {
   compact?: boolean;
   onScrollLine?: (line: number) => void;
   onActiveLineChange?: (line: number) => void;
+  onCursorPositionChange?: (position: EditorCursorPosition) => void;
 }
 
 export interface MarkdownEditorHandle {
@@ -109,13 +111,14 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, compact = false, onScrollLine, onActiveLineChange }, ref) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, compact = false, onScrollLine, onActiveLineChange, onCursorPositionChange }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
   const onScrollLineRef = useRef(onScrollLine);
   const onActiveLineChangeRef = useRef(onActiveLineChange);
+  const onCursorPositionChangeRef = useRef(onCursorPositionChange);
   const onResolvePastedImageRef = useRef(onResolvePastedImage);
   const onStagedAssetAddedRef = useRef(onStagedAssetAdded);
   const onStagedAssetAbandonedRef = useRef(onStagedAssetAbandoned);
@@ -126,6 +129,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   onSaveRef.current = onSave;
   onScrollLineRef.current = onScrollLine;
   onActiveLineChangeRef.current = onActiveLineChange;
+  onCursorPositionChangeRef.current = onCursorPositionChange;
   onResolvePastedImageRef.current = onResolvePastedImage;
   onStagedAssetAddedRef.current = onStagedAssetAdded;
   onStagedAssetAbandonedRef.current = onStagedAssetAbandoned;
@@ -158,6 +162,22 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
 
   useEffect(() => {
     if (!hostRef.current) return;
+    let cursorPositionFrame = 0;
+    let suppressScrollSyncUntil = 0;
+    const reportCursorPosition = (view: EditorView) => {
+      if (cursorPositionFrame) window.cancelAnimationFrame(cursorPositionFrame);
+      cursorPositionFrame = window.requestAnimationFrame(() => {
+        cursorPositionFrame = 0;
+        const head = view.state.selection.main.head;
+        const coordinates = view.coordsAtPos(head);
+        const scrollBounds = view.scrollDOM.getBoundingClientRect();
+        onCursorPositionChangeRef.current?.({
+          line: view.state.doc.lineAt(head).number,
+          screenY: coordinates?.top
+            ?? scrollBounds.top + view.lineBlockAt(head).top - view.scrollDOM.scrollTop,
+        });
+      });
+    };
     const state = EditorState.create({
       doc: value,
       extensions: [
@@ -228,9 +248,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           if (update.selectionSet || update.docChanged) {
             onActiveLineChangeRef.current?.(update.state.doc.lineAt(update.state.selection.main.head).number);
           }
-          if (update.viewportChanged) {
-            const line = update.state.doc.lineAt(update.view.lineBlockAtHeight(update.view.scrollDOM.scrollTop).from).number;
-            onScrollLineRef.current?.(line);
+          if (update.selectionSet) {
+            suppressScrollSyncUntil = performance.now() + 120;
+            reportCursorPosition(update.view);
           }
           if (!update.docChanged || applyingExternal.current) return;
           const value = update.state.sliceDoc();
@@ -251,9 +271,17 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     });
     const view = new EditorView({ state, parent: hostRef.current });
     viewRef.current = view;
+    const handleEditorScroll = () => {
+      if (performance.now() < suppressScrollSyncUntil) return;
+      const line = view.state.doc.lineAt(view.lineBlockAtHeight(view.scrollDOM.scrollTop).from).number;
+      onScrollLineRef.current?.(line);
+    };
+    view.scrollDOM.addEventListener("scroll", handleEditorScroll, { passive: true });
     onActiveLineChangeRef.current?.(view.state.doc.lineAt(view.state.selection.main.head).number);
     foldBase64Data(view);
     return () => {
+      if (cursorPositionFrame) window.cancelAnimationFrame(cursorPositionFrame);
+      view.scrollDOM.removeEventListener("scroll", handleEditorScroll);
       view.destroy();
       if (viewRef.current === view) viewRef.current = null;
     };

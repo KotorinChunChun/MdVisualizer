@@ -58,7 +58,7 @@ import { clipboardImageDestination, formatClipboardImageFilename, referencedStag
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { drawioEmbeddedFence, drawioExternalReference, markdownLineEnding, preferredDrawioFilename, type DrawioStorageConversionContext } from "./lib/drawioStorage";
-import { sourceBlockIndexForLine, sourceLineAtViewportTop } from "./lib/paneSync";
+import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, type EditorCursorPosition } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
 import "./styles/app.css";
 import "./styles/content.css";
@@ -986,11 +986,34 @@ export function App() {
     const container = containerRef.current;
     const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
       .filter((block) => block.getClientRects().length > 0);
-    const index = sourceBlockIndexForLine(blocks.map((block) => Number(block.dataset.sourceLine) || 1), line);
-    const target = blocks[index];
-    if (!container || !target) return;
+    if (!container || blocks.length === 0) return;
+    const containerBounds = container.getBoundingClientRect();
+    const targetTop = sourceTopForLine(blocks.map((block) => ({
+      line: Number(block.dataset.sourceLine) || 1,
+      top: block.getBoundingClientRect().top,
+    })), line);
+    if (targetTop === null) return;
+    const viewportScale = container.clientHeight > 0 ? containerBounds.height / container.clientHeight : 1;
     paneSyncOrigin.current = "edit";
-    container.scrollTop += target.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, 0, viewportScale);
+    releasePaneSync();
+  }, [releasePaneSync]);
+
+  const handleEditorCursorPosition = useCallback((position: EditorCursorPosition) => {
+    if (paneSyncOrigin.current === "view") return;
+    const container = containerRef.current;
+    const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
+      .filter((block) => block.getClientRects().length > 0);
+    if (!container || blocks.length === 0) return;
+    const containerBounds = container.getBoundingClientRect();
+    const targetTop = sourceTopForLine(blocks.map((block) => ({
+      line: Number(block.dataset.sourceLine) || 1,
+      top: block.getBoundingClientRect().top,
+    })), position.line);
+    if (targetTop === null) return;
+    const viewportScale = container.clientHeight > 0 ? containerBounds.height / container.clientHeight : 1;
+    paneSyncOrigin.current = "edit";
+    container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, position.screenY - containerBounds.top, viewportScale);
     releasePaneSync();
   }, [releasePaneSync]);
 
@@ -1017,8 +1040,10 @@ export function App() {
     const line = Number(block?.dataset.sourceLine);
     if (!Number.isFinite(line) || line < 1) return;
     if (editorMode === "preview") return;
+    paneSyncOrigin.current = "view";
     editorRef.current?.focusLine(line);
-  }, [canEditActive, editorMode]);
+    releasePaneSync();
+  }, [canEditActive, editorMode, releasePaneSync]);
 
   const handlePreviewContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
     if (!activeTab?.document || activeTab.document.kind !== "markdown" || viewModeRef.current === "presentation") return;
@@ -1785,6 +1810,7 @@ export function App() {
           onPasteImageError={(error) => setToast({ id: crypto.randomUUID(), message: `画像の貼り付けに失敗しました: ${String(error)}`, type: "error" })}
           onScrollLine={editorMode === "split" ? handleEditorScrollLine : undefined}
           onActiveLineChange={editorMode === "split" ? setActiveEditorLine : undefined}
+          onCursorPositionChange={editorMode === "split" ? handleEditorCursorPosition : undefined}
         />
       </Suspense>}
       {(editorMode !== "edit" || !canEditActive) && <main

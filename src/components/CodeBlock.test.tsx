@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CodeBlock } from "./CodeBlock";
+import { CodeBlock, powerShellWorkingDirectory } from "./CodeBlock";
 import { runPowerShell } from "../lib/commands";
 
 vi.mock("../lib/commands", () => ({ runPowerShell: vi.fn() }));
@@ -46,12 +46,13 @@ describe("CodeBlock", () => {
     render(<CodeBlock className="language-pwsh" documentPath={documentPath}>{"Write-Output 'safe-output'"}</CodeBlock>);
 
     fireEvent.click(screen.getByRole("button", { name: "PowerShellを実行" }));
-    expect((screen.getByRole("textbox", { name: "作業フォルダー" }) as HTMLInputElement).value).toBe(String.raw`C:\docs`);
+    const workingDirectory = screen.getByRole("textbox", { name: "作業フォルダー" }) as HTMLInputElement;
+    expect(workingDirectory.value).toBe(String.raw`C:\docs`);
+    expect(workingDirectory.readOnly).toBe(true);
     expect(runPowerShell).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByRole("textbox", { name: "作業フォルダー" }), { target: { value: String.raw`C:\work` } });
     fireEvent.click(screen.getByRole("button", { name: "実行する" }));
 
-    await waitFor(() => expect(runPowerShell).toHaveBeenCalledWith({ documentPath, language: "pwsh", source: "Write-Output 'safe-output'", workingDirectory: String.raw`C:\work` }));
+    await waitFor(() => expect(runPowerShell).toHaveBeenCalledWith({ documentPath, language: "pwsh", source: "Write-Output 'safe-output'" }));
     expect((await screen.findByLabelText("標準出力")).textContent).toContain("safe-output");
     expect(screen.getByLabelText("PowerShell実行結果").textContent).toContain("終了コード: 0");
   });
@@ -61,6 +62,12 @@ describe("CodeBlock", () => {
     expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
     rerender(<CodeBlock className="language-powershell">Write-Output no-path</CodeBlock>);
     expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
+  });
+
+  it("normalizes Windows verbatim paths before showing the Markdown directory", () => {
+    expect(powerShellWorkingDirectory(String.raw`\\?\C:\docs\sample.md`)).toBe(String.raw`C:\docs`);
+    expect(powerShellWorkingDirectory(String.raw`\\?\UNC\server\share\sample.md`)).toBe(String.raw`\\server\share`);
+    expect(powerShellWorkingDirectory(String.raw`C:\sample.md`)).toBe("C:\\");
   });
 
   it("renders a key language block with the shared shortcut SVG", () => {
