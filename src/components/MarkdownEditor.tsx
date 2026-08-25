@@ -183,6 +183,8 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           line: view.state.doc.lineAt(head).number,
           screenY: coordinates?.top
             ?? scrollBounds.top + view.lineBlockAt(head).top - view.scrollDOM.scrollTop,
+          remainingScroll: Math.max(0, view.scrollDOM.scrollHeight - view.scrollDOM.clientHeight - view.scrollDOM.scrollTop),
+          viewportHeight: view.scrollDOM.clientHeight,
         });
       });
     };

@@ -58,7 +58,7 @@ import { clipboardImageDestination, formatClipboardImageFilename, referencedStag
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { drawioEmbeddedFence, drawioExternalReference, markdownLineEnding, preferredDrawioFilename, type DrawioStorageConversionContext } from "./lib/drawioStorage";
-import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, type EditorCursorPosition } from "./lib/paneSync";
+import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
 import "./styles/app.css";
 import "./styles/content.css";
@@ -1013,7 +1013,16 @@ export function App() {
     if (targetTop === null) return;
     const viewportScale = container.clientHeight > 0 ? containerBounds.height / container.clientHeight : 1;
     paneSyncOrigin.current = "edit";
-    container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, position.screenY - containerBounds.top, viewportScale);
+    const endScrollTop = synchronizedPaneEndScrollTop(
+      position,
+      blocks.reduce((lastLine, block) => Math.max(lastLine, Number(block.dataset.sourceLine) || 1), 1),
+      container,
+    );
+    if (endScrollTop === null) {
+      container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, position.screenY - containerBounds.top, viewportScale);
+    } else {
+      container.scrollTop = endScrollTop;
+    }
     releasePaneSync();
   }, [releasePaneSync]);
 

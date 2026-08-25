@@ -6,6 +6,15 @@ export interface SourceBlockMetric {
 export interface EditorCursorPosition {
   line: number;
   screenY: number;
+  /** Remaining vertical scroll distance in the Edit pane, in CSS pixels. */
+  remainingScroll: number;
+  /** Visible Edit-pane height, used to scale the end-proximity threshold. */
+  viewportHeight: number;
+}
+
+export interface ScrollablePaneMetric {
+  scrollHeight: number;
+  clientHeight: number;
 }
 
 /** Resolves the source block displayed at the top of the View pane. */
@@ -50,4 +59,19 @@ export function sourceTopForLine(blocks: readonly SourceBlockMetric[], requested
 export function scrollDeltaForViewportAnchor(targetTop: number, viewportTop: number, desiredViewportY: number, viewportScale = 1): number {
   const scale = Number.isFinite(viewportScale) && viewportScale > 0 ? viewportScale : 1;
   return (targetTop - viewportTop - desiredViewportY) / scale;
+}
+
+/**
+ * Returns the View-pane scroll end when the Edit cursor is inside the final
+ * rendered source block and the Edit pane itself is already near its end.
+ * Otherwise the caller should keep using source-anchor Y synchronization.
+ */
+export function synchronizedPaneEndScrollTop(
+  position: Pick<EditorCursorPosition, "line" | "remainingScroll" | "viewportHeight">,
+  lastRenderedSourceLine: number,
+  preview: ScrollablePaneMetric,
+): number | null {
+  const proximity = Math.max(24, Math.max(0, position.viewportHeight) * 0.05);
+  if (position.line < lastRenderedSourceLine || position.remainingScroll > proximity) return null;
+  return Math.max(0, preview.scrollHeight - preview.clientHeight);
 }

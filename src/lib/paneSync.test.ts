@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine } from "./paneSync";
+import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop } from "./paneSync";
 
 describe("pane source-position synchronization", () => {
   it("uses the last source block that has crossed the View pane top", () => {
@@ -28,5 +28,26 @@ describe("pane source-position synchronization", () => {
   it("keeps the cursor anchor at the same screen Y while respecting preview zoom", () => {
     expect(scrollDeltaForViewportAnchor(500, 100, 180)).toBe(220);
     expect(scrollDeltaForViewportAnchor(500, 100, 180, 2)).toBe(110);
+  });
+
+  it("aligns pane ends when the cursor is near the Edit end inside the final rendered block", () => {
+    expect(synchronizedPaneEndScrollTop(
+      { line: 67, remainingScroll: 0, viewportHeight: 320 },
+      60,
+      { scrollHeight: 1800, clientHeight: 400 },
+    )).toBe(1400);
+  });
+
+  it("keeps normal source-anchor synchronization away from either pane end", () => {
+    expect(synchronizedPaneEndScrollTop(
+      { line: 59, remainingScroll: 0, viewportHeight: 320 },
+      60,
+      { scrollHeight: 1800, clientHeight: 400 },
+    )).toBeNull();
+    expect(synchronizedPaneEndScrollTop(
+      { line: 67, remainingScroll: 80, viewportHeight: 320 },
+      60,
+      { scrollHeight: 1800, clientHeight: 400 },
+    )).toBeNull();
   });
 });

@@ -20,7 +20,11 @@ describe("MarkdownEditor", () => {
 
     await waitFor(() => expect(container.querySelector(".cm-activeLine")?.textContent).toBe("three"));
     expect(onActiveLineChange).toHaveBeenLastCalledWith(3);
-    await waitFor(() => expect(onCursorPositionChange).toHaveBeenLastCalledWith(expect.objectContaining({ line: 3 })));
+    await waitFor(() => expect(onCursorPositionChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      line: 3,
+      remainingScroll: 0,
+      viewportHeight: 0,
+    })));
     expect(Number.isFinite(onCursorPositionChange.mock.lastCall?.[0].screenY)).toBe(true);
     expect(ref.current?.contains(document.activeElement)).toBe(true);
   });
