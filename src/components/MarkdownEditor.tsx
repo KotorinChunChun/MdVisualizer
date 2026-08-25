@@ -14,8 +14,11 @@ import {
   buildStructuredListMove,
   buildStructuredListPaste,
   buildStructuredListToggle,
+  detectLineEnding,
+  normalizeLineEndings,
   type MarkdownEditAction,
   type MarkdownEditChange,
+  type MarkdownLineEnding,
   type StructuredListKind,
 } from "../lib/markdownEditing";
 import { findBase64FoldRange } from "../lib/base64Folding";
@@ -35,6 +38,7 @@ interface MarkdownEditorProps {
   onStagedAssetAdded?: (content: string, asset: StagedDocumentAsset) => void;
   onStagedAssetAbandoned?: (asset: StagedDocumentAsset) => void;
   onPasteImageError?: (error: unknown) => void;
+  onLineEndingsNormalized?: (lineEnding: MarkdownLineEnding) => void;
   compact?: boolean;
   onScrollLine?: (line: number) => void;
   onActiveLineChange?: (line: number) => void;
@@ -111,7 +115,7 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, compact = false, onScrollLine, onActiveLineChange, onCursorPositionChange }, ref) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, onScrollLine, onActiveLineChange, onCursorPositionChange }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -123,6 +127,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   const onStagedAssetAddedRef = useRef(onStagedAssetAdded);
   const onStagedAssetAbandonedRef = useRef(onStagedAssetAbandoned);
   const onPasteImageErrorRef = useRef(onPasteImageError);
+  const onLineEndingsNormalizedRef = useRef(onLineEndingsNormalized);
   const applyingExternal = useRef(false);
   const normalizingLists = useRef(false);
   onChangeRef.current = onChange;
@@ -134,7 +139,10 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   onStagedAssetAddedRef.current = onStagedAssetAdded;
   onStagedAssetAbandonedRef.current = onStagedAssetAbandoned;
   onPasteImageErrorRef.current = onPasteImageError;
-  const lineSeparator = useMemo(() => value.includes("\r\n") ? "\r\n" : value.includes("\r") ? "\r" : "\n", [documentId]);
+  onLineEndingsNormalizedRef.current = onLineEndingsNormalized;
+  const documentLineEnding = useMemo(() => detectLineEnding(value), [documentId]);
+  const normalizedDocumentValue = normalizeLineEndings(value, documentLineEnding);
+  const editorValue = normalizeLineEndings(normalizedDocumentValue, "\n");
 
   const clampedLine = (view: EditorView, line: number) => view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, Math.round(line))));
   useImperativeHandle(ref, () => ({
@@ -179,11 +187,13 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       });
     };
     const state = EditorState.create({
-      doc: value,
+      doc: editorValue,
       extensions: [
         basicSetup,
         markdown({ base: markdownLanguage }),
-        EditorState.lineSeparator.of(lineSeparator),
+        // CodeMirror内では改行をLFへ統一し、外部との入出力時だけ文書の
+        // 推測済み改行形式へ変換する。これによりCRLF文書でも位置は1文字単位になる。
+        EditorState.lineSeparator.of("\n"),
         EditorView.lineWrapping,
         base64FoldService,
         editorTheme,
@@ -227,7 +237,10 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                     anchor: selection.from + markdown.length,
                     head: selection.from + markdown.length,
                   }, "input.image.paste");
-                  if (resolved.asset) onStagedAssetAddedRef.current?.(current.state.sliceDoc(), resolved.asset);
+                  if (resolved.asset) onStagedAssetAddedRef.current?.(
+                    normalizeLineEndings(current.state.sliceDoc(), documentLineEnding),
+                    resolved.asset,
+                  );
                   if (resolved.source.toLowerCase().startsWith("data:")) foldBase64Data(current);
                 })
                 .catch((error) => {
@@ -239,7 +252,15 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             const text = event.clipboardData?.getData("text/plain");
             if (!text) return false;
             const selection = view.state.selection.main;
-            const handled = dispatchEdit(view, buildStructuredListPaste(view.state.sliceDoc(), selection.from, selection.to, text), "input.list.paste");
+            const normalizedText = normalizeLineEndings(text, "\n");
+            const structured = buildStructuredListPaste(view.state.sliceDoc(), selection.from, selection.to, normalizedText);
+            const handled = dispatchEdit(view, structured ?? {
+              from: selection.from,
+              to: selection.to,
+              insert: normalizedText,
+              anchor: selection.from + normalizedText.length,
+              head: selection.from + normalizedText.length,
+            }, structured ? "input.list.paste" : "input.paste");
             if (handled) event.preventDefault();
             return handled;
           },
@@ -253,15 +274,16 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             reportCursorPosition(update.view);
           }
           if (!update.docChanged || applyingExternal.current) return;
-          const value = update.state.sliceDoc();
+          const editorContent = update.state.sliceDoc();
+          const value = normalizeLineEndings(editorContent, documentLineEnding);
           onChangeRef.current(value);
           if (normalizingLists.current) return;
           const selection = update.state.selection.main;
-          const correction = buildOrderedListNormalization(value, selection.anchor, selection.head);
+          const correction = buildOrderedListNormalization(editorContent, selection.anchor, selection.head);
           if (!correction) return;
           queueMicrotask(() => {
             const current = viewRef.current;
-            if (!current || current.state.sliceDoc() !== value) return;
+            if (!current || current.state.sliceDoc() !== editorContent) return;
             normalizingLists.current = true;
             dispatchEdit(current, correction, "input.list.renumber");
             normalizingLists.current = false;
@@ -271,6 +293,10 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     });
     const view = new EditorView({ state, parent: hostRef.current });
     viewRef.current = view;
+    if (normalizedDocumentValue !== value) {
+      onChangeRef.current(normalizedDocumentValue);
+      onLineEndingsNormalizedRef.current?.(documentLineEnding);
+    }
     const handleEditorScroll = () => {
       if (performance.now() < suppressScrollSyncUntil) return;
       const line = view.state.doc.lineAt(view.lineBlockAtHeight(view.scrollDOM.scrollTop).from).number;
@@ -285,16 +311,22 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       view.destroy();
       if (viewRef.current === view) viewRef.current = null;
     };
-  }, [documentId, lineSeparator]);
+  }, [documentId, documentLineEnding]);
 
   useEffect(() => {
     const view = viewRef.current;
-    if (!view || view.state.sliceDoc() === value) return;
+    const normalizedDocument = normalizeLineEndings(value, documentLineEnding);
+    const nextEditorValue = normalizeLineEndings(normalizedDocument, "\n");
+    if (!view || view.state.sliceDoc() === nextEditorValue) return;
     applyingExternal.current = true;
-    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } });
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: nextEditorValue } });
     foldBase64Data(view);
     applyingExternal.current = false;
-  }, [value]);
+    if (normalizedDocument !== value) {
+      onChangeRef.current(normalizedDocument);
+      onLineEndingsNormalizedRef.current?.(documentLineEnding);
+    }
+  }, [value, documentLineEnding]);
 
   const apply = (action: MarkdownEditAction) => {
     const view = viewRef.current;

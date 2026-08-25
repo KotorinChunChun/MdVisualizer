@@ -86,6 +86,66 @@ describe("MarkdownEditor", () => {
     await waitFor(() => expect(onChange).toHaveBeenCalledWith("1. item\n2. "));
   });
 
+  it("repairs mixed line endings using the predominant document format", async () => {
+    const onChange = vi.fn();
+    const onLineEndingsNormalized = vi.fn();
+    const mixed = "one\r\ntwo\nthree\r\nfour";
+    const { container } = render(<MarkdownEditor documentId="mixed:1" value={mixed} dirty={false} saving={false} onChange={onChange} onSave={() => {}} onLineEndingsNormalized={onLineEndingsNormalized} />);
+
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("one\r\ntwo\r\nthree\r\nfour"));
+    expect(onLineEndingsNormalized).toHaveBeenCalledWith("\r\n");
+    expect(container.querySelectorAll(".cm-line")).toHaveLength(4);
+    expect(container.querySelector(".cm-specialChar")).toBeNull();
+  });
+
+  it("uses the inferred CRLF format for Enter", async () => {
+    const onChange = vi.fn();
+    const ref = createRef<MarkdownEditorHandle>();
+    const { container } = render(<MarkdownEditor ref={ref} documentId="crlf-enter:1" value={"one\r\ntwo"} dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+    const editor = container.querySelector<HTMLElement>(".cm-content")!;
+
+    act(() => ref.current?.focusLine(2));
+    fireEvent.keyDown(editor, { key: "End" });
+    fireEvent.keyDown(editor, { key: "Enter" });
+
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("one\r\ntwo\r\n"));
+  });
+
+  it("keeps CRLF and correct cursor positions when continuing a structured list", async () => {
+    const onChange = vi.fn();
+    const ref = createRef<MarkdownEditorHandle>();
+    const { container } = render(<MarkdownEditor ref={ref} documentId="crlf-list-enter:1" value={"1. first\r\n2. second"} dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+    const editor = container.querySelector<HTMLElement>(".cm-content")!;
+
+    act(() => ref.current?.focusLine(2));
+    fireEvent.keyDown(editor, { key: "End" });
+    fireEvent.keyDown(editor, { key: "Enter" });
+
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("1. first\r\n2. second\r\n3. "));
+  });
+
+  it("normalizes pasted LF text to a CRLF document", async () => {
+    const onChange = vi.fn();
+    const { container } = render(<MarkdownEditor documentId="crlf-paste:1" value={"start\r\nend"} dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, {
+      clipboardData: { items: [], files: [], getData: () => "alpha\nbeta" },
+    });
+
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("alpha\r\nbetastart\r\nend"));
+  });
+
+  it("normalizes pasted CRLF text to an LF document", async () => {
+    const onChange = vi.fn();
+    const { container } = render(<MarkdownEditor documentId="lf-paste:1" value={"start\nend"} dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, {
+      clipboardData: { items: [], files: [], getData: () => "alpha\r\nbeta" },
+    });
+
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("alpha\nbetastart\nend"));
+  });
+
   it("inserts a clipboard image instead of its accompanying plain text", async () => {
     const onChange = vi.fn();
     const onResolvePastedImage = vi.fn().mockResolvedValue({ source: "data:image/png;base64,AAEC" });

@@ -9,7 +9,9 @@ import {
   buildStructuredListPaste,
   buildStructuredListSoftEnter,
   buildStructuredListToggle,
+  detectLineEnding,
   moveHeadingBlock,
+  normalizeLineEndings,
   parseMarkdownHeadingBlocks,
   type MarkdownEditAction,
   type MarkdownEditChange,
@@ -183,7 +185,7 @@ function replaceRange(source: string, from: number, to: number, insert: string):
 }
 
 function documentLineEnding(source: string): string {
-  return source.includes("\r\n") ? "\r\n" : source.includes("\r") ? "\r" : "\n";
+  return detectLineEnding(source);
 }
 
 function toolbarChange(source: string, from: number, to: number, action: MarkdownEditAction): MarkdownEditChange | null {
@@ -240,10 +242,11 @@ export function executeEditingTestCase(testCase: EditingTestCase): EditingTestRe
         actualAfter = applyChange(source, buildStructuredListMove(source, to, testCase.operation.direction));
         break;
       case "paste": {
-        const structured = buildStructuredListPaste(source, from, to, testCase.operation.text);
+        const pasted = normalizeLineEndings(testCase.operation.text, detectLineEnding(source));
+        const structured = buildStructuredListPaste(source, from, to, pasted);
         actualAfter = structured
           ? applyChange(source, structured)
-          : replaceRange(source, from, to, testCase.operation.text);
+          : replaceRange(source, from, to, pasted);
         break;
       }
       case "toolbar":
@@ -608,15 +611,23 @@ const PASTE_VALUES: readonly InputToken[] = [
   { id: "fence", label: "コードフェンス", value: "```text\ncode\n```" },
 ];
 
-const MATRIX_PASTE_CASES = CURSOR_CONTEXTS.slice(0, 20).flatMap((context) => PASTE_VALUES.map((value) => testCase(
-  `matrix-paste-${context.id}-${value.id}`,
-  "貼り付け",
-  `${context.label}へ${value.label}を貼り付け`,
-  `${context.left}${EDITING_CARET_MARKER}${context.right}`,
-  `Ctrl+V: ${value.label}`,
-  `${context.left}${value.value}${context.right}`,
-  { type: "paste", text: value.value },
-)));
+const MATRIX_PASTE_CASES = CURSOR_CONTEXTS.slice(0, 20).flatMap((context) => {
+  // この行列のCRLF文書フィクスチャはIDにも明示されている。期待値は
+  // 実装関数から生成せず、フィクスチャ側の指定に従って固定する。
+  const expectedEnding = context.id.startsWith("crlf-") ? "\r\n" : "\n";
+  return PASTE_VALUES.map((value) => {
+    const expectedPaste = value.value.replace(/\r\n|\r|\n/g, expectedEnding);
+    return testCase(
+      `matrix-paste-${context.id}-${value.id}`,
+      "貼り付け",
+      `${context.label}へ${value.label}を貼り付け`,
+      `${context.left}${EDITING_CARET_MARKER}${context.right}`,
+      `Ctrl+V: ${value.label}`,
+      `${context.left}${expectedPaste}${context.right}`,
+      { type: "paste", text: value.value },
+    );
+  });
+});
 
 const STRUCTURAL_EDITING_CASES: readonly EditingTestCase[] = [
   testCase("line-move-middle-up", "行入替", "中間行を1行上へ", "one\nt¦wo\nthree", "Alt+↑", "two\none\nthree", { type: "move-lines", direction: -1 }),

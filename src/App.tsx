@@ -1808,6 +1808,11 @@ export function App() {
           onStagedAssetAdded={(content, asset) => dispatch({ type: "STAGED_ASSET_ADDED", id: activeTab.id, content, asset })}
           onStagedAssetAbandoned={(asset) => void discardStagedAssets([asset.id])}
           onPasteImageError={(error) => setToast({ id: crypto.randomUUID(), message: `画像の貼り付けに失敗しました: ${String(error)}`, type: "error" })}
+          onLineEndingsNormalized={(lineEnding) => setToast({
+            id: crypto.randomUUID(),
+            message: `混在していた改行コードを${lineEnding === "\r\n" ? "CRLF" : lineEnding === "\r" ? "CR" : "LF"}へ統一しました。保存するとファイルへ反映されます。`,
+            type: "success",
+          })}
           onScrollLine={editorMode === "split" ? handleEditorScrollLine : undefined}
           onActiveLineChange={editorMode === "split" ? setActiveEditorLine : undefined}
           onCursorPositionChange={editorMode === "split" ? handleEditorCursorPosition : undefined}

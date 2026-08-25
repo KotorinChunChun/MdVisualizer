@@ -84,9 +84,19 @@ export function isMarkdownDocumentName(value: string): boolean {
 }
 
 export function detectLineEnding(value: string): MarkdownLineEnding {
-  if (value.includes("\r\n")) return "\r\n";
-  if (value.includes("\r")) return "\r";
-  return "\n";
+  const counts: Record<MarkdownLineEnding, number> = { "\r\n": 0, "\n": 0, "\r": 0 };
+  let first: MarkdownLineEnding | null = null;
+  for (const match of value.matchAll(/\r\n|\r|\n/g)) {
+    const ending = match[0] as MarkdownLineEnding;
+    counts[ending] += 1;
+    first ??= ending;
+  }
+  if (!first) return "\n";
+  return (["\r\n", "\n", "\r"] as const).reduce((selected, ending) => {
+    if (counts[ending] > counts[selected]) return ending;
+    if (counts[ending] === counts[selected] && ending === first) return ending;
+    return selected;
+  }, first);
 }
 
 export function normalizeLineEndings(value: string, lineEnding: MarkdownLineEnding): string {
