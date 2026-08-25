@@ -33,7 +33,18 @@ function escapeHtmlAttribute(value: string): string {
 
 export function drawioViewerDocument(xml: string): string {
   const config = escapeHtmlAttribute(JSON.stringify(drawioViewerConfig(xml)));
-  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;min-height:100%;overflow:hidden;background:transparent}.mxgraph{width:100%;min-height:180px}</style></head><body><div class="mxgraph" data-mxgraph="${config}"></div><script>(()=>{const send=()=>{const svg=document.querySelector('svg');if(svg)parent.postMessage({type:'markdown-viewer-drawio-svg',svg:svg.outerHTML},'*')};window.captureDrawioSvg=send;new MutationObserver(send).observe(document.body,{subtree:true,childList:true,attributes:true})})()</script><script src="https://viewer.diagrams.net/js/viewer-static.min.js" referrerpolicy="no-referrer" onload="GraphViewer.processElements();captureDrawioSvg()"></script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}.mxgraph{width:100%;height:100%;min-height:0}</style></head><body><div class="mxgraph" data-mxgraph="${config}"></div><script>(()=>{const send=()=>{const svg=document.querySelector('svg');if(svg)parent.postMessage({type:'markdown-viewer-drawio-svg',svg:svg.outerHTML},'*')};window.captureDrawioSvg=send;new MutationObserver(send).observe(document.body,{subtree:true,childList:true,attributes:true})})()</script><script src="https://viewer.diagrams.net/js/viewer-static.min.js" referrerpolicy="no-referrer" onload="GraphViewer.processElements();captureDrawioSvg()"></script></body></html>`;
+}
+
+/** Returns the exact responsive height needed to show an SVG viewBox without clipping or trailing blank space. */
+export function drawioPreviewHeight(svgSource: string, availableWidth: number): number | null {
+  if (!Number.isFinite(availableWidth) || availableWidth <= 0) return null;
+  const parsed = new DOMParser().parseFromString(svgSource, "image/svg+xml");
+  const svg = parsed.documentElement;
+  if (parsed.querySelector("parsererror") || svg.localName !== "svg") return null;
+  const viewBox = svg.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
+  if (!viewBox || viewBox.length !== 4 || !viewBox.every(Number.isFinite) || viewBox[2] <= 0 || viewBox[3] <= 0) return null;
+  return Math.max(1, Math.ceil(availableWidth * viewBox[3] / viewBox[2]));
 }
 
 export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 12): string {
@@ -88,6 +99,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
   const [editing, setEditing] = useState(false);
   const [viewerError, setViewerError] = useState<string | null>(null);
   const [renderedSvg, setRenderedSvg] = useState<string>();
+  const [viewerHeight, setViewerHeight] = useState(180);
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
   const [convertingStorage, setConvertingStorage] = useState(false);
   const viewerRef = useRef<HTMLIFrameElement>(null);
@@ -140,6 +152,25 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
     };
   }, [display, viewerDocument]);
 
+  useEffect(() => {
+    if (display !== "diagram" || !viewerDocument || !renderedSvg) return;
+    const frame = viewerRef.current;
+    if (!frame) return;
+    const updateHeight = () => {
+      const width = frame.getBoundingClientRect().width || frame.clientWidth;
+      const height = drawioPreviewHeight(renderedSvg, width);
+      if (height !== null) setViewerHeight((current) => current === height ? current : height);
+    };
+    updateHeight();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHeight);
+    observer?.observe(frame);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, [display, renderedSvg, viewerDocument]);
+
   const label = kind === "svg" ? "SVG → draw.io" : kind === "mermaid" ? "Mermaid → draw.io" : kind === "compressed" ? "draw.io（圧縮データ）" : "draw.io";
   const svgPreview = (svg: string, alt: string) => {
     const content = <div className="drawio-block__svg" dangerouslySetInnerHTML={{ __html: svg }} />;
@@ -176,6 +207,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
       className="drawio-block__viewer-frame"
       title="draw.ioプレビュー"
       srcDoc={viewerDocument}
+      style={{ height: viewerHeight }}
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
     />;

@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DrawioBlock, drawioViewerConfig, drawioViewerDocument, fitDrawioSvgToContent } from "./DrawioBlock";
+import { DrawioBlock, drawioPreviewHeight, drawioViewerConfig, drawioViewerDocument, fitDrawioSvgToContent } from "./DrawioBlock";
 
 vi.mock("./MermaidBlock", () => ({ MermaidBlock: ({ source, onRenderedSvg }: { source: string; onRenderedSvg?: (svg: string) => void }) => <div data-testid="mermaid-drawio" onClick={() => onRenderedSvg?.('<svg viewBox="0 0 10 10"/>')}>{source}</div> }));
 
@@ -39,6 +39,18 @@ describe("DrawioBlock", () => {
     expect(document).toContain("class=\"mxgraph\"");
     expect(document).not.toContain('data-mxgraph="{"');
     expect(document).toContain("&amp;quot;");
+    expect(document).toContain("height:100%");
+    expect(document).toContain("min-height:0");
+  });
+
+  it("calculates preview height from the rendered viewBox and current width", () => {
+    const wide = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 100"/>';
+    const tall = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -20 200 400"/>';
+    expect(drawioPreviewHeight(wide, 1000)).toBe(200);
+    expect(drawioPreviewHeight(wide, 250)).toBe(50);
+    expect(drawioPreviewHeight(tall, 300)).toBe(600);
+    expect(drawioPreviewHeight('<svg xmlns="http://www.w3.org/2000/svg"/>', 300)).toBeNull();
+    expect(drawioPreviewHeight(wide, 0)).toBeNull();
   });
 
   it("crops a rendered diagram to its actual bounds and keeps negative coordinates", () => {

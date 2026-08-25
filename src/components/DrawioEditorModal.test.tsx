@@ -20,6 +20,11 @@ describe("DrawioEditorModal", () => {
 
     window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: JSON.stringify({ event: "init" }) }));
     expect(postMessage).toHaveBeenCalledWith(expect.stringContaining('"action":"load"'), DRAWIO_ORIGIN);
+    expect(postMessage).toHaveBeenCalledWith(expect.stringContaining('page=\\"0\\"'), DRAWIO_ORIGIN);
+
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: JSON.stringify({ event: "load", pageVisible: true }) }));
+    expect(postMessage).toHaveBeenCalledWith(JSON.stringify({ action: "invokeAction", actionName: "pageView" }), DRAWIO_ORIGIN);
+    expect(postMessage).toHaveBeenCalledWith(JSON.stringify({ action: "fit", border: 32, maxScale: 1 }), DRAWIO_ORIGIN);
 
     window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "save", xml: "<mxfile><diagram><mxGraphModel><root/></mxGraphModel></diagram></mxfile>", exit: true } }));
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.stringContaining("mxGraphModel")));

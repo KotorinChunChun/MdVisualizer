@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { DRAWIO_EDITOR_URL, DRAWIO_ORIGIN, extractDrawioFenceData, parseTrustedDrawioMessage, prepareDrawioLoad } from "../lib/drawio";
+import { disableDrawioPageView, DRAWIO_EDITOR_URL, DRAWIO_ORIGIN, extractDrawioFenceData, parseTrustedDrawioMessage, prepareDrawioLoad } from "../lib/drawio";
 
 export function DrawioEditorModal({ source, onSave, onCancel }: {
   source: string;
@@ -26,8 +26,16 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
         setError(null);
         const load: Record<string, unknown> = { action: "load", title: "Markdown diagram", noSaveBtn: 1, saveAndExit: 1, fit: 1 };
         if ("descriptor" in payload) load.descriptor = payload.descriptor;
-        else load.xml = payload.xml;
+        else load.xml = disableDrawioPageView(payload.xml);
         frameWindow?.postMessage(JSON.stringify(load), DRAWIO_ORIGIN);
+      } else if (message.event === "load") {
+        // Imported formats can create their own model, so disable Page View
+        // after loading as well. Fitting after that centers the actual drawing
+        // in the available editor viewport.
+        if (message.pageVisible !== false) {
+          frameWindow?.postMessage(JSON.stringify({ action: "invokeAction", actionName: "pageView" }), DRAWIO_ORIGIN);
+        }
+        frameWindow?.postMessage(JSON.stringify({ action: "fit", border: 32, maxScale: 1 }), DRAWIO_ORIGIN);
       } else if (message.event === "save" && typeof message.xml === "string" && message.xml.length <= 20 * 1024 * 1024) {
         setSaving(true);
         Promise.resolve(onSave(extractDrawioFenceData(message.xml))).then((saved) => {
