@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, hasPreviewTextSelection, moveZoomLevel, normalizeZoom, previewSelectionSourceRange, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, hasPreviewTextSelection, moveZoomLevel, normalizeZoom, previewSelectionSourceRange, resolveDocumentPanelForView, resolveDocumentSidePanel, shouldBlockF5Reload, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
 
 describe("application window title", () => {
   it("uses the active tab filename followed by the application name", () => {
@@ -17,6 +17,25 @@ describe("new Markdown shortcut wiring", () => {
     const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
     expect(source).toContain('event.key.toLowerCase() === "n"');
     expect(source).toContain('dispatch({ type: "NEW_MARKDOWN" })');
+  });
+});
+
+describe("F5 reload protection", () => {
+  it("blocks F5 for an unsaved document and permits a saved document", () => {
+    expect(shouldBlockF5Reload({ dirty: true })).toBe(true);
+    expect(shouldBlockF5Reload({ dirty: false })).toBe(false);
+    expect(shouldBlockF5Reload(null)).toBe(false);
+  });
+
+  it("handles F5 before modal early returns and warns instead of confirming discard", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    const f5 = source.indexOf('if (event.key === "F5")');
+    const modalReturn = source.indexOf("if (annotationTarget) return", f5);
+    expect(f5).toBeGreaterThan(-1);
+    expect(modalReturn).toBeGreaterThan(f5);
+    expect(source).toContain("未保存の編集内容があるため再読み込みを中止しました");
+    expect(source.slice(f5, modalReturn)).toContain("event.preventDefault()");
+    expect(source.slice(f5, modalReturn)).toContain("shouldBlockF5Reload(activeTab)");
   });
 });
 

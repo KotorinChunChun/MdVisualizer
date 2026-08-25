@@ -106,6 +106,10 @@ export function canEditMarkdownDocument(document: { kind: string } | null | unde
   return document?.kind === "markdown";
 }
 
+export function shouldBlockF5Reload(tab: { dirty: boolean } | null | undefined): boolean {
+  return Boolean(tab?.dirty);
+}
+
 interface PreviewContextState {
   x: number;
   y: number;
@@ -1489,6 +1493,21 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      // Handle F5 before modal-specific early returns. Otherwise the browser's
+      // default reload can bypass the document-level discard protection.
+      if (event.key === "F5") {
+        event.preventDefault();
+        if (shouldBlockF5Reload(activeTab)) {
+          setToast({
+            id: String(Date.now()),
+            message: "未保存の編集内容があるため再読み込みを中止しました。保存してからF5を押してください。",
+            type: "error",
+          });
+        } else {
+          reload();
+        }
+        return;
+      }
       if (isShortcutHelpShortcut(event)) {
         event.preventDefault();
         setShortcutHelpOpen(true);
@@ -1522,12 +1541,6 @@ export function App() {
       if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "s") {
         event.preventDefault();
         if (activeTab) void saveTab(activeTab.id);
-        return;
-      }
-
-      if (event.key === "F5") {
-        event.preventDefault();
-        reload();
         return;
       }
 
