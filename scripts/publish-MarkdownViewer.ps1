@@ -1,3 +1,4 @@
+# MarkdownViewerのガード付き公開エントリポイント。
 [CmdletBinding()]
 param(
     [ValidateSet("Plan", "Build", "Stage", "Publish", "Verify", "Full")]

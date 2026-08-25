@@ -1,3 +1,4 @@
+[CmdletBinding()]
 param(
     [string[]]$FallbackMarkdownPaths = @("$PSScriptRoot\..\samples\v0.0.10-editing.md"),
     [string]$OutputDirectory = (Join-Path ([IO.Path]::GetTempPath()) "markdownviewer-debug-smoke"),

@@ -7,7 +7,7 @@ Read this reference when modifying a project's release configuration or executin
 The project should provide:
 
 - `packaging/release-config.json`
-- `scripts/publish-msix-release.ps1`
+- `scripts/publish-MarkdownViewer.ps1`
 - a persistent-certificate-aware MSIX build script
 - an App Installer template and generator
 - channel-aware stage and local/public verification scripts

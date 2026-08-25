@@ -27,7 +27,7 @@ Treat `Plan` as the default whenever intent is unclear. Ask for the missing chan
 ## Preflight
 
 1. Read the repository `AGENTS.md` and the applicable requirement, implementation, and task documents.
-2. Locate `packaging/release-config.json` and `scripts/publish-msix-release.ps1`.
+2. Locate `packaging/release-config.json` and `scripts/publish-MarkdownViewer.ps1`.
 3. If either is absent, provide a plan or implement guarded automation only when the user asked for implementation. Do not improvise a release with ad hoc commands.
 4. Inspect Git status in the application and website repositories. Preserve unrelated changes and use path-scoped commits.
 5. Resolve the channel explicitly as `beta` or `stable` for every non-Plan mode.
@@ -41,27 +41,27 @@ Use `pwsh` for every PowerShell script.
 Read-only plan:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-msix-release.ps1 -Mode Plan
+pwsh -NoProfile -File .\scripts\publish-MarkdownViewer.ps1 -Mode Plan
 ```
 
 Explicit installer generation:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-msix-release.ps1 `
+pwsh -NoProfile -File .\scripts\publish-MarkdownViewer.ps1 `
   -Mode Build -Channel beta -ReleaseIntentConfirmed
 ```
 
 Explicit staging of existing artifacts:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-msix-release.ps1 `
+pwsh -NoProfile -File .\scripts\publish-MarkdownViewer.ps1 `
   -Mode Stage -Channel beta -ReleaseIntentConfirmed
 ```
 
 Explicit publication of staged artifacts:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-msix-release.ps1 `
+pwsh -NoProfile -File .\scripts\publish-MarkdownViewer.ps1 `
   -Mode Publish -Channel beta `
   -ReleaseIntentConfirmed -PublishConfirmed `
   -PythonPath <python-executable>
@@ -70,14 +70,14 @@ pwsh -NoProfile -File .\scripts\publish-msix-release.ps1 `
 Read-only verification:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-msix-release.ps1 `
+pwsh -NoProfile -File .\scripts\publish-MarkdownViewer.ps1 `
   -Mode Verify -Channel beta
 ```
 
 Explicit end-to-end release:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-msix-release.ps1 `
+pwsh -NoProfile -File .\scripts\publish-MarkdownViewer.ps1 `
   -Mode Full -Channel beta `
   -ReleaseIntentConfirmed -PublishConfirmed `
   -PythonPath <python-executable>
