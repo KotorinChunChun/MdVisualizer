@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, moveZoomLevel, normalizeZoom, previewSelectionSourceRange, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, hasPreviewTextSelection, moveZoomLevel, normalizeZoom, previewSelectionSourceRange, resolveDocumentPanelForView, resolveDocumentSidePanel, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
 
 describe("application window title", () => {
   it("uses the active tab filename followed by the application name", () => {
@@ -37,6 +37,7 @@ describe("Edit and View pane coordination", () => {
     expect(source).toContain("onScrollLine={editorMode === \"split\" ? handleEditorScrollLine : undefined}");
     expect(source).toContain("onActiveLineChange={editorMode === \"split\" ? setActiveEditorLine : undefined}");
     expect(source).toContain("onCursorPositionChange={editorMode === \"split\" ? handleEditorCursorPosition : undefined}");
+    expect(source).toContain("hasPreviewTextSelection(window.getSelection(), markdownRef.current)");
     expect(source).toContain('if (editorMode === "preview") return;');
     expect(source).toContain("<PreviewContextMenu");
     expect(source).toContain('event.ctrlKey && event.shiftKey');
@@ -54,6 +55,27 @@ describe("Edit and View pane coordination", () => {
     selection?.addRange(range);
 
     expect(previewSelectionSourceRange(selection, root, [1, 3], 1)).toEqual({ inside: true, firstLine: 1, lastLine: 3 });
+    root.remove();
+  });
+
+  it("keeps a non-empty text selection inside View owned by the browser", () => {
+    const root = document.createElement("div");
+    const paragraph = document.createElement("p");
+    paragraph.textContent = "copy this text";
+    root.append(paragraph);
+    document.body.append(root);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    expect(hasPreviewTextSelection(selection, root)).toBe(true);
+    expect(hasPreviewTextSelection(selection, document.createElement("div"))).toBe(false);
+
+    selection?.collapse(paragraph.firstChild, 0);
+    expect(hasPreviewTextSelection(selection, root)).toBe(false);
+    selection?.removeAllRanges();
     root.remove();
   });
 });

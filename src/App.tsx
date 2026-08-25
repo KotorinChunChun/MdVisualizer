@@ -144,6 +144,13 @@ export function previewSelectionSourceRange(selection: Selection | null, root: H
   };
 }
 
+/** True while the browser owns a non-empty text selection inside View. */
+export function hasPreviewTextSelection(selection: Selection | null, root: HTMLElement | null): boolean {
+  return Boolean(root && selection && !selection.isCollapsed && selection.toString().length > 0
+    && selection.anchorNode && selection.focusNode
+    && root.contains(selection.anchorNode) && root.contains(selection.focusNode));
+}
+
 export function applicationWindowTitle(tab: { kind?: "document" | "settings"; path: string } | null | undefined): string {
   if (!tab) return "MarkdownViewer";
   if (tab.kind === "settings") return "設定 - MarkdownViewer";
@@ -1043,6 +1050,7 @@ export function App() {
 
   const handlePreviewClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     if (!canEditActive || viewModeRef.current === "presentation") return;
+    if (hasPreviewTextSelection(window.getSelection(), markdownRef.current)) return;
     const target = event.target instanceof Element ? event.target : null;
     if (!target || target.closest("a, button, input, textarea, select")) return;
     const block = target.closest<HTMLElement>("[data-source-line]");
