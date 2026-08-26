@@ -30,9 +30,12 @@
 .table-editor-grid { min-width: 100%; border-collapse: collapse; }
 .table-editor-grid th, .table-editor-grid td { min-width: 120px; padding: 5px; border: 1px solid var(--border-color); vertical-align: top; }
 .table-editor-grid th { position: relative; background: var(--table-header-bg); }
-.table-editor-grid input, .table-editor-grid textarea { width: calc(100% - 28px); min-height: 30px; padding: 4px; color: var(--text-primary); border: 1px solid var(--border-color); background: var(--bg-color); }
+.table-editor-grid input, .table-editor-grid textarea, .table-editor-grid select { min-height: 30px; padding: 4px; color: var(--text-primary); border: 1px solid var(--border-color); background: var(--bg-color); }
+.table-editor-grid input { width: 100%; }
 .table-editor-grid textarea { width: 100%; min-height: 52px; resize: vertical; }
-.table-editor-grid th button { float: right; padding: 2px 6px; }
+.table-editor-grid select { width: 100%; margin-top: 5px; }
+.table-editor-heading { display: flex; align-items: center; gap: 4px; }
+.table-editor-grid th button { flex: 0 0 auto; padding: 2px 6px; }
 .table-editor-grid .table-editor-row-action { min-width: 42px; width: 42px; text-align: center; }
 .table-editor-footer { justify-content: flex-end; border-top: 1px solid var(--border-color); }
 .table-editor-footer .table-editor-save { color: #fff; border-color: var(--accent-color); background: var(--accent-color); }

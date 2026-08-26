@@ -5,6 +5,7 @@ import {
   serializeDelimitedTable,
   type DelimitedTableLanguage,
 } from "../lib/delimitedTable";
+import { TableEditorDialog } from "./TableEditorDialog";
 import "../styles/delimited-table.css";
 
 interface DelimitedTableBlockProps {
@@ -17,62 +18,6 @@ type SortState = { column: number; direction: "ascending" | "descending" } | nul
 
 function emitToast(type: "success" | "error", message: string): void {
   window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message } }));
-}
-
-function EditDialog({
-  delimiter,
-  initialHeaders,
-  initialRows,
-  onCancel,
-  onSave,
-}: {
-  delimiter: "," | "\t";
-  initialHeaders: string[];
-  initialRows: string[][];
-  onCancel: () => void;
-  onSave: (body: string) => boolean | void;
-}) {
-  const [headers, setHeaders] = useState(() => [...initialHeaders]);
-  const [rows, setRows] = useState(() => initialRows.map((row) => [...row]));
-
-  const removeColumn = (column: number) => {
-    if (headers.length <= 1) return;
-    setHeaders((current) => current.filter((_, index) => index !== column));
-    setRows((current) => current.map((row) => row.filter((_, index) => index !== column)));
-  };
-
-  return <div className="table-editor-overlay">
-    <section className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="table-editor-title">
-      <header className="table-editor-toolbar">
-        <strong id="table-editor-title">表を編集</strong>
-        <button type="button" onClick={() => setRows((current) => [...current, headers.map(() => "")])}>行を追加</button>
-        <button type="button" onClick={() => {
-          setHeaders((current) => [...current, `列 ${current.length + 1}`]);
-          setRows((current) => current.map((row) => [...row, ""]));
-        }}>列を追加</button>
-      </header>
-      <p className="table-editor-note">先頭行はヘッダーです。ヘッダー名とセル値を編集し、行・列を追加または削除できます。</p>
-      <div className="table-editor-scroll">
-        <table className="table-editor-grid">
-          <thead><tr><th className="table-editor-row-action" aria-label="行操作" />{headers.map((header, column) => <th key={column}>
-            <input aria-label={`列 ${column + 1}の見出し`} value={header} onChange={(event) => setHeaders((current) => current.map((value, index) => index === column ? event.target.value : value))} />
-            <button type="button" aria-label={`列 ${column + 1}を削除`} disabled={headers.length <= 1} onClick={() => removeColumn(column)}>×</button>
-          </th>)}</tr></thead>
-          <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex}>
-            <td className="table-editor-row-action"><button type="button" aria-label={`行 ${rowIndex + 1}を削除`} onClick={() => setRows((current) => current.filter((_, index) => index !== rowIndex))}>×</button></td>
-            {headers.map((_, column) => <td key={column}><textarea aria-label={`行 ${rowIndex + 1} 列 ${column + 1}`} value={row[column] ?? ""} onChange={(event) => setRows((current) => current.map((candidate, index) => index === rowIndex ? candidate.map((value, cell) => cell === column ? event.target.value : value) : candidate))} /></td>)}
-          </tr>)}</tbody>
-        </table>
-      </div>
-      <footer className="table-editor-footer">
-        <button type="button" onClick={onCancel}>キャンセル</button>
-        <button type="button" className="table-editor-save" onClick={() => {
-          const accepted = onSave(serializeDelimitedTable({ delimiter, headers, rows }));
-          if (accepted !== false) onCancel();
-        }}>反映</button>
-      </footer>
-    </section>
-  </div>;
 }
 
 export function DelimitedTableBlock({ language, source, onSave }: DelimitedTableBlockProps) {
@@ -170,6 +115,6 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
     <div className="data-grid-table-wrap"><table className="data-grid-table"><thead><tr>{visibleIndexes.map((column) => <th key={column}><button type="button" onClick={() => toggleSort(column)} aria-sort={sort?.column === column ? sort.direction : "none"}>{headers[column]}<span>{sort?.column === column ? sort.direction === "ascending" ? "▲" : "▼" : "◇"}</span></button></th>)}</tr></thead>
       <tbody>{pageRows.length ? pageRows.map((row, rowIndex) => <tr key={`${currentPage}-${rowIndex}`}>{visibleIndexes.map((column) => <td key={column}>{row[column]}</td>)}</tr>) : <tr><td className="data-grid-empty" colSpan={Math.max(1, visibleIndexes.length)}>一致する行はありません</td></tr>}</tbody></table></div>
     <footer className="data-grid-footer"><span>{filteredRows.length} / {rows.length} 行</span><span className="spacer" /><label>表示件数<select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={Number.MAX_SAFE_INTEGER}>すべて</option></select></label><button type="button" disabled={currentPage <= 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>前へ</button><span>{currentPage + 1} / {pageCount}</span><button type="button" disabled={currentPage >= pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))}>次へ</button></footer>
-    {editing && <EditDialog delimiter={delimiter} initialHeaders={headers} initialRows={rows} onCancel={() => setEditing(false)} onSave={(body) => onSave?.(body)} />}
+    {editing && <TableEditorDialog initialHeaders={headers} initialRows={rows} onCancel={() => setEditing(false)} onSave={(table) => onSave?.(serializeDelimitedTable({ delimiter, headers: table.headers, rows: table.rows }))} />}
   </section>;
 }

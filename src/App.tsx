@@ -38,7 +38,7 @@ import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
-import { replaceCodeFenceBody, replaceMarkdownOccurrence, type CodeFenceOccurrence } from "./lib/markdownOccurrences";
+import { replaceCodeFenceBody, replaceMarkdownOccurrence, type CodeFenceOccurrence, type MarkdownTableOccurrence } from "./lib/markdownOccurrences";
 import { parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./lib/assetConversion";
 import { sanitizeSvgXml } from "./lib/svgSafety";
 import type { ExternalAppConfig } from "./types/settings";
@@ -1623,6 +1623,20 @@ export function App() {
     });
   }, []);
 
+  const updateMarkdownTable = useCallback((occurrence: MarkdownTableOccurrence, replacement: string): boolean => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return false;
+    try {
+      const content = replaceMarkdownOccurrence(tab.draft, occurrence, replacement);
+      dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+      setToast({ id: crypto.randomUUID(), message: "表の変更をMarkdownドラフトへ反映しました", type: "success" });
+      return true;
+    } catch (error) {
+      setToast({ id: crypto.randomUUID(), message: error instanceof Error ? error.message : String(error), type: "error" });
+      return false;
+    }
+  }, []);
+
   const convertDrawioStorage = useCallback(async (context: DrawioStorageConversionContext) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document
       && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
@@ -1947,6 +1961,7 @@ export function App() {
             sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
             onCodeFenceBodyChange={updateCodeFenceBody}
+            onMarkdownTableChange={updateMarkdownTable}
             onDrawioStorageConvert={convertDrawioStorage}
             stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
             stagedDrawioSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.drawio$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}

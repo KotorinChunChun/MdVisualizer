@@ -20,8 +20,9 @@ import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { imageOccurrenceId } from "../lib/imageOccurrences";
 import { remarkObsidianImages } from "../lib/remarkObsidianImages";
 import { DelimitedTableBlock } from "./DelimitedTableBlock";
+import { TableEditorDialog } from "./TableEditorDialog";
 import { isDelimitedTableLanguage } from "../lib/delimitedTable";
-import { collectEditableMarkdownOccurrences, type CodeFenceOccurrence, type ImageMarkdownOccurrence, type InlineSvgOccurrence } from "../lib/markdownOccurrences";
+import { collectEditableMarkdownOccurrences, serializeMarkdownTable, type CodeFenceOccurrence, type ImageMarkdownOccurrence, type InlineSvgOccurrence, type MarkdownTableOccurrence } from "../lib/markdownOccurrences";
 import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { DrawioBlock } from "./DrawioBlock";
@@ -85,6 +86,7 @@ interface MarkdownPreviewProps {
   sourcePath?: string;
   onCodeHighlightComplete?: () => void;
   onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
+  onMarkdownTableChange?: (occurrence: MarkdownTableOccurrence, replacement: string) => boolean | void;
   stagedAssetPreviews?: Record<string, string>;
   stagedDrawioSources?: Record<string, string>;
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
@@ -152,6 +154,8 @@ interface MarkdownRenderContextValue {
   mermaidIndexByOffset: Map<number, number>;
   codeFenceByOffset: Map<number, CodeFenceOccurrence>;
   onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
+  tableByOffset: Map<number, MarkdownTableOccurrence>;
+  onMarkdownTableChange?: (occurrence: MarkdownTableOccurrence, replacement: string) => boolean | void;
   imageOccurrenceByOffset: Map<number, ImageMarkdownOccurrence>;
   inlineSvgByOffset: Map<number, InlineSvgOccurrence>;
   stagedAssetPreviews: Record<string, string>;
@@ -249,7 +253,25 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
     : <code className={className} {...props}>{children}</code>;
 };
 
-const MarkdownTable: NonNullable<Components["table"]> = ({ node: _node, children, ...props }) => <div className="table-scroll"><table {...props}>{children}</table></div>;
+const MarkdownTable: NonNullable<Components["table"]> = ({ node, children, ...props }) => {
+  const context = useMarkdownRenderContext();
+  const [editing, setEditing] = React.useState(false);
+  const offset = node?.position?.start.offset;
+  const occurrence = offset === undefined ? undefined : context.tableByOffset.get(offset);
+  const editable = Boolean(occurrence && context.documentPath && context.onMarkdownTableChange && !context.staticMode && !context.presentationMode);
+  return <div className="table-scroll markdown-table-card">
+    {editable && <button type="button" className="markdown-table-edit" aria-label="表を編集" title="表を編集" onClick={() => setEditing(true)}>✎</button>}
+    <table {...props}>{children}</table>
+    {editing && occurrence && <TableEditorDialog
+      initialHeaders={occurrence.headers}
+      initialRows={occurrence.rows}
+      initialAlignments={occurrence.alignments}
+      showAlignments
+      onCancel={() => setEditing(false)}
+      onSave={(table) => context.onMarkdownTableChange?.(occurrence, serializeMarkdownTable({ ...table, lineEnding: occurrence.lineEnding, continuationPrefix: occurrence.continuationPrefix }))}
+    />}
+  </div>;
+};
 
 const MarkdownLink: NonNullable<Components["a"]> = ({ href, children, ...props }) => {
   const context = useMarkdownRenderContext();
@@ -395,6 +417,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   sourcePath,
   onCodeHighlightComplete,
   onCodeFenceBodyChange,
+  onMarkdownTableChange,
   stagedAssetPreviews = {},
   stagedDrawioSources = {},
   onDrawioStorageConvert,
@@ -415,6 +438,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   ), [editableOccurrences]);
   const imageOccurrenceByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is ImageMarkdownOccurrence => occurrence.kind === "image").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const inlineSvgByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is InlineSvgOccurrence => occurrence.kind === "inline-svg").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
+  const tableByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is MarkdownTableOccurrence => occurrence.kind === "table").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const renderContext = React.useMemo<MarkdownRenderContextValue>(() => ({
     baseDir,
     imageVersions,
@@ -440,6 +464,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     mermaidIndexByOffset,
     codeFenceByOffset,
     onCodeFenceBodyChange,
+    tableByOffset,
+    onMarkdownTableChange,
     imageOccurrenceByOffset,
     inlineSvgByOffset,
     stagedAssetPreviews,
@@ -449,8 +475,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   }), [
     baseDir, codeFenceByOffset, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onCodeFenceBodyChange, onDrawioStorageConvert, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
-    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, staticMode, tabId, theme, windowId,
+    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 
   return (
