@@ -1,7 +1,7 @@
 import { history, moveLineDown, moveLineUp, redo, undo } from "@codemirror/commands";
 import { EditorSelection, EditorState, findClusterBreak, type StateCommand, type Transaction } from "@codemirror/state";
 import {
-  buildMarkdownEdit,
+  buildContextualMarkdownEdit,
   buildOrderedListNormalization,
   buildStructuredListEnter,
   buildStructuredListIndent,
@@ -197,7 +197,7 @@ function toolbarChange(source: string, from: number, to: number, action: Markdow
   const kind = listKind[action];
   return kind
     ? buildStructuredListToggle(source, from, to, kind)
-    : buildMarkdownEdit(source, from, to, action);
+    : buildContextualMarkdownEdit(source, from, to, action, to);
 }
 
 export function executeEditingTestCase(testCase: EditingTestCase): EditingTestResult {
@@ -428,6 +428,17 @@ const BASE_EDITING_TEST_CASES: readonly EditingTestCase[] = [
   testCase("toolbar-drawio-placeholder", "ツールバー", "draw.io雛形を挿入", "¦", "draw.io図を挿入", "\n\n```drawio\n<mxGraphModel><root><mxCell id=\"0\"/><mxCell id=\"1\" parent=\"0\"/></root></mxGraphModel>\n```\n\n", { type: "toolbar", action: "drawio" }),
   testCase("toolbar-image-placeholder", "ツールバー", "画像雛形を挿入", "¦", "画像を挿入", "![画像](image.png)", { type: "toolbar", action: "image" }),
   testCase("toolbar-image-selection", "ツールバー", "選択を代替テキストへ", "⟦diagram⟧", "画像を挿入", "![diagram](image.png)", { type: "toolbar", action: "image" }),
+  testCase("toolbar-context-fence-table", "ツールバー", "コードフェンス後へ表を挿入", "```text\nin¦side\n```\ntail", "表を挿入", "```text\ninside\n```\n\n\n| 列1 | 列2 |\n| --- | --- |\n| 値1 | 値2 |\n\ntail", { type: "toolbar", action: "table" }),
+  testCase("toolbar-context-fence-mermaid", "ツールバー", "コードフェンス後へMermaidを挿入", "```text\nin¦side\n```\ntail", "Mermaid図を挿入", "```text\ninside\n```\n\n\n```mermaid\ngraph TD\n  A --> B\n```\n\ntail", { type: "toolbar", action: "mermaid" }),
+  testCase("toolbar-context-fence-drawio", "ツールバー", "コードフェンス後へdraw.ioを挿入", "```text\nin¦side\n```\ntail", "draw.io図を挿入", "```text\ninside\n```\n\n\n```drawio\n<mxGraphModel><root><mxCell id=\"0\"/><mxCell id=\"1\" parent=\"0\"/></root></mxGraphModel>\n```\n\ntail", { type: "toolbar", action: "drawio" }),
+  testCase("toolbar-context-tilde-fence", "ツールバー", "チルダフェンス後へ水平線を挿入", "~~~~text\nin¦side\n~~~~\ntail", "水平線", "~~~~text\ninside\n~~~~\n\n\n---\n\ntail", { type: "toolbar", action: "horizontal-rule" }),
+  testCase("toolbar-context-unclosed-fence", "ツールバー", "未閉鎖フェンスを閉じてからMermaidを挿入", "```text\nin¦side", "Mermaid図を挿入", "```text\ninside\n```\n\n\n```mermaid\ngraph TD\n  A --> B\n```\n\n", { type: "toolbar", action: "mermaid" }),
+  testCase("toolbar-context-image", "ツールバー", "画像記法後へ表を挿入", "before ![al¦t](image(v2).png) after", "表を挿入", "before ![alt](image(v2).png)\n\n| 列1 | 列2 |\n| --- | --- |\n| 値1 | 値2 |\n\n after", { type: "toolbar", action: "table" }),
+  testCase("toolbar-context-link", "ツールバー", "リンク記法後へMermaidを挿入", "before [li¦nk](https://example.test/a_(b)) after", "Mermaid図を挿入", "before [link](https://example.test/a_(b))\n\n```mermaid\ngraph TD\n  A --> B\n```\n\n after", { type: "toolbar", action: "mermaid" }),
+  testCase("toolbar-context-inline-code", "ツールバー", "インラインコード後へ表を挿入", "before `co¦de` after", "表を挿入", "before `code`\n\n| 列1 | 列2 |\n| --- | --- |\n| 値1 | 値2 |\n\n after", { type: "toolbar", action: "table" }),
+  testCase("toolbar-context-table-disable-table", "ツールバー", "表内では表挿入を無効化", "| A | B |\n| --- | --- |\n| one | t¦wo |", "表を挿入", "| A | B |\n| --- | --- |\n| one | two |", { type: "toolbar", action: "table" }),
+  testCase("toolbar-context-table-disable-mermaid", "ツールバー", "表内ではMermaid挿入を無効化", "| A | B |\n| --- | --- |\n| one | t¦wo |", "Mermaid図を挿入", "| A | B |\n| --- | --- |\n| one | two |", { type: "toolbar", action: "mermaid" }),
+  testCase("toolbar-context-table-disable-drawio", "ツールバー", "表内ではdraw.io挿入を無効化", "| A | B |\n| --- | --- |\n| one | t¦wo |", "draw.io図を挿入", "| A | B |\n| --- | --- |\n| one | two |", { type: "toolbar", action: "drawio" }),
 
   testCase("normalize-ordered", "自動正規化", "番号付きリストを1から再採番", "4. one\n9. t¦wo\n2. three", "自動再採番", "1. one\n2. two\n3. three", { type: "normalize" }),
   testCase("normalize-nested", "自動正規化", "階層ごとに再採番", "8. one\n   7. ch¦ild\n4. two", "自動再採番", "1. one\n   1. child\n2. two", { type: "normalize" }),

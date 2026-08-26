@@ -1,6 +1,9 @@
 export {
   buildOrderedListNormalization,
   buildMarkdownEdit,
+  buildContextualMarkdownEdit,
+  isMarkdownToolbarActionDisabled,
+  resolveMarkdownInsertionContext,
   buildStructuredListEnter,
   buildStructuredListSoftEnter,
   buildStructuredListIndent,

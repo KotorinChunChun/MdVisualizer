@@ -16,6 +16,17 @@ export type MarkdownEditAction =
   | "drawio"
   | "image";
 
+import { isMarkdownBlockInsertionAction, resolveMarkdownInsertionContext } from "./toolbarContext";
+
+export {
+  isMarkdownBlockInsertionAction,
+  resolveMarkdownInsertionContext,
+  MARKDOWN_BLOCK_INSERTION_ACTIONS,
+  type MarkdownBlockInsertionAction,
+  type MarkdownInsertionContext,
+  type MarkdownInsertionContextKind,
+} from "./toolbarContext";
+
 export {
   buildStructuredListEnter,
   buildStructuredListSoftEnter,
@@ -193,4 +204,23 @@ export function buildMarkdownEdit(source: string, from: number, to: number, acti
       return inserted(start, end, insert, [pathStart, pathStart + "image.png".length]);
     }
   }
+}
+
+export function isMarkdownToolbarActionDisabled(source: string, cursor: number, action: MarkdownEditAction): boolean {
+  return isMarkdownBlockInsertionAction(action) && resolveMarkdownInsertionContext(source, cursor).disabled;
+}
+
+export function buildContextualMarkdownEdit(source: string, from: number, to: number, action: MarkdownEditAction, cursor = to): MarkdownEditChange | null {
+  if (!isMarkdownBlockInsertionAction(action)) return buildMarkdownEdit(source, from, to, action);
+  const context = resolveMarkdownInsertionContext(source, cursor);
+  if (context.disabled) return null;
+  if (context.kind === "plain") return buildMarkdownEdit(source, from, to, action);
+  const change = buildMarkdownEdit(source, context.position, context.position, action);
+  if (!context.requiredClosure) return change;
+  return {
+    ...change,
+    insert: context.requiredClosure + change.insert,
+    anchor: change.anchor + context.requiredClosure.length,
+    head: change.head + context.requiredClosure.length,
+  };
 }

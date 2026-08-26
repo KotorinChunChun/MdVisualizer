@@ -47,6 +47,32 @@ describe("MarkdownEditor", () => {
     await waitFor(() => expect(onChange).toHaveBeenCalledWith("**太字**# Test"));
   });
 
+  it("disables block insertion buttons while the cursor is inside a table", async () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    render(<MarkdownEditor ref={ref} documentId="table-context:1" value={"| A | B |\n| --- | --- |\n| one | two |\n\noutside"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+
+    act(() => ref.current?.focusLine(3));
+
+    await waitFor(() => expect((screen.getByRole("button", { name: "表を挿入" }) as HTMLButtonElement).disabled).toBe(true));
+    expect((screen.getByRole("button", { name: "Mermaid図を挿入" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "draw.io図を挿入" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "画像を挿入" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("inserts a block after the closing fence when the cursor is inside code", async () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const onChange = vi.fn();
+    render(<MarkdownEditor ref={ref} documentId="fence-context:1" value={"```typescript\nconst value = 1;\n```\nafter"} dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+
+    act(() => ref.current?.focusLine(2));
+    fireEvent.click(screen.getByRole("button", { name: "Mermaid図を挿入" }));
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    const output = onChange.mock.lastCall?.[0] as string;
+    expect(output.indexOf("```mermaid")).toBeGreaterThan(output.indexOf("const value = 1;"));
+    expect(output.indexOf("```mermaid")).toBeLessThan(output.indexOf("after"));
+  });
+
   it("enables saving only for an unsaved draft", () => {
     const onSave = vi.fn();
     const { rerender } = render(<MarkdownEditor documentId="tab-1:1" value="# Test" dirty={false} saving={false} onChange={() => {}} onSave={onSave} />);

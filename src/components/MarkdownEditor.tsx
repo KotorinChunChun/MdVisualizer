@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { basicSetup } from "codemirror";
 import { indentWithTab } from "@codemirror/commands";
 import { foldAll, foldEffect, foldService, unfoldAll } from "@codemirror/language";
@@ -6,7 +6,7 @@ import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { EditorState, Prec } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import {
-  buildMarkdownEdit,
+  buildContextualMarkdownEdit,
   buildOrderedListNormalization,
   buildStructuredListEnter,
   buildStructuredListSoftEnter,
@@ -16,6 +16,7 @@ import {
   buildStructuredListToggle,
   detectLineEnding,
   normalizeLineEndings,
+  isMarkdownToolbarActionDisabled,
   type MarkdownEditAction,
   type MarkdownEditChange,
   type MarkdownLineEnding,
@@ -130,6 +131,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   const onLineEndingsNormalizedRef = useRef(onLineEndingsNormalized);
   const applyingExternal = useRef(false);
   const normalizingLists = useRef(false);
+  const [disabledToolbarActions, setDisabledToolbarActions] = useState<MarkdownEditAction[]>([]);
   onChangeRef.current = onChange;
   onSaveRef.current = onSave;
   onScrollLineRef.current = onScrollLine;
@@ -187,6 +189,14 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           viewportHeight: view.scrollDOM.clientHeight,
         });
       });
+    };
+    const updateToolbarContext = (view: EditorView) => {
+      const source = view.state.sliceDoc();
+      const cursor = view.state.selection.main.head;
+      const next = TOOLBAR_ACTIONS
+        .filter(({ action }) => isMarkdownToolbarActionDisabled(source, cursor, action))
+        .map(({ action }) => action);
+      setDisabledToolbarActions((current) => current.length === next.length && current.every((action, index) => action === next[index]) ? current : next);
     };
     const state = EditorState.create({
       doc: editorValue,
@@ -268,6 +278,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           },
         }),
         EditorView.updateListener.of((update) => {
+          if (update.selectionSet || update.docChanged) updateToolbarContext(update.view);
           if (update.selectionSet || update.docChanged) {
             onActiveLineChangeRef.current?.(update.state.doc.lineAt(update.state.selection.main.head).number);
           }
@@ -295,6 +306,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     });
     const view = new EditorView({ state, parent: hostRef.current });
     viewRef.current = view;
+    updateToolbarContext(view);
     if (normalizedDocumentValue !== value) {
       onChangeRef.current(normalizedDocumentValue);
       onLineEndingsNormalizedRef.current?.(documentLineEnding);
@@ -337,14 +349,14 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     const kind = listToggleKind(action);
     const change = kind
       ? buildStructuredListToggle(view.state.sliceDoc(), selection.from, selection.to, kind)
-      : buildMarkdownEdit(view.state.sliceDoc(), selection.from, selection.to, action);
+      : buildContextualMarkdownEdit(view.state.sliceDoc(), selection.from, selection.to, action, selection.head);
     dispatchEdit(view, change, "input.toolbar");
     view.focus();
   };
 
   return <section className={`markdown-editor${compact ? " markdown-editor--compact" : ""}`} aria-label="Markdown編集">
     <div className="markdown-editor__toolbar" role="toolbar" aria-label="Markdown書式">
-      {TOOLBAR_ACTIONS.map((item) => <button key={item.action} type="button" title={item.title} aria-label={item.title} onClick={() => apply(item.action)}>{item.label}</button>)}
+      {TOOLBAR_ACTIONS.map((item) => <button key={item.action} type="button" title={item.title} aria-label={item.title} disabled={disabledToolbarActions.includes(item.action)} onClick={() => apply(item.action)}>{item.label}</button>)}
       <span className="markdown-editor__toolbar-spacer" />
       <button type="button" title="すべて折りたたむ" onClick={() => { const view = viewRef.current; if (view) foldAll(view); }}>折りたたむ</button>
       <button type="button" title="すべて展開" onClick={() => { const view = viewRef.current; if (view) unfoldAll(view); }}>展開</button>
