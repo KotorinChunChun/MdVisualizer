@@ -32,6 +32,17 @@ describe("shortcut key rendering", () => {
     expect(isShortcutKeySource("Fn+F5")).toBe(true);
     expect(isShortcutKeySource("ordinary code")).toBe(false);
     expect(isShortcutKeySource("S")).toBe(false);
+    expect(isShortcutKeySource("S+Ctrl")).toBe(false);
+  });
+
+  it("accepts symbol keys and Japanese operation names after a leading modifier", () => {
+    for (const source of ["Ctrl+.", "Ctrl+[", "Ctrl+]", "Ctrl+マウスホイール", "Alt+←", "Windows++", "Ctrl+,"]) {
+      expect(isShortcutKeySource(source), source).toBe(true);
+    }
+    expect(parseShortcutKeySequence("Ctrl+マウスホイール")?.label).toBe("Ctrl + マウスホイール");
+    expect(parseShortcutKeySequence("Alt+←")?.groups[0].tokens[1]).toEqual({ label: "←", kind: "key" });
+    expect(parseShortcutKeySequence("Windows++")?.groups[0].tokens[1]).toEqual({ label: "+", kind: "key" });
+    expect(parseShortcutKeySequence("Ctrl+C → Ctrl+V")?.separators).toEqual(["→"]);
   });
 
   it("builds accessible SVG for inline and block variants", () => {
@@ -46,7 +57,7 @@ describe("shortcut key rendering", () => {
 
   it("escapes labels and source attributes in generated SVG", () => {
     const svg = buildShortcutKeySvg("Ctrl+&", { variant: "block" });
-    expect(svg).not.toContain('data-shortcut-token="&"');
+    expect(svg).toContain('data-shortcut-token="&amp;"');
     expect(svg).toContain("data-shortcut-source=\"Ctrl+&amp;\"");
   });
 });

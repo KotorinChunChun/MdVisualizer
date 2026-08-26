@@ -387,6 +387,21 @@ body {
   font-size: inherit;
 }
 
+.markdown-body pre:has(> .code-block),
+.markdown-body pre:has(> .data-grid-card),
+.markdown-body pre:has(> .drawio-block),
+.markdown-body pre:has(> .mermaid-container),
+.markdown-body pre:has(> .plantuml-container) {
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  white-space: normal;
+}
+
 .markdown-body p:has(> .inline-image-resize ~ .inline-image-resize) {
   display: flex;
   align-items: stretch;

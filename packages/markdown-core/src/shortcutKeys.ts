@@ -39,6 +39,7 @@ const namedKeyAliases = new Map<string, string>([
   ["pause", "Pause"], ["up", "↑"], ["arrowup", "↑"],
   ["down", "↓"], ["arrowdown", "↓"], ["left", "←"], ["arrowleft", "←"],
   ["right", "→"], ["arrowright", "→"],
+  ["↑", "↑"], ["↓", "↓"], ["←", "←"], ["→", "→"],
 ]);
 
 function compactToken(value: string): string {
@@ -55,14 +56,23 @@ export function normalizeShortcutKeyToken(value: string): ShortcutKeyToken | nul
   if (named) return { label: named, kind: "key" };
   if (/^f(?:[1-9]|1[0-2])$/i.test(source)) return { label: source.toUpperCase(), kind: "key" };
   if (/^[a-z0-9]$/i.test(source)) return { label: source.toUpperCase(), kind: "key" };
+  if (source.length <= 32 && !/[+\r\n→]/.test(source)) return { label: source, kind: "key" };
   return null;
+}
+
+function splitShortcutGroup(group: string): Array<ShortcutKeyToken | null> {
+  const plusKey = /\+\s*\+$/.test(group);
+  const normalized = plusKey ? group.replace(/\+\s*\+$/, "+__PLUS_KEY__") : group;
+  return normalized.split(/\s*\+\s*/).map((value) => value === "__PLUS_KEY__"
+    ? { label: "+", kind: "key" as const }
+    : normalizeShortcutKeyToken(value));
 }
 
 function splitShortcutSequence(source: string): { groups: string[]; separators: string[] } {
   const normalized = source.replace(/\r\n?/g, "\n").replace(/\s*->\s*/g, "→").trim();
   const groups: string[] = [];
   const separators: string[] = [];
-  const separatorPattern = /\s*(,|→|\n+)\s*/g;
+  const separatorPattern = /\s*((?<!\+),|(?<!\+)→|\n+)\s*/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = separatorPattern.exec(normalized))) {
@@ -83,7 +93,7 @@ export function parseShortcutKeySequence(source: string): ShortcutKeySequence | 
   if (parts.groups.length === 0) return null;
   const groups: ShortcutKeyGroup[] = [];
   for (const group of parts.groups) {
-    const tokens = group.split(/\s*\+\s*/).map(normalizeShortcutKeyToken);
+    const tokens = splitShortcutGroup(group);
     if (tokens.some(token => token === null)) return null;
     groups.push({ tokens: tokens as ShortcutKeyToken[] });
   }
@@ -96,7 +106,7 @@ export function parseShortcutKeySequence(source: string): ShortcutKeySequence | 
 
 export function isShortcutKeySource(source: string): boolean {
   const parsed = parseShortcutKeySequence(source);
-  return Boolean(parsed?.groups.some(group => group.tokens.some(token => token.kind === "modifier")));
+  return parsed?.groups[0]?.tokens[0]?.kind === "modifier";
 }
 
 function escapeXml(value: string): string {

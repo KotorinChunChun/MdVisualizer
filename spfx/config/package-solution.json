@@ -3,7 +3,7 @@
   "solution": {
     "name": "spfx-markdown-editor-client-side-solution",
     "id": "cc592ba5-ad2e-4616-ba55-5c9cc000a6ab",
-    "version": "0.0.11.0",
+    "version": "0.0.12.0",
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
     "skipFeatureDeployment": true,
@@ -30,7 +30,7 @@
         "title": "spfx-markdown-editor Feature",
         "description": "Markdown Editor Web Partを有効にします。",
         "id": "21be68cf-476f-4fcd-9b1e-449b3d855ad4",
-        "version": "0.0.11.0"
+        "version": "0.0.12.0"
       }
     ]
   },
