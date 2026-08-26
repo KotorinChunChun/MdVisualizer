@@ -1,5 +1,5 @@
 .drawio-block { margin: 1em 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: 8px; background: var(--panel-bg); }
-.drawio-block__toolbar { display: flex; align-items: center; gap: 12px; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid var(--border-color); }
+.drawio-block__toolbar { gap: 12px; }
 .drawio-block__toolbar > span { margin-right: auto; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
 .drawio-block__toolbar .mermaid-toolbar { padding: 0; }
 .drawio-block__preview { min-height: 0; padding: 12px; overflow: auto; background: #fff; color: #1f2937; }

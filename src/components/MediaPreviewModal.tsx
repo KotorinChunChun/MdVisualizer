@@ -22,7 +22,8 @@ export interface MediaPreviewTarget {
   content: MediaPreviewContent;
   cropTarget?: import("../hooks/useCropEditor").CropTarget | null;
   editTarget?: import("../hooks/useCropEditor").ImageEditTarget | null;
-  mermaidSource?: string;
+  diagramSource?: string;
+  diagramKind?: "mermaid" | "drawio";
   imageContext?: ImageEditContext;
   conversionContext?: AssetConversionContext;
   svgEditTarget?: import("../hooks/useCropEditor").SharePointAssetEditContext & { svg: string; filename: string };
@@ -67,7 +68,8 @@ export function MediaPreviewModal({
   onMediaClick,
   editDisabledReason,
   onCrop,
-  mermaidSource,
+  diagramSource,
+  diagramKind,
   imageContext,
   onSaveCaption,
   onRenameImage,
@@ -84,7 +86,8 @@ export function MediaPreviewModal({
   onMediaClick?: () => void;
   editDisabledReason?: string;
   onCrop?: () => void;
-  mermaidSource?: string;
+  diagramSource?: string;
+  diagramKind?: "mermaid" | "drawio";
   imageContext?: ImageEditContext;
   onSaveCaption?: (context: ImageEditContext, caption: string) => Promise<void>;
   onRenameImage?: (context: ImageEditContext, filename: string) => Promise<void>;
@@ -102,7 +105,7 @@ export function MediaPreviewModal({
   const [mode, setMode] = useState<"fit" | "actual">(initialViewState?.mode ?? "fit");
   const [scale, setScale] = useState(initialViewState?.scale ?? 1);
   const [imageSize, setImageSize] = useState({ width: 1000, height: 600 });
-  const [display, setDisplay] = useState<"diagram" | "code">(initialViewState?.display ?? "diagram");
+  const [display] = useState<"diagram" | "code">("diagram");
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [converting, setConverting] = useState(false);
   const [conversionError, setConversionError] = useState<string | null>(null);
@@ -200,7 +203,7 @@ export function MediaPreviewModal({
     onClick={onClose}
   >
     <div className="media-preview__toolbar" onClick={(event) => event.stopPropagation()}>
-      {mermaidSource && content.kind === "svg" && <MermaidToolbar source={mermaidSource} svg={content.svg} display={display} onDisplayChange={setDisplay} />}
+      {diagramSource && content.kind === "svg" && <MermaidToolbar source={diagramSource} svg={content.svg} display="diagram" fileDiagramKind={diagramKind ?? "mermaid"} ariaLabel={`${diagramKind === "drawio" ? "draw.io" : "Mermaid"}全画面操作`} />}
       {imageContext && onOpenImageApp && imageApps.length > 0 && <ExternalActions
         apps={imageApps}
         title=""
@@ -270,9 +273,7 @@ export function MediaPreviewModal({
       onPointerCancel={() => { panRef.current = null; setPanning(false); }}
       onAuxClick={(event) => { if (event.button === 1) event.preventDefault(); }}
     >
-      {display === "code" && mermaidSource
-        ? <pre className="mermaid-source media-preview__source"><code>{mermaidSource}</code></pre>
-        : <div className="media-preview__stage" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
+      <div className="media-preview__stage" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
           <div
             className={`media-preview__transform is-${mode}`}
             style={{
@@ -299,7 +300,7 @@ export function MediaPreviewModal({
               />
               : <div className="media-preview__svg" dangerouslySetInnerHTML={{ __html: content.svg }} />}
           </div>
-        </div>}
+        </div>
     </div>
     <output className="media-preview__scale">
       {mode === "fit" ? "全体表示" : "1:1"} · {Math.round(effectiveScale * 100)}%{panning ? " · パン中" : ""}

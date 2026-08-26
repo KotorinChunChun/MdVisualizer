@@ -246,6 +246,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       diagramIndex={diagramIndex}
       diagramCount={context.mermaidFenceOffsets.length}
       onMediaOpen={context.onMediaOpen}
+      editable={!context.staticMode && !context.presentationMode && Boolean(context.documentPath)}
     />;
   }
   return className?.includes("language-")

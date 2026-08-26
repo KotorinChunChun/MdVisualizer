@@ -122,6 +122,8 @@ describe("DrawioBlock", () => {
     fireEvent.click(screen.getByRole("button", { name: "図を拡大" }));
     expect(onMediaOpen).toHaveBeenCalledWith({
       content: { kind: "svg", svg: expect.stringContaining("<rect"), alt: "draw.io図" },
+      diagramSource: source,
+      diagramKind: "drawio",
     });
   });
 });

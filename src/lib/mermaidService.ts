@@ -61,7 +61,7 @@ export function renderMermaid(source: string, id: string, theme: string, options
   const task = async (): Promise<string> => {
     const mermaid = (await import("mermaid")).default;
     if (!initialized) {
-      mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
+      mermaid.initialize({ startOnLoad: false, securityLevel: "strict", suppressErrorRendering: true });
       initialized = true;
     }
     const result = await mermaid.render(id, mergeMermaidFrontmatter(source, mermaidThemeFor(theme)));

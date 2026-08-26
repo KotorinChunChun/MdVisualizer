@@ -2065,7 +2065,8 @@ export function App() {
       />
       {mediaPreview && <MediaPreviewModal
         content={mediaPreview.content}
-        mermaidSource={mediaPreview.mermaidSource}
+        diagramSource={mediaPreview.diagramSource}
+        diagramKind={mediaPreview.diagramKind}
         imageContext={mediaPreview.imageContext}
         conversionContext={mediaPreview.conversionContext}
         onConvertAsset={convertDocumentAsset}

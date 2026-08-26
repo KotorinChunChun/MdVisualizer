@@ -68,8 +68,35 @@ describe("MermaidBlock", () => {
         svg: '<svg viewBox="0 0 800 400"><text>diagram</text></svg>',
         alt: "Mermaid図",
       },
-      mermaidSource: "flowchart LR\nA --> B",
+      diagramSource: "flowchart LR\nA --> B",
+      diagramKind: "mermaid",
     });
+  });
+
+  it("keeps a render error compact and opens details in an isolated dialog", async () => {
+    const longError = `Syntax Error in Text\n${"broken ".repeat(300)}`;
+    mocks.renderMermaid.mockRejectedValueOnce(new Error(longError));
+    const { container } = render(<MermaidBlock source="flowchart LR\nA - broken" theme="dark" mode="on" />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
+    expect(container.querySelector(".mermaid-error pre")).toBeNull();
+    expect(screen.queryByText(longError)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "エラー詳細" }));
+    expect(screen.getByRole("dialog", { name: "Mermaidエラー詳細" }).textContent).toContain("Syntax Error in Text");
+    fireEvent.click(screen.getByRole("button", { name: "エラー詳細を閉じる" }));
+    expect(screen.queryByRole("dialog", { name: "Mermaidエラー詳細" })).toBeNull();
+  });
+
+  it("opens the Mermaid GUI editor placeholder from the header pencil", async () => {
+    mocks.renderMermaid.mockResolvedValueOnce("<svg><text>diagram</text></svg>");
+    render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" editable />);
+
+    expect(screen.getByText("Mermaid")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集" }));
+    expect(screen.getByRole("dialog", { name: "Mermaid GUI編集" })).toBeTruthy();
+    expect(screen.getByText("Mermaid専用GUI編集ツールを準備中です。")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集を閉じる" }));
+    expect(screen.queryByRole("dialog", { name: "Mermaid GUI編集" })).toBeNull();
   });
 
   it("switches a rendered block between diagram and source", async () => {

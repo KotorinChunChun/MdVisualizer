@@ -179,7 +179,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
         type="button"
         className="drawio-block__zoom"
         aria-label="図を拡大"
-        onClick={() => onMediaOpen({ content: { kind: "svg", svg, alt } })}
+        onClick={() => onMediaOpen({ content: { kind: "svg", svg, alt }, diagramSource: source, diagramKind: "drawio" })}
       >{content}</button>
       : content;
   };
@@ -217,13 +217,13 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
         className="drawio-block__zoom"
         aria-label="図を拡大"
         aria-disabled={!renderedSvg}
-        onClick={() => renderedSvg && onMediaOpen({ content: { kind: "svg", svg: renderedSvg, alt: "draw.io図" } })}
+        onClick={() => renderedSvg && onMediaOpen({ content: { kind: "svg", svg: renderedSvg, alt: "draw.io図" }, diagramSource: source, diagramKind: "drawio" })}
       >{viewerHost}</button>
       : viewerHost;
   }
 
   return <div className="drawio-block" data-drawio-block={blockId}>
-    <div className="drawio-block__toolbar">
+    <div className="drawio-block__toolbar diagram-block__header">
       <span>{label}</span>
       <MermaidToolbar
         source={source}

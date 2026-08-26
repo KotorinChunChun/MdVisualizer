@@ -134,4 +134,21 @@ describe("MediaPreviewModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "同フォルダのファイルへ変換" }));
     await waitFor(() => expect(onConvertAsset).toHaveBeenCalledWith(context));
   });
+
+  it("shows code, raster, and vector copy actions for diagram previews without a code view toggle", () => {
+    render(<MediaPreviewModal
+      content={{ kind: "svg", svg: '<svg viewBox="0 0 400 200" />', alt: "draw.io図" }}
+      diagramSource="<mxGraphModel/>"
+      diagramKind="drawio"
+      onClose={vi.fn()}
+    />);
+
+    expect(screen.getByRole("toolbar", { name: "draw.io全画面操作" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "コードをコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ラスタコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "プレビュー" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "コード" })).toBeNull();
+    expect(document.querySelector(".media-preview__source")).toBeNull();
+  });
 });
