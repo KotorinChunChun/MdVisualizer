@@ -58,6 +58,7 @@ import { clipboardImageDestination, formatClipboardImageFilename, referencedStag
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { drawioEmbeddedFence, drawioExternalReference, markdownLineEnding, preferredDrawioFilename, type DrawioStorageConversionContext } from "./lib/drawioStorage";
+import { mermaidEmbeddedFence, mermaidExternalReference, preferredMermaidFilename, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
 import "./styles/app.css";
@@ -1672,6 +1673,45 @@ export function App() {
     setToast({ id: crypto.randomUUID(), message: "draw.ioをMarkdown埋め込みへ切り替えました。外部ファイルは削除していません。", type: "success" });
   }, []);
 
+  const convertMermaidStorage = useCallback(async (context: MermaidStorageConversionContext) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document
+      && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) throw new Error("この文書は閲覧専用です。");
+
+    if (context.storage === "embedded") {
+      const staged = await stageDocumentAsset({
+        documentPath: tab.document.path,
+        preferredFilename: preferredMermaidFilename(context.occurrence),
+        text: context.source,
+      });
+      try {
+        const content = replaceMarkdownOccurrence(tab.draft, context.occurrence, mermaidExternalReference(staged.filename));
+        dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, text: context.source } });
+        setToast({ id: crypto.randomUUID(), message: `${staged.filename} を一時ステージしました。Markdown保存時に外部ファイルとして確定します。`, type: "success" });
+      } catch (error) {
+        await discardStagedAssets([staged.id]);
+        throw error;
+      }
+      return;
+    }
+
+    const pending = (tab.pendingAssets ?? []).find((asset) => asset.filename === context.occurrence.source && asset.text !== undefined);
+    const content = replaceMarkdownOccurrence(tab.draft, context.occurrence, mermaidEmbeddedFence(context.source, markdownLineEnding(tab.draft)));
+    if (pending) {
+      await discardStagedAssets([pending.id]);
+      dispatch({ type: "STAGED_ASSET_REMOVED", id: tab.id, content, stagingId: pending.id });
+    } else dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+    setToast({ id: crypto.randomUUID(), message: "MermaidをMarkdown埋め込みへ切り替えました。外部ファイルは削除していません。", type: "success" });
+  }, []);
+
+  const updateStagedTextAsset = useCallback((filename: string, text: string): boolean => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    const asset = tab?.pendingAssets?.find((candidate) => candidate.filename === filename && candidate.text !== undefined);
+    if (!tab || !asset) return false;
+    dispatch({ type: "STAGED_ASSET_UPDATED", id: tab.id, stagingId: asset.id, text });
+    return true;
+  }, []);
+
   const handleMarkdownChanged = useCallback(
     ({ path, changeKind }: { path: string; changeKind: string }) => {
       const identity = localPathIdentity(path);
@@ -1963,8 +2003,11 @@ export function App() {
             onCodeFenceBodyChange={updateCodeFenceBody}
             onMarkdownTableChange={updateMarkdownTable}
             onDrawioStorageConvert={convertDrawioStorage}
+            onMermaidStorageConvert={convertMermaidStorage}
+            onStagedTextAssetChange={updateStagedTextAsset}
             stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
             stagedDrawioSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.drawio$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
+            stagedMermaidSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.(?:mmd|mermaid)$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
           />
         ) : (
           <div className="empty-state">

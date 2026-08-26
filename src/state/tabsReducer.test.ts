@@ -236,6 +236,8 @@ describe("tabsReducer", () => {
     state = tabsReducer(state, { type: "STAGED_ASSET_ADDED", id: "tab-1", content: "![x](image.png)", asset: { id: "stage-1", filename: "image.png" } });
     state = tabsReducer(state, { type: "DRAFT_CHANGED", id: "tab-1", content: "# title\n![x](image.png)" });
     expect(state.tabs[0].pendingAssets?.map((asset) => asset.id)).toEqual(["stage-1"]);
+    state = tabsReducer(state, { type: "STAGED_ASSET_UPDATED", id: "tab-1", stagingId: "stage-1", text: "updated" });
+    expect(state.tabs[0].pendingAssets?.[0]?.text).toBe("updated");
     state = tabsReducer(state, { type: "SAVED", id: "tab-1", document: { ...loadedDocument("C:/docs/a.md"), content: "![x](image.png)", revision: "revision-2" }, committedAssetIds: ["stage-1"] });
     expect(state.tabs[0].pendingAssets).toEqual([]);
     expect(state.tabs[0].dirty).toBe(true);

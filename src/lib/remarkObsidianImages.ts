@@ -23,7 +23,7 @@ type MarkdownNode = {
 };
 
 const OBSIDIAN_EMBED_PATTERN = /!?\[\[([^\]\r\n]+)\]\]/g;
-const IMAGE_EXTENSION_PATTERN = /\.(?:avif|bmp|drawio|gif|ico|jpe?g|png|svg|tiff?|webp)(?:[?#].*)?$/i;
+const IMAGE_EXTENSION_PATTERN = /\.(?:avif|bmp|drawio|gif|ico|jpe?g|mmd|mermaid|png|svg|tiff?|webp)(?:[?#].*)?$/i;
 const SIZE_ALIAS_PATTERN = /^\d+(?:x\d+)?$/i;
 const SKIPPED_PARENT_TYPES = new Set(["image", "link", "definition", "code", "inlineCode", "html"]);
 
@@ -88,7 +88,10 @@ function transformText(node: MarkdownNode): MarkdownNode[] {
   for (const match of value.matchAll(OBSIDIAN_EMBED_PATTERN)) {
     const start = match.index ?? 0;
     const end = start + match[0].length;
-    const imageReference = parseObsidianImageReference(match[1]);
+    const parsedImageReference = parseObsidianImageReference(match[1]);
+    const imageReference = parsedImageReference && (match[0].startsWith("!") || !/\.(?:mmd|mermaid)(?:[?#].*)?$/i.test(parsedImageReference.source))
+      ? parsedImageReference
+      : null;
     const linkReference = !match[0].startsWith("!") ? parseObsidianMarkdownLinkReference(match[1]) : null;
     if (!imageReference && !linkReference) continue;
     if (start > cursor) transformed.push(positionedText(node, value.slice(cursor, start), cursor, start));

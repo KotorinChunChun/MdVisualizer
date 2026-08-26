@@ -66,6 +66,7 @@ describe("remarkObsidianImages", () => {
   it("converts standalone Mermaid wiki links", () => {
     expect(parseObsidianMarkdownLinkReference("flow.mmd|フロー図")).toEqual({ source: "flow.mmd", label: "フロー図" });
     expect(parseObsidianMarkdownLinkReference("sequence.mermaid")).toEqual({ source: "sequence.mermaid", label: "sequence.mermaid" });
+    expect(imageNodes("![[flow.mmd|フロー図]]")).toMatchObject([{ url: "flow.mmd", alt: "フロー図" }]);
   });
 
   it("treats Obsidian size aliases as dimensions rather than visible alt text", () => {

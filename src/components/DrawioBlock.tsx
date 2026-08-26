@@ -87,6 +87,18 @@ export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 12): string 
   return fitted.outerHTML;
 }
 
+export function isEmptyDrawioSource(source: string): boolean {
+  const kind = classifyDrawioSource(source);
+  if (kind === "empty") return true;
+  if (kind !== "xml") return false;
+  const parsed = new DOMParser().parseFromString(source, "application/xml");
+  if (parsed.querySelector("parsererror")) return false;
+  if (parsed.querySelector('mxCell[vertex="1"],mxCell[edge="1"]')) return false;
+  const diagrams = [...parsed.querySelectorAll("diagram")];
+  if (diagrams.some((diagram) => diagram.children.length === 0 && diagram.textContent?.trim())) return false;
+  return Boolean(parsed.querySelector("mxGraphModel, mxfile"));
+}
+
 export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert, onSave, onMediaOpen }: {
   source: string;
   theme: string;
@@ -103,7 +115,9 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
   const [convertingStorage, setConvertingStorage] = useState(false);
   const viewerRef = useRef<HTMLIFrameElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const kind = useMemo(() => classifyDrawioSource(source), [source]);
+  const emptyDiagram = useMemo(() => isEmptyDrawioSource(source), [source]);
   const load = useMemo(() => {
     try { return prepareDrawioLoad(source); }
     catch (error) { return error instanceof Error ? error : new Error(String(error)); }
@@ -122,7 +136,8 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
     setDisplay("diagram");
     setViewerError(null);
     setRenderedSvg(safeSourceSvg);
-  }, [safeSourceSvg, source]);
+    setViewerHeight(emptyDiagram ? 100 : 180);
+  }, [emptyDiagram, safeSourceSvg, source]);
 
   useEffect(() => {
     if (display !== "diagram" || !viewerDocument) return;
@@ -154,26 +169,32 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
 
   useEffect(() => {
     if (display !== "diagram" || !viewerDocument || !renderedSvg) return;
-    const frame = viewerRef.current;
-    if (!frame) return;
+    const host = previewRef.current;
+    if (!host) return;
     const updateHeight = () => {
-      const width = frame.getBoundingClientRect().width || frame.clientWidth;
+      if (emptyDiagram) {
+        setViewerHeight(100);
+        return;
+      }
+      const style = getComputedStyle(host);
+      const horizontalPadding = (Number.parseFloat(style.paddingLeft) || 0) + (Number.parseFloat(style.paddingRight) || 0);
+      const width = Math.max(0, host.clientWidth - horizontalPadding);
       const height = drawioPreviewHeight(renderedSvg, width);
       if (height !== null) setViewerHeight((current) => current === height ? current : height);
     };
     updateHeight();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHeight);
-    observer?.observe(frame);
+    observer?.observe(host);
     window.addEventListener("resize", updateHeight);
     return () => {
       observer?.disconnect();
       window.removeEventListener("resize", updateHeight);
     };
-  }, [display, renderedSvg, viewerDocument]);
+  }, [display, emptyDiagram, renderedSvg, viewerDocument]);
 
   const label = kind === "svg" ? "SVG → draw.io" : kind === "mermaid" ? "Mermaid → draw.io" : kind === "compressed" ? "draw.io（圧縮データ）" : "draw.io";
-  const svgPreview = (svg: string, alt: string) => {
-    const content = <div className="drawio-block__svg" dangerouslySetInnerHTML={{ __html: svg }} />;
+  const svgPreview = (svg: string, alt: string, height?: number) => {
+    const content = <div className="drawio-block__svg" style={height ? { height } : undefined} dangerouslySetInnerHTML={{ __html: svg }} />;
     return onMediaOpen
       ? <button
         type="button"
@@ -201,13 +222,14 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
     onMediaOpen={onMediaOpen}
   />;
   else if (viewerError) preview = <div className="drawio-block__fallback"><p>{viewerError}</p><pre><code>{source}</code></pre></div>;
+  else if (renderedSvg) preview = svgPreview(renderedSvg, "draw.io図", viewerHeight);
   else {
     const viewerHost = <iframe
       ref={viewerRef}
       className="drawio-block__viewer-frame"
       title="draw.ioプレビュー"
       srcDoc={viewerDocument}
-      style={{ height: viewerHeight }}
+      style={{ height: emptyDiagram ? 100 : 180 }}
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
     />;
@@ -249,7 +271,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
         }}
       >{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button>}
     </div>
-    <div className="drawio-block__preview">{preview}</div>
+    <div className="drawio-block__preview" ref={previewRef}>{preview}</div>
     {editing && !(load instanceof Error) && <DrawioEditorModal source={source} onSave={onSave!} onCancel={() => setEditing(false)} />}
   </div>;
 }

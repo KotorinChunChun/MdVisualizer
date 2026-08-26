@@ -91,7 +91,9 @@ describe("MermaidBlock", () => {
     mocks.renderMermaid.mockResolvedValueOnce("<svg><text>diagram</text></svg>");
     render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" editable />);
 
-    expect(screen.getByText("Mermaid")).toBeTruthy();
+    const header = screen.getByText("Mermaid").parentElement!;
+    expect(header.children[0].textContent).toBe("Mermaid");
+    expect(header.children[1].textContent).toBe("編集");
     fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集" }));
     expect(screen.getByRole("dialog", { name: "Mermaid GUI編集" })).toBeTruthy();
     expect(screen.getByText("Mermaid専用GUI編集ツールを準備中です。")).toBeTruthy();

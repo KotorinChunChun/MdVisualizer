@@ -207,7 +207,7 @@ pub fn extract_image_paths(content: &str, base_dir: &Path) -> Vec<String> {
 }
 
 fn is_image_filename(src: &str) -> bool {
-    Regex::new(r"(?i)\.(?:avif|bmp|drawio|gif|ico|jpe?g|png|svg|tiff?|webp)(?:[?#].*)?$")
+    Regex::new(r"(?i)\.(?:avif|bmp|drawio|gif|ico|jpe?g|mmd|mermaid|png|svg|tiff?|webp)(?:[?#].*)?$")
         .unwrap()
         .is_match(src)
 }
@@ -253,15 +253,18 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let image = directory.path().join("構成図.png");
         let drawio = directory.path().join("構成図.drawio");
+        let mermaid = directory.path().join("処理.mmd");
         std::fs::write(&image, b"image").unwrap();
         std::fs::write(&drawio, b"<mxfile/>").unwrap();
+        std::fs::write(&mermaid, b"flowchart LR\nA --> B").unwrap();
 
         let paths = extract_image_paths(
-            "![[構成図.png|システム構成]]\n[[構成図.png]]\n![[構成図.drawio]]\n[[設計ノート.md]]",
+            "![[構成図.png|システム構成]]\n[[構成図.png]]\n![[構成図.drawio]]\n![Mermaid](処理.mmd)\n[[設計ノート.md]]",
             directory.path(),
         );
 
         assert_eq!(paths, vec![
+            mermaid.canonicalize().unwrap().to_string_lossy().into_owned(),
             drawio.canonicalize().unwrap().to_string_lossy().into_owned(),
             image.canonicalize().unwrap().to_string_lossy().into_owned(),
         ]);

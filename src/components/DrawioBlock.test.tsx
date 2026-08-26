@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DrawioBlock, drawioPreviewHeight, drawioViewerConfig, drawioViewerDocument, fitDrawioSvgToContent } from "./DrawioBlock";
+import { DrawioBlock, drawioPreviewHeight, drawioViewerConfig, drawioViewerDocument, fitDrawioSvgToContent, isEmptyDrawioSource } from "./DrawioBlock";
 
 vi.mock("./MermaidBlock", () => ({ MermaidBlock: ({ source, onRenderedSvg }: { source: string; onRenderedSvg?: (svg: string) => void }) => <div data-testid="mermaid-drawio" onClick={() => onRenderedSvg?.('<svg viewBox="0 0 10 10"/>')}>{source}</div> }));
 
@@ -81,6 +81,16 @@ describe("DrawioBlock", () => {
     expect(fitDrawioSvgToContent(svg)).toContain('viewBox="0 0 1 1"');
   });
 
+  it("recognizes an empty draw.io canvas and keeps its bootstrap height near 100px", () => {
+    const empty = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>';
+    const populated = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="2" vertex="1" parent="1"/></root></mxGraphModel>';
+    expect(isEmptyDrawioSource(empty)).toBe(true);
+    expect(isEmptyDrawioSource(populated)).toBe(false);
+
+    render(<DrawioBlock source={empty} theme="light" blockId="empty" />);
+    expect((screen.getByTitle("draw.ioプレビュー") as HTMLIFrameElement).style.height).toBe("100px");
+  });
+
   it("keeps the viewer-provided content viewBox instead of expanding to the SVG root bbox", () => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "79.5 119.5 442 72");
@@ -103,6 +113,20 @@ describe("DrawioBlock", () => {
     expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "コード" }));
     expect(screen.getByText(source)).toBeTruthy();
+  });
+
+  it("replaces the bootstrap iframe with the captured responsive SVG", async () => {
+    const source = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>';
+    render(<DrawioBlock source={source} theme="light" blockId="captured" onMediaOpen={() => {}} />);
+    const iframe = screen.getByTitle("draw.ioプレビュー") as HTMLIFrameElement;
+    window.dispatchEvent(new MessageEvent("message", {
+      source: iframe.contentWindow,
+      data: { type: "markdown-viewer-drawio-svg", svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100"><rect width="400" height="100"/></svg>' },
+    }));
+
+    await waitFor(() => expect(screen.queryByTitle("draw.ioプレビュー")).toBeNull());
+    const zoom = screen.getByRole("button", { name: "図を拡大" });
+    expect(zoom.querySelector("svg")?.getAttribute("viewBox")).toBe("0 0 400 100");
   });
 
   it("switches an embedded draw.io block to external storage", async () => {

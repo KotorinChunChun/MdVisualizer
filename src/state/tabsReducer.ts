@@ -66,6 +66,7 @@ export type TabsAction =
   | { type: "EDITOR_MODE"; id: string; mode: EditorWorkspaceMode }
   | { type: "STAGED_ASSET_ADDED"; id: string; content: string; asset: StagedDocumentAsset }
   | { type: "STAGED_ASSET_REMOVED"; id: string; content: string; stagingId: string }
+  | { type: "STAGED_ASSET_UPDATED"; id: string; stagingId: string; text: string }
   | { type: "IMAGE_DISPLAY_SIZE"; id: string; source: string; size: ImageSize }
   | { type: "MOVE"; id: string; toIndex: number };
 
@@ -245,6 +246,12 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       return updateTab(state, action.id, (tab) => !tab.document ? tab : ({ ...tab, draft: action.content, dirty: action.content !== tab.document.content, pendingAssets: [...(tab.pendingAssets ?? []), action.asset], saveError: null }));
     case "STAGED_ASSET_REMOVED":
       return updateTab(state, action.id, (tab) => !tab.document ? tab : ({ ...tab, draft: action.content, dirty: action.content !== tab.document.content, pendingAssets: (tab.pendingAssets ?? []).filter((asset) => asset.id !== action.stagingId), saveError: null }));
+    case "STAGED_ASSET_UPDATED":
+      return updateTab(state, action.id, (tab) => !tab.document ? tab : ({
+        ...tab,
+        pendingAssets: (tab.pendingAssets ?? []).map((asset) => asset.id === action.stagingId ? { ...asset, text: action.text } : asset),
+        saveError: null,
+      }));
     case "IMAGE_DISPLAY_SIZE":
       return updateTab(state, action.id, (tab) => {
         const current = tab.imageDisplaySizes[action.source];

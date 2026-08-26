@@ -354,6 +354,7 @@ fn media_type_for(path: &Path) -> AppResult<(&'static str, bool)> {
         "bmp" => Ok(("image/bmp", false)),
         "svg" => Ok(("image/svg+xml", true)),
         "drawio" => Ok(("application/vnd.jgraph.mxfile", true)),
+        "mmd" | "mermaid" => Ok(("text/vnd.mermaid", true)),
         _ => Err(AppError::UnsupportedDocument(
             path.to_string_lossy().into_owned(),
         )),
@@ -462,6 +463,20 @@ mod tests {
         assert!(!dir.path().join("diagram.drawio").exists());
         manager.commit_with(&document, &[staged.id], || Ok(())).unwrap();
         assert_eq!(fs::read_to_string(dir.path().join("diagram.drawio")).unwrap(), "<mxGraphModel/>");
+    }
+
+    #[test]
+    fn stages_mermaid_text_and_commits_it_with_markdown() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        fs::write(&document, "old").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let staged = manager
+            .stage(&document.to_string_lossy(), "flow.mmd", b"flowchart LR\nA --> B")
+            .unwrap();
+        assert_eq!(staged.filename, "flow.mmd");
+        manager.commit_with(&document, &[staged.id], || Ok(())).unwrap();
+        assert_eq!(fs::read_to_string(dir.path().join("flow.mmd")).unwrap(), "flowchart LR\nA --> B");
     }
 
     #[test]

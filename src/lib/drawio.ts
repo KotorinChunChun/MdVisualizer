@@ -1,5 +1,5 @@
 export const DRAWIO_ORIGIN = "https://embed.diagrams.net";
-export const DRAWIO_EDITOR_URL = `${DRAWIO_ORIGIN}/?embed=1&proto=json&spin=1&libraries=1&noSaveBtn=1`;
+export const DRAWIO_EDITOR_URL = `${DRAWIO_ORIGIN}/?embed=1&proto=json&spin=1&libraries=1&noSaveBtn=1&pv=0`;
 
 export type DrawioSourceKind = "empty" | "svg" | "mermaid" | "xml" | "compressed";
 export type DrawioLoadPayload =

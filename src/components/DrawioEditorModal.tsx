@@ -24,17 +24,21 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
         window.clearTimeout(timeout);
         setStatus("編集中");
         setError(null);
-        const load: Record<string, unknown> = { action: "load", title: "Markdown diagram", noSaveBtn: 1, saveAndExit: 1, fit: 1 };
+        const load: Record<string, unknown> = {
+          action: "load",
+          title: "Markdown diagram",
+          noSaveBtn: 1,
+          saveAndExit: 1,
+          fit: 1,
+          maxFitScale: 1,
+        };
         if ("descriptor" in payload) load.descriptor = payload.descriptor;
         else load.xml = disableDrawioPageView(payload.xml);
         frameWindow?.postMessage(JSON.stringify(load), DRAWIO_ORIGIN);
       } else if (message.event === "load") {
-        // Imported formats can create their own model, so disable Page View
-        // after loading as well. Fitting after that centers the actual drawing
-        // in the available editor viewport.
-        if (message.pageVisible !== false) {
-          frameWindow?.postMessage(JSON.stringify({ action: "invokeAction", actionName: "pageView" }), DRAWIO_ORIGIN);
-        }
+        // Page View is disabled by both the iframe URL and the loaded XML.
+        // A final fit after the load event uses the actual editor viewport and
+        // centers the drawing instead of leaving it at the canvas origin.
         frameWindow?.postMessage(JSON.stringify({ action: "fit", border: 32, maxScale: 1 }), DRAWIO_ORIGIN);
       } else if (message.event === "save" && typeof message.xml === "string" && message.xml.length <= 20 * 1024 * 1024) {
         setSaving(true);

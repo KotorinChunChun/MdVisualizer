@@ -68,6 +68,7 @@ describe("ExternalDrawioBlock", () => {
 
   it("uses staged draw.io XML immediately and can switch it back to embedded storage", async () => {
     const onStorageConvert = vi.fn();
+    const onStagedSourceChange = vi.fn(() => true);
     const stagedSource = "<mxfile><diagram name=\"staged\"/></mxfile>";
     render(<ExternalDrawioBlock
       source="diagram.drawio"
@@ -77,10 +78,14 @@ describe("ExternalDrawioBlock", () => {
       version={0}
       stagedSource={stagedSource}
       onStorageConvert={onStorageConvert}
+      onStagedSourceChange={onStagedSourceChange}
     />);
 
     expect((await screen.findByTestId("external-drawio")).textContent).toContain("staged");
     expect(loadMarkdown).not.toHaveBeenCalled();
+    expect(screen.getByTestId("external-drawio").dataset.editable).toBe("true");
+    fireEvent.click(screen.getByTestId("external-drawio"));
+    expect(onStagedSourceChange).toHaveBeenCalledWith("<mxfile><diagram name=\"saved\"/></mxfile>");
     fireEvent.click(screen.getByRole("button", { name: "埋め込みへ切替" }));
     expect(onStorageConvert).toHaveBeenCalledWith(stagedSource);
   });

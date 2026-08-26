@@ -19,6 +19,7 @@ export function ExternalDrawioBlock({
   editable = true,
   stagedSource,
   onStorageConvert,
+  onStagedSourceChange,
   onMediaOpen,
 }: {
   source: string;
@@ -30,6 +31,7 @@ export function ExternalDrawioBlock({
   editable?: boolean;
   stagedSource?: string;
   onStorageConvert?: (source: string) => boolean | void | Promise<boolean | void>;
+  onStagedSourceChange?: (source: string) => boolean | void;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
   const path = useMemo(() => resolveLocalImagePath(source, baseDir), [baseDir, source]);
@@ -68,6 +70,13 @@ export function ExternalDrawioBlock({
   }, [path, retryToken, stagedSource, version]);
 
   const save = async (content: string): Promise<boolean> => {
+    if (stagedSource !== undefined) {
+      if (!onStagedSourceChange) return false;
+      const accepted = onStagedSourceChange(content);
+      if (accepted === false) return false;
+      emitToast("success", `${source} の一時ステージを更新しました`);
+      return true;
+    }
     if (!document) return false;
     const result = await saveMarkdown({
       path: document.path,
@@ -99,7 +108,7 @@ export function ExternalDrawioBlock({
       blockId={blockId}
       storage="external"
       onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(stagedSource ?? document!.content) : undefined}
-      onSave={editable && document ? save : undefined}
+      onSave={editable && (document || (stagedSource !== undefined && onStagedSourceChange)) ? save : undefined}
       onMediaOpen={onMediaOpen}
     />
     {alt?.trim() && <span className="inline-image-resize__caption">{alt}</span>}

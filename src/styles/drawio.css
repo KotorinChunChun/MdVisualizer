@@ -7,7 +7,7 @@
 .drawio-block__viewer-frame { display: block; width: 100%; min-height: 0; border: 0; pointer-events: none; background: transparent; }
 .drawio-block__viewer svg { display: block; max-width: 100%; height: auto !important; margin: auto; }
 .drawio-block__svg { display: grid; place-items: center; min-height: 0; }
-.drawio-block__svg svg { display: block; width: 100%; max-width: 100%; height: auto; }
+.drawio-block__svg svg { display: block; width: 100%; max-width: 100%; height: 100%; }
 .drawio-block__zoom { display: block; width: 100%; padding: 0; color: inherit; background: transparent; border: 0; cursor: zoom-in; }
 .drawio-block__source { max-height: 520px; margin: 0; overflow: auto; white-space: pre-wrap; }
 .drawio-block__error,.drawio-block__fallback p { color: #b42318; white-space: pre-wrap; }

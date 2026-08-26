@@ -22,6 +22,8 @@ interface MermaidBlockProps {
   mediaSource?: string;
   diagramAlt?: string;
   editable?: boolean;
+  storage?: "embedded" | "external";
+  onStorageConvert?: () => boolean | void | Promise<boolean | void>;
 }
 
 type RenderState = { svg: string | null; error: string | null; pending: boolean };
@@ -41,12 +43,15 @@ export function MermaidBlock({
   mediaSource,
   diagramAlt = "Mermaid図",
   editable = false,
+  storage,
+  onStorageConvert,
 }: MermaidBlockProps) {
   const [state, setState] = useState<RenderState>({ svg: null, error: null, pending: false });
   const [showDetails, setShowDetails] = useState(false);
   const [visible, setVisible] = useState(false);
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
   const [editorOpen, setEditorOpen] = useState(false);
+  const [convertingStorage, setConvertingStorage] = useState(false);
   const hostRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
   const localId = useId().replace(/:/g, "-");
@@ -114,9 +119,15 @@ export function MermaidBlock({
   }, [diagramCount, diagramIndex, localId, mode, source, stableBlockId, statusId, tabId, theme, visible, windowId]);
 
   const toolbar = showToolbar && <div className="diagram-block__header mermaid-container__header">
-    {editable && <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>✎</button>}
     <span>Mermaid</span>
+    {editable && <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button>}
     <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} />
+    {storage && onStorageConvert && <button className="diagram-action-button" type="button" disabled={convertingStorage} onClick={() => {
+      setConvertingStorage(true);
+      void Promise.resolve().then(onStorageConvert).catch((error) => window.dispatchEvent(new CustomEvent("markdown-toast", {
+        detail: { type: "error", message: error instanceof Error ? error.message : String(error) },
+      }))).finally(() => setConvertingStorage(false));
+    }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button>}
   </div>;
   const editor = editorOpen && <MermaidEditorPlaceholderModal source={source} onClose={() => setEditorOpen(false)} />;
 

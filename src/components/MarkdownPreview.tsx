@@ -27,10 +27,12 @@ import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetCon
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { DrawioBlock } from "./DrawioBlock";
 import { ExternalDrawioBlock } from "./ExternalDrawioBlock";
+import { ExternalMermaidBlock } from "./ExternalMermaidBlock";
 import { PlantUmlBlock } from "./PlantUmlBlock";
 import { isPlantUmlFenceLanguage } from "@markdown-viewer/markdown-core";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
 import type { DrawioStorageConversionContext } from "../lib/drawioStorage";
+import type { MermaidStorageConversionContext } from "../lib/mermaidStorage";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
 
@@ -89,7 +91,10 @@ interface MarkdownPreviewProps {
   onMarkdownTableChange?: (occurrence: MarkdownTableOccurrence, replacement: string) => boolean | void;
   stagedAssetPreviews?: Record<string, string>;
   stagedDrawioSources?: Record<string, string>;
+  stagedMermaidSources?: Record<string, string>;
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onMermaidStorageConvert?: (context: MermaidStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onStagedTextAssetChange?: (filename: string, text: string) => boolean | void;
   diffChangedLines?: ReadonlySet<number>;
   staticMode?: boolean;
 }
@@ -160,7 +165,10 @@ interface MarkdownRenderContextValue {
   inlineSvgByOffset: Map<number, InlineSvgOccurrence>;
   stagedAssetPreviews: Record<string, string>;
   stagedDrawioSources: Record<string, string>;
+  stagedMermaidSources: Record<string, string>;
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onMermaidStorageConvert?: (context: MermaidStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onStagedTextAssetChange?: (filename: string, text: string) => boolean | void;
   staticMode: boolean;
 }
 
@@ -236,8 +244,10 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
   if (className?.toLowerCase().includes("language-mermaid")) {
     const sourceOffset = node?.position?.start.offset;
     const diagramIndex = sourceOffset === undefined ? 0 : context.mermaidIndexByOffset.get(sourceOffset) ?? 0;
+    const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
+    const mermaidSource = String(children ?? "").replace(/\n$/, "");
     return <MermaidBlock
-      source={String(children ?? "")}
+      source={mermaidSource}
       theme={context.theme}
       mode={context.mermaidMode}
       windowId={context.windowId}
@@ -247,6 +257,10 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       diagramCount={context.mermaidFenceOffsets.length}
       onMediaOpen={context.onMediaOpen}
       editable={!context.staticMode && !context.presentationMode && Boolean(context.documentPath)}
+      storage={occurrence ? "embedded" : undefined}
+      onStorageConvert={occurrence && context.documentPath && context.onMermaidStorageConvert
+        ? () => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence, source: mermaidSource })
+        : undefined}
     />;
   }
   return className?.includes("language-")
@@ -316,8 +330,30 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       version={context.imageVersions[drawioPath] ?? 0}
       editable={!context.staticMode && !context.presentationMode}
       stagedSource={context.stagedDrawioSources[source]}
+      onStagedSourceChange={context.stagedDrawioSources[source] !== undefined && context.onStagedTextAssetChange
+        ? (text) => context.onStagedTextAssetChange?.(source, text)
+        : undefined}
       onStorageConvert={occurrence && context.documentPath && context.onDrawioStorageConvert
         ? (drawioSource) => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: drawioSource })
+        : undefined}
+      onMediaOpen={context.onMediaOpen}
+    />;
+  }
+  const mermaidPath = local && /\.(?:mmd|mermaid)(?:[?#]|$)/i.test(source)
+    ? resolveLocalImagePath(source, context.baseDir)
+    : null;
+  if (mermaidPath) {
+    return <ExternalMermaidBlock
+      source={source}
+      alt={alt}
+      baseDir={context.baseDir}
+      theme={context.theme}
+      blockId={imageOccurrenceId(sourceOffset ?? 0)}
+      version={context.imageVersions[mermaidPath] ?? 0}
+      editable={!context.staticMode && !context.presentationMode}
+      stagedSource={context.stagedMermaidSources[source]}
+      onStorageConvert={occurrence && context.documentPath && context.onMermaidStorageConvert
+        ? (mermaidSource) => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: mermaidSource })
         : undefined}
       onMediaOpen={context.onMediaOpen}
     />;
@@ -421,7 +457,10 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onMarkdownTableChange,
   stagedAssetPreviews = {},
   stagedDrawioSources = {},
+  stagedMermaidSources = {},
   onDrawioStorageConvert,
+  onMermaidStorageConvert,
+  onStagedTextAssetChange,
   diffChangedLines,
   staticMode = false,
 }) => {
@@ -471,13 +510,16 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     inlineSvgByOffset,
     stagedAssetPreviews,
     stagedDrawioSources,
+    stagedMermaidSources,
     onDrawioStorageConvert,
+    onMermaidStorageConvert,
+    onStagedTextAssetChange,
     staticMode,
   }), [
     baseDir, codeFenceByOffset, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
-    onSearchFoldManualOverride, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, staticMode, tabId, tableByOffset, theme, windowId,
+    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 
   return (
