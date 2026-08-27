@@ -13,7 +13,6 @@ export function responsiveOverflowIds(
   gap = 6,
   moreWidth = 38,
 ): string[] {
-  if (availableWidth <= 0) return [];
   const hidden = new Set<string>();
   const total = () => items.filter((item) => !hidden.has(item.id)).reduce((sum, item) => sum + item.width, 0)
     + Math.max(0, items.length - hidden.size - 1) * gap
@@ -26,6 +25,10 @@ export function responsiveOverflowIds(
   return [...hidden];
 }
 
+export function responsiveItemAreaWidth(rootWidth: number, labelWidth: number, hasLabel: boolean, gap = 6): number {
+  return Math.max(0, rootWidth - (hasLabel ? labelWidth + gap : 0));
+}
+
 export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
   label?: ReactNode;
   ariaLabel: string;
@@ -33,21 +36,33 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
   items: ResponsiveToolbarItem[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
+  const itemWidths = useRef(new Map<string, number>());
+  const itemsRef = useRef(items);
   const [overflowIds, setOverflowIds] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  itemsRef.current = items;
 
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
     const measure = () => {
-      const availableWidth = root.clientWidth;
-      if (availableWidth <= 0) return;
-      const widths = items.map((item) => ({
+      if (root.clientWidth <= 0) return;
+      const style = getComputedStyle(root);
+      const gap = Number.parseFloat(style.columnGap || style.gap) || 6;
+      const labelWidth = labelRef.current?.scrollWidth ?? 0;
+      const widths = itemsRef.current.map((item) => {
+        const element = itemRefs.current.get(item.id);
+        const measured = Math.max(element?.scrollWidth ?? 0, element?.offsetWidth ?? 0);
+        if (measured > 0) itemWidths.current.set(item.id, measured);
+        return {
         ...item,
-        width: itemRefs.current.get(item.id)?.offsetWidth ?? 0,
-      }));
-      const next = responsiveOverflowIds(availableWidth, widths);
+          width: itemWidths.current.get(item.id) ?? 0,
+        };
+      });
+      const availableWidth = responsiveItemAreaWidth(root.clientWidth, labelWidth, Boolean(label), gap);
+      const next = responsiveOverflowIds(availableWidth, widths, gap);
       setOverflowIds((current) => current.length === next.length && current.every((id, index) => id === next[index]) ? current : next);
     };
     measure();
@@ -58,7 +73,7 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
       observer?.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [items]);
+  });
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -74,7 +89,7 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
 
   const overflow = new Set(overflowIds);
   return <div ref={rootRef} className={`responsive-toolbar ${className}`.trim()} role="toolbar" aria-label={ariaLabel}>
-    {label && <div className="responsive-toolbar__label">{label}</div>}
+    {label && <div ref={labelRef} className="responsive-toolbar__label">{label}</div>}
     <div className="responsive-toolbar__items">
       {items.map((item) => <div
         key={item.id}

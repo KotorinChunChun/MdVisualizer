@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FoldSection } from "./FoldSection";
 import { dispatchFoldCommand } from "../lib/foldSections";
 
@@ -46,6 +46,18 @@ describe("FoldSection", () => {
     expect(screen.getByRole("button", { name: /Details/ }).getAttribute("aria-expanded")).toBe("false");
     rerender(<FoldSection foldId="details" collapsed forceExpanded><h2>Details</h2><div>Visible content</div></FoldSection>);
     expect(screen.getByRole("button", { name: /Details/ }).getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("keeps a controlled toggle visually stable while persistence catches up", () => {
+    const onCollapsedChange = vi.fn();
+    const { rerender } = render(<FoldSection foldId="details" collapsed={false} onCollapsedChange={onCollapsedChange}><h2>Details</h2><div>Body</div></FoldSection>);
+    const toggle = screen.getByRole("button", { name: /Details/ });
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(onCollapsedChange).toHaveBeenCalledWith("details", true);
+
+    rerender(<FoldSection foldId="details" collapsed onCollapsedChange={onCollapsedChange}><h2>Details</h2><div>Body</div></FoldSection>);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
   });
 
   it("applies level, current-section, and reset commands", () => {

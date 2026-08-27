@@ -83,7 +83,7 @@ body {
 .responsive-toolbar__label { flex: 0 1 auto; min-width: 0; margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .responsive-toolbar__items { display: flex; min-width: 0; align-items: center; gap: 6px; flex-wrap: nowrap; }
 .responsive-toolbar__item { flex: 0 0 auto; }
-.responsive-toolbar__item.is-overflowed { position: absolute; visibility: hidden; pointer-events: none; }
+.responsive-toolbar__item.is-overflowed { position: fixed; left: -100000px; width: max-content; visibility: hidden; pointer-events: none; }
 .responsive-toolbar__more { position: relative; flex: 0 0 auto; }
 .responsive-toolbar__more > [role="menu"] { position: absolute; z-index: 12020; top: calc(100% + 4px); right: 0; display: grid; min-width: 190px; gap: 4px; padding: 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--panel-bg); box-shadow: 0 8px 24px #0008; }
 .responsive-toolbar__more > [role="menu"] > div { display: grid; gap: 4px; }

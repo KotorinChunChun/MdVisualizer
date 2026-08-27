@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { responsiveOverflowIds } from "./ResponsiveToolbar";
+import { responsiveItemAreaWidth, responsiveOverflowIds } from "./ResponsiveToolbar";
 
 describe("responsive toolbar", () => {
   it("moves low-priority non-fixed items to overflow until one line fits", () => {
@@ -13,6 +13,12 @@ describe("responsive toolbar", () => {
     expect(responsiveOverflowIds(330, items)).toEqual([]);
     expect(responsiveOverflowIds(250, items)).toEqual(["low", "medium"]);
     expect(responsiveOverflowIds(170, items)).toEqual(["low", "medium", "high"]);
-    expect(responsiveOverflowIds(0, items)).toEqual([]);
+    expect(responsiveOverflowIds(0, items)).toEqual(["low", "medium", "high"]);
+  });
+
+  it("reserves the heading width before deciding which operations fit", () => {
+    expect(responsiveItemAreaWidth(300, 72, true)).toBe(222);
+    expect(responsiveItemAreaWidth(300, 72, false)).toBe(300);
+    expect(responsiveItemAreaWidth(50, 72, true)).toBe(0);
   });
 });

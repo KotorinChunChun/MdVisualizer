@@ -17,8 +17,8 @@ interface FoldSectionProps {
 }
 
 export function FoldSection({ children, foldId = "", collapsed: controlledCollapsed, onCollapsedChange, forceExpanded = false, onManualOverride }: FoldSectionProps) {
-  const [localCollapsed, setLocalCollapsed] = useState(false);
-  const collapsed = forceExpanded ? false : controlledCollapsed ?? localCollapsed;
+  const [localCollapsed, setLocalCollapsed] = useState(controlledCollapsed ?? false);
+  const collapsed = forceExpanded ? false : localCollapsed;
   const setCollapsed = (next: boolean) => { setLocalCollapsed(next); onCollapsedChange?.(foldId, next); };
   const parts = Children.toArray(children);
   const heading = parts[0] as ReactElement<{
@@ -33,6 +33,10 @@ export function FoldSection({ children, foldId = "", collapsed: controlledCollap
   const content = parts[1];
   const HeadingTag = (heading?.type ?? "h2") as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
   const headingLevel = Number(HeadingTag.slice(1));
+
+  useEffect(() => {
+    if (controlledCollapsed !== undefined) setLocalCollapsed(controlledCollapsed);
+  }, [controlledCollapsed]);
 
   useEffect(() => {
     const handleCommand = (event: Event) => {

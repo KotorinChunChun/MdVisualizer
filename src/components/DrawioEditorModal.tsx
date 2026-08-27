@@ -16,6 +16,10 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setError("draw.ioから初期化通知を受信できませんでした。ネットワーク接続を確認して再試行してください。"), 20_000);
+    let deferredCenter = 0;
+    const centerDrawing = (frameWindow: Window | null) => {
+      frameWindow?.postMessage(JSON.stringify({ action: "fit", border: 32, maxScale: 1 }), DRAWIO_ORIGIN);
+    };
     const receive = (event: MessageEvent) => {
       const frameWindow = iframeRef.current?.contentWindow ?? null;
       const message = parseTrustedDrawioMessage(event, frameWindow);
@@ -30,16 +34,19 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
           noSaveBtn: 1,
           saveAndExit: 1,
           fit: 1,
+          border: 32,
           maxFitScale: 1,
         };
         if ("descriptor" in payload) load.descriptor = payload.descriptor;
         else load.xml = disableDrawioPageView(payload.xml);
         frameWindow?.postMessage(JSON.stringify(load), DRAWIO_ORIGIN);
       } else if (message.event === "load") {
-        // Page View is disabled by both the iframe URL and the loaded XML.
-        // A final fit after the load event uses the actual editor viewport and
-        // centers the drawing instead of leaving it at the canvas origin.
-        frameWindow?.postMessage(JSON.stringify({ action: "fit", border: 32, maxScale: 1 }), DRAWIO_ORIGIN);
+        // The first fit uses the loaded graph bounds. The editor then finishes
+        // laying out its sidebars, so repeat the bounded fit once against the
+        // settled canvas to avoid leaving the drawing at the origin.
+        centerDrawing(frameWindow);
+        window.clearTimeout(deferredCenter);
+        deferredCenter = window.setTimeout(() => centerDrawing(frameWindow), 160);
       } else if (message.event === "save" && typeof message.xml === "string" && message.xml.length <= 20 * 1024 * 1024) {
         setSaving(true);
         Promise.resolve(onSave(extractDrawioFenceData(message.xml))).then((saved) => {
@@ -54,6 +61,7 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
     window.addEventListener("message", receive);
     return () => {
       window.clearTimeout(timeout);
+      window.clearTimeout(deferredCenter);
       window.removeEventListener("message", receive);
     };
   }, [onCancel, onSave, payload, retryToken]);
