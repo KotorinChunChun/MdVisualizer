@@ -58,8 +58,13 @@
 .table-editor-insert-row.is-empty { position: static; margin: auto; opacity: 1; pointer-events: auto; }
 .table-editor-footer { justify-content: flex-end; border-top: 1px solid var(--border-color); }
 .table-editor-footer .table-editor-save { color: #fff; border-color: var(--accent-color); background: var(--accent-color); }
+.table-print-host { display: none; }
 
 @media print {
+  body.table-print-active > *:not(.table-print-host) { display: none !important; }
+  body.table-print-active > .table-print-host { display: block !important; color: #111; background: #fff; }
+  .table-print-host .data-grid-table { width: 100%; }
+  .table-print-host .data-grid-table tr { break-inside: avoid; }
   .data-grid-toolbar, .data-grid-column-panel, .search-panes, .data-grid-footer, .table-editor-overlay { display: none !important; }
   .data-grid-card, .data-grid-table-wrap { overflow: visible; border-color: #777; }
   .data-grid-table th, .data-grid-table td { color: #111; border-color: #777; }

@@ -2,10 +2,20 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DelimitedTableBlock } from "./DelimitedTableBlock";
 
+const nativeMocks = vi.hoisted(() => ({
+  showSaveDialog: vi.fn(),
+  saveTableCsv: vi.fn(),
+}));
+vi.mock("@tauri-apps/plugin-dialog", () => ({ save: nativeMocks.showSaveDialog }));
+vi.mock("../lib/commands", () => ({ saveTableCsv: nativeMocks.saveTableCsv }));
+
 describe("DelimitedTableBlock", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    vi.clearAllMocks();
+    vi.useRealTimers();
+    delete (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
   });
 
   it("keeps the slicer off initially and resets it to off for new source", () => {
@@ -126,6 +136,7 @@ describe("DelimitedTableBlock", () => {
   });
 
   it("requests the current Blob-based CSV download", () => {
+    vi.useFakeTimers();
     const createObjectUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:table");
     const revokeObjectUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
     let clickedAnchor: { href: string; download: string } | null = null;
@@ -138,16 +149,44 @@ describe("DelimitedTableBlock", () => {
 
     expect(createObjectUrl).toHaveBeenCalledWith(expect.objectContaining({ type: "text/csv;charset=utf-8" }));
     expect(clickedAnchor).toEqual({ href: "blob:table", download: "table.csv" });
+    expect(revokeObjectUrl).not.toHaveBeenCalled();
+    vi.runAllTimers();
     expect(revokeObjectUrl).toHaveBeenCalledWith("blob:table");
   });
 
-  it("delegates the current print action to the whole window", () => {
-    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+  it("uses the native save dialog and reports the selected CSV path", async () => {
+    Object.defineProperty(window, "__TAURI_INTERNALS__", { configurable: true, value: {} });
+    nativeMocks.showSaveDialog.mockResolvedValue("C:\\exports\\table.csv");
+    nativeMocks.saveTableCsv.mockResolvedValue("C:\\exports\\table.csv");
+    const toast = vi.fn();
+    window.addEventListener("markdown-toast", toast);
     render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "CSV" }));
+
+    await vi.waitFor(() => expect(nativeMocks.saveTableCsv).toHaveBeenCalledWith("C:\\exports\\table.csv", "\uFEFFname,score\nAlice,10"));
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ detail: { type: "success", message: "CSVを保存しました: C:\\exports\\table.csv" } }));
+    window.removeEventListener("markdown-toast", toast);
+  });
+
+  it("prints only the selected table with all rows outside paging", () => {
+    vi.useFakeTimers();
+    const source = ["name,score", ...Array.from({ length: 12 }, (_, index) => `row${index + 1},${index + 1}`)].join("\n");
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      const host = document.querySelector(".table-print-host")!;
+      expect(document.body.classList.contains("table-print-active")).toBe(true);
+      expect(host.querySelectorAll("tbody tr")).toHaveLength(12);
+      expect(host.textContent).toContain("row12");
+    });
+    render(<DelimitedTableBlock language="csv" source={source} />);
 
     fireEvent.click(screen.getByRole("button", { name: "印刷" }));
 
     expect(print).toHaveBeenCalledOnce();
+    expect(document.querySelector(".table-print-host")).toBeTruthy();
+    vi.runAllTimers();
+    expect(document.querySelector(".table-print-host")).toBeNull();
+    expect(document.body.classList.contains("table-print-active")).toBe(false);
   });
 
   it("shows a clear parsing error and does not render controls", () => {

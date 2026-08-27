@@ -7,6 +7,7 @@ use crate::document_edit::{
     CreateMarkdownRequest, SaveMarkdownRequest,
 };
 use crate::errors::AppError;
+use crate::file_lock::{atomic_write, with_lock};
 use crate::image_ops::{
     crop_image as do_crop_image, save_rendered_image as do_save_rendered_image, CropImageRequest,
     CropImageResult, SaveRenderedImageRequest,
@@ -61,6 +62,25 @@ use window_settings::{
 use crate::app_state::WindowGeometry;
 
 static CLIPBOARD_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+fn save_table_csv_file(path: &Path, content: &str) -> Result<PathBuf, String> {
+    if !path.is_absolute() {
+        return Err("CSVの保存先は絶対パスで指定してください。".to_string());
+    }
+    if !path.extension().is_some_and(|extension| extension.eq_ignore_ascii_case("csv")) {
+        return Err("CSVの保存先には.csvファイルを指定してください。".to_string());
+    }
+    if !path.parent().is_some_and(Path::is_dir) {
+        return Err("CSVの保存先フォルダーが存在しません。".to_string());
+    }
+    with_lock(path, || atomic_write(path, content.as_bytes())).map_err(|error| error.to_string())?;
+    Ok(path.to_path_buf())
+}
+
+#[tauri::command]
+pub fn save_table_csv(path: String, content: String) -> Result<String, String> {
+    save_table_csv_file(Path::new(&path), &content).map(|saved| saved.to_string_lossy().into_owned())
+}
 
 #[tauri::command]
 pub fn report_debug_window_state(
@@ -1257,6 +1277,18 @@ mod tests {
         assert_eq!(value["status"], "conflict");
         assert_eq!(value["latest"]["content"], "# latest");
         assert!(!value["latest"]["revision"].as_str().unwrap().is_empty());
+    }
+
+    #[test]
+    fn table_csv_save_requires_an_absolute_csv_path_and_writes_exact_content() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("table.csv");
+        let content = "\u{feff}名前,値\nA,1";
+
+        assert_eq!(save_table_csv_file(&path, content).unwrap(), path);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), content);
+        assert!(save_table_csv_file(Path::new("relative.csv"), content).is_err());
+        assert!(save_table_csv_file(&directory.path().join("table.txt"), content).is_err());
     }
 
     #[test]

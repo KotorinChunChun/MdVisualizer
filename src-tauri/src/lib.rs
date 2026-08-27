@@ -274,6 +274,7 @@ pub fn run() {
             load_markdown,
             create_markdown,
             save_markdown,
+            save_table_csv,
             stage_document_asset,
             stage_clipboard_image,
             discard_staged_assets,

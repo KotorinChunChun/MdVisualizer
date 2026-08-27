@@ -7,6 +7,8 @@ import {
 } from "../lib/delimitedTable";
 import { TableEditorDialog } from "./TableEditorDialog";
 import { calculateTableAggregates } from "../lib/tableAggregation";
+import { save as showSaveDialog } from "@tauri-apps/plugin-dialog";
+import { saveTableCsv } from "../lib/commands";
 import "../styles/delimited-table.css";
 
 interface DelimitedTableBlockProps {
@@ -18,7 +20,7 @@ interface DelimitedTableBlockProps {
 type SortCriterion = { column: number; direction: "ascending" | "descending" };
 type TableContextMenu = { kind: "column"; column: number; x: number; y: number } | { kind: "row"; row: string[]; x: number; y: number } | null;
 
-function emitToast(type: "success" | "error", message: string): void {
+function emitToast(type: "success" | "error" | "info", message: string): void {
   window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message } }));
 }
 
@@ -113,14 +115,77 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
       emitToast("success", "表をコピーしました");
     } catch { emitToast("error", "表をコピーできませんでした"); }
   };
-  const downloadCsv = () => {
+  const downloadCsv = async () => {
     const body = serializeDelimitedTable({ delimiter: ",", headers: exportRows[0], rows: exportRows.slice(1) });
-    const url = URL.createObjectURL(new Blob([`\uFEFF${body}`], { type: "text/csv;charset=utf-8" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "table.csv";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    const content = `\uFEFF${body}`;
+    try {
+      if ("__TAURI_INTERNALS__" in window) {
+        const path = await showSaveDialog({
+          title: "表をCSVとして保存",
+          defaultPath: "table.csv",
+          filters: [{ name: "CSV", extensions: ["csv"] }],
+        });
+        if (!path) {
+          emitToast("info", "CSV保存をキャンセルしました");
+          return;
+        }
+        const savedPath = await saveTableCsv(path, content);
+        emitToast("success", `CSVを保存しました: ${savedPath}`);
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "table.csv";
+      anchor.hidden = true;
+      document.body.append(anchor);
+      anchor.click();
+      window.setTimeout(() => {
+        anchor.remove();
+        URL.revokeObjectURL(url);
+      }, 0);
+      emitToast("success", "CSVのダウンロードを開始しました");
+    } catch (error) {
+      emitToast("error", `CSVを保存できませんでした: ${String(error)}`);
+    }
+  };
+
+  const printTable = () => {
+    const host = document.createElement("div");
+    host.className = "table-print-host";
+    const printTableElement = document.createElement("table");
+    printTableElement.className = "data-grid-table";
+    const head = printTableElement.createTHead().insertRow();
+    visibleIndexes.forEach((column) => {
+      const cell = document.createElement("th");
+      cell.textContent = headers[column];
+      head.append(cell);
+    });
+    const body = printTableElement.createTBody();
+    filteredRows.forEach((row) => {
+      const printRow = body.insertRow();
+      visibleIndexes.forEach((column) => {
+        const cell = printRow.insertCell();
+        cell.textContent = row[column] ?? "";
+      });
+    });
+    host.append(printTableElement);
+    document.body.append(host);
+    document.body.classList.add("table-print-active");
+    let cleaned = false;
+    const cleanupPrint = () => {
+      if (cleaned) return;
+      cleaned = true;
+      window.removeEventListener("afterprint", cleanupPrint);
+      document.body.classList.remove("table-print-active");
+      host.remove();
+    };
+    window.addEventListener("afterprint", cleanupPrint);
+    try {
+      window.print();
+    } finally {
+      window.setTimeout(cleanupPrint, 0);
+    }
   };
 
   const copyText = async (text: string, success: string) => {
@@ -145,8 +210,8 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
       {panesOpen && <button type="button" disabled={!query && Object.values(selectedValues).every((values) => values.length === 0)} onClick={clearFilters}>フィルタ解除</button>}
       {onSave && <button type="button" onClick={() => setEditing(true)}>表を編集</button>}
       <button type="button" onClick={() => void copy()}>コピー</button>
-      <button type="button" onClick={downloadCsv}>CSV</button>
-      <button type="button" onClick={() => window.print()}>印刷</button>
+      <button type="button" onClick={() => void downloadCsv()}>CSV</button>
+      <button type="button" onClick={printTable}>印刷</button>
       <label className="data-grid-search">検索<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="全列を検索" /></label>
     </div>
     {columnsOpen && <div className="data-grid-column-panel" aria-label="列表示の選択">{headers.map((header, column) => <label key={column}><input type="checkbox" checked={visibleColumns[column] !== false} onChange={(event) => setVisibleColumns((current) => headers.map((_, index) => index === column ? event.target.checked : current[index] !== false))} />{header}</label>)}</div>}

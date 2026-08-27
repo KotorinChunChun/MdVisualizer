@@ -59,6 +59,9 @@ export async function loadMarkdown(path: string): Promise<MarkdownLoadResult> {
 export async function saveMarkdown(request: SaveMarkdownRequest): Promise<MarkdownSaveResult> {
   return await invoke<MarkdownSaveResult>("save_markdown", { request });
 }
+export async function saveTableCsv(path: string, content: string): Promise<string> {
+  return await invoke<string>("save_table_csv", { path, content });
+}
 export async function createMarkdown(request: CreateMarkdownRequest): Promise<MarkdownLoadResult> {
   return await invoke<MarkdownLoadResult>("create_markdown", { request });
 }
