@@ -16,6 +16,8 @@
 .data-grid-table { min-width: 100%; margin: 0; border-collapse: collapse; }
 .data-grid-table th, .data-grid-table td { padding: 7px 9px; border: 1px solid var(--border-color); text-align: left; white-space: pre-wrap; }
 .data-grid-table th button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 0; color: inherit; border: 0; background: transparent; font: inherit; font-weight: 650; cursor: pointer; }
+.data-grid-table .is-selected-column, .data-grid-table .is-selected-row > td { background: color-mix(in srgb, var(--accent-color) 18%, var(--panel-bg)); }
+.data-grid-context-menu { z-index: 12010; }
 .data-grid-empty { padding: 20px !important; color: var(--text-muted); text-align: center !important; }
 .data-grid-footer { border-top: 1px solid var(--border-color); color: var(--text-muted); }
 .data-grid-footer .spacer { flex: 1 1 auto; }

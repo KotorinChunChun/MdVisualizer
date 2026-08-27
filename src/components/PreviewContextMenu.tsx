@@ -5,16 +5,18 @@ interface PreviewContextMenuProps {
   y: number;
   plainText: string;
   markdownText: string;
+  rowTsv?: string;
   canEdit: boolean;
   onEdit: () => void;
   onSelectLine: () => void;
+  onSelectRow?: () => void;
   onSelectAll: () => void;
   onResult: (message: string) => void;
   onError: (message: string) => void;
   onDismiss: () => void;
 }
 
-export function PreviewContextMenu({ x, y, plainText, markdownText, canEdit, onEdit, onSelectLine, onSelectAll, onResult, onError, onDismiss }: PreviewContextMenuProps) {
+export function PreviewContextMenu({ x, y, plainText, markdownText, rowTsv, canEdit, onEdit, onSelectLine, onSelectRow, onSelectAll, onResult, onError, onDismiss }: PreviewContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,7 +60,9 @@ export function PreviewContextMenu({ x, y, plainText, markdownText, canEdit, onE
     <button type="button" role="menuitem" disabled={!markdownText} onClick={() => copy(markdownText, "Markdown")}>Markdownでコピー</button>
     <button type="button" role="menuitem" disabled={!canEdit} onClick={() => run(onEdit)}>編集</button>
     <div role="separator" />
-    <button type="button" role="menuitem" onClick={() => run(onSelectLine)}>行選択</button>
+    <button type="button" role="menuitem" onClick={() => run(onSelectRow ?? onSelectLine)}>行選択</button>
+    {onSelectRow && <button type="button" role="menuitem" disabled={!rowTsv} onClick={() => copy(rowTsv ?? "", "行")}>選択した行をTSVでコピー</button>}
+    <button type="button" role="menuitem" onClick={() => run(onSelectLine)}>ブロック全体を選択</button>
     <button type="button" role="menuitem" onClick={() => run(onSelectAll)}>すべて選択</button>
   </div>;
 }

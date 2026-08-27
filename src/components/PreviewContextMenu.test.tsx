@@ -39,4 +39,22 @@ describe("PreviewContextMenu", () => {
     rerender(<PreviewContextMenu {...props} canEdit={false} />);
     expect((screen.getByRole("menuitem", { name: "編集" }) as HTMLButtonElement).disabled).toBe(true);
   });
+
+  it("selects and copies a table row without removing block selection", async () => {
+    const onSelectLine = vi.fn();
+    const onSelectRow = vi.fn();
+    const props = { x: 0, y: 0, plainText: "A 1", markdownText: "| A | 1 |", rowTsv: "A\t1", canEdit: true, onEdit: vi.fn(), onSelectLine, onSelectRow, onSelectAll: vi.fn(), onResult: vi.fn(), onError: vi.fn(), onDismiss: vi.fn() };
+    const { rerender } = render(<PreviewContextMenu {...props} />);
+
+    fireEvent.click(screen.getByRole("menuitem", { name: "行選択" }));
+    expect(onSelectRow).toHaveBeenCalledOnce();
+
+    rerender(<PreviewContextMenu {...props} />);
+    fireEvent.click(screen.getByRole("menuitem", { name: "選択した行をTSVでコピー" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("A\t1"));
+
+    rerender(<PreviewContextMenu {...props} />);
+    fireEvent.click(screen.getByRole("menuitem", { name: "ブロック全体を選択" }));
+    expect(onSelectLine).toHaveBeenCalledOnce();
+  });
 });

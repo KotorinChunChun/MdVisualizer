@@ -117,6 +117,8 @@ interface PreviewContextState {
   line: number;
   plainText: string;
   markdownText: string;
+  rowElement: HTMLTableRowElement | null;
+  rowTsv: string;
 }
 
 function previewSourceBlocks(root: HTMLElement | null, visibleOnly = false): HTMLElement[] {
@@ -1079,12 +1081,17 @@ export function App() {
     const clickedBlock = blocks.find((block) => Number(block.dataset.sourceLine) === clickedLine);
     const selection = window.getSelection();
     const selectedRange = previewSelectionSourceRange(selection, root, sourceLines, clickedLine);
+    const targetElement = target instanceof Element ? target : target.parentElement;
+    const rowElement = targetElement?.closest<HTMLTableRowElement>("tr") ?? null;
+    const tableRow = rowElement && root.contains(rowElement) ? rowElement : null;
     setPreviewContext({
       x: event.clientX,
       y: event.clientY,
       line: clickedLine,
       plainText: selectedRange.inside ? selection!.toString().trim() : clickedBlock?.textContent?.trim() ?? "",
       markdownText: markdownForPreviewRange(previewContent, sourceLines, selectedRange.firstLine, selectedRange.lastLine),
+      rowElement: tableRow,
+      rowTsv: tableRow ? [...tableRow.querySelectorAll("th, td")].map((cell) => cell.textContent?.trim() ?? "").join("\t") : "",
     });
   }, [activeTab?.document, previewContent]);
 
@@ -1113,6 +1120,16 @@ export function App() {
     selection?.removeAllRanges();
     selection?.addRange(range);
   }, []);
+
+  const selectPreviewRow = useCallback(() => {
+    const row = previewContext?.rowElement;
+    if (!row || !row.isConnected) return;
+    const range = document.createRange();
+    range.selectNodeContents(row);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }, [previewContext]);
 
   useEffect(() => {
     if (editorMode === "preview" || pendingEditorLine.current === null) return;
@@ -2177,9 +2194,11 @@ export function App() {
         y={previewContext.y}
         plainText={previewContext.plainText}
         markdownText={previewContext.markdownText}
+        rowTsv={previewContext.rowTsv}
         canEdit={canEditActive}
         onEdit={editPreviewContextLine}
         onSelectLine={() => selectPreviewContent(previewContext.line)}
+        onSelectRow={previewContext.rowElement ? selectPreviewRow : undefined}
         onSelectAll={() => selectPreviewContent()}
         onDismiss={() => setPreviewContext(null)}
         onResult={(message) => setToast({ id: crypto.randomUUID(), message, type: "success" })}
