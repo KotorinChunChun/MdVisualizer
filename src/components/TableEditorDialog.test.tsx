@@ -97,19 +97,53 @@ describe("TableEditorDialog grid editing", () => {
 
   it("reorders rows and columns with their drag handles", () => {
     const onSave = vi.fn(() => true);
-    const dataTransfer = { effectAllowed: "" };
+    const dataTransfer = { effectAllowed: "", dropEffect: "", setData: vi.fn() };
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"], ["3", "4"]]} onCancel={() => undefined} onSave={onSave} />);
 
     fireEvent.dragStart(screen.getByRole("button", { name: "列 1をドラッグして並び替え" }), { dataTransfer });
-    fireEvent.drop(screen.getByRole("button", { name: "列 2をドラッグして並び替え" }), { dataTransfer });
+    const secondColumn = screen.getByRole("textbox", { name: "列 2の見出し" }).closest("th")!;
+    fireEvent.dragOver(secondColumn, { dataTransfer });
+    expect(secondColumn.classList.contains("is-drop-target")).toBe(true);
+    fireEvent.drop(secondColumn, { dataTransfer });
+    expect(screen.getByRole("textbox", { name: "列 2の見出し" }).closest("th")?.classList.contains("is-reordered")).toBe(true);
     fireEvent.dragStart(screen.getByRole("button", { name: "行 1をドラッグして並び替え" }), { dataTransfer });
-    fireEvent.drop(screen.getByRole("button", { name: "行 2をドラッグして並び替え" }).closest("td")!, { dataTransfer });
+    const secondRow = screen.getByRole("button", { name: "行 2をドラッグして並び替え" }).closest("tr")!;
+    fireEvent.dragOver(secondRow, { dataTransfer });
+    expect(secondRow.classList.contains("is-drop-target")).toBe(true);
+    fireEvent.drop(secondRow, { dataTransfer });
     fireEvent.click(screen.getByRole("button", { name: "反映" }));
 
+    expect(dataTransfer.setData).toHaveBeenCalledTimes(2);
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       headers: ["B", "A"],
       rows: [["4", "3"], ["2", "1"]],
     }));
+  });
+
+  it("selects a whole column or row by clicking its drag handle", () => {
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"], ["3", "4"]]} onCancel={() => undefined} onSave={() => true} />);
+    const columnHandle = screen.getByRole("button", { name: "列 2をドラッグして並び替え" });
+    const rowHandle = screen.getByRole("button", { name: "行 1をドラッグして並び替え" });
+    const setData = vi.fn();
+
+    fireEvent.click(columnHandle);
+    fireEvent.copy(columnHandle, { clipboardData: { setData } });
+    expect(setData).toHaveBeenLastCalledWith("text/plain", "B\n2\n4");
+
+    fireEvent.click(rowHandle);
+    fireEvent.copy(rowHandle, { clipboardData: { setData } });
+    expect(setData).toHaveBeenLastCalledWith("text/plain", "1\t2");
+  });
+
+  it("places three alignment buttons to the right of each column heading", () => {
+    const onSave = vi.fn(() => true);
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} initialAlignments={[null, null]} showAlignments onCancel={() => undefined} onSave={onSave} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "列 1を右揃え" }));
+    expect(screen.getByRole("button", { name: "列 1を右揃え" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ alignments: ["right", null] }));
   });
 
   it("adds total, average, and count rows or columns from the aggregate menu", () => {
