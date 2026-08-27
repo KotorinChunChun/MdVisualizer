@@ -4,6 +4,7 @@ import { removeMermaidBlockStatus, setMermaidBlockStatus } from "../lib/mermaidS
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { MermaidToolbar } from "./MermaidToolbar";
 import { MermaidEditorPlaceholderModal } from "./MermaidEditorPlaceholderModal";
+import { ResponsiveToolbar } from "./ResponsiveToolbar";
 
 interface MermaidBlockProps {
   source: string;
@@ -118,17 +119,16 @@ export function MermaidBlock({
     return () => { disposed = true; };
   }, [diagramCount, diagramIndex, localId, mode, source, stableBlockId, statusId, tabId, theme, visible, windowId]);
 
-  const toolbar = showToolbar && <div className="diagram-block__header mermaid-container__header">
-    <span>Mermaid</span>
-    {editable && <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button>}
-    <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} />
-    {storage && onStorageConvert && <button className="diagram-action-button" type="button" disabled={convertingStorage} onClick={() => {
+  const toolbar = showToolbar && <ResponsiveToolbar className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={<span>Mermaid</span>} items={[
+    ...(editable ? [{ id: "edit", priority: 80, node: <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button> }] : []),
+    { id: "copy-view", priority: 100, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} /> },
+    ...(storage && onStorageConvert ? [{ id: "storage", priority: 10, node: <button className="diagram-action-button" type="button" disabled={convertingStorage} onClick={() => {
       setConvertingStorage(true);
       void Promise.resolve().then(onStorageConvert).catch((error) => window.dispatchEvent(new CustomEvent("markdown-toast", {
         detail: { type: "error", message: error instanceof Error ? error.message : String(error) },
       }))).finally(() => setConvertingStorage(false));
-    }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button>}
-  </div>;
+    }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button> }] : []),
+  ]} />;
   const editor = editorOpen && <MermaidEditorPlaceholderModal source={source} onClose={() => setEditorOpen(false)} />;
 
   if (mode === "off" || mode === "always-code") return <div className={`mermaid-container${showToolbar ? "" : " is-embedded"}`}>

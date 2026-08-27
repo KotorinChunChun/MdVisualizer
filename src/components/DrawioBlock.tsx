@@ -5,6 +5,7 @@ import { sanitizeSvgXml } from "../lib/svgSafety";
 import { MermaidBlock } from "./MermaidBlock";
 import { MermaidToolbar } from "./MermaidToolbar";
 import { DrawioEditorModal } from "./DrawioEditorModal";
+import { ResponsiveToolbar } from "./ResponsiveToolbar";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import "../styles/drawio.css";
 
@@ -245,9 +246,8 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
   }
 
   return <div className="drawio-block" data-drawio-block={blockId}>
-    <div className="drawio-block__toolbar diagram-block__header">
-      <span>{label}</span>
-      <MermaidToolbar
+    <ResponsiveToolbar className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={<span>{label}</span>} items={[
+      { id: "copy-view-edit", priority: 100, node: <MermaidToolbar
         source={source}
         svg={renderedSvg}
         display={display}
@@ -255,8 +255,8 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
         ariaLabel="draw.io操作"
         fileDiagramKind="drawio"
         onEdit={onSave ? () => setEditing(true) : undefined}
-      />
-      {storage && onStorageConvert && <button
+      /> },
+      ...(storage && onStorageConvert ? [{ id: "storage", priority: 10, node: <button
         className="diagram-action-button"
         type="button"
         disabled={convertingStorage}
@@ -269,8 +269,8 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
             })))
             .finally(() => setConvertingStorage(false));
         }}
-      >{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button>}
-    </div>
+      >{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button> }] : []),
+    ]} />
     <div className="drawio-block__preview" ref={previewRef}>{preview}</div>
     {editing && !(load instanceof Error) && <DrawioEditorModal source={source} onSave={onSave!} onCancel={() => setEditing(false)} />}
   </div>;

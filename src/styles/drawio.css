@@ -1,6 +1,6 @@
 .drawio-block { margin: 1em 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: 8px; background: var(--panel-bg); }
 .drawio-block__toolbar { gap: 12px; }
-.drawio-block__toolbar > span { margin-right: auto; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+.drawio-block__toolbar .responsive-toolbar__label { color: var(--text-secondary); font-size: 12px; font-weight: 600; }
 .drawio-block__toolbar .mermaid-toolbar { padding: 0; }
 .drawio-block__preview { min-height: 0; padding: 12px; overflow: auto; background: #fff; color: #1f2937; }
 .drawio-block__viewer { display: grid; place-items: center; min-height: 0; }

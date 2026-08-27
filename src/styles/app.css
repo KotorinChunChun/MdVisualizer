@@ -79,6 +79,14 @@ body {
 .context-menu button { padding: 7px 10px; border: 0; color: var(--text-primary); background: transparent; text-align: left; cursor: pointer; }
 .context-menu button:hover { background: var(--btn-hover); }
 .context-menu button:disabled { opacity: .5; cursor: not-allowed; }
+.responsive-toolbar { display: flex; min-width: 0; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.responsive-toolbar__label { flex: 0 1 auto; min-width: 0; margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.responsive-toolbar__items { display: flex; min-width: 0; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.responsive-toolbar__item { flex: 0 0 auto; }
+.responsive-toolbar__item.is-overflowed { position: absolute; visibility: hidden; pointer-events: none; }
+.responsive-toolbar__more { position: relative; flex: 0 0 auto; }
+.responsive-toolbar__more > [role="menu"] { position: absolute; z-index: 12020; top: calc(100% + 4px); right: 0; display: grid; min-width: 190px; gap: 4px; padding: 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--panel-bg); box-shadow: 0 8px 24px #0008; }
+.responsive-toolbar__more > [role="menu"] > div { display: grid; gap: 4px; }
 .preview-context-menu [role="separator"] { height: 1px; margin: 4px 2px; background: var(--border-color); }
 .status-bar { min-height: 28px; padding: 5px 12px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 12px; background: var(--panel-bg); }
 .view-controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; padding:7px 12px; background:var(--panel-bg); border-bottom:1px solid var(--border-color); font-size:12px; }
@@ -493,12 +501,12 @@ body {
 .mermaid-editor-placeholder__body pre { max-height: 220px; overflow: auto; white-space: pre-wrap; }
 .mermaid-editor-placeholder__icon { font-size: 42px; color: var(--accent-color); }
 .mermaid-source { overflow-x: auto; padding: 12px; background: var(--panel-bg); }
-.mermaid-toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; align-items: center; padding: 6px 0; }
+.mermaid-toolbar { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 6px; align-items: center; padding: 6px 0; }
 .diagram-action-button { min-height: 30px; padding: 5px 9px; color: inherit; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 7px; cursor: pointer; }
 .mermaid-toolbar button[aria-pressed="true"] { color: var(--accent-contrast, #fff); background: var(--accent-color); border-color: var(--accent-color); }
 .mermaid-toolbar button:disabled { cursor: not-allowed; opacity: 0.55; }
 .mermaid-toolbar__view { display: flex; order: 2; }
-.mermaid-toolbar__copy { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; order: 1; }
+.mermaid-toolbar__copy { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 6px; order: 1; }
 .mermaid-toolbar__view button { border-radius: 0; }
 .mermaid-toolbar__view button:first-child { border-radius: 7px 0 0 7px; }
 .mermaid-toolbar__view button:last-child { margin-left: -1px; border-radius: 0 7px 7px 0; }
