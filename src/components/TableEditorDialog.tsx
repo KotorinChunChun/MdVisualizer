@@ -1,4 +1,4 @@
-import { ClipboardEvent, KeyboardEvent, MouseEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { calculateTableAggregates, isTableAggregateResultCell } from "../lib/tableAggregation";
 
 export type TableColumnAlignment = "left" | "center" | "right" | null;
@@ -35,6 +35,14 @@ function pastedCells(text: string): string[][] {
   return withoutFinalNewline.split("\n").map((line) => line.split("\t"));
 }
 
+function moveItem<T>(items: T[], from: number, to: number): T[] {
+  if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) return items;
+  const next = [...items];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
 export function TableEditorDialog({
   initialHeaders,
   initialRows,
@@ -47,11 +55,19 @@ export function TableEditorDialog({
   const [headers, setHeaders] = useState(() => [...initialHeaders]);
   const [rows, setRows] = useState(() => initialRows.map((row) => [...row]));
   const [alignments, setAlignments] = useState<TableColumnAlignment[]>(() => initialHeaders.map((_, index) => initialAlignments?.[index] ?? null));
+  const [aggregateMenuOpen, setAggregateMenuOpen] = useState(false);
   const [selection, setSelection] = useState<GridSelection>({ anchor: { row: 0, column: 0 }, focus: { row: 0, column: 0 } });
   const cellRefs = useRef(new Map<string, HTMLInputElement>());
   const dragging = useRef(false);
   const programmaticFocus = useRef<string | null>(null);
+  const draggedColumn = useRef<number | null>(null);
+  const draggedRow = useRef<number | null>(null);
   const calculated = useMemo(() => calculateTableAggregates({ headers, rows }), [headers, rows]);
+
+  const applyChanges = () => {
+    const accepted = onSave({ headers, rows: calculated.rows.map((row) => headers.map((_, column) => row[column] ?? "")), alignments });
+    if (accepted !== false) onCancel();
+  };
 
   useEffect(() => {
     const finishDragging = () => { dragging.current = false; };
@@ -98,10 +114,39 @@ export function TableEditorDialog({
     setSelection({ anchor: { row: 0, column: 0 }, focus: { row: 0, column: 0 } });
   };
 
-  const addColumn = () => {
-    setHeaders((current) => [...current, `列 ${current.length + 1}`]);
-    setRows((current) => current.map((row) => [...row, ""]));
-    setAlignments((current) => [...current, null]);
+  const insertColumn = (column: number, label?: string) => {
+    const nextLabel = label ?? `列 ${headers.length + 1}`;
+    setHeaders((current) => [...current.slice(0, column), nextLabel, ...current.slice(column)]);
+    setRows((current) => current.map((row) => [...row.slice(0, column), "", ...row.slice(column)]));
+    setAlignments((current) => [...current.slice(0, column), null, ...current.slice(column)]);
+    const point = { row: 0, column };
+    setSelection({ anchor: point, focus: point });
+    focusCell(point);
+  };
+
+  const insertRow = (row: number, label = "") => {
+    setRows((current) => [
+      ...current.slice(0, row),
+      headers.map((_, column) => column === 0 ? label : ""),
+      ...current.slice(row),
+    ]);
+    const point = { row: row + 1, column: 0 };
+    setSelection({ anchor: point, focus: point });
+    focusCell(point);
+  };
+
+  const moveColumn = (from: number, to: number) => {
+    setHeaders((current) => moveItem(current, from, to));
+    setRows((current) => current.map((row) => moveItem(row, from, to)));
+    setAlignments((current) => moveItem(current, from, to));
+    const point = { row: 0, column: to };
+    setSelection({ anchor: point, focus: point });
+  };
+
+  const moveRow = (from: number, to: number) => {
+    setRows((current) => moveItem(current, from, to));
+    const point = { row: to + 1, column: 0 };
+    setSelection({ anchor: point, focus: point });
   };
 
   const isSelected = (point: GridPoint) => {
@@ -122,7 +167,11 @@ export function TableEditorDialog({
     const input = event.currentTarget;
     let rowDelta = 0;
     let columnDelta = 0;
-    if (event.key === "Enter") rowDelta = event.shiftKey ? -1 : 1;
+    if (event.ctrlKey && event.key.toLocaleLowerCase() === "a") {
+      event.preventDefault();
+      applyChanges();
+      return;
+    } else if (event.key === "Enter") rowDelta = event.shiftKey ? -1 : 1;
     else if (event.key === "Tab") columnDelta = event.shiftKey ? -1 : 1;
     else if (event.key === "ArrowUp") rowDelta = -1;
     else if (event.key === "ArrowDown") rowDelta = 1;
@@ -204,16 +253,33 @@ export function TableEditorDialog({
     <section className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <header className="table-editor-toolbar">
         <strong id={titleId}>表を編集</strong>
-        <button type="button" onClick={() => setRows((current) => [...current, headers.map(() => "")])}>行を追加</button>
-        <button type="button" onClick={addColumn}>列を追加</button>
+        <div className="table-editor-aggregate-menu">
+          <button type="button" aria-expanded={aggregateMenuOpen} onClick={() => setAggregateMenuOpen((open) => !open)}>集計を追加</button>
+          {aggregateMenuOpen && <div role="menu" aria-label="集計を追加">
+            {["合計", "平均", "個数"].flatMap((label) => [
+              <button key={`${label}行`} type="button" role="menuitem" onClick={() => { insertRow(rows.length, label); setAggregateMenuOpen(false); }}>{label}行</button>,
+              <button key={`${label}列`} type="button" role="menuitem" onClick={() => { insertColumn(headers.length, label); setAggregateMenuOpen(false); }}>{label}列</button>,
+            ])}
+          </div>}
+        </div>
       </header>
-      <p className="table-editor-note">先頭行はヘッダーです。矢印・Enter・Tabで移動し、範囲選択したセルをコピーしたり、Excel等から複数セルを貼り付けたりできます。</p>
+      <p className="table-editor-note">先頭行はヘッダーです。境界の＋で挿入、ハンドルのドラッグで並び替えできます。Ctrl+Aで編集内容を反映します。</p>
       <div className="table-editor-scroll">
         <table className="table-editor-grid">
           <thead><tr><th className="table-editor-row-action" aria-label="行操作" />{headers.map((header, column) => {
             const point = { row: 0, column };
             return <th key={column} className={isSelected(point) ? "is-selected" : undefined}>
+              <button type="button" className="table-editor-insert table-editor-insert-column is-before" aria-label={`列 ${column + 1}の左に挿入`} onClick={() => insertColumn(column)}>＋</button>
+              {column === headers.length - 1 && <button type="button" className="table-editor-insert table-editor-insert-column is-after" aria-label={`列 ${column + 1}の右に挿入`} onClick={() => insertColumn(column + 1)}>＋</button>}
               <div className="table-editor-heading">
+                <button type="button" className="table-editor-drag-handle" draggable aria-label={`列 ${column + 1}をドラッグして並び替え`} onDragStart={(event: DragEvent<HTMLButtonElement>) => {
+                  draggedColumn.current = column;
+                  event.dataTransfer.effectAllowed = "move";
+                }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
+                  event.preventDefault();
+                  if (draggedColumn.current !== null) moveColumn(draggedColumn.current, column);
+                  draggedColumn.current = null;
+                }} onDragEnd={() => { draggedColumn.current = null; }}>⋮⋮</button>
                 <input {...gridInputProps(point)} aria-label={`列 ${column + 1}の見出し`} value={header} onChange={(event) => updateCell(point, event.target.value)} />
                 <button type="button" aria-label={`列 ${column + 1}を削除`} disabled={headers.length <= 1} onClick={() => removeColumn(column)}>×</button>
               </div>
@@ -228,8 +294,27 @@ export function TableEditorDialog({
               </select>}
             </th>;
           })}</tr></thead>
-          <tbody>{rows.map((_, rowIndex) => <tr key={rowIndex}>
-            <td className="table-editor-row-action"><button type="button" aria-label={`行 ${rowIndex + 1}を削除`} onClick={() => setRows((current) => current.filter((_, index) => index !== rowIndex))}>×</button></td>
+          <tbody>{rows.length === 0 ? <tr>
+            <td className="table-editor-row-action">
+              <button type="button" className="table-editor-insert table-editor-insert-row is-empty" aria-label="最初の行を挿入" onClick={() => insertRow(0)}>＋</button>
+            </td>
+            <td className="data-grid-empty" colSpan={headers.length}>行はありません</td>
+          </tr> : rows.map((_, rowIndex) => <tr key={rowIndex}>
+            <td className="table-editor-row-action" onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
+              event.preventDefault();
+              if (draggedRow.current !== null) moveRow(draggedRow.current, rowIndex);
+              draggedRow.current = null;
+            }}>
+              <button type="button" className="table-editor-insert table-editor-insert-row is-before" aria-label={`行 ${rowIndex + 1}の上に挿入`} onClick={() => insertRow(rowIndex)}>＋</button>
+              {rowIndex === rows.length - 1 && <button type="button" className="table-editor-insert table-editor-insert-row is-after" aria-label={`行 ${rowIndex + 1}の下に挿入`} onClick={() => insertRow(rowIndex + 1)}>＋</button>}
+              <span className="table-editor-row-buttons">
+                <button type="button" className="table-editor-drag-handle" draggable aria-label={`行 ${rowIndex + 1}をドラッグして並び替え`} onDragStart={(event: DragEvent<HTMLButtonElement>) => {
+                  draggedRow.current = rowIndex;
+                  event.dataTransfer.effectAllowed = "move";
+                }} onDragEnd={() => { draggedRow.current = null; }}>⋮</button>
+                <button type="button" aria-label={`行 ${rowIndex + 1}を削除`} onClick={() => setRows((current) => current.filter((_, index) => index !== rowIndex))}>×</button>
+              </span>
+            </td>
             {headers.map((_, column) => {
               const point = { row: rowIndex + 1, column };
               return <td key={column} className={isSelected(point) ? "is-selected" : undefined}>
@@ -241,10 +326,7 @@ export function TableEditorDialog({
       </div>
       <footer className="table-editor-footer">
         <button type="button" onClick={onCancel}>キャンセル</button>
-        <button type="button" className="table-editor-save" onClick={() => {
-          const accepted = onSave({ headers, rows: calculated.rows.map((row) => headers.map((_, column) => row[column] ?? "")), alignments });
-          if (accepted !== false) onCancel();
-        }}>反映</button>
+        <button type="button" className="table-editor-save" onClick={applyChanges}>反映</button>
       </footer>
     </section>
   </div>;

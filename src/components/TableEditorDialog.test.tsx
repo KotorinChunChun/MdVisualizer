@@ -67,4 +67,74 @@ describe("TableEditorDialog grid editing", () => {
       rows: [["A", "15", "15"], ["B", "20", "20"], ["合計", "35", ""]],
     }));
   });
+
+  it("applies the current edit with Ctrl+A", () => {
+    const onSave = vi.fn(() => true);
+    const onCancel = vi.fn();
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["old"]]} onCancel={onCancel} onSave={onSave} />);
+    const cell = screen.getByRole("textbox", { name: "行 1 列 1" });
+    fireEvent.change(cell, { target: { value: "new" } });
+
+    fireEvent.keyDown(cell, { key: "a", ctrlKey: true });
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ headers: ["A"], rows: [["new"]] }));
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("inserts rows and columns at table boundaries", () => {
+    const onSave = vi.fn(() => true);
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} onCancel={() => undefined} onSave={onSave} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "列 2の左に挿入" }));
+    fireEvent.click(screen.getByRole("button", { name: "行 1の下に挿入" }));
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      headers: ["A", "列 3", "B"],
+      rows: [["1", "", "2"], ["", "", ""]],
+    }));
+  });
+
+  it("reorders rows and columns with their drag handles", () => {
+    const onSave = vi.fn(() => true);
+    const dataTransfer = { effectAllowed: "" };
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"], ["3", "4"]]} onCancel={() => undefined} onSave={onSave} />);
+
+    fireEvent.dragStart(screen.getByRole("button", { name: "列 1をドラッグして並び替え" }), { dataTransfer });
+    fireEvent.drop(screen.getByRole("button", { name: "列 2をドラッグして並び替え" }), { dataTransfer });
+    fireEvent.dragStart(screen.getByRole("button", { name: "行 1をドラッグして並び替え" }), { dataTransfer });
+    fireEvent.drop(screen.getByRole("button", { name: "行 2をドラッグして並び替え" }).closest("td")!, { dataTransfer });
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      headers: ["B", "A"],
+      rows: [["4", "3"], ["2", "1"]],
+    }));
+  });
+
+  it("adds total, average, and count rows or columns from the aggregate menu", () => {
+    const onSave = vi.fn(() => true);
+    render(<TableEditorDialog initialHeaders={["項目", "値"]} initialRows={[["A", "10"], ["B", "20"]]} onCancel={() => undefined} onSave={onSave} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "集計を追加" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "合計行" }));
+    fireEvent.click(screen.getByRole("button", { name: "集計を追加" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "平均列" }));
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      headers: ["項目", "値", "平均"],
+      rows: [["A", "10", "10"], ["B", "20", "20"], ["合計", "30", ""]],
+    }));
+  });
+
+  it("can insert the first row into an empty table", () => {
+    const onSave = vi.fn(() => true);
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[]} onCancel={() => undefined} onSave={onSave} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "最初の行を挿入" }));
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ rows: [[""]] }));
+  });
 });
