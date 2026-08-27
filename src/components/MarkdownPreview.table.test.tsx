@@ -44,4 +44,26 @@ describe("MarkdownPreview Markdown tables", () => {
     view.rerender(<MarkdownPreview content={content} baseDir="" documentPath="note.md" imageVersions={{}} onMarkdownTableChange={onMarkdownTableChange} presentationMode />);
     expect(screen.queryByRole("button", { name: "表を編集" })).toBeNull();
   });
+
+  it("renders aggregate results and serializes them when applying the table", () => {
+    const content = "| 項目 | 値1 | 値2 | 合計 |\n| --- | ---: | ---: | ---: |\n| A | 10 | 20 | old |\n| B | 5 | x | old |\n| 合計 | old | old | old |";
+    const onMarkdownTableChange = vi.fn().mockReturnValue(true);
+    const { container } = render(<MarkdownPreview
+      content={content}
+      baseDir=""
+      documentPath="note.md"
+      imageVersions={{}}
+      onMarkdownTableChange={onMarkdownTableChange}
+    />);
+    const rows = container.querySelectorAll(".markdown-table-card > table tbody tr");
+
+    expect(rows[0].textContent).toBe("A102030");
+    expect(rows[1].textContent).toBe("B5x5");
+    expect(rows[2].textContent).toBe("合計1520");
+
+    fireEvent.click(screen.getByRole("button", { name: "表を編集" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "表を編集" })).getByRole("button", { name: "反映" }));
+    expect(onMarkdownTableChange.mock.calls[0][1]).toContain("| A | 10 | 20 | 30 |");
+    expect(onMarkdownTableChange.mock.calls[0][1]).toContain("| 合計 | 15 | 20 |  |");
+  });
 });

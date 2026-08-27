@@ -111,6 +111,18 @@ describe("editable Markdown occurrences", () => {
     expect(serialized).toBe("| name | note |\r\n| --- | :---: |\r\n| Alice | A\\|B<br>next |");
   });
 
+  it("serializes calculated aggregate cells", () => {
+    const serialized = serializeMarkdownTable({
+      headers: ["項目", "値", "平均"],
+      rows: [["A", "10", "old"], ["B", "20", "old"], ["合計", "old", "old"]],
+      alignments: [null, "right", "right"],
+      lineEnding: "\n",
+    });
+
+    expect(serialized).toContain("| A | 10 | 10 |");
+    expect(serialized).toContain("| 合計 | 30 |  |");
+  });
+
   it("preserves a block quote container while serializing a nested GFM table", () => {
     const markdown = "> | A | B |\n> | --- | --- |\n> | 1 | 2 |";
     const table = collectEditableMarkdownOccurrences(markdown).find((item): item is MarkdownTableOccurrence => item.kind === "table");

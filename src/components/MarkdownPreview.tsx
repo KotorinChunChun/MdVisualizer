@@ -35,6 +35,7 @@ import type { DrawioStorageConversionContext } from "../lib/drawioStorage";
 import type { MermaidStorageConversionContext } from "../lib/mermaidStorage";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
+import { calculateTableAggregates, isTableAggregateResultCell, type TableAggregationResult } from "../lib/tableAggregation";
 
 type MarkdownNode = {
   type?: string;
@@ -268,15 +269,35 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
     : <code className={className} {...props}>{children}</code>;
 };
 
+function calculatedMarkdownTableChildren(children: React.ReactNode, calculation: TableAggregationResult): React.ReactNode {
+  let bodyRow = 0;
+  return React.Children.map(children, (section) => {
+    if (!React.isValidElement<{ children?: React.ReactNode }>(section) || section.type !== "tbody") return section;
+    const rows = React.Children.map(section.props.children, (row) => {
+      if (!React.isValidElement<{ children?: React.ReactNode }>(row) || row.type !== "tr") return row;
+      const currentRow = bodyRow;
+      bodyRow += 1;
+      const cells = React.Children.map(row.props.children, (cell, column) => {
+        if (!isTableAggregateResultCell(calculation, currentRow, column)) return cell;
+        if (!React.isValidElement<{ children?: React.ReactNode }>(cell)) return cell;
+        return React.cloneElement(cell, undefined, calculation.rows[currentRow]?.[column] ?? "");
+      });
+      return React.cloneElement(row, undefined, cells);
+    });
+    return React.cloneElement(section, undefined, rows);
+  });
+}
+
 const MarkdownTable: NonNullable<Components["table"]> = ({ node, children, ...props }) => {
   const context = useMarkdownRenderContext();
   const [editing, setEditing] = React.useState(false);
   const offset = node?.position?.start.offset;
   const occurrence = offset === undefined ? undefined : context.tableByOffset.get(offset);
   const editable = Boolean(occurrence && context.documentPath && context.onMarkdownTableChange && !context.staticMode && !context.presentationMode);
+  const calculation = occurrence ? calculateTableAggregates(occurrence) : null;
   return <div className="table-scroll markdown-table-card">
     {editable && <button type="button" className="markdown-table-edit" aria-label="表を編集" title="表を編集" onClick={() => setEditing(true)}>✎</button>}
-    <table {...props}>{children}</table>
+    <table {...props}>{calculation ? calculatedMarkdownTableChildren(children, calculation) : children}</table>
     {editing && occurrence && <TableEditorDialog
       initialHeaders={occurrence.headers}
       initialRows={occurrence.rows}

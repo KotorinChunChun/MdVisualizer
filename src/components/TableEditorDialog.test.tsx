@@ -39,4 +39,32 @@ describe("TableEditorDialog grid editing", () => {
     fireEvent.copy(last, { clipboardData: { setData } });
     expect(setData).toHaveBeenCalledWith("text/plain", "A\tB\n1\t2");
   });
+
+  it("recalculates aggregate cells and saves calculated values", () => {
+    const onSave = vi.fn(() => true);
+    render(<TableEditorDialog
+      initialHeaders={["項目", "値", "平均"]}
+      initialRows={[["A", "10", "old"], ["B", "20", "old"], ["合計", "old", "old"]]}
+      onCancel={() => undefined}
+      onSave={onSave}
+    />);
+
+    const rowAverage = screen.getByRole("textbox", { name: "行 1 列 3" }) as HTMLInputElement;
+    const columnTotal = screen.getByRole("textbox", { name: "行 3 列 2" }) as HTMLInputElement;
+    const intersection = screen.getByRole("textbox", { name: "行 3 列 3" }) as HTMLInputElement;
+    expect(rowAverage.value).toBe("10");
+    expect(columnTotal.value).toBe("30");
+    expect(intersection.value).toBe("");
+    expect(rowAverage.readOnly).toBe(true);
+    expect(columnTotal.readOnly).toBe(true);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "行 1 列 2" }), { target: { value: "15" } });
+    expect(rowAverage.value).toBe("15");
+    expect(columnTotal.value).toBe("35");
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      rows: [["A", "15", "15"], ["B", "20", "20"], ["合計", "35", ""]],
+    }));
+  });
 });

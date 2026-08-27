@@ -2,6 +2,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import { remarkObsidianImages } from "./remarkObsidianImages";
+import { calculateTableAggregates } from "./tableAggregation";
 
 type MarkdownPosition = {
   start?: { line?: number; offset?: number };
@@ -177,13 +178,14 @@ function encodeMarkdownTableCell(value: string): string {
 }
 
 export function serializeMarkdownTable(table: Pick<MarkdownTableOccurrence, "headers" | "rows" | "alignments" | "lineEnding"> & { continuationPrefix?: string }): string {
-  const width = Math.max(1, table.headers.length);
+  const calculated = calculateTableAggregates(table);
+  const width = Math.max(1, calculated.headers.length);
   const row = (values: string[]) => `| ${Array.from({ length: width }, (_, column) => encodeMarkdownTableCell(values[column] ?? "")).join(" | ")} |`;
   const separator = row(Array.from({ length: width }, (_, column) => {
     const alignment = table.alignments[column] ?? null;
     return alignment === "left" ? ":---" : alignment === "center" ? ":---:" : alignment === "right" ? "---:" : "---";
   }));
-  return [row(table.headers), separator, ...table.rows.map(row)].map((line, index) => `${index > 0 ? table.continuationPrefix ?? "" : ""}${line}`).join(table.lineEnding);
+  return [row(calculated.headers), separator, ...calculated.rows.map(row)].map((line, index) => `${index > 0 ? table.continuationPrefix ?? "" : ""}${line}`).join(table.lineEnding);
 }
 
 function collectHtmlImages(node: MarkdownNode): ImageMarkdownOccurrence[] {

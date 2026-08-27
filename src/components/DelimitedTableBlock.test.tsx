@@ -60,6 +60,24 @@ describe("DelimitedTableBlock", () => {
     expect(screen.queryByRole("dialog", { name: "表を編集" })).toBeNull();
   });
 
+  it("displays vertical and horizontal aggregate results from the source", () => {
+    render(<DelimitedTableBlock language="csv" source={"項目,値1,値2,合計\nA,10,20,old\nB,5,x,old\n合計,old,old,old"} />);
+    const bodyRows = screen.getByRole("table").querySelectorAll("tbody tr");
+
+    expect(bodyRows[0].textContent).toBe("A102030");
+    expect(bodyRows[1].textContent).toBe("B5x5");
+    expect(bodyRows[2].textContent).toBe("合計1520");
+  });
+
+  it("serializes calculated cells when applying an edited delimited table", () => {
+    const onSave = vi.fn().mockReturnValue(true);
+    render(<DelimitedTableBlock language="csv" source={"項目,値\nA,10\nB,20\n合計,"} onSave={onSave} />);
+    fireEvent.click(screen.getByRole("button", { name: "表を編集" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "表を編集" })).getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith("項目,値\nA,10\nB,20\n合計,30");
+  });
+
   it("requests the current Blob-based CSV download", () => {
     const createObjectUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:table");
     const revokeObjectUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);

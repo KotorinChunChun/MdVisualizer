@@ -1,4 +1,5 @@
-import { ClipboardEvent, KeyboardEvent, MouseEvent, useEffect, useId, useRef, useState } from "react";
+import { ClipboardEvent, KeyboardEvent, MouseEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { calculateTableAggregates, isTableAggregateResultCell } from "../lib/tableAggregation";
 
 export type TableColumnAlignment = "left" | "center" | "right" | null;
 
@@ -50,6 +51,7 @@ export function TableEditorDialog({
   const cellRefs = useRef(new Map<string, HTMLInputElement>());
   const dragging = useRef(false);
   const programmaticFocus = useRef<string | null>(null);
+  const calculated = useMemo(() => calculateTableAggregates({ headers, rows }), [headers, rows]);
 
   useEffect(() => {
     const finishDragging = () => { dragging.current = false; };
@@ -73,7 +75,10 @@ export function TableEditorDialog({
 
   const cellValue = (point: GridPoint) => point.row === 0
     ? headers[point.column] ?? ""
-    : rows[point.row - 1]?.[point.column] ?? "";
+    : calculated.rows[point.row - 1]?.[point.column] ?? "";
+
+  const isCalculatedCell = (point: GridPoint) => point.row > 0
+    && isTableAggregateResultCell(calculated, point.row - 1, point.column);
 
   const updateCell = (point: GridPoint, value: string) => {
     if (point.row === 0) {
@@ -148,6 +153,7 @@ export function TableEditorDialog({
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>, point: GridPoint) => {
+    if (isCalculatedCell(point)) return;
     const grid = pastedCells(event.clipboardData.getData("text/plain"));
     if (!grid.length) return;
     event.preventDefault();
@@ -222,12 +228,12 @@ export function TableEditorDialog({
               </select>}
             </th>;
           })}</tr></thead>
-          <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex}>
+          <tbody>{rows.map((_, rowIndex) => <tr key={rowIndex}>
             <td className="table-editor-row-action"><button type="button" aria-label={`行 ${rowIndex + 1}を削除`} onClick={() => setRows((current) => current.filter((_, index) => index !== rowIndex))}>×</button></td>
             {headers.map((_, column) => {
               const point = { row: rowIndex + 1, column };
               return <td key={column} className={isSelected(point) ? "is-selected" : undefined}>
-                <input {...gridInputProps(point)} aria-label={`行 ${rowIndex + 1} 列 ${column + 1}`} value={row[column] ?? ""} onChange={(event) => updateCell(point, event.target.value)} />
+                <input {...gridInputProps(point)} aria-label={`行 ${rowIndex + 1} 列 ${column + 1}`} value={cellValue(point)} readOnly={isCalculatedCell(point)} onChange={(event) => updateCell(point, event.target.value)} />
               </td>;
             })}
           </tr>)}</tbody>
@@ -236,7 +242,7 @@ export function TableEditorDialog({
       <footer className="table-editor-footer">
         <button type="button" onClick={onCancel}>キャンセル</button>
         <button type="button" className="table-editor-save" onClick={() => {
-          const accepted = onSave({ headers, rows: rows.map((row) => headers.map((_, column) => row[column] ?? "")), alignments });
+          const accepted = onSave({ headers, rows: calculated.rows.map((row) => headers.map((_, column) => row[column] ?? "")), alignments });
           if (accepted !== false) onCancel();
         }}>反映</button>
       </footer>

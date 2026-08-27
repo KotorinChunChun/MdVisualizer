@@ -6,6 +6,7 @@ import {
   type DelimitedTableLanguage,
 } from "../lib/delimitedTable";
 import { TableEditorDialog } from "./TableEditorDialog";
+import { calculateTableAggregates } from "../lib/tableAggregation";
 import "../styles/delimited-table.css";
 
 interface DelimitedTableBlockProps {
@@ -25,6 +26,9 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
     try { return { data: parseDelimitedTable(source, language), error: null }; }
     catch (error) { return { data: null, error: String(error) }; }
   }, [language, source]);
+  const table = useMemo(() => parsed.data
+    ? { ...parsed.data, ...calculateTableAggregates(parsed.data) }
+    : null, [parsed.data]);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortState>(null);
   const [visibleColumns, setVisibleColumns] = useState<boolean[]>([]);
@@ -38,18 +42,18 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
   useEffect(() => {
     setQuery("");
     setSort(null);
-    setVisibleColumns(parsed.data?.headers.map(() => true) ?? []);
+    setVisibleColumns(table?.headers.map(() => true) ?? []);
     setColumnsOpen(false);
     setPanesOpen(false);
     setSelectedValues({});
     setPage(0);
     setEditing(false);
-  }, [language, source, parsed.data?.headers.length]);
+  }, [language, source, table?.headers.length]);
 
   const filteredRows = useMemo(() => {
-    if (!parsed.data) return [];
+    if (!table) return [];
     const normalizedQuery = query.trim().toLocaleLowerCase("ja");
-    const filtered = parsed.data.rows.filter((row) => {
+    const filtered = table.rows.filter((row) => {
       if (normalizedQuery && !row.some((cell) => cell.toLocaleLowerCase("ja").includes(normalizedQuery))) return false;
       return Object.entries(selectedValues).every(([column, values]) => values.length === 0 || values.includes(row[Number(column)] ?? ""));
     });
@@ -58,17 +62,17 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
       const compared = compareDelimitedValues(left.row[sort.column] ?? "", right.row[sort.column] ?? "");
       return (sort.direction === "ascending" ? compared : -compared) || left.index - right.index;
     }).map(({ row }) => row);
-  }, [parsed.data, query, selectedValues, sort]);
+  }, [table, query, selectedValues, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, pageCount - 1);
   const pageRows = filteredRows.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
-  const visibleIndexes = parsed.data?.headers.map((_, index) => index).filter((index) => visibleColumns[index] !== false) ?? [];
+  const visibleIndexes = table?.headers.map((_, index) => index).filter((index) => visibleColumns[index] !== false) ?? [];
 
   useEffect(() => { setPage(0); }, [query, selectedValues, sort, pageSize]);
 
-  if (parsed.error || !parsed.data) return <div className="data-grid-error" role="alert">表を解析できません: {parsed.error}</div>;
-  const { headers, rows, delimiter } = parsed.data;
+  if (parsed.error || !parsed.data || !table) return <div className="data-grid-error" role="alert">表を解析できません: {parsed.error}</div>;
+  const { headers, rows, delimiter } = table;
 
   const toggleSort = (column: number) => setSort((current) => current?.column === column
     ? { column, direction: current.direction === "ascending" ? "descending" : "ascending" }
@@ -115,6 +119,6 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
     <div className="data-grid-table-wrap"><table className="data-grid-table"><thead><tr>{visibleIndexes.map((column) => <th key={column}><button type="button" onClick={() => toggleSort(column)} aria-sort={sort?.column === column ? sort.direction : "none"}>{headers[column]}<span>{sort?.column === column ? sort.direction === "ascending" ? "▲" : "▼" : "◇"}</span></button></th>)}</tr></thead>
       <tbody>{pageRows.length ? pageRows.map((row, rowIndex) => <tr key={`${currentPage}-${rowIndex}`}>{visibleIndexes.map((column) => <td key={column}>{row[column]}</td>)}</tr>) : <tr><td className="data-grid-empty" colSpan={Math.max(1, visibleIndexes.length)}>一致する行はありません</td></tr>}</tbody></table></div>
     <footer className="data-grid-footer"><span>{filteredRows.length} / {rows.length} 行</span><span className="spacer" /><label>表示件数<select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={Number.MAX_SAFE_INTEGER}>すべて</option></select></label><button type="button" disabled={currentPage <= 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>前へ</button><span>{currentPage + 1} / {pageCount}</span><button type="button" disabled={currentPage >= pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))}>次へ</button></footer>
-    {editing && <TableEditorDialog initialHeaders={headers} initialRows={rows} onCancel={() => setEditing(false)} onSave={(table) => onSave?.(serializeDelimitedTable({ delimiter, headers: table.headers, rows: table.rows }))} />}
+    {editing && <TableEditorDialog initialHeaders={parsed.data.headers} initialRows={parsed.data.rows} onCancel={() => setEditing(false)} onSave={(edited) => onSave?.(serializeDelimitedTable({ delimiter, headers: edited.headers, rows: edited.rows }))} />}
   </section>;
 }
