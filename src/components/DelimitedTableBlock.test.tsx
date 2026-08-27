@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DelimitedTableBlock } from "./DelimitedTableBlock";
 
 describe("DelimitedTableBlock", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it("keeps SearchPanes off initially and resets it to off for new source", () => {
     const view = render(<DelimitedTableBlock language="csv" source={"name,city\nAlice,Tokyo\nBob,Osaka"} />);
@@ -55,6 +58,31 @@ describe("DelimitedTableBlock", () => {
 
     expect(onSave).toHaveBeenCalledWith("名前\tvalue\nnew\t1");
     expect(screen.queryByRole("dialog", { name: "表を編集" })).toBeNull();
+  });
+
+  it("requests the current Blob-based CSV download", () => {
+    const createObjectUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:table");
+    const revokeObjectUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    let clickedAnchor: { href: string; download: string } | null = null;
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+      clickedAnchor = { href: this.href, download: this.download };
+    });
+    render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "CSV" }));
+
+    expect(createObjectUrl).toHaveBeenCalledWith(expect.objectContaining({ type: "text/csv;charset=utf-8" }));
+    expect(clickedAnchor).toEqual({ href: "blob:table", download: "table.csv" });
+    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:table");
+  });
+
+  it("delegates the current print action to the whole window", () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+    render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "印刷" }));
+
+    expect(print).toHaveBeenCalledOnce();
   });
 
   it("shows a clear parsing error and does not render controls", () => {
