@@ -206,6 +206,13 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
   if (!language && isShortcutKeySource(source)) {
     return <ShortcutKeySvg source={source} variant="inline" />;
   }
+  if (!language) {
+    const colorCode = /^#[0-9a-fA-F]{6}$/.test(source);
+    return <code className={[className, "markdown-inline-code", colorCode ? "markdown-inline-code--color" : ""].filter(Boolean).join(" ")} {...props}>
+      {colorCode && <span className="markdown-inline-code__color-swatch" style={{ backgroundColor: source }} aria-hidden="true" />}
+      {children}
+    </code>;
+  }
   if (language === "drawio") {
     const sourceOffset = node?.position?.start.offset;
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);

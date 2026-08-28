@@ -17,6 +17,9 @@
   --link-hover: #93c5fd;
   --inline-code-bg: #242933;
   --inline-code-color: #eceff4;
+  --inline-code-text-color: #f87171;
+  --inline-color-code-text: #eceff4;
+  --inline-code-swatch-border: #8892b0;
   --code-block-bg: #1a1c23;
   --code-block-color: #eceff4;
   --table-header-bg: #242933;
@@ -383,6 +386,9 @@ body {
   font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.9em;
 }
+.markdown-body code.markdown-inline-code { color: var(--inline-code-text-color, #c62828); }
+.markdown-body code.markdown-inline-code--color { color: var(--inline-color-code-text, var(--text-primary)); }
+.markdown-inline-code__color-swatch { display: inline-block; width: .9em; height: .9em; margin-right: .38em; border: 1px solid var(--inline-code-swatch-border, var(--border-color)); border-radius: 2px; vertical-align: -.08em; }
 
 .markdown-body pre {
   background-color: var(--code-block-bg);
@@ -781,6 +787,9 @@ body {
   .app-container {
     --inline-code-bg: #eef2f6;
     --inline-code-color: #24292f;
+    --inline-code-text-color: #b42318;
+    --inline-color-code-text: #24292f;
+    --inline-code-swatch-border: #57606a;
     --code-block-bg: #f6f8fa;
     --code-block-color: #24292f;
     --table-header-bg: #e8edf3;

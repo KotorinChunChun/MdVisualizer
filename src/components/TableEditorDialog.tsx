@@ -399,7 +399,17 @@ export function TableEditorDialog({
     focusCell(point);
   };
 
-  const openContextMenu = (event: MouseEvent<HTMLInputElement>, point: GridPoint) => {
+  const contextPointForTarget = (target: EventTarget | null): GridPoint => {
+    if (!(target instanceof Element)) return selection.focus;
+    const cell = target.closest<HTMLElement>("[data-table-column-index]");
+    const column = Number(cell?.dataset.tableColumnIndex);
+    if (!cell || !Number.isInteger(column) || column < 0 || column >= headers.length) return selection.focus;
+    const rowElement = cell.closest<HTMLElement>("[data-table-row-index]");
+    const rowIndex = Number(rowElement?.dataset.tableRowIndex);
+    return { row: rowElement && Number.isInteger(rowIndex) ? rowIndex + 1 : 0, column };
+  };
+
+  const openContextMenu = (event: MouseEvent<HTMLElement>, point = contextPointForTarget(event.target)) => {
     event.preventDefault();
     event.stopPropagation();
     selectCell(point);
@@ -438,8 +448,8 @@ export function TableEditorDialog({
     onContextMenu: (event: MouseEvent<HTMLInputElement>) => openContextMenu(event, point),
   });
 
-  return <div className="table-editor-overlay">
-    <section ref={dialogRef} className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onCopy={handleCopy} onPointerMove={moveHandlePointer} onPointerUp={finishHandlePointer} onPointerCancel={(event) => finishHandlePointer(event, true)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); }}>
+  return <div className="table-editor-overlay" onContextMenu={(event) => openContextMenu(event)}>
+    <section ref={dialogRef} className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onCopy={handleCopy} onPointerMove={moveHandlePointer} onPointerUp={finishHandlePointer} onPointerCancel={(event) => finishHandlePointer(event, true)} onContextMenu={(event) => openContextMenu(event)}>
       <header className="table-editor-toolbar">
         <strong id={titleId}>表を編集</strong>
         <div className="table-editor-aggregate-menu">
@@ -465,7 +475,7 @@ export function TableEditorDialog({
             ].filter(Boolean).join(" ");
             return <th key={column} data-table-column-index={column} className={columnClasses || undefined}>
               <button type="button" className="table-editor-insert table-editor-insert-column is-before" aria-label={`列 ${column + 1}の左に挿入`} onClick={() => insertColumn(column)}>＋</button>
-              {column === headers.length - 1 && <button type="button" className="table-editor-insert table-editor-insert-column is-after" aria-label={`列 ${column + 1}の右に挿入`} onClick={() => insertColumn(column + 1)}>＋</button>}
+              <button type="button" className="table-editor-insert table-editor-insert-column is-after" aria-label={`列 ${column + 1}の右に挿入`} onClick={() => insertColumn(column + 1)}>＋</button>
               <button type="button" className="table-editor-delete table-editor-delete-column" aria-label={`列 ${column + 1}を削除`} disabled={headers.length <= 1} onClick={() => requestRemoveColumn(column)}>−</button>
               <button type="button" className="table-editor-drag-handle table-editor-column-drag-handle" aria-label={`列 ${column + 1}をドラッグして並び替え`} title="ドラッグで列移動、クリックで列選択" onClick={() => { if (!suppressHandleClick.current) selectColumn(column); }} onPointerDown={(event) => beginHandlePointer(event, "column", column)}>•••</button>
               <div className="table-editor-heading">
@@ -515,7 +525,7 @@ export function TableEditorDialog({
                 dragState?.axis === "column" && dragState.over === column ? "is-drop-target" : "",
                 reordered?.axis === "column" && reordered.index === column ? "is-reordered" : "",
               ].filter(Boolean).join(" ");
-              return <td key={column} className={cellClasses || undefined}>
+              return <td key={column} data-table-column-index={column} className={cellClasses || undefined}>
                 <input {...gridInputProps(point)} aria-label={`行 ${rowIndex + 1} 列 ${column + 1}`} value={cellValue(point)} readOnly={isCalculatedCell(point)} onChange={(event) => updateCell(point, event.target.value)} />
               </td>;
             })}
@@ -533,7 +543,7 @@ export function TableEditorDialog({
         aria-label="表編集操作"
         tabIndex={-1}
         style={{ left: contextMenu.x, top: contextMenu.y }}
-        onContextMenu={(event) => event.preventDefault()}
+        onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); }}
         onPointerDown={(event) => event.stopPropagation()}
       >
         {contextMenu.point.row > 0 && <button type="button" role="menuitem" onClick={() => runContextAction(() => selectRow(contextMenu.point.row - 1))}>行全体を選択</button>}

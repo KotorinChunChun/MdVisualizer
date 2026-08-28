@@ -121,6 +121,25 @@ describe("MarkdownPreview sanitization", () => {
     expect(container.querySelector("svg.shortcut-key-svg--inline")?.getAttribute("aria-label")).toBe("キーボードショートカット: Ctrl + S");
     expect(container.querySelector("svg.shortcut-key-svg--block")?.getAttribute("aria-label")).toBe("キーボードショートカット: Ctrl + Shift + S");
   });
+
+  it("adds a filled swatch only to exact six-digit hexadecimal inline colors", () => {
+    const { container } = render(<MarkdownPreview
+      content={"`#12Ab34` `#12Ab3` `prefix#12Ab34` `plain code`"}
+      baseDir=""
+      imageVersions={{}}
+    />);
+    const inlineCodes = [...container.querySelectorAll<HTMLElement>("code.markdown-inline-code")];
+    const colorCode = inlineCodes.find((element) => element.textContent === "#12Ab34")!;
+    const ordinary = inlineCodes.find((element) => element.textContent === "plain code")!;
+    const swatches = container.querySelectorAll<HTMLElement>(".markdown-inline-code__color-swatch");
+
+    expect(swatches).toHaveLength(1);
+    expect(colorCode.classList.contains("markdown-inline-code--color")).toBe(true);
+    expect(swatches[0].style.backgroundColor).toBe("rgb(18, 171, 52)");
+    expect(ordinary.classList.contains("markdown-inline-code--color")).toBe(false);
+    expect(inlineCodes.find((element) => element.textContent === "#12Ab3")?.querySelector(".markdown-inline-code__color-swatch")).toBeNull();
+    expect(inlineCodes.find((element) => element.textContent === "prefix#12Ab34")?.querySelector(".markdown-inline-code__color-swatch")).toBeNull();
+  });
 });
 
 describe("countMermaidFences", () => {

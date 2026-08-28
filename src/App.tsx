@@ -1070,6 +1070,12 @@ export function App() {
   }, [canEditActive, editorMode, releasePaneSync]);
 
   const handlePreviewContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    const targetElement = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : null;
+    if (targetElement?.closest(".table-editor-overlay")) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (!activeTab?.document || activeTab.document.kind !== "markdown" || viewModeRef.current === "presentation") return;
     const root = markdownRef.current;
     const target = event.target instanceof Node ? event.target : null;
@@ -1081,7 +1087,6 @@ export function App() {
     const clickedBlock = blocks.find((block) => Number(block.dataset.sourceLine) === clickedLine);
     const selection = window.getSelection();
     const selectedRange = previewSelectionSourceRange(selection, root, sourceLines, clickedLine);
-    const targetElement = target instanceof Element ? target : target.parentElement;
     const rowElement = targetElement?.closest<HTMLTableRowElement>("tr") ?? null;
     const tableRow = rowElement && root.contains(rowElement) ? rowElement : null;
     setPreviewContext({

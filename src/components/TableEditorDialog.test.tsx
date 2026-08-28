@@ -198,13 +198,29 @@ describe("TableEditorDialog grid editing", () => {
     expect(screen.getByRole("button", { name: "行 2の下に挿入" })).toBeTruthy();
   });
 
-  it("opens a foreground table-editor menu and blocks the background context menu", () => {
+  it("shows both left and right insert buttons on every column", () => {
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} onCancel={() => undefined} onSave={() => true} />);
+
+    expect(screen.getByRole("button", { name: "列 1の左に挿入" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "列 1の右に挿入" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "列 2の左に挿入" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "列 2の右に挿入" })).toBeTruthy();
+  });
+
+  it("opens a foreground table-editor menu and blocks the background context menu", () => {
+    const backgroundMenu = vi.fn();
+    const { container } = render(<div onContextMenu={backgroundMenu}><TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} onCancel={() => undefined} onSave={() => true} /></div>);
+    const overlay = container.querySelector(".table-editor-overlay")!;
     const cell = screen.getByRole("textbox", { name: "行 1 列 1" });
+
+    expect(fireEvent.contextMenu(overlay, { clientX: 50, clientY: 60 })).toBe(false);
+    expect(backgroundMenu).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole("menu", { name: "表編集操作" })).getByRole("menuitem", { name: "列全体を選択" }));
 
     expect(fireEvent.contextMenu(cell, { clientX: 80, clientY: 90 })).toBe(false);
     const menu = screen.getByRole("menu", { name: "表編集操作" });
     expect(menu.classList.contains("table-editor-context-menu")).toBe(true);
+    expect(backgroundMenu).not.toHaveBeenCalled();
     fireEvent.click(within(menu).getByRole("menuitem", { name: "行全体を選択" }));
 
     const setData = vi.fn();
