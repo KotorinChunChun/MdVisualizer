@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MarkdownPreview } from "./MarkdownPreview";
 
 vi.mock("./DrawioBlock", () => ({
-  DrawioBlock: ({ source, onSave, onMediaOpen, onStorageConvert }: { source: string; onSave?: (source: string) => void; onMediaOpen?: (target: unknown) => void; onStorageConvert?: () => void }) => <div>
-    <button type="button" data-source={source} data-media-open={String(Boolean(onMediaOpen))} onClick={() => onSave?.("<mxGraphModel><root/></mxGraphModel>")}>mock draw.io</button>
+  DrawioBlock: ({ source, headingTitle, onSave, onMediaOpen, onStorageConvert }: { source: string; headingTitle?: string; onSave?: (source: string) => void; onMediaOpen?: (target: unknown) => void; onStorageConvert?: () => void }) => <div>
+    <button type="button" data-source={source} data-title={headingTitle} data-media-open={String(Boolean(onMediaOpen))} onClick={() => onSave?.("<mxGraphModel><root/></mxGraphModel>")}>mock draw.io</button>
     {onStorageConvert && <button type="button" onClick={onStorageConvert}>fence storage</button>}
   </div>,
 }));
@@ -35,6 +35,16 @@ describe("MarkdownPreview draw.io fences", () => {
     expect(buttons[0].dataset.mediaOpen).toBe("true");
     fireEvent.click(buttons[1]);
     expect(onCodeFenceBodyChange).toHaveBeenCalledWith(expect.objectContaining({ language: "drawio", body: "compressed" }), "<mxGraphModel><root/></mxGraphModel>");
+  });
+
+  it("shows the fenced draw.io title beside the block kind", () => {
+    render(<MarkdownPreview
+      content={'```drawio title="システム構成"\n<mxGraphModel/>\n```'}
+      baseDir="C:\\docs"
+      documentPath="C:\\docs\\note.md"
+      imageVersions={{}}
+    />);
+    expect(screen.getByRole("button", { name: "mock draw.io" }).dataset.title).toBe("システム構成");
   });
 
   it("routes standard and Obsidian draw.io image embeds to the external draw.io preview", () => {

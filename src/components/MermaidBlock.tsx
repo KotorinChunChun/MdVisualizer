@@ -22,6 +22,7 @@ interface MermaidBlockProps {
   /** Original source shown by the shared popup when a local translator is used. */
   mediaSource?: string;
   diagramAlt?: string;
+  headingTitle?: string;
   editable?: boolean;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
@@ -43,6 +44,7 @@ export function MermaidBlock({
   onRenderedSvg,
   mediaSource,
   diagramAlt = "Mermaid図",
+  headingTitle,
   editable = false,
   storage,
   onStorageConvert,
@@ -119,7 +121,8 @@ export function MermaidBlock({
     return () => { disposed = true; };
   }, [diagramCount, diagramIndex, localId, mode, source, stableBlockId, statusId, tabId, theme, visible, windowId]);
 
-  const toolbar = showToolbar && <ResponsiveToolbar className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={<span>Mermaid</span>} items={[
+  const toolbarLabel = `Mermaid${headingTitle?.trim() ? ` — ${headingTitle.trim()}` : ""}`;
+  const toolbar = showToolbar && <ResponsiveToolbar collapseAll className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={<span>{toolbarLabel}</span>} items={[
     ...(editable ? [{ id: "edit", priority: 80, node: <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button> }] : []),
     { id: "copy-view", priority: 100, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} /> },
     ...(storage && onStorageConvert ? [{ id: "storage", priority: 10, node: <button className="diagram-action-button" type="button" disabled={convertingStorage} onClick={() => {

@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export interface ResponsiveToolbarItem {
   id: string;
@@ -29,11 +30,20 @@ export function responsiveItemAreaWidth(rootWidth: number, labelWidth: number, h
   return Math.max(0, rootWidth - (hasLabel ? labelWidth + gap : 0));
 }
 
-export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
+export function resolvedResponsiveOverflowIds(
+  progressiveIds: string[],
+  items: Array<Pick<ResponsiveToolbarItem, "id">>,
+  collapseAll: boolean,
+): string[] {
+  return collapseAll && progressiveIds.length > 0 ? items.map((item) => item.id) : progressiveIds;
+}
+
+export function ResponsiveToolbar({ label, ariaLabel, className = "", items, collapseAll = false }: {
   label?: ReactNode;
   ariaLabel: string;
   className?: string;
   items: ResponsiveToolbarItem[];
+  collapseAll?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
@@ -42,6 +52,8 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
   const itemsRef = useRef(items);
   const [overflowIds, setOverflowIds] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   itemsRef.current = items;
 
   useLayoutEffect(() => {
@@ -62,7 +74,8 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
         };
       });
       const availableWidth = responsiveItemAreaWidth(root.clientWidth, labelWidth, Boolean(label), gap);
-      const next = responsiveOverflowIds(availableWidth, widths, gap);
+      const progressive = responsiveOverflowIds(availableWidth, widths, gap);
+      const next = resolvedResponsiveOverflowIds(progressive, itemsRef.current, collapseAll);
       setOverflowIds((current) => current.length === next.length && current.every((id, index) => id === next[index]) ? current : next);
     };
     measure();
@@ -74,6 +87,29 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
       window.removeEventListener("resize", measure);
     };
   });
+
+  useEffect(() => {
+    if (overflowIds.length === 0) setMenuOpen(false);
+  }, [overflowIds.length]);
+
+  useLayoutEffect(() => {
+    if (!menuOpen) return;
+    const updatePosition = () => {
+      const bounds = moreButtonRef.current?.getBoundingClientRect();
+      if (!bounds) return;
+      const right = Math.max(8, window.innerWidth - bounds.right);
+      setMenuPosition(bounds.bottom <= window.innerHeight / 2
+        ? { top: bounds.bottom + 4, right }
+        : { bottom: window.innerHeight - bounds.top + 4, right });
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -99,10 +135,16 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items }: {
       >{item.node}</div>)}
     </div>
     {overflowIds.length > 0 && <div className="responsive-toolbar__more">
-      <button type="button" aria-label="その他の操作" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>…</button>
-      {menuOpen && <div role="menu" aria-label={`${ariaLabel}のその他`} onPointerDown={(event) => event.stopPropagation()}>
+      <button ref={moreButtonRef} type="button" aria-label="その他の操作" aria-expanded={menuOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => setMenuOpen((open) => !open)}>…</button>
+      {menuOpen && menuPosition && createPortal(<div
+        className="responsive-toolbar__menu"
+        role="menu"
+        aria-label={`${ariaLabel}のその他`}
+        style={menuPosition}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
         {items.filter((item) => overflow.has(item.id)).map((item) => <div role="none" key={item.id}>{item.node}</div>)}
-      </div>}
+      </div>, document.body)}
     </div>}
   </div>;
 }

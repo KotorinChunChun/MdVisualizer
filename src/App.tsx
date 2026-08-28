@@ -266,9 +266,9 @@ export function App() {
 
   useEffect(() => {
     const handleMarkdownToast = (event: Event) => {
-      const detail = (event as CustomEvent<{ message?: string; type?: ToastState["type"]; actionLabel?: string; onAction?: ToastState["onAction"] }>).detail;
+      const detail = (event as CustomEvent<{ message?: string; type?: ToastState["type"]; actionLabel?: string; onAction?: ToastState["onAction"]; onMessageClick?: ToastState["onMessageClick"] }>).detail;
       if (!detail?.message) return;
-      setToast({ id: String(Date.now()), message: detail.message, type: detail.type ?? "info", actionLabel: detail.actionLabel, onAction: detail.onAction });
+      setToast({ id: String(Date.now()), message: detail.message, type: detail.type ?? "info", actionLabel: detail.actionLabel, onAction: detail.onAction, onMessageClick: detail.onMessageClick });
     };
     window.addEventListener("markdown-toast", handleMarkdownToast);
     return () => window.removeEventListener("markdown-toast", handleMarkdownToast);
@@ -1669,7 +1669,15 @@ export function App() {
       try {
         const content = replaceMarkdownOccurrence(tab.draft, context.occurrence, drawioExternalReference(staged.filename));
         dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, text: context.source } });
-        setToast({ id: crypto.randomUUID(), message: `${staged.filename} を一時ステージしました。Markdown保存時に外部ファイルとして確定します。`, type: "success" });
+        setToast({
+          id: crypto.randomUUID(),
+          message: `${staged.filename} を一時ステージしました。Markdown保存時に外部ファイルとして確定します。`,
+          type: "success",
+          onMessageClick: async () => {
+            try { await openContainingFolder(tab.document!.path); }
+            catch (error) { setToast({ id: crypto.randomUUID(), message: `保存フォルダーを開けませんでした: ${String(error)}`, type: "error" }); }
+          },
+        });
       } catch (error) {
         await discardStagedAssets([staged.id]);
         throw error;
@@ -1704,7 +1712,15 @@ export function App() {
       try {
         const content = replaceMarkdownOccurrence(tab.draft, context.occurrence, mermaidExternalReference(staged.filename));
         dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, text: context.source } });
-        setToast({ id: crypto.randomUUID(), message: `${staged.filename} を一時ステージしました。Markdown保存時に外部ファイルとして確定します。`, type: "success" });
+        setToast({
+          id: crypto.randomUUID(),
+          message: `${staged.filename} を一時ステージしました。Markdown保存時に外部ファイルとして確定します。`,
+          type: "success",
+          onMessageClick: async () => {
+            try { await openContainingFolder(tab.document!.path); }
+            catch (error) { setToast({ id: crypto.randomUUID(), message: `保存フォルダーを開けませんでした: ${String(error)}`, type: "error" }); }
+          },
+        });
       } catch (error) {
         await discardStagedAssets([staged.id]);
         throw error;

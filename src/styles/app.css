@@ -85,8 +85,14 @@ body {
 .responsive-toolbar__item { flex: 0 0 auto; }
 .responsive-toolbar__item.is-overflowed { position: fixed; left: -100000px; width: max-content; visibility: hidden; pointer-events: none; }
 .responsive-toolbar__more { position: relative; flex: 0 0 auto; }
-.responsive-toolbar__more > [role="menu"] { position: absolute; z-index: 12020; top: calc(100% + 4px); right: 0; display: grid; min-width: 190px; gap: 4px; padding: 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--panel-bg); box-shadow: 0 8px 24px #0008; }
-.responsive-toolbar__more > [role="menu"] > div { display: grid; gap: 4px; }
+.responsive-toolbar__menu { position: fixed; z-index: 12020; display: flex; min-width: 210px; max-height: calc(100vh - 16px); flex-direction: column; align-items: stretch; gap: 4px; padding: 6px; overflow: auto; border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); background: var(--panel-bg); box-shadow: 0 8px 24px #0008; }
+.responsive-toolbar__menu > div,
+.responsive-toolbar__menu .mermaid-toolbar,
+.responsive-toolbar__menu .mermaid-toolbar__copy,
+.responsive-toolbar__menu .mermaid-toolbar__view { display: flex; width: 100%; flex-direction: column; align-items: stretch; gap: 4px; }
+.responsive-toolbar__menu button { width: 100%; min-width: max-content; margin: 0; border-radius: 6px; text-align: left; white-space: nowrap; }
+.responsive-toolbar__menu .mermaid-toolbar__view button:first-child,
+.responsive-toolbar__menu .mermaid-toolbar__view button:last-child { margin: 0; border-radius: 6px; }
 .preview-context-menu [role="separator"] { height: 1px; margin: 4px 2px; background: var(--border-color); }
 .status-bar { min-height: 28px; padding: 5px 12px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 12px; background: var(--panel-bg); }
 .view-controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; padding:7px 12px; background:var(--panel-bg); border-bottom:1px solid var(--border-color); font-size:12px; }
@@ -710,6 +716,8 @@ body {
   transition: opacity 1s ease, transform 1s ease;
 }
 .toast button { pointer-events: auto; }
+.toast-message[role="button"] { pointer-events: auto; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.toast-message[role="button"]:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
 .toast.is-fading { opacity: 0; transform: translateY(10px); pointer-events: none; }
 
 @keyframes slideUp {

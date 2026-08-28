@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadMarkdown } from "../lib/commands";
-import { resolveLocalImagePath } from "../lib/path";
+import { getFileName, resolveLocalImagePath } from "../lib/path";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { MermaidBlock } from "./MermaidBlock";
 
@@ -71,11 +71,11 @@ export function ExternalMermaidBlock({
       blockId={blockId}
       diagramIndex={0}
       diagramCount={1}
+      headingTitle={alt?.trim() || getFileName(path ?? source)}
       editable={editable}
       storage="external"
       onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(diagramSource) : undefined}
       onMediaOpen={onMediaOpen}
     />
-    {alt?.trim() && <span className="inline-image-resize__caption">{alt}</span>}
   </div>;
 }

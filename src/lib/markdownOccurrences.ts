@@ -131,6 +131,14 @@ function parseCodeFence(markdown: string, node: MarkdownNode): CodeFenceOccurren
   };
 }
 
+/** Returns the human-readable title/caption declared on a fenced code block. */
+export function codeFenceTitle(meta: string | null | undefined): string | undefined {
+  if (!meta) return undefined;
+  const match = /(?:^|\s)(?:title|caption)=(?:"([^"]+)"|'([^']+)'|([^\s]+))/i.exec(meta);
+  const title = (match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
+  return title || undefined;
+}
+
 function splitMarkdownTableRow(line: string): string[] {
   let source = line.trim();
   if (source.startsWith("|")) source = source.slice(1);

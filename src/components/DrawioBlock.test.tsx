@@ -10,9 +10,9 @@ describe("DrawioBlock", () => {
   it("previews SVG safely and opens the editor with conversion warnings", () => {
     const onSave = vi.fn();
     const source = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/><path d="M0 0L1 1"/><script>alert(1)</script></svg>';
-    const { container } = render(<DrawioBlock source={source} theme="light" blockId="one" onSave={onSave} />);
+    const { container } = render(<DrawioBlock source={source} theme="light" blockId="one" headingTitle="構成図" onSave={onSave} />);
     expect(container.innerHTML).not.toContain("script");
-    expect(screen.getByText("SVG → draw.io")).toBeTruthy();
+    expect(screen.getByText("SVG → draw.io — 構成図")).toBeTruthy();
     const editButton = screen.getByRole("button", { name: "編集" });
     expect(editButton.classList.contains("diagram-action-button")).toBe(true);
     fireEvent.click(editButton);
@@ -91,16 +91,17 @@ describe("DrawioBlock", () => {
     expect((screen.getByTitle("draw.ioプレビュー") as HTMLIFrameElement).style.height).toBe("100px");
   });
 
-  it("keeps the viewer-provided content viewBox instead of expanding to the SVG root bbox", () => {
+  it("adds a 20px margin to the viewer-provided content viewBox", () => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "79.5 119.5 442 72");
+    svg.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "rect"));
     Object.defineProperty(svg, "getBBox", {
       value: () => ({ x: 0, y: 0, width: 520.5, height: 190.5 }),
     });
 
     const result = fitDrawioSvgToContent(svg);
-    expect(result).toContain('viewBox="79.5 119.5 442 72"');
-    expect(result).not.toContain('viewBox="-12 -12 544.5 214.5"');
+    expect(result).toContain('viewBox="59.5 99.5 482 112"');
+    expect(result).not.toContain('viewBox="-20 -20 560.5 230.5"');
   });
 
   it("offers the same copy and display controls as Mermaid", () => {
@@ -151,7 +152,7 @@ describe("DrawioBlock", () => {
 
     await waitFor(() => expect(screen.queryByTitle("draw.ioプレビュー")).toBeNull());
     const zoom = screen.getByRole("button", { name: "図を拡大" });
-    expect(zoom.querySelector("svg")?.getAttribute("viewBox")).toBe("0 0 400 100");
+    expect(zoom.querySelector("svg")?.getAttribute("viewBox")).toBe("-20 -20 440 140");
   });
 
   it("switches an embedded draw.io block to external storage", async () => {

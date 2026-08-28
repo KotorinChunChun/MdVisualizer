@@ -2,8 +2,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./MermaidBlock", () => ({
-  MermaidBlock: ({ source, storage, editable, onStorageConvert }: { source: string; storage?: string; editable?: boolean; onStorageConvert?: () => void }) => <div>
-    <output data-testid="embedded-mermaid" data-source={source} data-storage={storage} data-editable={String(editable)} />
+  MermaidBlock: ({ source, headingTitle, storage, editable, onStorageConvert }: { source: string; headingTitle?: string; storage?: string; editable?: boolean; onStorageConvert?: () => void }) => <div>
+    <output data-testid="embedded-mermaid" data-source={source} data-title={headingTitle} data-storage={storage} data-editable={String(editable)} />
     {onStorageConvert && <button type="button" onClick={onStorageConvert}>embedded storage</button>}
   </div>,
 }));
@@ -31,6 +31,7 @@ describe("MarkdownPreview Mermaid storage", () => {
     />);
 
     expect(screen.getByTestId("embedded-mermaid").dataset.storage).toBe("embedded");
+    expect(screen.getByTestId("embedded-mermaid").dataset.title).toBe("flow");
     fireEvent.click(screen.getByRole("button", { name: "embedded storage" }));
     expect(onMermaidStorageConvert).toHaveBeenNthCalledWith(1, expect.objectContaining({
       storage: "embedded",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  codeFenceTitle,
   collectEditableMarkdownOccurrences,
   MarkdownOccurrenceConflictError,
   replaceCodeFenceBody,
@@ -10,6 +11,13 @@ import {
 } from "./markdownOccurrences";
 
 describe("editable Markdown occurrences", () => {
+  it("extracts quoted and unquoted diagram titles from fence metadata", () => {
+    expect(codeFenceTitle('title="システム 構成"')).toBe("システム 構成");
+    expect(codeFenceTitle("caption='処理フロー'")).toBe("処理フロー");
+    expect(codeFenceTitle("title=overview other=value")).toBe("overview");
+    expect(codeFenceTitle("other=value")).toBeUndefined();
+  });
+
   it("collects fenced blocks, duplicate images, HTML images, and inline SVG with exact ranges", () => {
     const markdown = [
       "```csv",

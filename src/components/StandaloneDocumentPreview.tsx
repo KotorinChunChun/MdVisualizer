@@ -51,6 +51,7 @@ export function StandaloneDocumentPreview({
         blockId="standalone-document"
         diagramIndex={0}
         diagramCount={1}
+        headingTitle={getFileName(document.path)}
         onMediaOpen={onMediaOpen}
       />
     </div>;
@@ -62,6 +63,7 @@ export function StandaloneDocumentPreview({
         source={document.content}
         theme={theme}
         blockId="standalone-document"
+        headingTitle={getFileName(document.path)}
         onSave={onDrawioSave}
         onMediaOpen={onMediaOpen}
       />

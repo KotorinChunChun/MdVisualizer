@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { responsiveItemAreaWidth, responsiveOverflowIds } from "./ResponsiveToolbar";
+import { resolvedResponsiveOverflowIds, responsiveItemAreaWidth, responsiveOverflowIds } from "./ResponsiveToolbar";
 
 describe("responsive toolbar", () => {
   it("moves low-priority non-fixed items to overflow until one line fits", () => {
@@ -20,5 +20,12 @@ describe("responsive toolbar", () => {
     expect(responsiveItemAreaWidth(300, 72, true)).toBe(222);
     expect(responsiveItemAreaWidth(300, 72, false)).toBe(300);
     expect(responsiveItemAreaWidth(50, 72, true)).toBe(0);
+  });
+
+  it("switches every diagram action to the menu as one atomic group", () => {
+    const items = [{ id: "edit" }, { id: "copy-view" }, { id: "storage" }];
+    expect(resolvedResponsiveOverflowIds([], items, true)).toEqual([]);
+    expect(resolvedResponsiveOverflowIds(["storage"], items, true)).toEqual(["edit", "copy-view", "storage"]);
+    expect(resolvedResponsiveOverflowIds(["storage"], items, false)).toEqual(["storage"]);
   });
 });

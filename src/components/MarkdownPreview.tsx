@@ -22,7 +22,7 @@ import { remarkObsidianImages } from "../lib/remarkObsidianImages";
 import { DelimitedTableBlock } from "./DelimitedTableBlock";
 import { TableEditorDialog } from "./TableEditorDialog";
 import { isDelimitedTableLanguage } from "../lib/delimitedTable";
-import { collectEditableMarkdownOccurrences, serializeMarkdownTable, type CodeFenceOccurrence, type ImageMarkdownOccurrence, type InlineSvgOccurrence, type MarkdownTableOccurrence } from "../lib/markdownOccurrences";
+import { codeFenceTitle, collectEditableMarkdownOccurrences, serializeMarkdownTable, type CodeFenceOccurrence, type ImageMarkdownOccurrence, type InlineSvgOccurrence, type MarkdownTableOccurrence } from "../lib/markdownOccurrences";
 import { parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { DrawioBlock } from "./DrawioBlock";
@@ -213,6 +213,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       source={String(children ?? "").replace(/\n$/, "")}
       theme={context.theme}
       blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
+      headingTitle={codeFenceTitle(occurrence?.meta)}
       storage={occurrence ? "embedded" : undefined}
       onStorageConvert={occurrence && context.documentPath && context.onDrawioStorageConvert
         ? () => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence, source: String(children ?? "").replace(/\n$/, "") })
@@ -256,6 +257,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       blockId={`offset-${sourceOffset ?? diagramIndex}`}
       diagramIndex={diagramIndex}
       diagramCount={context.mermaidFenceOffsets.length}
+      headingTitle={codeFenceTitle(occurrence?.meta)}
       onMediaOpen={context.onMediaOpen}
       editable={!context.staticMode && !context.presentationMode && Boolean(context.documentPath)}
       storage={occurrence ? "embedded" : undefined}

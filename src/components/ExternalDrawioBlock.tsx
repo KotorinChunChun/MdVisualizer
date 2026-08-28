@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadMarkdown, saveMarkdown } from "../lib/commands";
-import { resolveLocalImagePath } from "../lib/path";
+import { getFileName, resolveLocalImagePath } from "../lib/path";
 import type { MarkdownLoadResult } from "../types/app";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { DrawioBlock } from "./DrawioBlock";
@@ -106,11 +106,11 @@ export function ExternalDrawioBlock({
       source={stagedSource ?? document!.content}
       theme={theme}
       blockId={blockId}
+      headingTitle={alt?.trim() || getFileName(path ?? source)}
       storage="external"
       onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(stagedSource ?? document!.content) : undefined}
       onSave={editable && (document || (stagedSource !== undefined && onStagedSourceChange)) ? save : undefined}
       onMediaOpen={onMediaOpen}
     />
-    {alt?.trim() && <span className="inline-image-resize__caption">{alt}</span>}
   </div>;
 }

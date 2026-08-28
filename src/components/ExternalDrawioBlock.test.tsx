@@ -8,8 +8,8 @@ const { loadMarkdown, saveMarkdown } = vi.hoisted(() => ({
 
 vi.mock("../lib/commands", () => ({ loadMarkdown, saveMarkdown }));
 vi.mock("./DrawioBlock", () => ({
-  DrawioBlock: ({ source, onSave, onStorageConvert }: { source: string; onSave?: (content: string) => Promise<boolean | void>; onStorageConvert?: () => void }) => <div>
-    <button type="button" data-testid="external-drawio" data-editable={String(Boolean(onSave))} onClick={() => void onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
+  DrawioBlock: ({ source, headingTitle, onSave, onStorageConvert }: { source: string; headingTitle?: string; onSave?: (content: string) => Promise<boolean | void>; onStorageConvert?: () => void }) => <div>
+    <button type="button" data-testid="external-drawio" data-title={headingTitle} data-editable={String(Boolean(onSave))} onClick={() => void onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
     {onStorageConvert && <button type="button" onClick={onStorageConvert}>埋め込みへ切替</button>}
   </div>,
 }));
@@ -50,13 +50,14 @@ describe("ExternalDrawioBlock", () => {
       expectedRevision: "revision-1",
       stagedAssetIds: [],
     }));
-    expect(screen.getByText("構成図")).toBeTruthy();
+    expect(screen.getByTestId("external-drawio").dataset.title).toBe("構成図");
   });
 
   it("does not expose editing in a static preview", async () => {
     loadMarkdown.mockResolvedValue(loaded);
     render(<ExternalDrawioBlock source="diagrams/system.drawio" baseDir="C:\\docs" theme="dark" blockId="image-2" version={0} editable={false} />);
     expect((await screen.findByTestId("external-drawio")).dataset.editable).toBe("false");
+    expect(screen.getByTestId("external-drawio").dataset.title).toBe("system.drawio");
   });
 
   it("shows a reload action when the referenced file cannot be loaded", async () => {

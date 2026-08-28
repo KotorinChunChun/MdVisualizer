@@ -27,7 +27,19 @@ export const Toast: React.FC<ToastProps> = ({ toast, onRestore, onClose }) => {
 
   return (
     <div className={`toast toast-${toast.type}${fading ? " is-fading" : ""}`}>
-      <span className="toast-message">{toast.message}</span>
+      <span
+        className="toast-message"
+        role={toast.onMessageClick ? "button" : undefined}
+        tabIndex={toast.onMessageClick ? 0 : undefined}
+        title={toast.onMessageClick ? "クリックして保存フォルダーを開く" : undefined}
+        onClick={toast.onMessageClick ? () => void toast.onMessageClick?.() : undefined}
+        onKeyDown={toast.onMessageClick ? (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            void toast.onMessageClick?.();
+          }
+        } : undefined}
+      >{toast.message}</span>
       {toast.restorePath && onRestore && (
         <button
           className="btn btn-restore"

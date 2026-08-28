@@ -17,4 +17,11 @@ describe("button interaction styles", () => {
   it("shares one action-button shape between Mermaid and draw.io", () => {
     expect(appCss).toContain(".diagram-action-button { min-height: 30px;");
   });
+
+  it("renders responsive overflow actions as a foreground vertical menu", () => {
+    expect(appCss).toContain(".responsive-toolbar__menu { position: fixed; z-index: 12020;");
+    expect(appCss).toContain("flex-direction: column;");
+    expect(appCss).toContain(".responsive-toolbar__menu button { width: 100%;");
+    expect(appCss).toContain("white-space: nowrap;");
+  });
 });

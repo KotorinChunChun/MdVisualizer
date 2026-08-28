@@ -89,10 +89,10 @@ describe("MermaidBlock", () => {
 
   it("opens the Mermaid GUI editor placeholder from the header pencil", async () => {
     mocks.renderMermaid.mockResolvedValueOnce("<svg><text>diagram</text></svg>");
-    render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" editable />);
+    render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" headingTitle="処理フロー" editable />);
 
     const header = screen.getByRole("toolbar", { name: "Mermaidブロック操作" });
-    expect(header.textContent).toContain("Mermaid");
+    expect(header.textContent).toContain("Mermaid — 処理フロー");
     expect(screen.getByRole("button", { name: "Mermaid GUI編集" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集" }));
     expect(screen.getByRole("dialog", { name: "Mermaid GUI編集" })).toBeTruthy();

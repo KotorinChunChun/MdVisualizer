@@ -29,4 +29,15 @@ describe("Toast", () => {
     screen.getByRole("button", { name: "ファイルとしてコピー" }).click();
     expect(onAction).toHaveBeenCalledOnce();
   });
+
+  it("opens the save folder when the staged-file message is clicked or activated from the keyboard", () => {
+    const onMessageClick = vi.fn();
+    render(<Toast toast={{ id: "notice-3", message: "diagram.drawio を一時ステージしました", type: "success", onMessageClick }} onClose={vi.fn()} />);
+    const message = screen.getByRole("button", { name: "diagram.drawio を一時ステージしました" });
+
+    message.click();
+    expect(onMessageClick).toHaveBeenCalledTimes(1);
+    message.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(onMessageClick).toHaveBeenCalledTimes(2);
+  });
 });

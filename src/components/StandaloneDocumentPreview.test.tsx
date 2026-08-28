@@ -7,14 +7,14 @@ vi.mock("./ImageRenderer", () => ({
 }));
 
 vi.mock("./MermaidBlock", () => ({
-  MermaidBlock: ({ source, mode, diagramCount }: { source: string; mode: string; diagramCount: number }) => (
-    <div data-testid="mermaid-preview" data-mode={mode} data-count={diagramCount}>{source}</div>
+  MermaidBlock: ({ source, mode, diagramCount, headingTitle }: { source: string; mode: string; diagramCount: number; headingTitle?: string }) => (
+    <div data-testid="mermaid-preview" data-mode={mode} data-count={diagramCount} data-title={headingTitle}>{source}</div>
   ),
 }));
 
 vi.mock("./DrawioBlock", () => ({
-  DrawioBlock: ({ source, onSave }: { source: string; onSave?: (source: string) => void }) => (
-    <button type="button" data-testid="drawio-preview" onClick={() => onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
+  DrawioBlock: ({ source, headingTitle, onSave }: { source: string; headingTitle?: string; onSave?: (source: string) => void }) => (
+    <button type="button" data-testid="drawio-preview" data-title={headingTitle} onClick={() => onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
   ),
 }));
 
@@ -62,6 +62,7 @@ describe("StandaloneDocumentPreview", () => {
     expect(screen.getByTestId("mermaid-preview").textContent).toContain("A --> B");
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-mode")).toBe("on");
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-count")).toBe("1");
+    expect(screen.getByTestId("mermaid-preview").dataset.title).toBe("flow.mmd");
   });
 
   it("routes a draw.io file through the existing draw.io renderer and save callback", () => {
@@ -77,6 +78,7 @@ describe("StandaloneDocumentPreview", () => {
 
     screen.getByTestId("drawio-preview").click();
     expect(screen.getByTestId("drawio-preview").textContent).toContain("mxfile");
+    expect(screen.getByTestId("drawio-preview").dataset.title).toBe("system.drawio");
     expect(onDrawioSave).toHaveBeenCalledWith("<mxfile><diagram name=\"saved\"/></mxfile>");
   });
 });

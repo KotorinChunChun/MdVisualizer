@@ -48,14 +48,22 @@ export function drawioPreviewHeight(svgSource: string, availableWidth: number): 
   return Math.max(1, Math.ceil(availableWidth * viewBox[3] / viewBox[2]));
 }
 
-export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 12): string {
+export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 20): string {
   const fitted = svg.cloneNode(true) as SVGSVGElement;
   const existingViewBox = svg.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
   const hasUsableViewBox = existingViewBox?.length === 4
     && existingViewBox.every(Number.isFinite)
     && existingViewBox[2] > 0
     && existingViewBox[3] > 0;
-  if (!hasUsableViewBox) {
+  const hasDrawableContent = Boolean(svg.querySelector("path,rect,circle,ellipse,line,polyline,polygon,text,image,foreignObject,use"));
+  if (hasUsableViewBox && hasDrawableContent) {
+    fitted.setAttribute("viewBox", [
+      existingViewBox[0] - padding,
+      existingViewBox[1] - padding,
+      existingViewBox[2] + padding * 2,
+      existingViewBox[3] + padding * 2,
+    ].join(" "));
+  } else if (!hasUsableViewBox) {
     try {
       const bounds = svg.getBBox();
       if ([bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite)
@@ -100,10 +108,11 @@ export function isEmptyDrawioSource(source: string): boolean {
   return Boolean(parsed.querySelector("mxGraphModel, mxfile"));
 }
 
-export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert, onSave, onMediaOpen }: {
+export function DrawioBlock({ source, theme, blockId, headingTitle, storage, onStorageConvert, onSave, onMediaOpen }: {
   source: string;
   theme: string;
   blockId: string;
+  headingTitle?: string;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
   onSave?: (source: string) => boolean | void | Promise<boolean | void>;
@@ -126,7 +135,14 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
   }, [source]);
   const safeSourceSvg = useMemo(() => {
     if (kind !== "svg") return undefined;
-    try { return sanitizeSvgXml(source); }
+    try {
+      const sanitized = sanitizeSvgXml(source);
+      const parsed = new DOMParser().parseFromString(sanitized, "image/svg+xml");
+      const svg = parsed.documentElement;
+      return parsed.querySelector("parsererror") || svg.localName !== "svg"
+        ? undefined
+        : fitDrawioSvgToContent(svg as unknown as SVGSVGElement);
+    }
     catch { return undefined; }
   }, [kind, source]);
   const viewerDocument = useMemo(
@@ -208,6 +224,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
   }, [display, emptyDiagram, renderedSvg, viewerDocument]);
 
   const label = kind === "svg" ? "SVG → draw.io" : kind === "mermaid" ? "Mermaid → draw.io" : kind === "compressed" ? "draw.io（圧縮データ）" : "draw.io";
+  const toolbarLabel = `${label}${headingTitle?.trim() ? ` — ${headingTitle.trim()}` : ""}`;
   const svgPreview = (svg: string, alt: string, height?: number) => {
     const content = <div className="drawio-block__svg" style={height ? { height } : undefined} dangerouslySetInnerHTML={{ __html: svg }} />;
     return onMediaOpen
@@ -261,7 +278,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
   }
 
   return <div className="drawio-block" data-drawio-block={blockId}>
-    <ResponsiveToolbar className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={<span>{label}</span>} items={[
+    <ResponsiveToolbar collapseAll className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={<span>{toolbarLabel}</span>} items={[
       { id: "copy-view-edit", priority: 100, node: <MermaidToolbar
         source={source}
         svg={renderedSvg}
