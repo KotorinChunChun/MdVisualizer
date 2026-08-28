@@ -1,4 +1,5 @@
 import { ClipboardEvent, KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { calculateTableAggregates, isTableAggregateResultCell } from "../lib/tableAggregation";
 
 export type TableColumnAlignment = "left" | "center" | "right" | null;
@@ -27,6 +28,8 @@ interface TablePointerDragSession extends TableDragState {
   startY: number;
   moved: boolean;
 }
+interface TableEditorContextMenu { point: GridPoint; x: number; y: number }
+interface PendingTableDelete { axis: "row" | "column"; index: number; message: string }
 
 const cellKey = ({ row, column }: GridPoint) => `${row}:${column}`;
 const orderedSelection = ({ anchor, focus }: GridSelection) => ({
@@ -75,11 +78,14 @@ export function TableEditorDialog({
   const dragging = useRef(false);
   const programmaticFocus = useRef<string | null>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
   const pointerDrag = useRef<TablePointerDragSession | null>(null);
   const suppressHandleClick = useRef(false);
   const reorderAnimationTimer = useRef(0);
   const [dragState, setDragState] = useState<TableDragState | null>(null);
   const [reordered, setReordered] = useState<{ axis: "row" | "column"; index: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<TableEditorContextMenu | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingTableDelete | null>(null);
   const calculated = useMemo(() => calculateTableAggregates({ headers, rows }), [headers, rows]);
 
   const applyChanges = () => {
@@ -94,6 +100,23 @@ export function TableEditorDialog({
   }, []);
 
   useEffect(() => () => window.clearTimeout(reorderAnimationTimer.current), []);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    contextMenuRef.current?.focus();
+    const dismiss = (event: globalThis.PointerEvent) => {
+      if (!(event.target instanceof Node) || !contextMenuRef.current?.contains(event.target)) setContextMenu(null);
+    };
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setContextMenu(null);
+    };
+    window.addEventListener("pointerdown", dismiss);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [contextMenu]);
 
   const focusCell = (point: GridPoint) => {
     programmaticFocus.current = cellKey(point);
@@ -134,21 +157,37 @@ export function TableEditorDialog({
       : row));
   };
 
-  const removeColumn = (column: number) => {
+  const commitRemoveColumn = (column: number) => {
     if (headers.length <= 1) return;
-    const hasData = Boolean(headers[column]?.trim()) || rows.some((row) => Boolean(row[column]?.trim()));
-    if (hasData && !window.confirm(`「${headers[column] || `列 ${column + 1}`}」列にはデータがあります。削除しますか？`)) return;
     setHeaders((current) => current.filter((_, index) => index !== column));
     setRows((current) => current.map((row) => row.filter((_, index) => index !== column)));
     setAlignments((current) => current.filter((_, index) => index !== column));
     setSelection({ anchor: { row: 0, column: 0 }, focus: { row: 0, column: 0 } });
   };
 
-  const removeRow = (row: number) => {
-    const hasData = rows[row]?.some((cell) => Boolean(cell?.trim()));
-    if (hasData && !window.confirm(`行 ${row + 1}にはデータがあります。削除しますか？`)) return;
+  const commitRemoveRow = (row: number) => {
     setRows((current) => current.filter((_, index) => index !== row));
     setSelection({ anchor: { row: 0, column: 0 }, focus: { row: 0, column: 0 } });
+  };
+
+  const requestRemoveColumn = (column: number) => {
+    if (headers.length <= 1) return;
+    const hasData = Boolean(headers[column]?.trim()) || rows.some((row) => Boolean(row[column]?.trim()));
+    if (!hasData) commitRemoveColumn(column);
+    else setPendingDelete({ axis: "column", index: column, message: `「${headers[column] || `列 ${column + 1}`}」列にはデータがあります。削除しますか？` });
+  };
+
+  const requestRemoveRow = (row: number) => {
+    const hasData = rows[row]?.some((cell) => Boolean(cell?.trim()));
+    if (!hasData) commitRemoveRow(row);
+    else setPendingDelete({ axis: "row", index: row, message: `行 ${row + 1}にはデータがあります。削除しますか？` });
+  };
+
+  const confirmPendingDelete = () => {
+    if (!pendingDelete) return;
+    if (pendingDelete.axis === "column") commitRemoveColumn(pendingDelete.index);
+    else commitRemoveRow(pendingDelete.index);
+    setPendingDelete(null);
   };
 
   const insertColumn = (column: number, label?: string) => {
@@ -306,18 +345,37 @@ export function TableEditorDialog({
     moveSelection(point, rowDelta, columnDelta, event.shiftKey && event.key !== "Tab");
   };
 
-  const handleCopy = (event: ClipboardEvent<HTMLElement>) => {
+  const selectedText = () => {
     const range = orderedSelection(selection);
-    const text = Array.from({ length: range.bottom - range.top + 1 }, (_, rowOffset) =>
+    return Array.from({ length: range.bottom - range.top + 1 }, (_, rowOffset) =>
       Array.from({ length: range.right - range.left + 1 }, (_, columnOffset) => cellValue({ row: range.top + rowOffset, column: range.left + columnOffset })).join("\t"),
     ).join("\n");
+  };
+
+  const handleCopy = (event: ClipboardEvent<HTMLElement>) => {
     event.preventDefault();
-    event.clipboardData.setData("text/plain", text);
+    event.clipboardData.setData("text/plain", selectedText());
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>, point: GridPoint) => {
     if (isCalculatedCell(point)) return;
-    const grid = pastedCells(event.clipboardData.getData("text/plain"));
+    const text = event.clipboardData.getData("text/plain");
+    const range = orderedSelection(selection);
+    const singleCell = range.top === range.bottom && range.left === range.right;
+    if (singleCell) {
+      event.preventDefault();
+      const input = event.currentTarget;
+      const current = cellValue(point);
+      const start = input.selectionStart ?? current.length;
+      const end = input.selectionEnd ?? start;
+      updateCell(point, `${current.slice(0, start)}${text}${current.slice(end)}`);
+      window.requestAnimationFrame(() => {
+        input.focus();
+        input.setSelectionRange(start + text.length, start + text.length);
+      });
+      return;
+    }
+    const grid = pastedCells(text);
     if (!grid.length) return;
     event.preventDefault();
     const requiredColumns = Math.max(headers.length, point.column + Math.max(...grid.map((row) => row.length)));
@@ -341,6 +399,22 @@ export function TableEditorDialog({
     focusCell(point);
   };
 
+  const openContextMenu = (event: MouseEvent<HTMLInputElement>, point: GridPoint) => {
+    event.preventDefault();
+    event.stopPropagation();
+    selectCell(point);
+    setContextMenu({
+      point,
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - 230)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 330)),
+    });
+  };
+
+  const runContextAction = (action: () => void) => {
+    action();
+    setContextMenu(null);
+  };
+
   const gridInputProps = (point: GridPoint) => ({
     ref: (element: HTMLInputElement | null) => {
       const key = cellKey(point);
@@ -348,6 +422,7 @@ export function TableEditorDialog({
       else cellRefs.current.delete(key);
     },
     className: isSelected(point) ? "is-selected" : undefined,
+    style: showAlignments ? { textAlign: alignments[point.column] ?? "center" } : undefined,
     onFocus: () => {
       if (programmaticFocus.current === cellKey(point)) {
         programmaticFocus.current = null;
@@ -360,10 +435,11 @@ export function TableEditorDialog({
     onMouseEnter: () => { if (dragging.current) selectCell(point, true); },
     onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => handleKeyDown(event, point),
     onPaste: (event: ClipboardEvent<HTMLInputElement>) => handlePaste(event, point),
+    onContextMenu: (event: MouseEvent<HTMLInputElement>) => openContextMenu(event, point),
   });
 
   return <div className="table-editor-overlay">
-    <section ref={dialogRef} className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onCopy={handleCopy} onPointerMove={moveHandlePointer} onPointerUp={finishHandlePointer} onPointerCancel={(event) => finishHandlePointer(event, true)}>
+    <section ref={dialogRef} className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onCopy={handleCopy} onPointerMove={moveHandlePointer} onPointerUp={finishHandlePointer} onPointerCancel={(event) => finishHandlePointer(event, true)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); }}>
       <header className="table-editor-toolbar">
         <strong id={titleId}>表を編集</strong>
         <div className="table-editor-aggregate-menu">
@@ -390,7 +466,7 @@ export function TableEditorDialog({
             return <th key={column} data-table-column-index={column} className={columnClasses || undefined}>
               <button type="button" className="table-editor-insert table-editor-insert-column is-before" aria-label={`列 ${column + 1}の左に挿入`} onClick={() => insertColumn(column)}>＋</button>
               {column === headers.length - 1 && <button type="button" className="table-editor-insert table-editor-insert-column is-after" aria-label={`列 ${column + 1}の右に挿入`} onClick={() => insertColumn(column + 1)}>＋</button>}
-              <button type="button" className="table-editor-delete table-editor-delete-column" aria-label={`列 ${column + 1}を削除`} disabled={headers.length <= 1} onClick={() => removeColumn(column)}>−</button>
+              <button type="button" className="table-editor-delete table-editor-delete-column" aria-label={`列 ${column + 1}を削除`} disabled={headers.length <= 1} onClick={() => requestRemoveColumn(column)}>−</button>
               <button type="button" className="table-editor-drag-handle table-editor-column-drag-handle" aria-label={`列 ${column + 1}をドラッグして並び替え`} title="ドラッグで列移動、クリックで列選択" onClick={() => { if (!suppressHandleClick.current) selectColumn(column); }} onPointerDown={(event) => beginHandlePointer(event, "column", column)}>•••</button>
               <div className="table-editor-heading">
                 {showAlignments && <button
@@ -425,15 +501,21 @@ export function TableEditorDialog({
           ].filter(Boolean).join(" ") || undefined} data-table-row-index={rowIndex}>
             <td className="table-editor-row-action">
               <button type="button" className="table-editor-insert table-editor-insert-row is-before" aria-label={`行 ${rowIndex + 1}の上に挿入`} onClick={() => insertRow(rowIndex)}>＋</button>
-              {rowIndex === rows.length - 1 && <button type="button" className="table-editor-insert table-editor-insert-row is-after" aria-label={`行 ${rowIndex + 1}の下に挿入`} onClick={() => insertRow(rowIndex + 1)}>＋</button>}
-              <button type="button" className="table-editor-delete table-editor-delete-row" aria-label={`行 ${rowIndex + 1}を削除`} onClick={() => removeRow(rowIndex)}>−</button>
+              <button type="button" className="table-editor-insert table-editor-insert-row is-after" aria-label={`行 ${rowIndex + 1}の下に挿入`} onClick={() => insertRow(rowIndex + 1)}>＋</button>
+              <button type="button" className="table-editor-delete table-editor-delete-row" aria-label={`行 ${rowIndex + 1}を削除`} onClick={() => requestRemoveRow(rowIndex)}>−</button>
               <span className="table-editor-row-buttons">
                 <button type="button" className="table-editor-drag-handle" aria-label={`行 ${rowIndex + 1}をドラッグして並び替え`} title="ドラッグで行移動、クリックで行選択" onClick={() => { if (!suppressHandleClick.current) selectRow(rowIndex); }} onPointerDown={(event) => beginHandlePointer(event, "row", rowIndex)}>⋮</button>
               </span>
             </td>
             {headers.map((_, column) => {
               const point = { row: rowIndex + 1, column };
-              return <td key={column} className={isSelected(point) ? "is-selected" : undefined}>
+              const cellClasses = [
+                isSelected(point) ? "is-selected" : "",
+                dragState?.axis === "column" && dragState.from === column ? "is-dragging" : "",
+                dragState?.axis === "column" && dragState.over === column ? "is-drop-target" : "",
+                reordered?.axis === "column" && reordered.index === column ? "is-reordered" : "",
+              ].filter(Boolean).join(" ");
+              return <td key={column} className={cellClasses || undefined}>
                 <input {...gridInputProps(point)} aria-label={`行 ${rowIndex + 1} 列 ${column + 1}`} value={cellValue(point)} readOnly={isCalculatedCell(point)} onChange={(event) => updateCell(point, event.target.value)} />
               </td>;
             })}
@@ -444,6 +526,37 @@ export function TableEditorDialog({
         <button type="button" onClick={onCancel}>キャンセル</button>
         <button type="button" className="table-editor-save" onClick={applyChanges}>反映</button>
       </footer>
+      {contextMenu && createPortal(<div
+        ref={contextMenuRef}
+        className="context-menu table-editor-context-menu"
+        role="menu"
+        aria-label="表編集操作"
+        tabIndex={-1}
+        style={{ left: contextMenu.x, top: contextMenu.y }}
+        onContextMenu={(event) => event.preventDefault()}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        {contextMenu.point.row > 0 && <button type="button" role="menuitem" onClick={() => runContextAction(() => selectRow(contextMenu.point.row - 1))}>行全体を選択</button>}
+        <button type="button" role="menuitem" onClick={() => runContextAction(() => selectColumn(contextMenu.point.column))}>列全体を選択</button>
+        <div role="separator" />
+        {contextMenu.point.row > 0 && <button type="button" role="menuitem" onClick={() => runContextAction(() => insertRow(contextMenu.point.row - 1))}>上に行を挿入</button>}
+        {contextMenu.point.row > 0 && <button type="button" role="menuitem" onClick={() => runContextAction(() => insertRow(contextMenu.point.row))}>下に行を挿入</button>}
+        <button type="button" role="menuitem" onClick={() => runContextAction(() => insertColumn(contextMenu.point.column))}>左に列を挿入</button>
+        <button type="button" role="menuitem" onClick={() => runContextAction(() => insertColumn(contextMenu.point.column + 1))}>右に列を挿入</button>
+        <div role="separator" />
+        {contextMenu.point.row > 0 && <button type="button" role="menuitem" className="is-danger" onClick={() => runContextAction(() => requestRemoveRow(contextMenu.point.row - 1))}>行を削除</button>}
+        <button type="button" role="menuitem" className="is-danger" disabled={headers.length <= 1} onClick={() => runContextAction(() => requestRemoveColumn(contextMenu.point.column))}>列を削除</button>
+      </div>, document.body)}
     </section>
+    {pendingDelete && createPortal(<div className="table-editor-confirm-overlay" onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); }}>
+      <div className="table-editor-confirm" role="alertdialog" aria-modal="true" aria-label="削除の確認">
+        <strong>削除の確認</strong>
+        <p>{pendingDelete.message}</p>
+        <div>
+          <button type="button" onClick={() => setPendingDelete(null)}>キャンセル</button>
+          <button type="button" className="is-danger" onClick={confirmPendingDelete}>削除</button>
+        </div>
+      </div>
+    </div>, document.body)}
   </div>;
 }

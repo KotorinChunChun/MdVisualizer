@@ -19,12 +19,26 @@ describe("TableEditorDialog grid editing", () => {
 
   it("pastes a TSV rectangle and expands rows and columns", () => {
     const onSave = vi.fn(() => true);
-    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["old"]]} onCancel={() => undefined} onSave={onSave} />);
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["old", "keep"]]} onCancel={() => undefined} onSave={onSave} />);
     const firstCell = screen.getByRole("textbox", { name: "行 1 列 1" });
+    fireEvent.mouseDown(firstCell);
+    fireEvent.mouseEnter(screen.getByRole("textbox", { name: "行 1 列 2" }));
+    fireEvent.mouseUp(window);
     fireEvent.paste(firstCell, { clipboardData: { getData: () => "x\ty\n1\t2" } });
     expect((screen.getByRole("textbox", { name: "行 2 列 2" }) as HTMLInputElement).value).toBe("2");
     fireEvent.click(screen.getByRole("button", { name: "反映" }));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ headers: ["A", "列 2"], rows: [["x", "y"], ["1", "2"]] }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ headers: ["A", "B"], rows: [["x", "y"], ["1", "2"]] }));
+  });
+
+  it("inserts pasted text at the caret when only one cell is selected", () => {
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["abcd"]]} onCancel={() => undefined} onSave={() => true} />);
+    const cell = screen.getByRole("textbox", { name: "行 1 列 1" }) as HTMLInputElement;
+    fireEvent.mouseDown(cell);
+    cell.setSelectionRange(2, 2);
+
+    fireEvent.paste(cell, { clipboardData: { getData: () => "XY" } });
+
+    expect(cell.value).toBe("abXYcd");
   });
 
   it("copies a selected rectangular range as TSV", () => {
@@ -107,6 +121,8 @@ describe("TableEditorDialog grid editing", () => {
     fireEvent.pointerDown(screen.getByRole("button", { name: "列 1をドラッグして並び替え" }), { pointerId: 1, button: 0, clientX: 50, clientY: 10 });
     fireEvent.pointerMove(dialog, { pointerId: 1, clientX: 150, clientY: 10 });
     expect(secondColumn.classList.contains("is-drop-target")).toBe(true);
+    expect(screen.getByRole("textbox", { name: "行 1 列 2" }).closest("td")?.classList.contains("is-drop-target")).toBe(true);
+    expect(screen.getByRole("textbox", { name: "行 2 列 2" }).closest("td")?.classList.contains("is-drop-target")).toBe(true);
     fireEvent.pointerUp(dialog, { pointerId: 1, clientX: 150, clientY: 10 });
     expect(screen.getByRole("textbox", { name: "列 2の見出し" }).closest("th")?.classList.contains("is-reordered")).toBe(true);
     const firstRow = screen.getByRole("button", { name: "行 1をドラッグして並び替え" }).closest("tr")!;
@@ -146,8 +162,11 @@ describe("TableEditorDialog grid editing", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "列 1を右揃え" }));
     expect(screen.getByRole("button", { name: "列 1を右揃え" }).getAttribute("aria-pressed")).toBe("true");
+    expect((screen.getByRole("textbox", { name: "列 1の見出し" }) as HTMLInputElement).style.textAlign).toBe("right");
+    expect((screen.getByRole("textbox", { name: "行 1 列 1" }) as HTMLInputElement).style.textAlign).toBe("right");
     fireEvent.click(screen.getByRole("button", { name: "列 1を右揃え" }));
     expect(screen.getByRole("button", { name: "列 1を右揃え" }).getAttribute("aria-pressed")).toBe("false");
+    expect((screen.getByRole("textbox", { name: "列 1の見出し" }) as HTMLInputElement).style.textAlign).toBe("center");
     fireEvent.click(screen.getByRole("button", { name: "反映" }));
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ alignments: ["center", null] }));
@@ -155,16 +174,42 @@ describe("TableEditorDialog grid editing", () => {
 
   it("uses minus popup buttons and confirms before deleting rows or columns with data", () => {
     const onSave = vi.fn(() => true);
-    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValue(true);
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} onCancel={() => undefined} onSave={onSave} />);
 
     fireEvent.click(screen.getByRole("button", { name: "行 1を削除" }));
+    let confirmation = screen.getByRole("alertdialog", { name: "削除の確認" });
+    expect(within(confirmation).getByText("行 1にはデータがあります。削除しますか？")).toBeTruthy();
+    fireEvent.click(within(confirmation).getByRole("button", { name: "キャンセル" }));
     expect(screen.getByRole("textbox", { name: "行 1 列 1" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "列 2を削除" }));
+    confirmation = screen.getByRole("alertdialog", { name: "削除の確認" });
+    fireEvent.click(within(confirmation).getByRole("button", { name: "削除" }));
     fireEvent.click(screen.getByRole("button", { name: "反映" }));
 
-    expect(confirm).toHaveBeenCalledTimes(2);
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ headers: ["A"], rows: [["1"]] }));
+  });
+
+  it("shows both upper and lower insert buttons on every row", () => {
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["1"], ["2"]]} onCancel={() => undefined} onSave={() => true} />);
+
+    expect(screen.getByRole("button", { name: "行 1の上に挿入" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "行 1の下に挿入" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "行 2の上に挿入" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "行 2の下に挿入" })).toBeTruthy();
+  });
+
+  it("opens a foreground table-editor menu and blocks the background context menu", () => {
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} onCancel={() => undefined} onSave={() => true} />);
+    const cell = screen.getByRole("textbox", { name: "行 1 列 1" });
+
+    expect(fireEvent.contextMenu(cell, { clientX: 80, clientY: 90 })).toBe(false);
+    const menu = screen.getByRole("menu", { name: "表編集操作" });
+    expect(menu.classList.contains("table-editor-context-menu")).toBe(true);
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "行全体を選択" }));
+
+    const setData = vi.fn();
+    fireEvent.copy(cell, { clipboardData: { setData } });
+    expect(setData).toHaveBeenCalledWith("text/plain", "1\t2");
   });
 
   it("adds total, average, and count rows or columns from the aggregate menu", () => {
