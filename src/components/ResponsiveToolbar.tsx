@@ -6,6 +6,7 @@ export interface ResponsiveToolbarItem {
   node: ReactNode;
   priority?: number;
   fixed?: boolean;
+  measurementWidth?: number;
 }
 
 export function responsiveOverflowIds(
@@ -66,7 +67,7 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items, col
       const labelWidth = labelRef.current?.scrollWidth ?? 0;
       const widths = itemsRef.current.map((item) => {
         const element = itemRefs.current.get(item.id);
-        const measured = Math.max(element?.scrollWidth ?? 0, element?.offsetWidth ?? 0);
+        const measured = item.measurementWidth ?? Math.max(element?.scrollWidth ?? 0, element?.offsetWidth ?? 0);
         if (measured > 0) itemWidths.current.set(item.id, measured);
         return {
         ...item,

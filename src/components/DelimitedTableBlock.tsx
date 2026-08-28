@@ -206,6 +206,7 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
 
   return <section ref={cardRef} className="data-grid-card" aria-label={`${language.toUpperCase()}表`}>
     <ResponsiveToolbar className="data-grid-toolbar" ariaLabel="表操作" items={[
+      { id: "search", priority: 100, fixed: true, measurementWidth: 160, node: <label className="data-grid-search">検索<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="全列を検索" /></label> },
       { id: "columns", priority: 50, node: <button type="button" aria-pressed={columnsOpen} className={columnsOpen ? "active" : ""} onClick={() => setColumnsOpen((open) => !open)}>列表示</button> },
       { id: "slicer", priority: 60, node: <button type="button" aria-pressed={panesOpen} className={panesOpen ? "active" : ""} onClick={() => setPanesOpen((open) => !open)}>スライサー</button> },
       ...(panesOpen ? [{ id: "clear", priority: 20, node: <button type="button" disabled={!query && Object.values(selectedValues).every((values) => values.length === 0)} onClick={clearFilters}>フィルタ解除</button> }] : []),
@@ -213,7 +214,6 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
       { id: "copy", priority: 30, node: <button type="button" onClick={() => void copy()}>コピー</button> },
       { id: "csv", priority: 10, node: <button type="button" onClick={() => void downloadCsv()}>CSV</button> },
       { id: "print", priority: 15, node: <button type="button" onClick={printTable}>印刷</button> },
-      { id: "search", priority: 100, fixed: true, node: <label className="data-grid-search">検索<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="全列を検索" /></label> },
     ]} />
     {columnsOpen && <div className="data-grid-column-panel" aria-label="列表示の選択">{headers.map((header, column) => <label key={column}><input type="checkbox" checked={visibleColumns[column] !== false} onChange={(event) => setVisibleColumns((current) => headers.map((_, index) => index === column ? event.target.checked : current[index] !== false))} />{header}</label>)}</div>}
     {panesOpen && <div className="search-panes" aria-label="スライサー">{headers.map((header, column) => {

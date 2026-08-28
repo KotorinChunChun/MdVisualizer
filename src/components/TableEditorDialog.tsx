@@ -320,9 +320,16 @@ export function TableEditorDialog({
     const input = event.currentTarget;
     let rowDelta = 0;
     let columnDelta = 0;
-    if (event.ctrlKey && event.key.toLocaleLowerCase() === "a") {
+    if (event.ctrlKey && event.key === "Enter") {
       event.preventDefault();
       applyChanges();
+      return;
+    } else if (event.ctrlKey && event.key.toLocaleLowerCase() === "a") {
+      event.preventDefault();
+      setSelection({
+        anchor: { row: 0, column: 0 },
+        focus: { row: rows.length, column: headers.length - 1 },
+      });
       return;
     } else if (event.key === "Enter") rowDelta = event.shiftKey ? -1 : 1;
     else if (event.key === "Tab") columnDelta = event.shiftKey ? -1 : 1;
@@ -462,7 +469,7 @@ export function TableEditorDialog({
           </div>}
         </div>
       </header>
-      <p className="table-editor-note">先頭行はヘッダーです。境界の＋で挿入、ハンドルのドラッグで並び替えできます。Ctrl+Aで編集内容を反映します。</p>
+      <p className="table-editor-note">先頭行はヘッダーです。境界の＋で挿入、ハンドルのドラッグで並び替えできます。Ctrl+Enterで反映、Ctrl+Aですべて選択します。</p>
       <div className="table-editor-scroll">
         <table className="table-editor-grid">
           <thead><tr><th className="table-editor-row-action" aria-label="行操作" />{headers.map((header, column) => {

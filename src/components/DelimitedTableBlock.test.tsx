@@ -72,6 +72,17 @@ describe("DelimitedTableBlock", () => {
     expect(screen.queryByRole("dialog", { name: "表を編集" })).toBeNull();
   });
 
+  it("places the flexible search field at the left edge before right-side operations", () => {
+    render(<DelimitedTableBlock language="csv-h" source={"name,score\nAlice,10"} />);
+    const toolbar = screen.getByRole("toolbar", { name: "表操作" });
+    const items = toolbar.querySelector(".responsive-toolbar__items")!;
+    const firstItem = items.firstElementChild!;
+
+    expect(firstItem.querySelector('input[type="search"]')).toBe(screen.getByRole("searchbox", { name: "検索" }));
+    expect(firstItem.nextElementSibling?.querySelector("button")?.textContent).toBe("列表示");
+    expect(firstItem.querySelector(".data-grid-search")).toBeTruthy();
+  });
+
   it("displays vertical and horizontal aggregate results from the source", () => {
     render(<DelimitedTableBlock language="csv" source={"項目,値1,値2,合計\nA,10,20,old\nB,5,x,old\n合計,old,old,old"} />);
     const bodyRows = screen.getByRole("table").querySelectorAll("tbody tr");

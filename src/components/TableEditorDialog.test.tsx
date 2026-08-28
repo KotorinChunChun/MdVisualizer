@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { TableEditorDialog } from "./TableEditorDialog";
+import { TableEditorDialog, type EditableTableData } from "./TableEditorDialog";
 
 describe("TableEditorDialog grid editing", () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -18,7 +18,7 @@ describe("TableEditorDialog grid editing", () => {
   });
 
   it("pastes a TSV rectangle and expands rows and columns", () => {
-    const onSave = vi.fn(() => true);
+    const onSave = vi.fn((_table: EditableTableData) => true);
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["old", "keep"]]} onCancel={() => undefined} onSave={onSave} />);
     const firstCell = screen.getByRole("textbox", { name: "行 1 列 1" });
     fireEvent.mouseDown(firstCell);
@@ -82,17 +82,44 @@ describe("TableEditorDialog grid editing", () => {
     }));
   });
 
-  it("applies the current edit with Ctrl+A", () => {
+  it("applies the current edit with Ctrl+Enter", () => {
     const onSave = vi.fn(() => true);
     const onCancel = vi.fn();
     render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["old"]]} onCancel={onCancel} onSave={onSave} />);
     const cell = screen.getByRole("textbox", { name: "行 1 列 1" });
     fireEvent.change(cell, { target: { value: "new" } });
 
-    fireEvent.keyDown(cell, { key: "a", ctrlKey: true });
+    fireEvent.keyDown(cell, { key: "Enter", ctrlKey: true });
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ headers: ["A"], rows: [["new"]] }));
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("selects every header and body cell with Ctrl+A", () => {
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"], ["3", "4"]]} onCancel={() => undefined} onSave={() => true} />);
+    const cell = screen.getByRole("textbox", { name: "行 1 列 1" });
+    const setData = vi.fn();
+
+    fireEvent.keyDown(cell, { key: "a", ctrlKey: true });
+    fireEvent.copy(cell, { clipboardData: { setData } });
+
+    expect(setData).toHaveBeenCalledWith("text/plain", "A\tB\n1\t2\n3\t4");
+    expect(screen.getByRole("textbox", { name: "列 1の見出し" }).classList.contains("is-selected")).toBe(true);
+    expect(screen.getByRole("textbox", { name: "行 2 列 2" }).classList.contains("is-selected")).toBe(true);
+  });
+
+  it("edits and applies a 1,000-row table", () => {
+    const rows = Array.from({ length: 1_000 }, (_, index) => [`row-${index + 1}`, String(index + 1)]);
+    const onSave = vi.fn((_table: EditableTableData) => true);
+    const { container } = render(<TableEditorDialog initialHeaders={["name", "value"]} initialRows={rows} onCancel={() => undefined} onSave={onSave} />);
+    const lastCell = container.querySelector<HTMLInputElement>('input[aria-label="行 1000 列 2"]')!;
+
+    fireEvent.change(lastCell, { target: { value: "updated" } });
+    fireEvent.keyDown(lastCell, { key: "Enter", ctrlKey: true });
+
+    const saved = onSave.mock.calls[0]?.[0];
+    expect(saved?.rows).toHaveLength(1_000);
+    expect(saved?.rows[999]).toEqual(["row-1000", "updated"]);
   });
 
   it("inserts rows and columns at table boundaries", () => {
