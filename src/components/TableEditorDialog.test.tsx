@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TableEditorDialog } from "./TableEditorDialog";
 
 describe("TableEditorDialog grid editing", () => {
-  afterEach(cleanup);
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
   it("moves between cells with Enter and arrow keys", async () => {
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} onCancel={() => undefined} onSave={() => true} />);
@@ -97,23 +97,28 @@ describe("TableEditorDialog grid editing", () => {
 
   it("reorders rows and columns with their drag handles", () => {
     const onSave = vi.fn(() => true);
-    const dataTransfer = { effectAllowed: "", dropEffect: "", setData: vi.fn() };
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"], ["3", "4"]]} onCancel={() => undefined} onSave={onSave} />);
+    const dialog = screen.getByRole("dialog", { name: "表を編集" });
 
-    fireEvent.dragStart(screen.getByRole("button", { name: "列 1をドラッグして並び替え" }), { dataTransfer });
+    const firstColumn = screen.getByRole("textbox", { name: "列 1の見出し" }).closest("th")!;
     const secondColumn = screen.getByRole("textbox", { name: "列 2の見出し" }).closest("th")!;
-    fireEvent.dragOver(secondColumn, { dataTransfer });
+    vi.spyOn(firstColumn, "getBoundingClientRect").mockReturnValue({ left: 0, right: 100, top: 0, bottom: 40, width: 100, height: 40, x: 0, y: 0, toJSON: () => ({}) });
+    vi.spyOn(secondColumn, "getBoundingClientRect").mockReturnValue({ left: 100, right: 200, top: 0, bottom: 40, width: 100, height: 40, x: 100, y: 0, toJSON: () => ({}) });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "列 1をドラッグして並び替え" }), { pointerId: 1, button: 0, clientX: 50, clientY: 10 });
+    fireEvent.pointerMove(dialog, { pointerId: 1, clientX: 150, clientY: 10 });
     expect(secondColumn.classList.contains("is-drop-target")).toBe(true);
-    fireEvent.drop(secondColumn, { dataTransfer });
+    fireEvent.pointerUp(dialog, { pointerId: 1, clientX: 150, clientY: 10 });
     expect(screen.getByRole("textbox", { name: "列 2の見出し" }).closest("th")?.classList.contains("is-reordered")).toBe(true);
-    fireEvent.dragStart(screen.getByRole("button", { name: "行 1をドラッグして並び替え" }), { dataTransfer });
+    const firstRow = screen.getByRole("button", { name: "行 1をドラッグして並び替え" }).closest("tr")!;
     const secondRow = screen.getByRole("button", { name: "行 2をドラッグして並び替え" }).closest("tr")!;
-    fireEvent.dragOver(secondRow, { dataTransfer });
+    vi.spyOn(firstRow, "getBoundingClientRect").mockReturnValue({ left: 0, right: 200, top: 40, bottom: 80, width: 200, height: 40, x: 0, y: 40, toJSON: () => ({}) });
+    vi.spyOn(secondRow, "getBoundingClientRect").mockReturnValue({ left: 0, right: 200, top: 80, bottom: 120, width: 200, height: 40, x: 0, y: 80, toJSON: () => ({}) });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "行 1をドラッグして並び替え" }), { pointerId: 2, button: 0, clientX: 10, clientY: 60 });
+    fireEvent.pointerMove(dialog, { pointerId: 2, clientX: 10, clientY: 100 });
     expect(secondRow.classList.contains("is-drop-target")).toBe(true);
-    fireEvent.drop(secondRow, { dataTransfer });
+    fireEvent.pointerUp(dialog, { pointerId: 2, clientX: 10, clientY: 100 });
     fireEvent.click(screen.getByRole("button", { name: "反映" }));
 
-    expect(dataTransfer.setData).toHaveBeenCalledTimes(2);
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       headers: ["B", "A"],
       rows: [["4", "3"], ["2", "1"]],
@@ -135,15 +140,31 @@ describe("TableEditorDialog grid editing", () => {
     expect(setData).toHaveBeenLastCalledWith("text/plain", "1\t2");
   });
 
-  it("places three alignment buttons to the right of each column heading", () => {
+  it("places icon alignment toggles on both sides of the heading and treats release as center", () => {
     const onSave = vi.fn(() => true);
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} initialAlignments={[null, null]} showAlignments onCancel={() => undefined} onSave={onSave} />);
 
     fireEvent.click(screen.getByRole("button", { name: "列 1を右揃え" }));
     expect(screen.getByRole("button", { name: "列 1を右揃え" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "列 1を右揃え" }));
+    expect(screen.getByRole("button", { name: "列 1を右揃え" }).getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(screen.getByRole("button", { name: "反映" }));
 
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ alignments: ["right", null] }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ alignments: ["center", null] }));
+  });
+
+  it("uses minus popup buttons and confirms before deleting rows or columns with data", () => {
+    const onSave = vi.fn(() => true);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValue(true);
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} onCancel={() => undefined} onSave={onSave} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "行 1を削除" }));
+    expect(screen.getByRole("textbox", { name: "行 1 列 1" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "列 2を削除" }));
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ headers: ["A"], rows: [["1"]] }));
   });
 
   it("adds total, average, and count rows or columns from the aggregate menu", () => {

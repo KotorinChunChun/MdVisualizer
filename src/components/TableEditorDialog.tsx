@@ -1,4 +1,4 @@
-import { ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ClipboardEvent, KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { calculateTableAggregates, isTableAggregateResultCell } from "../lib/tableAggregation";
 
 export type TableColumnAlignment = "left" | "center" | "right" | null;
@@ -21,6 +21,12 @@ interface TableEditorDialogProps {
 interface GridPoint { row: number; column: number }
 interface GridSelection { anchor: GridPoint; focus: GridPoint }
 interface TableDragState { axis: "row" | "column"; from: number; over: number }
+interface TablePointerDragSession extends TableDragState {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  moved: boolean;
+}
 
 const cellKey = ({ row, column }: GridPoint) => `${row}:${column}`;
 const orderedSelection = ({ anchor, focus }: GridSelection) => ({
@@ -44,6 +50,13 @@ function moveItem<T>(items: T[], from: number, to: number): T[] {
   return next;
 }
 
+function AlignmentIcon({ direction }: { direction: "left" | "right" }) {
+  const widths = direction === "left" ? [14, 10, 14, 8] : [14, 10, 14, 8];
+  return <svg aria-hidden="true" viewBox="0 0 18 18" width="16" height="16">
+    {widths.map((width, index) => <path key={index} d={`M${direction === "left" ? 2 : 16 - width} ${3 + index * 4}h${width}`} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />)}
+  </svg>;
+}
+
 export function TableEditorDialog({
   initialHeaders,
   initialRows,
@@ -61,8 +74,8 @@ export function TableEditorDialog({
   const cellRefs = useRef(new Map<string, HTMLInputElement>());
   const dragging = useRef(false);
   const programmaticFocus = useRef<string | null>(null);
-  const draggedColumn = useRef<number | null>(null);
-  const draggedRow = useRef<number | null>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const pointerDrag = useRef<TablePointerDragSession | null>(null);
   const suppressHandleClick = useRef(false);
   const reorderAnimationTimer = useRef(0);
   const [dragState, setDragState] = useState<TableDragState | null>(null);
@@ -123,9 +136,18 @@ export function TableEditorDialog({
 
   const removeColumn = (column: number) => {
     if (headers.length <= 1) return;
+    const hasData = Boolean(headers[column]?.trim()) || rows.some((row) => Boolean(row[column]?.trim()));
+    if (hasData && !window.confirm(`「${headers[column] || `列 ${column + 1}`}」列にはデータがあります。削除しますか？`)) return;
     setHeaders((current) => current.filter((_, index) => index !== column));
     setRows((current) => current.map((row) => row.filter((_, index) => index !== column)));
     setAlignments((current) => current.filter((_, index) => index !== column));
+    setSelection({ anchor: { row: 0, column: 0 }, focus: { row: 0, column: 0 } });
+  };
+
+  const removeRow = (row: number) => {
+    const hasData = rows[row]?.some((cell) => Boolean(cell?.trim()));
+    if (hasData && !window.confirm(`行 ${row + 1}にはデータがあります。削除しますか？`)) return;
+    setRows((current) => current.filter((_, index) => index !== row));
     setSelection({ anchor: { row: 0, column: 0 }, focus: { row: 0, column: 0 } });
   };
 
@@ -172,38 +194,73 @@ export function TableEditorDialog({
     reorderAnimationTimer.current = window.setTimeout(() => setReordered(null), 360);
   };
 
-  const beginHandleDrag = (event: DragEvent<HTMLButtonElement>, axis: "row" | "column", index: number) => {
-    suppressHandleClick.current = true;
-    if (axis === "column") draggedColumn.current = index;
-    else draggedRow.current = index;
-    setDragState({ axis, from: index, over: index });
-    event.dataTransfer.effectAllowed = "move";
-    try { event.dataTransfer.setData("text/plain", `markdown-viewer-table-${axis}:${index}`); } catch { /* WebView provides the drag payload in normal operation. */ }
+  const reorderTargetAt = (axis: "row" | "column", clientX: number, clientY: number): number | null => {
+    const attribute = axis === "column" ? "data-table-column-index" : "data-table-row-index";
+    const pointed = document.elementFromPoint?.(clientX, clientY)?.closest<HTMLElement>(`[${attribute}]`);
+    const pointedIndex = Number(pointed?.getAttribute(attribute));
+    if (pointed && Number.isInteger(pointedIndex)) return pointedIndex;
+
+    const candidates = dialogRef.current?.querySelectorAll<HTMLElement>(`[${attribute}]`) ?? [];
+    let nearestIndex: number | null = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const candidate of Array.from(candidates)) {
+      const index = Number(candidate.getAttribute(attribute));
+      const rect = candidate.getBoundingClientRect();
+      const center = axis === "column" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
+      const distance = Math.abs((axis === "column" ? clientX : clientY) - center);
+      if (Number.isInteger(index) && distance < nearestDistance) {
+        nearestIndex = index;
+        nearestDistance = distance;
+      }
+    }
+    return nearestIndex;
   };
 
-  const endHandleDrag = () => {
-    draggedColumn.current = null;
-    draggedRow.current = null;
+  const beginHandlePointer = (event: ReactPointerEvent<HTMLButtonElement>, axis: "row" | "column", index: number) => {
+    if (event.button !== 0) return;
+    pointerDrag.current = {
+      axis,
+      from: index,
+      over: index,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false,
+    };
+    try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* WebView外のテスト環境では未実装の場合がある。 */ }
+  };
+
+  const moveHandlePointer = (event: ReactPointerEvent<HTMLElement>) => {
+    const session = pointerDrag.current;
+    if (!session || event.pointerId !== session.pointerId) return;
+    if (!session.moved && Math.hypot(event.clientX - session.startX, event.clientY - session.startY) < 5) return;
+    event.preventDefault();
+    session.moved = true;
+    const over = reorderTargetAt(session.axis, event.clientX, event.clientY);
+    if (over !== null) session.over = over;
+    setDragState({ axis: session.axis, from: session.from, over: session.over });
+  };
+
+  const finishHandlePointer = (event: ReactPointerEvent<HTMLElement>, cancelled = false) => {
+    const session = pointerDrag.current;
+    if (!session || event.pointerId !== session.pointerId) return;
+    if (!cancelled && session.moved) {
+      if (session.axis === "column") moveColumn(session.from, session.over);
+      else moveRow(session.from, session.over);
+    } else if (!cancelled) {
+      if (session.axis === "column") selectColumn(session.from);
+      else selectRow(session.from);
+    }
+    pointerDrag.current = null;
     setDragState(null);
+    suppressHandleClick.current = true;
     window.setTimeout(() => { suppressHandleClick.current = false; }, 0);
   };
 
-  const markDragTarget = (event: DragEvent<HTMLElement>, axis: "row" | "column", index: number) => {
-    const active = axis === "column" ? draggedColumn.current : draggedRow.current;
-    if (active === null) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    setDragState((current) => current?.axis === axis && current.over === index ? current : { axis, from: active, over: index });
-  };
-
-  const dropHandle = (event: DragEvent<HTMLElement>, axis: "row" | "column", index: number) => {
-    event.preventDefault();
-    const from = axis === "column" ? draggedColumn.current : draggedRow.current;
-    if (from !== null) {
-      if (axis === "column") moveColumn(from, index);
-      else moveRow(from, index);
-    }
-    endHandleDrag();
+  const toggleAlignment = (column: number, alignment: "left" | "right") => {
+    setAlignments((current) => current.map((value, index) => index === column
+      ? value === alignment ? "center" : alignment
+      : value));
   };
 
   const isSelected = (point: GridPoint) => {
@@ -306,7 +363,7 @@ export function TableEditorDialog({
   });
 
   return <div className="table-editor-overlay">
-    <section className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onCopy={handleCopy}>
+    <section ref={dialogRef} className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onCopy={handleCopy} onPointerMove={moveHandlePointer} onPointerUp={finishHandlePointer} onPointerCancel={(event) => finishHandlePointer(event, true)}>
       <header className="table-editor-toolbar">
         <strong id={titleId}>表を編集</strong>
         <div className="table-editor-aggregate-menu">
@@ -330,23 +387,29 @@ export function TableEditorDialog({
               dragState?.axis === "column" && dragState.over === column ? "is-drop-target" : "",
               reordered?.axis === "column" && reordered.index === column ? "is-reordered" : "",
             ].filter(Boolean).join(" ");
-            return <th key={column} className={columnClasses || undefined} onDragOver={(event) => markDragTarget(event, "column", column)} onDrop={(event) => dropHandle(event, "column", column)}>
+            return <th key={column} data-table-column-index={column} className={columnClasses || undefined}>
               <button type="button" className="table-editor-insert table-editor-insert-column is-before" aria-label={`列 ${column + 1}の左に挿入`} onClick={() => insertColumn(column)}>＋</button>
               {column === headers.length - 1 && <button type="button" className="table-editor-insert table-editor-insert-column is-after" aria-label={`列 ${column + 1}の右に挿入`} onClick={() => insertColumn(column + 1)}>＋</button>}
-              <button type="button" className="table-editor-drag-handle table-editor-column-drag-handle" draggable aria-label={`列 ${column + 1}をドラッグして並び替え`} title="ドラッグで列移動、クリックで列選択" onClick={() => { if (!suppressHandleClick.current) selectColumn(column); }} onDragStart={(event) => beginHandleDrag(event, "column", column)} onDragEnd={endHandleDrag}>•••</button>
+              <button type="button" className="table-editor-delete table-editor-delete-column" aria-label={`列 ${column + 1}を削除`} disabled={headers.length <= 1} onClick={() => removeColumn(column)}>−</button>
+              <button type="button" className="table-editor-drag-handle table-editor-column-drag-handle" aria-label={`列 ${column + 1}をドラッグして並び替え`} title="ドラッグで列移動、クリックで列選択" onClick={() => { if (!suppressHandleClick.current) selectColumn(column); }} onPointerDown={(event) => beginHandlePointer(event, "column", column)}>•••</button>
               <div className="table-editor-heading">
+                {showAlignments && <button
+                  type="button"
+                  className={`table-editor-alignment-button is-left${alignments[column] === "left" ? " active" : ""}`}
+                  aria-label={`列 ${column + 1}を左揃え`}
+                  aria-pressed={alignments[column] === "left"}
+                  title="左揃え（再度押すと中央揃え）"
+                  onClick={() => toggleAlignment(column, "left")}
+                ><AlignmentIcon direction="left" /></button>}
                 <input {...gridInputProps(point)} aria-label={`列 ${column + 1}の見出し`} value={header} onChange={(event) => updateCell(point, event.target.value)} />
-                {showAlignments && <div className="table-editor-alignment-buttons" role="group" aria-label={`列 ${column + 1}の配置`}>
-                  {(["left", "center", "right"] as const).map((alignment) => <button
-                    type="button"
-                    key={alignment}
-                    className={alignments[column] === alignment ? "active" : undefined}
-                    aria-label={`列 ${column + 1}を${alignment === "left" ? "左" : alignment === "center" ? "中央" : "右"}揃え`}
-                    aria-pressed={alignments[column] === alignment}
-                    onClick={() => setAlignments((current) => current.map((value, index) => index === column ? alignment : value))}
-                  >{alignment === "left" ? "左" : alignment === "center" ? "中" : "右"}</button>)}
-                </div>}
-                <button type="button" aria-label={`列 ${column + 1}を削除`} disabled={headers.length <= 1} onClick={() => removeColumn(column)}>×</button>
+                {showAlignments && <button
+                  type="button"
+                  className={`table-editor-alignment-button is-right${alignments[column] === "right" ? " active" : ""}`}
+                  aria-label={`列 ${column + 1}を右揃え`}
+                  aria-pressed={alignments[column] === "right"}
+                  title="右揃え（再度押すと中央揃え）"
+                  onClick={() => toggleAlignment(column, "right")}
+                ><AlignmentIcon direction="right" /></button>}
               </div>
             </th>;
           })}</tr></thead>
@@ -359,13 +422,13 @@ export function TableEditorDialog({
             dragState?.axis === "row" && dragState.from === rowIndex ? "is-dragging" : "",
             dragState?.axis === "row" && dragState.over === rowIndex ? "is-drop-target" : "",
             reordered?.axis === "row" && reordered.index === rowIndex ? "is-reordered" : "",
-          ].filter(Boolean).join(" ") || undefined} onDragOver={(event) => markDragTarget(event, "row", rowIndex)} onDrop={(event) => dropHandle(event, "row", rowIndex)}>
+          ].filter(Boolean).join(" ") || undefined} data-table-row-index={rowIndex}>
             <td className="table-editor-row-action">
               <button type="button" className="table-editor-insert table-editor-insert-row is-before" aria-label={`行 ${rowIndex + 1}の上に挿入`} onClick={() => insertRow(rowIndex)}>＋</button>
               {rowIndex === rows.length - 1 && <button type="button" className="table-editor-insert table-editor-insert-row is-after" aria-label={`行 ${rowIndex + 1}の下に挿入`} onClick={() => insertRow(rowIndex + 1)}>＋</button>}
+              <button type="button" className="table-editor-delete table-editor-delete-row" aria-label={`行 ${rowIndex + 1}を削除`} onClick={() => removeRow(rowIndex)}>−</button>
               <span className="table-editor-row-buttons">
-                <button type="button" className="table-editor-drag-handle" draggable aria-label={`行 ${rowIndex + 1}をドラッグして並び替え`} title="ドラッグで行移動、クリックで行選択" onClick={() => { if (!suppressHandleClick.current) selectRow(rowIndex); }} onDragStart={(event) => beginHandleDrag(event, "row", rowIndex)} onDragEnd={endHandleDrag}>⋮</button>
-                <button type="button" aria-label={`行 ${rowIndex + 1}を削除`} onClick={() => setRows((current) => current.filter((_, index) => index !== rowIndex))}>×</button>
+                <button type="button" className="table-editor-drag-handle" aria-label={`行 ${rowIndex + 1}をドラッグして並び替え`} title="ドラッグで行移動、クリックで行選択" onClick={() => { if (!suppressHandleClick.current) selectRow(rowIndex); }} onPointerDown={(event) => beginHandlePointer(event, "row", rowIndex)}>⋮</button>
               </span>
             </td>
             {headers.map((_, column) => {

@@ -34,7 +34,7 @@ function escapeHtmlAttribute(value: string): string {
 
 export function drawioViewerDocument(xml: string): string {
   const config = escapeHtmlAttribute(JSON.stringify(drawioViewerConfig(xml)));
-  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}.mxgraph{width:100%;height:100%;min-height:0}</style></head><body><div class="mxgraph" data-mxgraph="${config}"></div><script>(()=>{const send=()=>{const svg=document.querySelector('svg');if(svg)parent.postMessage({type:'markdown-viewer-drawio-svg',svg:svg.outerHTML},'*')};window.captureDrawioSvg=send;new MutationObserver(send).observe(document.body,{subtree:true,childList:true,attributes:true})})()</script><script src="https://viewer.diagrams.net/js/viewer-static.min.js" referrerpolicy="no-referrer" onload="GraphViewer.processElements();captureDrawioSvg()"></script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}.mxgraph{width:100%;height:100%;min-height:0}</style></head><body><div class="mxgraph" data-mxgraph="${config}"></div><script>(()=>{const send=()=>{const svg=document.querySelector('svg');if(svg)parent.postMessage({type:'markdown-viewer-drawio-svg',svg:svg.outerHTML},'*')};window.captureDrawioSvg=send;window.reportDrawioViewerError=()=>parent.postMessage({type:'markdown-viewer-drawio-error'},'*');new MutationObserver(send).observe(document.body,{subtree:true,childList:true,attributes:true})})()</script><script src="https://viewer.diagrams.net/js/viewer-static.min.js" referrerpolicy="no-referrer" onload="try{GraphViewer.processElements();captureDrawioSvg()}catch(e){window.reportDrawioViewerError()}" onerror="window.reportDrawioViewerError()"></script></body></html>`;
 }
 
 /** Returns the exact responsive height needed to show an SVG viewBox without clipping or trailing blank space. */
@@ -113,6 +113,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
   const [viewerError, setViewerError] = useState<string | null>(null);
   const [renderedSvg, setRenderedSvg] = useState<string>();
   const [viewerHeight, setViewerHeight] = useState(180);
+  const [viewerAttempt, setViewerAttempt] = useState(0);
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
   const [convertingStorage, setConvertingStorage] = useState(false);
   const viewerRef = useRef<HTMLIFrameElement>(null);
@@ -138,6 +139,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
     setViewerError(null);
     setRenderedSvg(safeSourceSvg);
     setViewerHeight(emptyDiagram ? 100 : 180);
+    setViewerAttempt(0);
   }, [emptyDiagram, safeSourceSvg, source]);
 
   useEffect(() => {
@@ -145,10 +147,22 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
     const frame = viewerRef.current;
     if (!frame) return;
     let timeout = 0;
+    const failOrRetry = () => {
+      window.clearTimeout(timeout);
+      if (viewerAttempt < 1) {
+        setViewerError(null);
+        setViewerAttempt(viewerAttempt + 1);
+      } else {
+        setViewerError("draw.ioビューアーを読み込めませんでした。");
+      }
+    };
     const onMessage = (event: MessageEvent) => {
-      if (event.source !== frame.contentWindow
-        || event.data?.type !== "markdown-viewer-drawio-svg"
-        || typeof event.data.svg !== "string") return;
+      if (event.source !== frame.contentWindow) return;
+      if (event.data?.type === "markdown-viewer-drawio-error") {
+        failOrRetry();
+        return;
+      }
+      if (event.data?.type !== "markdown-viewer-drawio-svg" || typeof event.data.svg !== "string") return;
       try {
         window.clearTimeout(timeout);
         const parsed = new DOMParser().parseFromString(event.data.svg, "image/svg+xml");
@@ -161,12 +175,12 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
       }
     };
     window.addEventListener("message", onMessage);
-    timeout = window.setTimeout(() => setViewerError((current) => current ?? "draw.ioビューアーを読み込めませんでした。"), 20_000);
+    timeout = window.setTimeout(failOrRetry, 12_000);
     return () => {
       window.removeEventListener("message", onMessage);
       window.clearTimeout(timeout);
     };
-  }, [display, viewerDocument]);
+  }, [display, viewerAttempt, viewerDocument]);
 
   useEffect(() => {
     if (display !== "diagram" || !viewerDocument || !renderedSvg) return;
@@ -227,6 +241,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
   else {
     const viewerHost = <iframe
       ref={viewerRef}
+      key={viewerAttempt}
       className="drawio-block__viewer-frame"
       title="draw.ioプレビュー"
       srcDoc={viewerDocument}
@@ -252,6 +267,7 @@ export function DrawioBlock({ source, theme, blockId, storage, onStorageConvert,
         svg={renderedSvg}
         display={display}
         onDisplayChange={setDisplay}
+        previewDisabled={false}
         ariaLabel="draw.io操作"
         fileDiagramKind="drawio"
         onEdit={onSave ? () => setEditing(true) : undefined}

@@ -115,6 +115,31 @@ describe("DrawioBlock", () => {
     expect(screen.getByText(source)).toBeTruthy();
   });
 
+  it("can return from code to preview before an edited XML diagram finishes rendering", () => {
+    const source = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="2" vertex="1" parent="1"/></root></mxGraphModel>';
+    render(<DrawioBlock source={source} theme="light" blockId="preview-return" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "コード" }));
+    const preview = screen.getByRole("button", { name: "プレビュー" });
+    expect((preview as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(preview);
+    expect(screen.getByTitle("draw.ioプレビュー")).toBeTruthy();
+  });
+
+  it("recreates the viewer once when its external script reports a startup failure", async () => {
+    const source = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="2" vertex="1" parent="1"/></root></mxGraphModel>';
+    render(<DrawioBlock source={source} theme="light" blockId="viewer-retry" />);
+    const firstFrame = screen.getByTitle("draw.ioプレビュー") as HTMLIFrameElement;
+
+    fireEvent(window, new MessageEvent("message", {
+      source: firstFrame.contentWindow,
+      data: { type: "markdown-viewer-drawio-error" },
+    }));
+
+    await waitFor(() => expect(screen.getByTitle("draw.ioプレビュー")).not.toBe(firstFrame));
+    expect(screen.queryByText("draw.ioビューアーを読み込めませんでした。")).toBeNull();
+  });
+
   it("replaces the bootstrap iframe with the captured responsive SVG", async () => {
     const source = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>';
     render(<DrawioBlock source={source} theme="light" blockId="captured" onMediaOpen={() => {}} />);

@@ -23,7 +23,7 @@ describe("MarkdownPreview Markdown tables", () => {
 
     const dialog = screen.getByRole("dialog", { name: "表を編集" });
     fireEvent.change(within(dialog).getByRole("textbox", { name: "行 1 列 1" }), { target: { value: "A|B" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "列 1を中央揃え" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "列 1を左揃え" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "反映" }));
 
     expect(onMarkdownTableChange).toHaveBeenCalledTimes(1);

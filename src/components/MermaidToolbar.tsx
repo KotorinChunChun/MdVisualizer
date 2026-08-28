@@ -13,6 +13,7 @@ export function MermaidToolbar({
   ariaLabel = "Mermaid操作",
   allowFileCopy = true,
   fileDiagramKind = "mermaid",
+  previewDisabled,
   onEdit,
 }: {
   source: string;
@@ -22,6 +23,7 @@ export function MermaidToolbar({
   ariaLabel?: string;
   allowFileCopy?: boolean;
   fileDiagramKind?: "mermaid" | "drawio";
+  previewDisabled?: boolean;
   onEdit?: () => void;
 }) {
   const copy = async (event: MouseEvent<HTMLButtonElement>, kind: MermaidCopyKind) => {
@@ -54,7 +56,7 @@ export function MermaidToolbar({
       {svg && <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "svg")}>ベクタコピー</button>}
     </div>
     {onDisplayChange && <div className="mermaid-toolbar__view" role="group" aria-label="表示内容">
-      <button className="diagram-action-button" type="button" disabled={!svg} aria-pressed={display === "diagram"} onClick={() => onDisplayChange("diagram")}>プレビュー</button>
+      <button className="diagram-action-button" type="button" disabled={previewDisabled ?? !svg} aria-pressed={display === "diagram"} onClick={() => onDisplayChange("diagram")}>プレビュー</button>
       <button className="diagram-action-button" type="button" aria-pressed={display === "code"} onClick={() => onDisplayChange("code")}>コード</button>
     </div>}
     {onEdit && <button className="diagram-action-button" type="button" onClick={onEdit}>編集</button>}
