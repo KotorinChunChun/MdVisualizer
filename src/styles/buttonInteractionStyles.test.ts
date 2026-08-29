@@ -28,6 +28,11 @@ describe("button interaction styles", () => {
     expect(appCss).toContain(".code-block > pre { margin: 0; padding: 16px;");
   });
 
+  it("renders diagram alt text as a framed row", () => {
+    expect(appCss).toContain(".diagram-alt { padding: 8px 10px;");
+    expect(appCss).toContain("border-top: 1px solid var(--border-color);");
+  });
+
   it("renders responsive overflow actions as a foreground vertical menu", () => {
     expect(appCss).toContain(".responsive-toolbar__menu { position: fixed; z-index: 12020;");
     expect(appCss).toContain("flex-direction: column;");

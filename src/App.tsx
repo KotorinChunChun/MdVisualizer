@@ -1776,7 +1776,7 @@ export function App() {
           draft: tab.draft,
           latest,
           occurrence: context.occurrence,
-          replacement: drawioExternalReference(staged.filename),
+          replacement: drawioExternalReference(staged.filename, context.alt),
           committedAssetIds: [staged.id],
         });
         setToast({
@@ -1808,6 +1808,7 @@ export function App() {
         language: "drawio",
         body: asset.text,
         relativePath: normalizeRelativeAssetPath(latestOccurrence.source) ?? asset.filename,
+        alt: context.alt,
         style: embeddedPathStyle,
         lineEnding: markdownLineEnding(latest.content),
         continuationPrefix: markdownContinuationPrefix(latest.content, latestOccurrence.start),
@@ -1839,7 +1840,7 @@ export function App() {
           draft: tab.draft,
           latest,
           occurrence: context.occurrence,
-          replacement: mermaidExternalReference(staged.filename),
+          replacement: mermaidExternalReference(staged.filename, context.alt),
           committedAssetIds: [staged.id],
         });
         setToast({
@@ -1871,6 +1872,7 @@ export function App() {
         language: "mermaid",
         body: asset.text,
         relativePath: normalizeRelativeAssetPath(latestOccurrence.source) ?? asset.filename,
+        alt: context.alt,
         style: embeddedPathStyle,
         lineEnding: markdownLineEnding(latest.content),
         continuationPrefix: markdownContinuationPrefix(latest.content, latestOccurrence.start),

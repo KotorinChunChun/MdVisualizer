@@ -8,8 +8,8 @@ const { loadMarkdown, saveMarkdown } = vi.hoisted(() => ({
 
 vi.mock("../lib/commands", () => ({ loadMarkdown, saveMarkdown }));
 vi.mock("./DrawioBlock", () => ({
-  DrawioBlock: ({ source, headingTitle, onSave, onStorageConvert }: { source: string; headingTitle?: string; onSave?: (content: string) => Promise<boolean | void>; onStorageConvert?: () => void }) => <div>
-    <button type="button" data-testid="external-drawio" data-title={headingTitle} data-editable={String(Boolean(onSave))} onClick={() => void onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
+  DrawioBlock: ({ source, headingTitle, description, onSave, onStorageConvert }: { source: string; headingTitle?: string; description?: string; onSave?: (content: string) => Promise<boolean | void>; onStorageConvert?: () => void }) => <div>
+    <button type="button" data-testid="external-drawio" data-title={headingTitle} data-description={description} data-editable={String(Boolean(onSave))} onClick={() => void onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
     {onStorageConvert && <button type="button" onClick={onStorageConvert}>埋め込みへ切替</button>}
   </div>,
 }));
@@ -50,7 +50,8 @@ describe("ExternalDrawioBlock", () => {
       expectedRevision: "revision-1",
       stagedAssetIds: [],
     }));
-    expect(screen.getByTestId("external-drawio").dataset.title).toBe("構成図");
+    expect(screen.getByTestId("external-drawio").dataset.title).toBe("system.drawio");
+    expect(screen.getByTestId("external-drawio").dataset.description).toBe("構成図");
   });
 
   it("does not expose editing in a static preview", async () => {
@@ -88,6 +89,6 @@ describe("ExternalDrawioBlock", () => {
     fireEvent.click(screen.getByTestId("external-drawio"));
     expect(onStagedSourceChange).toHaveBeenCalledWith("<mxfile><diagram name=\"saved\"/></mxfile>");
     fireEvent.click(screen.getByRole("button", { name: "埋め込みへ切替" }));
-    expect(onStorageConvert).toHaveBeenCalledWith(stagedSource);
+    expect(onStorageConvert).toHaveBeenCalledWith(stagedSource, undefined);
   });
 });

@@ -27,7 +27,7 @@ export function ExternalMermaidBlock({
   version: number;
   editable?: boolean;
   stagedSource?: string;
-  onStorageConvert?: (source: string) => boolean | void | Promise<boolean | void>;
+  onStorageConvert?: (source: string, alt?: string) => boolean | void | Promise<boolean | void>;
   onRename?: (filename: string) => boolean | void | Promise<boolean | void>;
   onError?: (message: string) => void;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
@@ -76,11 +76,12 @@ export function ExternalMermaidBlock({
       blockId={blockId}
       diagramIndex={0}
       diagramCount={1}
-      headingTitle={alt?.trim() || getFileName(path ?? source)}
+      headingTitle={getFileName(path ?? source)}
+      description={alt}
       headingLabel={<ExternalFileHeader source={source} path={path} kind="Mermaid" status={version > 0 ? "更新あり" : undefined} onRename={onRename} onError={onError} />}
       editable={editable}
       storage="external"
-      onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(diagramSource) : undefined}
+      onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(diagramSource, alt?.trim() || undefined) : undefined}
       onMediaOpen={onMediaOpen}
     />
   </div>;

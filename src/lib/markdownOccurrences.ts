@@ -139,6 +139,14 @@ export function codeFenceTitle(meta: string | null | undefined): string | undefi
   return title || undefined;
 }
 
+/** Returns the optional alt text declared on a fenced code block. */
+export function codeFenceAlt(meta: string | null | undefined): string | undefined {
+  if (!meta) return undefined;
+  const match = /(?:^|\s)alt=(?:"([^"]*)"|'([^']*)'|([^\s]+))/i.exec(meta);
+  const alt = (match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
+  return alt || undefined;
+}
+
 function splitMarkdownTableRow(line: string): string[] {
   let source = line.trim();
   if (source.startsWith("|")) source = source.slice(1);

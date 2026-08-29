@@ -24,6 +24,7 @@ interface MermaidBlockProps {
   diagramAlt?: string;
   headingTitle?: string;
   headingLabel?: ReactNode;
+  description?: string;
   editable?: boolean;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
@@ -47,6 +48,7 @@ export function MermaidBlock({
   diagramAlt = "Mermaid図",
   headingTitle,
   headingLabel,
+  description,
   editable = false,
   storage,
   onStorageConvert,
@@ -124,6 +126,7 @@ export function MermaidBlock({
   }, [diagramCount, diagramIndex, localId, mode, source, stableBlockId, statusId, tabId, theme, visible, windowId]);
 
   const toolbarLabel = `Mermaid${headingTitle?.trim() ? ` — ${headingTitle.trim()}` : ""}`;
+  const descriptionNode = description?.trim() ? <div className="diagram-alt">{description.trim()}</div> : null;
   const toolbar = showToolbar && <ResponsiveToolbar collapseAll className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
     ...(editable ? [{ id: "edit", priority: 80, node: <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button> }] : []),
     { id: "copy-view", priority: 100, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} /> },
@@ -139,6 +142,7 @@ export function MermaidBlock({
   if (mode === "off" || mode === "always-code") return <div className={`mermaid-container${showToolbar ? "" : " is-embedded"}`}>
     {toolbar}
     <pre className="mermaid-source"><code>{source}</code></pre>
+    {descriptionNode}
     {editor}
   </div>;
   const shouldShowCode = mode === "error-code" && state.error !== null;
@@ -151,6 +155,7 @@ export function MermaidBlock({
     {displayedContent === "diagram" && !state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
     {displayedContent === "diagram" && !state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
     {displayedContent === "diagram" && state.svg && <button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: diagramAlt }, diagramSource: mediaSource ?? source, diagramKind: "mermaid" })} dangerouslySetInnerHTML={{ __html: state.svg }} />}
+    {descriptionNode}
     {editor}
   </div>;
 }

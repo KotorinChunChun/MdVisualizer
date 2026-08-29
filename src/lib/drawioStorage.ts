@@ -8,20 +8,22 @@ export type DrawioStorageConversionContext =
     occurrence: CodeFenceOccurrence;
     source: string;
     relativePath?: string;
+    alt?: string;
   }
   | {
     documentPath: string;
     storage: "external";
     occurrence: ImageMarkdownOccurrence;
     source: string;
+    alt?: string;
   };
 
 function markdownDestination(source: string): string {
   return /[\s()]/.test(source) ? `<${source}>` : source;
 }
 
-export function drawioExternalReference(source: string, caption = "draw.io"): string {
-  return `![${caption.trim() || "draw.io"}](${markdownDestination(source)})`;
+export function drawioExternalReference(source: string, caption = ""): string {
+  return `![${caption.trim()}](${markdownDestination(source)})`;
 }
 
 export function drawioEmbeddedFence(source: string, lineEnding: "\n" | "\r\n" | "\r" = "\n"): string {

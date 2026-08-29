@@ -5,7 +5,7 @@ import { mermaidEmbeddedFence, mermaidExternalReference, preferredMermaidFilenam
 describe("Mermaid storage conversion", () => {
   it("creates an external image reference and a safe embedded fence", () => {
     expect(mermaidExternalReference("diagrams/flow.mmd", "処理フロー")).toBe("![処理フロー](diagrams/flow.mmd)");
-    expect(mermaidExternalReference("my diagrams/flow.mmd")).toBe("![Mermaid](<my diagrams/flow.mmd>)");
+    expect(mermaidExternalReference("my diagrams/flow.mmd")).toBe("![](<my diagrams/flow.mmd>)");
     expect(mermaidEmbeddedFence("flowchart LR\r\nA[`x`] --> B", "\r\n")).toBe("```mermaid\r\nflowchart LR\r\nA[`x`] --> B\r\n```");
   });
 

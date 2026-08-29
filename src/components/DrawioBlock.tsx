@@ -108,12 +108,13 @@ export function isEmptyDrawioSource(source: string): boolean {
   return Boolean(parsed.querySelector("mxGraphModel, mxfile"));
 }
 
-export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel, storage, onStorageConvert, onSave, onMediaOpen }: {
+export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel, description, storage, onStorageConvert, onSave, onMediaOpen }: {
   source: string;
   theme: string;
   blockId: string;
   headingTitle?: string;
   headingLabel?: ReactNode;
+  description?: string;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
   onSave?: (source: string) => boolean | void | Promise<boolean | void>;
@@ -306,6 +307,7 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
       >{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button> }] : []),
     ]} />
     <div className="drawio-block__preview" ref={previewRef}>{preview}</div>
+    {description?.trim() && <div className="diagram-alt">{description.trim()}</div>}
     {editing && !(load instanceof Error) && <DrawioEditorModal source={source} onSave={onSave!} onCancel={() => setEditing(false)} />}
   </div>;
 }

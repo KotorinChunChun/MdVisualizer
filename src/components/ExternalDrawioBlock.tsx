@@ -33,7 +33,7 @@ export function ExternalDrawioBlock({
   version: number;
   editable?: boolean;
   stagedSource?: string;
-  onStorageConvert?: (source: string) => boolean | void | Promise<boolean | void>;
+  onStorageConvert?: (source: string, alt?: string) => boolean | void | Promise<boolean | void>;
   onRename?: (filename: string) => boolean | void | Promise<boolean | void>;
   onError?: (message: string) => void;
   onStagedSourceChange?: (source: string) => boolean | void;
@@ -111,10 +111,11 @@ export function ExternalDrawioBlock({
       source={stagedSource ?? document!.content}
       theme={theme}
       blockId={blockId}
-      headingTitle={alt?.trim() || getFileName(path ?? source)}
+      headingTitle={getFileName(path ?? source)}
+      description={alt}
       headingLabel={<ExternalFileHeader source={source} path={path} kind="draw.io" status={version > 0 ? "更新あり" : undefined} onRename={onRename} onError={onError} />}
       storage="external"
-      onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(stagedSource ?? document!.content) : undefined}
+      onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(stagedSource ?? document!.content, alt?.trim() || undefined) : undefined}
       onSave={editable && (document || (stagedSource !== undefined && onStagedSourceChange)) ? save : undefined}
       onMediaOpen={onMediaOpen}
     />

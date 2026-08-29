@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const { loadMarkdown } = vi.hoisted(() => ({ loadMarkdown: vi.fn() }));
 vi.mock("../lib/commands", () => ({ loadMarkdown }));
 vi.mock("./MermaidBlock", () => ({
-  MermaidBlock: ({ source, headingTitle, storage, editable, onStorageConvert }: { source: string; headingTitle?: string; storage?: string; editable?: boolean; onStorageConvert?: () => void }) => <div>
-    <output data-testid="external-mermaid" data-title={headingTitle} data-storage={storage} data-editable={String(editable)}>{source}</output>
+  MermaidBlock: ({ source, headingTitle, description, storage, editable, onStorageConvert }: { source: string; headingTitle?: string; description?: string; storage?: string; editable?: boolean; onStorageConvert?: () => void }) => <div>
+    <output data-testid="external-mermaid" data-title={headingTitle} data-description={description} data-storage={storage} data-editable={String(editable)}>{source}</output>
     {onStorageConvert && <button type="button" onClick={onStorageConvert}>埋め込みへ切替</button>}
   </div>,
 }));
@@ -23,8 +23,9 @@ describe("ExternalMermaidBlock", () => {
     expect((await screen.findByTestId("external-mermaid")).textContent).toContain("A --> B");
     expect(loadMarkdown).toHaveBeenCalledWith("C:/docs/flow.mmd");
     fireEvent.click(screen.getByRole("button", { name: "埋め込みへ切替" }));
-    expect(onStorageConvert).toHaveBeenCalledWith("flowchart LR\nA --> B");
-    expect(screen.getByTestId("external-mermaid").dataset.title).toBe("処理フロー");
+    expect(onStorageConvert).toHaveBeenCalledWith("flowchart LR\nA --> B", "処理フロー");
+    expect(screen.getByTestId("external-mermaid").dataset.title).toBe("flow.mmd");
+    expect(screen.getByTestId("external-mermaid").dataset.description).toBe("処理フロー");
   });
 
   it("renders staged Mermaid source without touching the filesystem", async () => {

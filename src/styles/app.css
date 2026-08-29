@@ -517,6 +517,7 @@ body {
 .diagram-block__header > .mermaid-toolbar { padding: 0; }
 .diagram-edit-button { flex: 0 0 auto; width: auto; min-height: 30px; padding: 5px 9px; font-size: inherit; white-space: nowrap; }
 .mermaid-container > .mermaid-source { margin: 0; border: 0; border-radius: 0; }
+.diagram-alt { padding: 8px 10px; color: var(--text-primary); background: var(--panel-bg); border-top: 1px solid var(--border-color); overflow-wrap: anywhere; }
 .plantuml-container > .mermaid-toolbar { justify-content: flex-end; }
 .plantuml-container > .mermaid-toolbar strong { margin-right: auto; color: var(--text-secondary); font-size: 12px; }
 .mermaid-error { display: flex; align-items: center; gap: 8px; max-width: 100%; padding: 10px 12px; color: #f87171; overflow-wrap: anywhere; background: color-mix(in srgb, currentColor 7%, transparent); }

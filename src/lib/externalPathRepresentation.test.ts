@@ -6,13 +6,14 @@ const fence = (markdown: string) => collectEditableMarkdownOccurrences(markdown)
 
 describe("external path representation", () => {
   it.each([
-    ["### src/main.ts\n\n```ts\ncode\n```", "heading"],
-    ["**`src/main.ts`**\n\n```ts\ncode\n```", "bold-code"],
-    ['```ts title="src/main.ts"\ncode\n```', "fence-title"],
-    ["```ts:src/main.ts\ncode\n```", "fence-colon"],
+    ["### src/main.ts — Main flow\n\n```ts\ncode\n```", "heading"],
+    ["**`src/main.ts - Main flow`**\n\n```ts\ncode\n```", "bold-code"],
+    ['```ts title="src/main.ts" alt="Main flow"\ncode\n```', "fence-title"],
+    ["```ts:src/main.ts - Main flow\ncode\n```", "fence-colon"],
   ] as const)("%s から相対パスを検出する", (markdown, style) => {
     const result = codeFencePathDecoration(markdown, fence(markdown));
     expect(result.relativePath).toBe("src/main.ts");
+    expect(result.alt).toBe("Main flow");
     expect(result.style).toBe(style);
     if (style === "heading" || style === "bold-code") expect(result.occurrence.start).toBe(0);
   });
@@ -24,6 +25,20 @@ describe("external path representation", () => {
     expect(embeddedFenceWithPath({ language: "ts", body: "code", relativePath: "src/main.ts", style: "fence-colon" })).toContain("```ts:src/main");
   });
 
+  it("alt付きの4方式を指定どおり生成する", () => {
+    expect(embeddedFenceWithPath({ language: "drawio", body: "xml", relativePath: "diagram.drawio", alt: "構成図", style: "heading" })).toContain("### diagram — 構成図");
+    expect(embeddedFenceWithPath({ language: "mermaid", body: "flow", relativePath: "diagram.mmd", alt: "処理フロー", style: "bold-code" })).toContain("**`diagram - 処理フロー`**");
+    expect(embeddedFenceWithPath({ language: "drawio", body: "xml", relativePath: "diagram.drawio", alt: "構成図", style: "fence-title" })).toContain('```drawio title="diagram" alt="構成図"');
+    expect(embeddedFenceWithPath({ language: "mermaid", body: "flow", relativePath: "diagram.mmd", alt: "処理フロー", style: "fence-colon" })).toContain("```mermaid:diagram - 処理フロー");
+  });
+
+  it("altなしの4方式は拡張子なしのファイル名だけを生成する", () => {
+    expect(embeddedFenceWithPath({ language: "drawio", body: "xml", relativePath: "diagram.drawio", style: "heading" })).toContain("### diagram\n");
+    expect(embeddedFenceWithPath({ language: "mermaid", body: "flow", relativePath: "diagram.mmd", style: "bold-code" })).toContain("**`diagram`**");
+    expect(embeddedFenceWithPath({ language: "drawio", body: "xml", relativePath: "diagram.drawio", style: "fence-title" })).toContain('```drawio title="diagram"');
+    expect(embeddedFenceWithPath({ language: "mermaid", body: "flow", relativePath: "diagram.mmd", style: "fence-colon" })).toContain("```mermaid:diagram\n");
+  });
+
   it("拡張子をファイル名の末尾だけで除去・付与する", () => {
     expect(removeFilenameExtension("src/main.ts")).toBe("src/main");
     expect(removeFilenameExtension("src/.main")).toBe("src/.main");
@@ -32,7 +47,7 @@ describe("external path representation", () => {
   });
 
   it("コロン記法から言語とパスを分離する", () => {
-    expect(splitFenceLanguagePath("mermaid:diagrams/flow.mmd")).toEqual({ language: "mermaid", relativePath: "diagrams/flow.mmd" });
+    expect(splitFenceLanguagePath("mermaid:diagrams/flow.mmd - 処理フロー")).toEqual({ language: "mermaid", relativePath: "diagrams/flow.mmd", alt: "処理フロー" });
   });
 
   it.each([

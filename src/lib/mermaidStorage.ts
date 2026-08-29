@@ -2,15 +2,15 @@ import type { CodeFenceOccurrence, ImageMarkdownOccurrence } from "./markdownOcc
 import { normalizedAssetFilename } from "./assetConversion";
 
 export type MermaidStorageConversionContext =
-  | { documentPath: string; storage: "embedded"; occurrence: CodeFenceOccurrence; source: string; relativePath?: string }
-  | { documentPath: string; storage: "external"; occurrence: ImageMarkdownOccurrence; source: string };
+  | { documentPath: string; storage: "embedded"; occurrence: CodeFenceOccurrence; source: string; relativePath?: string; alt?: string }
+  | { documentPath: string; storage: "external"; occurrence: ImageMarkdownOccurrence; source: string; alt?: string };
 
 function markdownDestination(source: string): string {
   return /[\s()]/.test(source) ? `<${source}>` : source;
 }
 
-export function mermaidExternalReference(source: string, caption = "Mermaid"): string {
-  return `![${caption.trim() || "Mermaid"}](${markdownDestination(source)})`;
+export function mermaidExternalReference(source: string, caption = ""): string {
+  return `![${caption.trim()}](${markdownDestination(source)})`;
 }
 
 export function mermaidEmbeddedFence(source: string, lineEnding: "\n" | "\r\n" | "\r" = "\n"): string {

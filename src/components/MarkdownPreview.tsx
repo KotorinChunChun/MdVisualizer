@@ -245,9 +245,10 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       theme={context.theme}
       blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
       headingTitle={removeFilenameExtension(codeFenceTitle(occurrence?.meta) ?? "") || undefined}
+      description={decoration?.alt}
       storage={occurrence ? "embedded" : undefined}
       onStorageConvert={decoration && context.documentPath && context.onDrawioStorageConvert
-        ? () => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: String(children ?? "").replace(/\n$/, ""), relativePath: decoration.relativePath })
+        ? () => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: String(children ?? "").replace(/\n$/, ""), relativePath: decoration.relativePath, alt: decoration.alt })
         : undefined}
       onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
       onMediaOpen={context.onMediaOpen}
@@ -295,11 +296,12 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       diagramIndex={diagramIndex}
       diagramCount={context.mermaidFenceOffsets.length}
       headingTitle={removeFilenameExtension(codeFenceTitle(occurrence?.meta) ?? "") || undefined}
+      description={decoration?.alt}
       onMediaOpen={context.onMediaOpen}
       editable={!context.staticMode && !context.presentationMode && Boolean(context.documentPath)}
       storage={occurrence ? "embedded" : undefined}
       onStorageConvert={decoration && context.documentPath && context.onMermaidStorageConvert
-        ? () => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: mermaidSource, relativePath: decoration.relativePath })
+        ? () => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: mermaidSource, relativePath: decoration.relativePath, alt: decoration.alt })
         : undefined}
     />;
   }
@@ -427,7 +429,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
         ? (text) => context.onStagedTextAssetChange?.(source, text)
         : undefined}
       onStorageConvert={occurrence && context.documentPath && context.onDrawioStorageConvert
-        ? (drawioSource) => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: drawioSource })
+        ? (drawioSource, drawioAlt) => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: drawioSource, alt: drawioAlt })
         : undefined}
       onRename={context.documentPath && context.onExternalFileRename
         ? (filename) => context.onExternalFileRename?.({ documentPath: context.documentPath!, filePath: drawioPath, source }, filename)
@@ -450,7 +452,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       editable={!context.staticMode && !context.presentationMode}
       stagedSource={context.stagedMermaidSources[source]}
       onStorageConvert={occurrence && context.documentPath && context.onMermaidStorageConvert
-        ? (mermaidSource) => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: mermaidSource })
+        ? (mermaidSource, mermaidAlt) => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: mermaidSource, alt: mermaidAlt })
         : undefined}
       onRename={context.documentPath && context.onExternalFileRename
         ? (filename) => context.onExternalFileRename?.({ documentPath: context.documentPath!, filePath: mermaidPath, source }, filename)

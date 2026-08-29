@@ -1,9 +1,10 @@
-import { codeFenceTitle, type CodeFenceOccurrence } from "./markdownOccurrences";
+import { codeFenceAlt, codeFenceTitle, type CodeFenceOccurrence } from "./markdownOccurrences";
 import type { EmbeddedPathStyle } from "../types/settings";
 
 export interface CodeFencePathDecoration {
   occurrence: CodeFenceOccurrence;
   relativePath?: string;
+  alt?: string;
   style?: EmbeddedPathStyle;
 }
 
@@ -31,11 +32,23 @@ export function appendFilenameExtension(value: string, extension: string): strin
   return normalizedExtension ? `${stem}.${normalizedExtension}` : stem;
 }
 
-export function splitFenceLanguagePath(language: string): { language: string; relativePath?: string } {
+function singleLineAlt(value: string | undefined): string | undefined {
+  const alt = value?.trim().replace(/\r\n|\r|\n/g, " ").replace(/\s+/g, " ");
+  return alt || undefined;
+}
+
+function splitPathAndAlt(value: string, separator: string): { path: string; alt?: string } {
+  const index = value.indexOf(separator);
+  if (index < 0) return { path: value };
+  return { path: value.slice(0, index).trim(), alt: singleLineAlt(value.slice(index + separator.length)) };
+}
+
+export function splitFenceLanguagePath(language: string): { language: string; relativePath?: string; alt?: string } {
   const separator = language.indexOf(":");
   if (separator <= 0) return { language };
-  const relativePath = normalizeRelativeAssetPath(language.slice(separator + 1));
-  return relativePath ? { language: language.slice(0, separator), relativePath } : { language };
+  const pathAndAlt = splitPathAndAlt(language.slice(separator + 1), " - ");
+  const relativePath = normalizeRelativeAssetPath(pathAndAlt.path);
+  return relativePath ? { language: language.slice(0, separator), relativePath, alt: pathAndAlt.alt } : { language };
 }
 
 function expandedOccurrence(markdown: string, occurrence: CodeFenceOccurrence, start: number): CodeFenceOccurrence {
@@ -72,24 +85,29 @@ const headingDescriptor = new RegExp(`^${descriptorPrefix}(#{1,6}[ \\t]+(.+?)[ \
 const boldCodeDescriptor = new RegExp(`^${descriptorPrefix}(\\*\\*\x60([^\x60\\r\\n]+)\x60\\*\\*)[ \\t]*$`);
 
 export function codeFencePathDecoration(markdown: string, occurrence: CodeFenceOccurrence): CodeFencePathDecoration {
-  const titlePath = normalizeRelativeAssetPath(codeFenceTitle(occurrence.meta));
-  if (titlePath) return { occurrence, relativePath: titlePath, style: "fence-title" };
+  const titleValue = codeFenceTitle(occurrence.meta);
+  const titlePathAndAlt = titleValue ? splitPathAndAlt(titleValue, " — ") : undefined;
+  const titlePath = normalizeRelativeAssetPath(titlePathAndAlt?.path);
+  if (titlePath) return { occurrence, relativePath: titlePath, alt: codeFenceAlt(occurrence.meta) ?? titlePathAndAlt?.alt, style: "fence-title" };
   const colon = splitFenceLanguagePath(occurrence.language);
-  if (colon.relativePath) return { occurrence, relativePath: colon.relativePath, style: "fence-colon" };
+  const colonMetaAlt = occurrence.meta.trim().replace(/^-\s*/, "");
+  if (colon.relativePath) return { occurrence, relativePath: colon.relativePath, alt: colon.alt ?? singleLineAlt(colonMetaAlt), style: "fence-colon" };
 
   const descriptor = previousDescriptorLine(markdown, codeFenceOpeningStart(occurrence));
   const heading = descriptor ? headingDescriptor.exec(descriptor.line) : null;
-  const headingPath = normalizeRelativeAssetPath(heading?.[3]);
+  const headingPathAndAlt = heading?.[3] ? splitPathAndAlt(heading[3], " — ") : undefined;
+  const headingPath = normalizeRelativeAssetPath(headingPathAndAlt?.path);
   if (descriptor && heading && headingPath) {
     const start = descriptor.start + heading[1].length;
-    return { occurrence: expandedOccurrence(markdown, occurrence, start), relativePath: headingPath, style: "heading" };
+    return { occurrence: expandedOccurrence(markdown, occurrence, start), relativePath: headingPath, alt: headingPathAndAlt?.alt, style: "heading" };
   }
 
   const bold = descriptor ? boldCodeDescriptor.exec(descriptor.line) : null;
-  const boldPath = normalizeRelativeAssetPath(bold?.[3]);
+  const boldPathAndAlt = bold?.[3] ? splitPathAndAlt(bold[3], " - ") : undefined;
+  const boldPath = normalizeRelativeAssetPath(boldPathAndAlt?.path);
   if (descriptor && bold && boldPath) {
     const start = descriptor.start + bold[1].length;
-    return { occurrence: expandedOccurrence(markdown, occurrence, start), relativePath: boldPath, style: "bold-code" };
+    return { occurrence: expandedOccurrence(markdown, occurrence, start), relativePath: boldPath, alt: boldPathAndAlt?.alt, style: "bold-code" };
   }
   return { occurrence };
 }
@@ -107,22 +125,26 @@ function escapeTitlePath(path: string): string {
   return path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
-export function embeddedFenceWithPath({ language, body, relativePath, style, lineEnding = "\n", continuationPrefix = "" }: {
+export function embeddedFenceWithPath({ language, body, relativePath, alt, style, lineEnding = "\n", continuationPrefix = "" }: {
   language: string;
   body: string;
   relativePath: string;
+  alt?: string;
   style: EmbeddedPathStyle;
   lineEnding?: "\n" | "\r\n" | "\r";
   continuationPrefix?: string;
 }): string {
   const normalizedPath = removeFilenameExtension(normalizeRelativeAssetPath(relativePath) ?? relativePath.replace(/\\/g, "/"));
+  const normalizedAlt = singleLineAlt(alt);
   const normalizedBody = body.trim().replace(/\r\n|\r|\n/g, lineEnding);
   const longestBacktickRun = Math.max(0, ...Array.from(normalizedBody.matchAll(/`+/g), (match) => match[0].length));
   const marker = "`".repeat(Math.max(3, longestBacktickRun + 1));
   const opening = style === "fence-title"
-    ? `${marker}${language} title="${escapeTitlePath(normalizedPath)}"`
-    : style === "fence-colon" ? `${marker}${language}:${normalizedPath}` : `${marker}${language}`;
-  const descriptor = style === "heading" ? `### ${normalizedPath}` : style === "bold-code" ? `**\`${normalizedPath}\`**` : undefined;
+    ? `${marker}${language} title="${escapeTitlePath(normalizedPath)}"${normalizedAlt ? ` alt="${escapeTitlePath(normalizedAlt)}"` : ""}`
+    : style === "fence-colon" ? `${marker}${language}:${normalizedPath}${normalizedAlt ? ` - ${normalizedAlt}` : ""}` : `${marker}${language}`;
+  const descriptor = style === "heading"
+    ? `### ${normalizedPath}${normalizedAlt ? ` — ${normalizedAlt}` : ""}`
+    : style === "bold-code" ? `**\`${normalizedPath}${normalizedAlt ? ` - ${normalizedAlt}` : ""}\`**` : undefined;
   const lines = [...(descriptor ? [descriptor, ""] : []), opening, normalizedBody, marker];
   return lines.map((line, index) => `${index > 0 ? continuationPrefix : ""}${line}`).join(lineEnding);
 }

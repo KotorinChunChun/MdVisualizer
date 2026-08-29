@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  codeFenceAlt,
   codeFenceTitle,
   collectEditableMarkdownOccurrences,
   MarkdownOccurrenceConflictError,
@@ -16,6 +17,13 @@ describe("editable Markdown occurrences", () => {
     expect(codeFenceTitle("caption='処理フロー'")).toBe("処理フロー");
     expect(codeFenceTitle("title=overview other=value")).toBe("overview");
     expect(codeFenceTitle("other=value")).toBeUndefined();
+  });
+
+  it("extracts optional quoted and unquoted alt text from fence metadata", () => {
+    expect(codeFenceAlt('title="diagram" alt="説明テキスト"')).toBe("説明テキスト");
+    expect(codeFenceAlt("alt='処理フロー'")).toBe("処理フロー");
+    expect(codeFenceAlt("alt=overview other=value")).toBe("overview");
+    expect(codeFenceAlt('title="diagram"')).toBeUndefined();
   });
 
   it("collects fenced blocks, duplicate images, HTML images, and inline SVG with exact ranges", () => {
