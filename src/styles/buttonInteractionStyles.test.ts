@@ -29,7 +29,7 @@ describe("button interaction styles", () => {
   });
 
   it("renders diagram alt text as a framed row", () => {
-    expect(appCss).toContain(".diagram-alt { padding: 8px 10px;");
+    expect(appCss).toContain(".diagram-alt { padding: 8px 10px; color: var(--text-primary); text-align: center;");
     expect(appCss).toContain("border-top: 1px solid var(--border-color);");
   });
 
