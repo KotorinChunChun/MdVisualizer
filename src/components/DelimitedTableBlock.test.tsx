@@ -25,7 +25,11 @@ describe("DelimitedTableBlock", () => {
 
     fireEvent.click(toggle);
     expect(screen.getByLabelText("スライサー")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "フィルタ解除" })).toBeTruthy();
+    const slicer = screen.getByLabelText("スライサー");
+    const clearButtons = within(slicer).getAllByRole("button", { name: "フィルタ解除" });
+    expect(clearButtons).toHaveLength(2);
+    expect(clearButtons.every((button) => (button as HTMLButtonElement).disabled)).toBe(true);
+    expect(within(screen.getByRole("toolbar", { name: "表操作" })).queryByRole("button", { name: "フィルタ解除" })).toBeNull();
     view.rerender(<DelimitedTableBlock language="csv" source={"name,city\nCarol,Nagoya"} />);
     expect(screen.getByRole("button", { name: "スライサー" }).getAttribute("aria-pressed")).toBe("false");
     expect(screen.queryByLabelText("スライサー")).toBeNull();
@@ -50,6 +54,11 @@ describe("DelimitedTableBlock", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Tokyo/ }));
     expect(within(screen.getByRole("table")).queryByText("Bob")).toBeNull();
     expect(screen.getByText("2 / 3 行")).toBeTruthy();
+    const slicer = screen.getByLabelText("スライサー");
+    const cityClear = within(slicer).getAllByRole("button", { name: "フィルタ解除" })[1];
+    expect((cityClear as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(cityClear);
+    expect(screen.getByText("3 / 3 行")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "列表示" }));
     const columnPanel = screen.getByLabelText("列表示の選択");

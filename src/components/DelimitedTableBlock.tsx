@@ -110,7 +110,12 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
     if (existing.direction === "ascending") return [{ column, direction: "descending" }, ...remaining];
     return remaining;
   });
-  const clearFilters = () => { setQuery(""); setSelectedValues({}); };
+  const clearColumnFilter = (column: number) => setSelectedValues((current) => {
+    if (!(column in current)) return current;
+    const next = { ...current };
+    delete next[column];
+    return next;
+  });
   const exportRows = [visibleIndexes.map((index) => headers[index]), ...filteredRows.map((row) => visibleIndexes.map((index) => row[index] ?? ""))];
 
   const serialized = (format: "csv" | "tsv") => serializeDelimitedTable({
@@ -191,7 +196,6 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
       { id: "search", priority: 120, fixed: true, measurementWidth: 180, node: <label className="data-grid-search"><input aria-label="検索キーワードを入力" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="検索キーワードを入力" /></label> },
       { id: "columns", priority: 20, node: <button type="button" aria-pressed={columnsOpen} className={columnsOpen ? "active" : ""} onClick={() => setColumnsOpen((open) => !open)}>列表示</button> },
       { id: "slicer", priority: 25, node: <button type="button" aria-pressed={panesOpen} className={panesOpen ? "active" : ""} onClick={() => setPanesOpen((open) => !open)}>スライサー</button> },
-      ...(panesOpen ? [{ id: "clear", priority: 20, node: <button type="button" disabled={!query && Object.values(selectedValues).every((values) => values.length === 0)} onClick={clearFilters}>フィルタ解除</button> }] : []),
       ...(onSave ? [{ id: "edit", priority: 110, node: <button type="button" onClick={() => setEditing(true)}>表を編集</button> }] : []),
       { id: "copy-csv", priority: 100, node: <button type="button" onClick={() => void copy("csv")}>CSVコピー</button> },
       { id: "copy-tsv", priority: 95, node: <button type="button" onClick={() => void copy("tsv")}>TSVコピー</button> },
@@ -205,7 +209,8 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
     {panesOpen && <div className="search-panes" aria-label="スライサー">{headers.map((header, column) => {
       const counts = new Map<string, number>();
       rows.forEach((row) => counts.set(row[column] ?? "", (counts.get(row[column] ?? "") ?? 0) + 1));
-      return <fieldset key={column}><legend>{header}</legend>{[...counts.entries()].sort(([left], [right]) => compareDelimitedValues(left, right)).slice(0, 250).map(([value, count]) => <label key={value}><input type="checkbox" checked={(selectedValues[column] ?? []).includes(value)} onChange={(event) => setSelectedValues((current) => {
+      const columnValues = selectedValues[column] ?? [];
+      return <fieldset key={column}><legend>{header}<button type="button" className="search-panes__clear" disabled={columnValues.length === 0} onClick={() => clearColumnFilter(column)}>フィルタ解除</button></legend>{[...counts.entries()].sort(([left], [right]) => compareDelimitedValues(left, right)).slice(0, 250).map(([value, count]) => <label key={value}><input type="checkbox" checked={columnValues.includes(value)} onChange={(event) => setSelectedValues((current) => {
         const values = current[column] ?? [];
         return { ...current, [column]: event.target.checked ? [...values, value] : values.filter((candidate) => candidate !== value) };
       })} /><span>{value || "(空白)"}</span><small>{count}</small></label>)}</fieldset>;

@@ -13,6 +13,9 @@
 .data-grid-column-panel label, .search-panes label { display: flex; align-items: center; gap: 5px; }
 .search-panes { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; max-height: 260px; padding: 8px; overflow: auto; border-bottom: 1px solid var(--border-color); }
 .search-panes fieldset { min-width: 0; max-height: 220px; padding: 6px; overflow: auto; border: 1px solid var(--border-color); border-radius: 5px; }
+.search-panes legend { display: flex; width: 100%; align-items: center; gap: 6px; }
+.search-panes__clear { min-height: 24px; margin-left: auto; padding: 2px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
+.search-panes__clear:disabled { cursor: not-allowed; opacity: .5; }
 .search-panes label span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-panes label small { margin-left: auto; color: var(--text-muted); }
 .data-grid-table-wrap { overflow: auto; }
