@@ -147,6 +147,22 @@ describe("DelimitedTableBlock", () => {
     expect(row.className).toContain("is-selected-row");
   });
 
+  it("quotes tabs and line breaks when copying a column or row as TSV", () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<DelimitedTableBlock language="csv" source={'name,notes\nAlice,"line1\nline2"\nBob,"a\tb"'} />);
+
+    const notesHeader = screen.getByRole("button", { name: /notes:/ }).closest("th")!;
+    fireEvent.contextMenu(notesHeader);
+    fireEvent.click(screen.getByRole("menuitem", { name: "選択した列のコピー" }));
+    expect(writeText).toHaveBeenLastCalledWith('notes\n"line1\nline2"\n"a\tb"');
+
+    const aliceRow = screen.getByText("Alice").closest("tr")!;
+    fireEvent.contextMenu(aliceRow);
+    fireEvent.click(screen.getByRole("menuitem", { name: "選択した行をTSVでコピー" }));
+    expect(writeText).toHaveBeenLastCalledWith('Alice\t"line1\nline2"');
+  });
+
   it("serializes calculated cells when applying an edited delimited table", () => {
     const onSave = vi.fn().mockReturnValue(true);
     render(<DelimitedTableBlock language="csv" source={"項目,値\nA,10\nB,20\n合計,"} onSave={onSave} />);

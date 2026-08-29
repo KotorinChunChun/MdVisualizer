@@ -33,4 +33,30 @@ describe("immediate Markdown mutation", () => {
     const decorated = { ...native, start: 0, expected: markdown };
     expect(replaceRelocatedOccurrence(markdown, decorated, "![Mermaid](diagrams/flow.mmd)")).toBe("![Mermaid](diagrams/flow.mmd)");
   });
+
+  it("同種候補がない場合は別種のMarkdown要素を誤置換しない", () => {
+    const originalMarkdown = "```drawio\n<mxGraphModel/>\n```";
+    const [original] = collectEditableMarkdownOccurrences(originalMarkdown);
+    const markdownWithoutCodeFence = "![構成図](diagram.drawio)";
+
+    expect(() => replaceBestEffortOccurrence(markdownWithoutCodeFence, original, "replacement"))
+      .toThrow(MarkdownOccurrenceConflictError);
+    expect(markdownWithoutCodeFence).toBe("![構成図](diagram.drawio)");
+  });
+
+  it("同じコードフェンスでも言語が異なる候補は誤置換しない", () => {
+    const [original] = collectEditableMarkdownOccurrences("```drawio\n<mxGraphModel/>\n```");
+    const mermaidOnly = "```mermaid\nflowchart LR\nA-->B\n```";
+
+    expect(() => replaceBestEffortOccurrence(mermaidOnly, original, "replacement"))
+      .toThrow(MarkdownOccurrenceConflictError);
+  });
+
+  it("同じ画像参照でも拡張子が異なる候補は誤置換しない", () => {
+    const [original] = collectEditableMarkdownOccurrences("![](diagram.drawio)");
+    const pngOnly = "![](diagram.png)";
+
+    expect(() => replaceBestEffortOccurrence(pngOnly, original, "replacement"))
+      .toThrow(MarkdownOccurrenceConflictError);
+  });
 });

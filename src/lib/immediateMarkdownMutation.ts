@@ -46,8 +46,20 @@ function similarityScore(candidate: EditableMarkdownOccurrence, original: Editab
   return score;
 }
 
+function isCompatibleBaselineCandidate(candidate: EditableMarkdownOccurrence, original: EditableMarkdownOccurrence): boolean {
+  if (candidate.kind !== original.kind) return false;
+  if (candidate.kind === "code-fence" && original.kind === "code-fence") {
+    return splitFenceLanguagePath(candidate.language).language === splitFenceLanguagePath(original.language).language;
+  }
+  if (candidate.kind === "image" && original.kind === "image") {
+    const extension = (value: string) => /\.([a-z0-9]+)(?:[?#]|$)/i.exec(value)?.[1]?.toLowerCase() ?? "";
+    return extension(candidate.source) === extension(original.source);
+  }
+  return true;
+}
+
 /**
- * Updates the launch-time Diff baseline after a forced storage conversion.
+ * Updates the saved Diff baseline after a forced storage conversion.
  * Exact text is preferred; when the baseline predates another confirmed
  * conversion, the closest same-kind candidate is selected by position,
  * source length, body length, language, and extension.
@@ -60,6 +72,7 @@ export function replaceBestEffortOccurrence(
   try { return replaceRelocatedOccurrence(markdown, original, replacement); }
   catch {
     const candidates = relocationCandidates(markdown)
+      .filter((candidate) => isCompatibleBaselineCandidate(candidate, original))
       .sort((left, right) => similarityScore(left, original) - similarityScore(right, original));
     const candidate = candidates[0];
     if (!candidate) throw new MarkdownOccurrenceConflictError();

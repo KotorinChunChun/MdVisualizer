@@ -1447,7 +1447,7 @@ export function App() {
     try {
       const content = replaceCodeFenceBody(tab.draft, occurrence, body);
       dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
-      setToast({ id: crypto.randomUUID(), message: "表の変更をMarkdownドラフトへ反映しました", type: "success" });
+      setToast({ id: crypto.randomUUID(), message: "コードブロックの変更をMarkdownドラフトへ反映しました", type: "success" });
       return true;
     } catch (error) {
       setToast({ id: crypto.randomUUID(), message: error instanceof Error ? error.message : String(error), type: "error" });

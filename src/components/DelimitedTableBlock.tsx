@@ -241,7 +241,11 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
         <button type="button" role="menuitem" onClick={() => {
           setSelectedColumn(contextMenu.column);
           setSelectedRow(null);
-          void copyText([headers[contextMenu.column], ...filteredRows.map((row) => row[contextMenu.column] ?? "")].join("\n"), "列をコピーしました");
+          void copyText(serializeDelimitedTable({
+            delimiter: "\t",
+            headers: [headers[contextMenu.column]],
+            rows: filteredRows.map((row) => [row[contextMenu.column] ?? ""]),
+          }), "列をコピーしました");
           setContextMenu(null);
         }}>選択した列のコピー</button>
       </> : <>
@@ -249,7 +253,11 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
         <button type="button" role="menuitem" onClick={() => {
           setSelectedRow(contextMenu.row);
           setSelectedColumn(null);
-          void copyText(visibleIndexes.map((column) => contextMenu.row[column] ?? "").join("\t"), "行をコピーしました");
+          void copyText(serializeDelimitedTable({
+            delimiter: "\t",
+            headers: visibleIndexes.map((column) => contextMenu.row[column] ?? ""),
+            rows: [],
+          }), "行をコピーしました");
           setContextMenu(null);
         }}>選択した行をTSVでコピー</button>
         <button type="button" role="menuitem" onClick={() => { selectBlock(); setContextMenu(null); }}>ブロック全体を選択</button>
