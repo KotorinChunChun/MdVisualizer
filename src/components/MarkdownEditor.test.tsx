@@ -11,6 +11,17 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("MarkdownEditor", () => {
+  it("highlights and refreshes changed lines when embedded in Diff", async () => {
+    const { container, rerender } = render(<MarkdownEditor documentId="diff:1" value={"one\ntwo\nthree"} dirty saving={false} onChange={() => {}} onSave={() => {}} diffChangedLines={new Set([2])} />);
+
+    await waitFor(() => expect(container.querySelector(".cm-line.cm-diff-changed-line")?.textContent).toBe("two"));
+
+    rerender(<MarkdownEditor documentId="diff:1" value={"one\ntwo\nthree"} dirty saving={false} onChange={() => {}} onSave={() => {}} diffChangedLines={new Set([3])} />);
+    await waitFor(() => {
+      expect(container.querySelector(".cm-line.cm-diff-changed-line")?.textContent).toBe("three");
+    });
+  });
+
   it("moves focus and the cursor to a requested source line through its imperative API", async () => {
     const ref = createRef<MarkdownEditorHandle>();
     const onActiveLineChange = vi.fn();

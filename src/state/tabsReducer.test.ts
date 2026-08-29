@@ -181,17 +181,17 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].document?.content).toBe("# Test");
   });
 
-  it("keeps the first opened content after reloads and saves", () => {
+  it("keeps the last saved content as the Diff baseline after reloads", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
     const id = state.tabs[0].id;
     state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: { ...loadedDocument("C:\\docs\\a.md"), content: "opened" } });
     state = tabsReducer(state, { type: "SAVED", id, document: { ...loadedDocument("C:\\docs\\a.md"), content: "saved" } });
     state = tabsReducer(state, { type: "RELOAD", id });
     state = tabsReducer(state, { type: "LOADED", id, generation: 2, document: { ...loadedDocument("C:\\docs\\a.md"), content: "external" } });
-    expect(state.tabs[0].openedContent).toBe("opened");
+    expect(state.tabs[0].openedContent).toBe("saved");
   });
 
-  it("即時保存では起動時コードの確定部分と未保存ドラフトを同時更新する", () => {
+  it("即時保存では保存済み基準の確定部分と未保存ドラフトを同時更新する", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
     const id = state.tabs[0].id;
     state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: { ...loadedDocument("C:\\docs\\a.md"), content: "opened" } });

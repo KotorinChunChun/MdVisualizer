@@ -12,7 +12,7 @@ export interface TabState {
   /** True until a Ctrl+N document is assigned a filesystem path. */
   untitled?: boolean;
   document: MarkdownLoadResult | null;
-  /** The immutable text captured by the first successful load of this tab. */
+  /** The last content successfully persisted by the app; the Diff comparison baseline. */
   openedContent?: string;
   error: string | null;
   loading: boolean;
@@ -229,6 +229,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
           path: action.document.path,
           untitled: false,
           document: action.document,
+          openedContent: action.document.content,
           draft,
           dirty: draft !== action.document.content,
           saving: false,

@@ -46,6 +46,16 @@ describe("save conflict wiring", () => {
     expect(source).toContain("storageRevision: result.latest.revision");
     expect(source).toContain("saveTab(activeTab.id, documentDiff.storageRevision)");
   });
+
+  it("keeps an open Diff workspace and advances its saved baseline after save", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    const saveSuccess = source.indexOf('dispatch({ type: "SAVED", id, document, committedAssetIds: stagedAssetIds })');
+    const saveToast = source.indexOf('setToast({ id: String(Date.now()), message: `${document.path} を保存しました`', saveSuccess);
+    expect(saveSuccess).toBeGreaterThan(-1);
+    expect(source.slice(saveSuccess, saveToast)).toContain("setDocumentDiff((current)");
+    expect(source.slice(saveSuccess, saveToast)).toContain("openedContent: document.content");
+    expect(source.slice(saveSuccess, saveToast)).not.toContain("setDocumentDiff(null)");
+  });
 });
 
 describe("Edit and View pane coordination", () => {

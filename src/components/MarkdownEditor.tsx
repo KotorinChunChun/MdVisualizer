@@ -3,8 +3,8 @@ import { basicSetup } from "codemirror";
 import { indentWithTab } from "@codemirror/commands";
 import { foldAll, foldEffect, foldService, unfoldAll } from "@codemirror/language";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { EditorState, Prec } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
+import { EditorState, Prec, StateEffect, StateField } from "@codemirror/state";
+import { Decoration, type DecorationSet, EditorView, keymap } from "@codemirror/view";
 import {
   buildContextualMarkdownEdit,
   buildOrderedListNormalization,
@@ -41,6 +41,8 @@ interface MarkdownEditorProps {
   onPasteImageError?: (error: unknown) => void;
   onLineEndingsNormalized?: (lineEnding: MarkdownLineEnding) => void;
   compact?: boolean;
+  /** One-based lines to highlight when this editor is embedded in Diff. */
+  diffChangedLines?: ReadonlySet<number>;
   onScrollLine?: (line: number) => void;
   onActiveLineChange?: (line: number) => void;
   onCursorPositionChange?: (position: EditorCursorPosition) => void;
@@ -88,6 +90,22 @@ const base64FoldService = foldService.of((state, lineStart) => {
   return findBase64FoldRange(line.text, line.from);
 });
 
+const setDiffChangedLines = StateEffect.define<ReadonlySet<number>>();
+const diffChangedLinesField = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(value, transaction) {
+    let next = value.map(transaction.changes);
+    for (const effect of transaction.effects) {
+      if (!effect.is(setDiffChangedLines)) continue;
+      next = Decoration.set([...effect.value]
+        .filter((line) => Number.isInteger(line) && line >= 1 && line <= transaction.state.doc.lines)
+        .map((line) => Decoration.line({ class: "cm-diff-changed-line" }).range(transaction.state.doc.line(line).from)), true);
+    }
+    return next;
+  },
+  provide: (field) => EditorView.decorations.from(field),
+});
+
 function foldBase64Data(view: EditorView) {
   const effects = [];
   for (let number = 1; number <= view.state.doc.lines; number += 1) {
@@ -116,7 +134,7 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, onScrollLine, onActiveLineChange, onCursorPositionChange }, ref) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, diffChangedLines, onScrollLine, onActiveLineChange, onCursorPositionChange }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -208,6 +226,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         EditorState.lineSeparator.of("\n"),
         EditorView.lineWrapping,
         base64FoldService,
+        diffChangedLinesField,
         editorTheme,
         EditorView.contentAttributes.of({ "aria-label": "Markdownを編集", spellcheck: "true" }),
         Prec.high(keymap.of([
@@ -319,6 +338,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     view.scrollDOM.addEventListener("scroll", handleEditorScroll, { passive: true });
     onActiveLineChangeRef.current?.(view.state.doc.lineAt(view.state.selection.main.head).number);
     foldBase64Data(view);
+    view.dispatch({ effects: setDiffChangedLines.of(diffChangedLines ?? new Set()) });
     return () => {
       if (cursorPositionFrame) window.cancelAnimationFrame(cursorPositionFrame);
       view.scrollDOM.removeEventListener("scroll", handleEditorScroll);
@@ -326,6 +346,13 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       if (viewRef.current === view) viewRef.current = null;
     };
   }, [documentId, documentLineEnding]);
+
+  const diffChangedLinesKey = [...(diffChangedLines ?? [])].sort((a, b) => a - b).join(",");
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({ effects: setDiffChangedLines.of(diffChangedLines ?? new Set()) });
+  }, [diffChangedLinesKey]);
 
   useEffect(() => {
     const view = viewRef.current;

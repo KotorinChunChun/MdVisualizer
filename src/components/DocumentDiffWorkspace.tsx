@@ -56,10 +56,10 @@ export function buildWorkspaceDiffPanes(target: DocumentDiffTarget, editorMode: 
     const changes = changedLineNumbers(target.openedContent, target.editingContent);
     return {
       mode: "four-way",
-      summary: "2-way（起動時と現在）",
+      summary: "2-way（保存済みと現在）",
       panes: [
-        { key: "opened-rendered", version: "opened", label: "起動時レンダリング", content: target.openedContent, changedLines: changes.base, display: "rendered" },
-        { key: "opened-code", version: "opened", label: "起動時コード", content: target.openedContent, changedLines: changes.base, display: "code" },
+        { key: "opened-rendered", version: "opened", label: "保存済みレンダリング", content: target.openedContent, changedLines: changes.base, display: "rendered" },
+        { key: "opened-code", version: "opened", label: "保存済みコード", content: target.openedContent, changedLines: changes.base, display: "code" },
         { key: "editing-code", version: "editing", label: "現在のコード", content: target.editingContent, changedLines: changes.target, display: "code" },
         { key: "editing-rendered", version: "editing", label: "現在のレンダリング", content: target.editingContent, changedLines: changes.target, display: "rendered" },
       ],
@@ -71,9 +71,9 @@ export function buildWorkspaceDiffPanes(target: DocumentDiffTarget, editorMode: 
   if (model.mode === "two-way") {
     return {
       mode: "two-way",
-      summary: "2-way（ストレージと起動時は同一）",
+      summary: "2-way（ストレージと保存済みは同一）",
       panes: [
-        { ...model.versions[0], version: model.versions[0].id, key: `opened-${display}`, label: "ストレージ／起動時", display },
+        { ...model.versions[0], version: model.versions[0].id, key: `opened-${display}`, label: "ストレージ／保存済み", display },
         { ...model.versions[1], version: model.versions[1].id, key: `editing-${display}`, label: "現在", display },
       ],
     };
@@ -85,7 +85,7 @@ export function buildWorkspaceDiffPanes(target: DocumentDiffTarget, editorMode: 
     summary: "3-way（ストレージに外部変更あり）",
     panes: [
       { ...versions.storage, version: "storage", key: `storage-${display}`, label: "ストレージ", display },
-      { ...versions.opened, version: "opened", key: `opened-${display}`, label: "起動時", display },
+      { ...versions.opened, version: "opened", key: `opened-${display}`, label: "保存済み", display },
       { ...versions.editing, version: "editing", key: `editing-${display}`, label: "現在", display },
     ],
   };
@@ -113,6 +113,7 @@ function CodePane({ pane, target, onEditingChange, onSave, editorRef, currentLin
       onChange={onEditingChange}
       onSave={() => onSave?.()}
       compact
+      diffChangedLines={pane.changedLines}
       onActiveLineChange={onActiveLineChange}
       onCursorPositionChange={onCursorPositionChange}
       onScrollLine={onScrollLine}

@@ -29,11 +29,11 @@ describe("DocumentDiffWorkspace", () => {
     )).toBe(0);
   });
 
-  it("uses storage/opened/current code columns in edit mode", () => {
+  it("uses storage/saved/current code columns in edit mode", () => {
     const threeWay = buildWorkspaceDiffPanes({ ...target, storageContent: "# Storage" }, "edit");
     expect(threeWay.mode).toBe("three-way");
     expect(threeWay.panes.map((pane) => [pane.label, pane.display])).toEqual([
-      ["ストレージ", "code"], ["起動時", "code"], ["現在", "code"],
+      ["ストレージ", "code"], ["保存済み", "code"], ["現在", "code"],
     ]);
   });
 
@@ -41,14 +41,14 @@ describe("DocumentDiffWorkspace", () => {
     const twoWay = buildWorkspaceDiffPanes(target, "preview");
     expect(twoWay.mode).toBe("two-way");
     expect(twoWay.panes.map((pane) => [pane.label, pane.display])).toEqual([
-      ["ストレージ／起動時", "rendered"], ["現在", "rendered"],
+      ["ストレージ／保存済み", "rendered"], ["現在", "rendered"],
     ]);
   });
 
   it("uses the requested four-column layout in split mode", () => {
     render(<DocumentDiffWorkspace target={target} editorMode="split" theme="dark" />);
-    expect(screen.getByText("起動時レンダリング")).toBeTruthy();
-    expect(screen.getByText("起動時コード")).toBeTruthy();
+    expect(screen.getByText("保存済みレンダリング")).toBeTruthy();
+    expect(screen.getByText("保存済みコード")).toBeTruthy();
     expect(screen.getByText("現在のコード")).toBeTruthy();
     expect(screen.getByText("現在のレンダリング")).toBeTruthy();
     expect(document.querySelectorAll(".document-diff__pane")).toHaveLength(4);

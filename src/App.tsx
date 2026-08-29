@@ -724,7 +724,16 @@ export function App() {
         document = result.document;
       }
       dispatch({ type: "SAVED", id, document, committedAssetIds: stagedAssetIds });
-      setDocumentDiff(null);
+      // A successful save establishes a new Diff baseline, but an already
+      // open Diff workspace remains visible so the user can continue editing
+      // and see any changes made while the save was in flight.
+      setDocumentDiff((current) => current && localPathIdentity(current.path) === localPathIdentity(document.path) ? {
+        ...current,
+        openedContent: document.content,
+        storageContent: document.content,
+        storageRevision: document.revision,
+        conflict: false,
+      } : current);
       setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
     } catch (error) {
       if (identity) recentSelfSaves.current.delete(identity);
