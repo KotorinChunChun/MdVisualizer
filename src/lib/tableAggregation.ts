@@ -52,13 +52,20 @@ export function calculateTableAggregates(data: { headers: string[]; rows: string
   const aggregateColumns = headers.map(tableAggregateKind);
   const aggregateRows = originalRows.map((row) => tableAggregateKind(row[0] ?? ""));
   const rows = originalRows.map((row) => [...row]);
+  const overallValues = originalRows.flatMap((candidate, candidateRow) => aggregateRows[candidateRow]
+    ? []
+    : candidate.flatMap((value, candidateColumn) => {
+      if (aggregateColumns[candidateColumn]) return [];
+      const parsed = parseTableNumber(value);
+      return parsed === null ? [] : [parsed];
+    }));
 
   for (let row = 0; row < rows.length; row += 1) {
     const rowKind = aggregateRows[row];
     for (let column = 0; column < width; column += 1) {
       const columnKind = aggregateColumns[column];
       if (rowKind && columnKind) {
-        rows[row][column] = "";
+        rows[row][column] = rowKind === columnKind ? aggregateValues(rowKind, overallValues) : "-";
       } else if (rowKind && column > 0) {
         const values = originalRows.flatMap((candidate, candidateRow) => {
           if (aggregateRows[candidateRow]) return [];

@@ -30,6 +30,53 @@ describe("TableEditorDialog grid editing", () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ headers: ["A", "B"], rows: [["x", "y"], ["1", "2"]] }));
   });
 
+  it("expands TSV copied from Excel even when only one cell is selected", () => {
+    const onSave = vi.fn((_table: EditableTableData) => true);
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["old"]]} onCancel={() => undefined} onSave={onSave} />);
+    const cell = screen.getByRole("textbox", { name: "行 1 列 1" });
+
+    fireEvent.paste(cell, { clipboardData: { getData: () => "x\ty\r\n1\t2\r\n" } });
+
+    expect((screen.getByRole("textbox", { name: "行 2 列 2" }) as HTMLInputElement).value).toBe("2");
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      headers: ["A", "列 2"],
+      rows: [["x", "y"], ["1", "2"]],
+    }));
+  });
+
+  it("starts a rectangular paste at the top-left cell for a reverse selection", () => {
+    const onSave = vi.fn((_table: EditableTableData) => true);
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"], ["3", "4"]]} onCancel={() => undefined} onSave={onSave} />);
+    const topLeft = screen.getByRole("textbox", { name: "行 1 列 1" });
+    const bottomRight = screen.getByRole("textbox", { name: "行 2 列 2" });
+    fireEvent.mouseDown(bottomRight);
+    fireEvent.mouseEnter(topLeft);
+    fireEvent.mouseUp(window);
+
+    fireEvent.paste(bottomRight, { clipboardData: { getData: () => "x\ty\n5\t6" } });
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      headers: ["A", "B"],
+      rows: [["x", "y"], ["5", "6"]],
+    }));
+  });
+
+  it("undoes an expanded multi-cell paste as one operation with Ctrl+Z", () => {
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["old", "keep"]]} onCancel={() => undefined} onSave={() => true} />);
+    const first = screen.getByRole("textbox", { name: "行 1 列 1" });
+    fireEvent.paste(first, { clipboardData: { getData: () => "x\ty\tz\n1\t2\t3" } });
+    expect(screen.getByRole("textbox", { name: "行 2 列 3" })).toBeTruthy();
+
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "行 1 列 1" }), { key: "z", ctrlKey: true });
+
+    expect((screen.getByRole("textbox", { name: "行 1 列 1" }) as HTMLInputElement).value).toBe("old");
+    expect((screen.getByRole("textbox", { name: "行 1 列 2" }) as HTMLInputElement).value).toBe("keep");
+    expect(screen.queryByRole("textbox", { name: "行 2 列 1" })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: "列 3の見出し" })).toBeNull();
+  });
+
   it("inserts pasted text at the caret when only one cell is selected", () => {
     render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["abcd"]]} onCancel={() => undefined} onSave={() => true} />);
     const cell = screen.getByRole("textbox", { name: "行 1 列 1" }) as HTMLInputElement;
@@ -39,6 +86,18 @@ describe("TableEditorDialog grid editing", () => {
     fireEvent.paste(cell, { clipboardData: { getData: () => "XY" } });
 
     expect(cell.value).toBe("abXYcd");
+  });
+
+  it("undoes a single-cell paste with Ctrl+Z", () => {
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["abcd"]]} onCancel={() => undefined} onSave={() => true} />);
+    const cell = screen.getByRole("textbox", { name: "行 1 列 1" }) as HTMLInputElement;
+    fireEvent.mouseDown(cell);
+    cell.setSelectionRange(2, 2);
+    fireEvent.paste(cell, { clipboardData: { getData: () => "XY" } });
+
+    fireEvent.keyDown(cell, { key: "z", ctrlKey: true });
+
+    expect(cell.value).toBe("abcd");
   });
 
   it("copies a selected rectangular range as TSV", () => {
@@ -68,7 +127,7 @@ describe("TableEditorDialog grid editing", () => {
     const intersection = screen.getByRole("textbox", { name: "行 3 列 3" }) as HTMLInputElement;
     expect(rowAverage.value).toBe("10");
     expect(columnTotal.value).toBe("30");
-    expect(intersection.value).toBe("");
+    expect(intersection.value).toBe("-");
     expect(rowAverage.readOnly).toBe(true);
     expect(columnTotal.readOnly).toBe(true);
 
@@ -78,7 +137,7 @@ describe("TableEditorDialog grid editing", () => {
     fireEvent.click(screen.getByRole("button", { name: "反映" }));
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      rows: [["A", "15", "15"], ["B", "20", "20"], ["合計", "35", ""]],
+      rows: [["A", "15", "15"], ["B", "20", "20"], ["合計", "35", "-"]],
     }));
   });
 
@@ -247,6 +306,7 @@ describe("TableEditorDialog grid editing", () => {
     expect(fireEvent.contextMenu(cell, { clientX: 80, clientY: 90 })).toBe(false);
     const menu = screen.getByRole("menu", { name: "表編集操作" });
     expect(menu.classList.contains("table-editor-context-menu")).toBe(true);
+    expect((menu as HTMLElement).style.zIndex).toBe("12030");
     expect(backgroundMenu).not.toHaveBeenCalled();
     fireEvent.click(within(menu).getByRole("menuitem", { name: "行全体を選択" }));
 
@@ -267,8 +327,15 @@ describe("TableEditorDialog grid editing", () => {
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       headers: ["項目", "値", "平均"],
-      rows: [["A", "10", "10"], ["B", "20", "20"], ["合計", "30", ""]],
+      rows: [["A", "10", "10"], ["B", "20", "20"], ["合計", "30", "-"]],
     }));
+  });
+
+  it("does not show the removed table-editor explanatory note", () => {
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["1"]]} onCancel={() => undefined} onSave={() => true} />);
+
+    expect(screen.queryByText(/先頭行はヘッダーです/)).toBeNull();
+    expect(screen.queryByText(/境界の＋/)).toBeNull();
   });
 
   it("can insert the first row into an empty table", () => {

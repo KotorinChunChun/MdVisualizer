@@ -30,6 +30,12 @@ interface TablePointerDragSession extends TableDragState {
 }
 interface TableEditorContextMenu { point: GridPoint; x: number; y: number }
 interface PendingTableDelete { axis: "row" | "column"; index: number; message: string }
+interface TableEditorSnapshot {
+  headers: string[];
+  rows: string[][];
+  alignments: TableColumnAlignment[];
+  selection: GridSelection;
+}
 
 const cellKey = ({ row, column }: GridPoint) => `${row}:${column}`;
 const orderedSelection = ({ anchor, focus }: GridSelection) => ({
@@ -82,11 +88,26 @@ export function TableEditorDialog({
   const pointerDrag = useRef<TablePointerDragSession | null>(null);
   const suppressHandleClick = useRef(false);
   const reorderAnimationTimer = useRef(0);
+  const pasteUndoHistory = useRef<TableEditorSnapshot[]>([]);
   const [dragState, setDragState] = useState<TableDragState | null>(null);
   const [reordered, setReordered] = useState<{ axis: "row" | "column"; index: number } | null>(null);
   const [contextMenu, setContextMenu] = useState<TableEditorContextMenu | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingTableDelete | null>(null);
   const calculated = useMemo(() => calculateTableAggregates({ headers, rows }), [headers, rows]);
+
+  const invalidatePasteUndo = () => { pasteUndoHistory.current = []; };
+
+  const rememberBeforePaste = () => {
+    pasteUndoHistory.current.push({
+      headers: [...headers],
+      rows: rows.map((row) => [...row]),
+      alignments: [...alignments],
+      selection: {
+        anchor: { ...selection.anchor },
+        focus: { ...selection.focus },
+      },
+    });
+  };
 
   const applyChanges = () => {
     const accepted = onSave({ headers, rows: calculated.rows.map((row) => headers.map((_, column) => row[column] ?? "")), alignments });
@@ -128,6 +149,17 @@ export function TableEditorDialog({
     });
   };
 
+  const undoPaste = () => {
+    const snapshot = pasteUndoHistory.current.pop();
+    if (!snapshot) return false;
+    setHeaders(snapshot.headers);
+    setRows(snapshot.rows);
+    setAlignments(snapshot.alignments);
+    setSelection(snapshot.selection);
+    focusCell(snapshot.selection.focus);
+    return true;
+  };
+
   const selectCell = (point: GridPoint, extend = false) => {
     setSelection((current) => ({ anchor: extend ? current.anchor : point, focus: point }));
   };
@@ -147,7 +179,8 @@ export function TableEditorDialog({
   const isCalculatedCell = (point: GridPoint) => point.row > 0
     && isTableAggregateResultCell(calculated, point.row - 1, point.column);
 
-  const updateCell = (point: GridPoint, value: string) => {
+  const updateCell = (point: GridPoint, value: string, preservePasteUndo = false) => {
+    if (!preservePasteUndo) invalidatePasteUndo();
     if (point.row === 0) {
       setHeaders((current) => current.map((cell, column) => column === point.column ? value : cell));
       return;
@@ -159,6 +192,7 @@ export function TableEditorDialog({
 
   const commitRemoveColumn = (column: number) => {
     if (headers.length <= 1) return;
+    invalidatePasteUndo();
     setHeaders((current) => current.filter((_, index) => index !== column));
     setRows((current) => current.map((row) => row.filter((_, index) => index !== column)));
     setAlignments((current) => current.filter((_, index) => index !== column));
@@ -166,6 +200,7 @@ export function TableEditorDialog({
   };
 
   const commitRemoveRow = (row: number) => {
+    invalidatePasteUndo();
     setRows((current) => current.filter((_, index) => index !== row));
     setSelection({ anchor: { row: 0, column: 0 }, focus: { row: 0, column: 0 } });
   };
@@ -191,6 +226,7 @@ export function TableEditorDialog({
   };
 
   const insertColumn = (column: number, label?: string) => {
+    invalidatePasteUndo();
     const nextLabel = label ?? `列 ${headers.length + 1}`;
     setHeaders((current) => [...current.slice(0, column), nextLabel, ...current.slice(column)]);
     setRows((current) => current.map((row) => [...row.slice(0, column), "", ...row.slice(column)]));
@@ -201,6 +237,7 @@ export function TableEditorDialog({
   };
 
   const insertRow = (row: number, label = "") => {
+    invalidatePasteUndo();
     setRows((current) => [
       ...current.slice(0, row),
       headers.map((_, column) => column === 0 ? label : ""),
@@ -213,6 +250,7 @@ export function TableEditorDialog({
 
   const moveColumn = (from: number, to: number) => {
     if (from === to) return;
+    invalidatePasteUndo();
     setHeaders((current) => moveItem(current, from, to));
     setRows((current) => current.map((row) => moveItem(row, from, to)));
     setAlignments((current) => moveItem(current, from, to));
@@ -225,6 +263,7 @@ export function TableEditorDialog({
 
   const moveRow = (from: number, to: number) => {
     if (from === to) return;
+    invalidatePasteUndo();
     setRows((current) => moveItem(current, from, to));
     const point = { row: to + 1, column: 0 };
     setSelection({ anchor: point, focus: point });
@@ -297,6 +336,7 @@ export function TableEditorDialog({
   };
 
   const toggleAlignment = (column: number, alignment: "left" | "right") => {
+    invalidatePasteUndo();
     setAlignments((current) => current.map((value, index) => index === column
       ? value === alignment ? "center" : alignment
       : value));
@@ -320,7 +360,10 @@ export function TableEditorDialog({
     const input = event.currentTarget;
     let rowDelta = 0;
     let columnDelta = 0;
-    if (event.ctrlKey && event.key === "Enter") {
+    if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLocaleLowerCase() === "z" && undoPaste()) {
+      event.preventDefault();
+      return;
+    } else if (event.ctrlKey && event.key === "Enter") {
       event.preventDefault();
       applyChanges();
       return;
@@ -339,6 +382,7 @@ export function TableEditorDialog({
     else if (event.key === "ArrowRight" && input.selectionStart === input.value.length && input.selectionEnd === input.value.length) columnDelta = 1;
     else if ((event.key === "Delete" || event.key === "Backspace") && cellKey(selection.anchor) !== cellKey(selection.focus)) {
       event.preventDefault();
+      invalidatePasteUndo();
       const range = orderedSelection(selection);
       setHeaders((current) => current.map((value, column) => range.top === 0 && column >= range.left && column <= range.right ? "" : value));
       setRows((current) => current.map((row, rowIndex) => row.map((value, column) => rowIndex + 1 >= Math.max(1, range.top) && rowIndex + 1 <= range.bottom && column >= range.left && column <= range.right ? "" : value)));
@@ -365,17 +409,20 @@ export function TableEditorDialog({
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>, point: GridPoint) => {
-    if (isCalculatedCell(point)) return;
     const text = event.clipboardData.getData("text/plain");
     const range = orderedSelection(selection);
     const singleCell = range.top === range.bottom && range.left === range.right;
-    if (singleCell) {
+    const destination = singleCell ? point : { row: range.top, column: range.left };
+    if (isCalculatedCell(destination)) return;
+    const tablePaste = !singleCell || text.includes("\t");
+    if (!tablePaste) {
       event.preventDefault();
+      rememberBeforePaste();
       const input = event.currentTarget;
       const current = cellValue(point);
       const start = input.selectionStart ?? current.length;
       const end = input.selectionEnd ?? start;
-      updateCell(point, `${current.slice(0, start)}${text}${current.slice(end)}`);
+      updateCell(point, `${current.slice(0, start)}${text}${current.slice(end)}`, true);
       window.requestAnimationFrame(() => {
         input.focus();
         input.setSelectionRange(start + text.length, start + text.length);
@@ -385,13 +432,14 @@ export function TableEditorDialog({
     const grid = pastedCells(text);
     if (!grid.length) return;
     event.preventDefault();
-    const requiredColumns = Math.max(headers.length, point.column + Math.max(...grid.map((row) => row.length)));
-    const requiredBodyRows = Math.max(rows.length, point.row + grid.length - 1);
+    rememberBeforePaste();
+    const requiredColumns = Math.max(headers.length, destination.column + Math.max(...grid.map((row) => row.length)));
+    const requiredBodyRows = Math.max(rows.length, destination.row + grid.length - 1);
     const nextHeaders = Array.from({ length: requiredColumns }, (_, column) => headers[column] ?? `列 ${column + 1}`);
     const nextRows = Array.from({ length: requiredBodyRows }, (_, row) => Array.from({ length: requiredColumns }, (_, column) => rows[row]?.[column] ?? ""));
     grid.forEach((pastedRow, rowOffset) => pastedRow.forEach((value, columnOffset) => {
-      const destinationRow = point.row + rowOffset;
-      const destinationColumn = point.column + columnOffset;
+      const destinationRow = destination.row + rowOffset;
+      const destinationColumn = destination.column + columnOffset;
       if (destinationRow === 0) nextHeaders[destinationColumn] = value;
       else nextRows[destinationRow - 1][destinationColumn] = value;
     }));
@@ -399,11 +447,11 @@ export function TableEditorDialog({
     setRows(nextRows);
     setAlignments((current) => Array.from({ length: requiredColumns }, (_, column) => current[column] ?? null));
     const focus = {
-      row: point.row + grid.length - 1,
-      column: point.column + grid[grid.length - 1].length - 1,
+      row: destination.row + grid.length - 1,
+      column: destination.column + grid[grid.length - 1].length - 1,
     };
-    setSelection({ anchor: point, focus });
-    focusCell(point);
+    setSelection({ anchor: destination, focus });
+    focusCell(destination);
   };
 
   const contextPointForTarget = (target: EventTarget | null): GridPoint => {
@@ -469,7 +517,6 @@ export function TableEditorDialog({
           </div>}
         </div>
       </header>
-      <p className="table-editor-note">先頭行はヘッダーです。境界の＋で挿入、ハンドルのドラッグで並び替えできます。Ctrl+Enterで反映、Ctrl+Aですべて選択します。</p>
       <div className="table-editor-scroll">
         <table className="table-editor-grid">
           <thead><tr><th className="table-editor-row-action" aria-label="行操作" />{headers.map((header, column) => {
@@ -549,7 +596,7 @@ export function TableEditorDialog({
         role="menu"
         aria-label="表編集操作"
         tabIndex={-1}
-        style={{ left: contextMenu.x, top: contextMenu.y }}
+        style={{ left: contextMenu.x, top: contextMenu.y, zIndex: 12030 }}
         onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); }}
         onPointerDown={(event) => event.stopPropagation()}
       >

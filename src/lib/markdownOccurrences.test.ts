@@ -128,7 +128,7 @@ describe("editable Markdown occurrences", () => {
     });
 
     expect(serialized).toContain("| A | 10 | 10 |");
-    expect(serialized).toContain("| 合計 | 30 |  |");
+    expect(serialized).toContain("| 合計 | 30 | - |");
   });
 
   it("preserves a block quote container while serializing a nested GFM table", () => {

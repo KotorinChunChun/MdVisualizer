@@ -39,7 +39,7 @@ describe("table aggregation", () => {
     ]);
   });
 
-  it("calculates aggregate columns horizontally and leaves row-column intersections blank", () => {
+  it("calculates aggregate columns horizontally and marks unlike row-column intersections", () => {
     const result = calculateTableAggregates({
       headers: ["項目", "値1", "合計", "値2", "平均", "個数"],
       rows: [
@@ -52,11 +52,28 @@ describe("table aggregation", () => {
     expect(result.rows).toEqual([
       ["A", "1", "4", "3", "2", "2"],
       ["B", "x", "0", "", "", "0"],
-      ["合計", "1", "", "3", "", ""],
+      ["合計", "1", "4", "3", "-", "-"],
     ]);
     expect(isTableAggregateResultCell(result, 0, 2)).toBe(true);
     expect(isTableAggregateResultCell(result, 2, 1)).toBe(true);
     expect(isTableAggregateResultCell(result, 0, 1)).toBe(false);
+  });
+
+  it("calculates matching aggregate intersections from all non-aggregate data cells", () => {
+    const result = calculateTableAggregates({
+      headers: ["項目", "値1", "値2", "合計", "平均", "個数"],
+      rows: [
+        ["A", "1", "3", "", "", ""],
+        ["B", "5", "x", "", "", ""],
+        ["合計", "", "", "", "", ""],
+        ["平均", "", "", "", "", ""],
+        ["個数", "", "", "", "", ""],
+      ],
+    });
+
+    expect(result.rows[2].slice(3)).toEqual(["9", "-", "-"]);
+    expect(result.rows[3].slice(3)).toEqual(["-", "3", "-"]);
+    expect(result.rows[4].slice(3)).toEqual(["-", "-", "3"]);
   });
 
   it("uses a header label in the first column as a horizontal aggregate column", () => {

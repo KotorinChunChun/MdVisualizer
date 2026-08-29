@@ -59,11 +59,11 @@ describe("MarkdownPreview Markdown tables", () => {
 
     expect(rows[0].textContent).toBe("A102030");
     expect(rows[1].textContent).toBe("B5x5");
-    expect(rows[2].textContent).toBe("合計1520");
+    expect(rows[2].textContent).toBe("合計152035");
 
     fireEvent.click(screen.getByRole("button", { name: "表を編集" }));
     fireEvent.click(within(screen.getByRole("dialog", { name: "表を編集" })).getByRole("button", { name: "反映" }));
     expect(onMarkdownTableChange.mock.calls[0][1]).toContain("| A | 10 | 20 | 30 |");
-    expect(onMarkdownTableChange.mock.calls[0][1]).toContain("| 合計 | 15 | 20 |  |");
+    expect(onMarkdownTableChange.mock.calls[0][1]).toContain("| 合計 | 15 | 20 | 35 |");
   });
 });

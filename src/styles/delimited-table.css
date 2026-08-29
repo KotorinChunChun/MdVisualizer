@@ -32,7 +32,6 @@
 .table-editor-toolbar strong { margin-right: auto; }
 .table-editor-aggregate-menu { position: relative; }
 .table-editor-aggregate-menu [role="menu"] { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; display: grid; grid-template-columns: repeat(2, max-content); gap: 4px; padding: 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--panel-bg); box-shadow: 0 8px 24px #0004; }
-.table-editor-note { margin: 0; padding: 7px 10px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
 .table-editor-scroll { flex: 1 1 auto; padding: 26px 30px; overflow: auto; }
 .table-editor-grid { min-width: 100%; border-collapse: collapse; }
 .table-editor-grid th, .table-editor-grid td { min-width: 120px; padding: 0; border: 1px solid var(--border-color); vertical-align: top; }
@@ -76,7 +75,7 @@
 .table-editor-delete-column:hover { transform: translateX(-50%) scale(1.06) !important; }
 .table-editor-delete-row { top: 50%; left: -12px; transform: translateY(-50%); }
 .table-editor-delete-row:hover { transform: translateY(-50%) scale(1.06) !important; }
-.table-editor-context-menu { z-index: 12030; min-width: 190px; }
+.context-menu.table-editor-context-menu { z-index: 12030; min-width: 190px; }
 .table-editor-context-menu [role="separator"] { height: 1px; margin: 4px 2px; background: var(--border-color); }
 .table-editor-context-menu button.is-danger { color: #c62828; }
 .table-editor-confirm-overlay { position: fixed; z-index: 12060; inset: 0; display: grid; place-items: center; padding: 24px; background: #0007; }

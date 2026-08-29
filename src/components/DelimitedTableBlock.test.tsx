@@ -89,7 +89,7 @@ describe("DelimitedTableBlock", () => {
 
     expect(bodyRows[0].textContent).toBe("A102030");
     expect(bodyRows[1].textContent).toBe("B5x5");
-    expect(bodyRows[2].textContent).toBe("合計1520");
+    expect(bodyRows[2].textContent).toBe("合計152035");
   });
 
   it("cycles each sort through ascending, descending, and none with the latest column first", () => {
