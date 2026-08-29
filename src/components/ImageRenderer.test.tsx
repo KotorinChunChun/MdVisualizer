@@ -170,6 +170,19 @@ describe("ImageRenderer inline resize", () => {
     expect(screen.getByText("画像").className).toContain("caption");
   });
 
+  it("shows a simple image filename without a format label", () => {
+    render(<ImageRenderer
+      src="photo.png"
+      alt="写真"
+      baseDir="C:\\docs"
+      imageVersions={{}}
+      onExternalRename={vi.fn()}
+    />);
+
+    expect(screen.getByRole("button", { name: "photo.png" })).not.toBeNull();
+    expect(screen.queryByText("PNG")).toBeNull();
+  });
+
   it("keeps the caption outside the bordered resize stage", () => {
     const { container } = renderImage();
     fireEvent.load(screen.getByAltText("テスト画像"));

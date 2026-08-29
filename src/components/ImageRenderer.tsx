@@ -227,7 +227,6 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       {!headingMode && !presentationMode && !isRemote && onExternalRename && <ExternalFileHeader
         source={src}
         path={fullPath}
-        kind={fullPath.match(/\.([a-z0-9]+)(?:[?#]|$)/i)?.[1]?.toUpperCase() ?? "画像"}
         status={previewSrc ? "未保存" : version > 0 ? "更新あり" : undefined}
         onRename={onExternalRename}
         onError={onError}
