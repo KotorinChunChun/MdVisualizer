@@ -9,6 +9,7 @@ import { ImageSize, useInlineImageResize } from "../hooks/useInlineImageResize";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { normalizedAssetFilename, parseRasterDataUri, type AssetConversionContext } from "../lib/assetConversion";
 import type { DocumentAssetData } from "../types/app";
+import { ExternalFileHeader } from "./ExternalFileHeader";
 import "../styles/inline-image-resize.css";
 
 interface ImageRendererProps {
@@ -29,6 +30,8 @@ interface ImageRendererProps {
   sourceOffset?: number;
   conversionContext?: AssetConversionContext;
   previewSrc?: string;
+  onExternalRename?: (filename: string) => boolean | void | Promise<boolean | void>;
+  onError?: (message: string) => void;
 }
 
 export interface PresentationImageTarget {
@@ -54,6 +57,8 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   sourceOffset,
   conversionContext,
   previewSrc,
+  onExternalRename,
+  onError,
 }) => {
   const [loadError, setLoadError] = useState(false);
   const [authenticatedSrc, setAuthenticatedSrc] = useState<string | null>(null);
@@ -219,6 +224,14 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       className={`inline-image-resize ${hasDisplaySize ? "has-display-size" : ""} ${isResizing ? "is-resizing" : ""} ${presentationMode ? "is-presentation" : ""} ${headingMode ? "is-heading" : ""}`}
       style={!presentationMode && !headingMode && size ? { width: `${size.width}px` } : undefined}
     >
+      {!headingMode && !presentationMode && !isRemote && onExternalRename && <ExternalFileHeader
+        source={src}
+        path={fullPath}
+        kind={fullPath.match(/\.([a-z0-9]+)(?:[?#]|$)/i)?.[1]?.toUpperCase() ?? "画像"}
+        status={previewSrc ? "未保存" : version > 0 ? "更新あり" : undefined}
+        onRename={onExternalRename}
+        onError={onError}
+      />}
       <span
         className="inline-image-resize__stage"
         style={!presentationMode && !headingMode && size ? { height: `${size.height}px` } : undefined}

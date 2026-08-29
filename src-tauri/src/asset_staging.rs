@@ -355,6 +355,11 @@ fn media_type_for(path: &Path) -> AppResult<(&'static str, bool)> {
         "svg" => Ok(("image/svg+xml", true)),
         "drawio" => Ok(("application/vnd.jgraph.mxfile", true)),
         "mmd" | "mermaid" => Ok(("text/vnd.mermaid", true)),
+        "csv" => Ok(("text/csv", true)),
+        "tsv" => Ok(("text/tab-separated-values", true)),
+        "txt" | "md" | "json" | "xml" | "html" | "css" | "js" | "jsx" | "ts" | "tsx"
+        | "py" | "rs" | "cs" | "java" | "c" | "h" | "cpp" | "hpp" | "sql" | "yaml" | "yml"
+        | "toml" | "ini" | "log" | "sh" | "ps1" | "vb" => Ok(("text/plain", true)),
         _ => Err(AppError::UnsupportedDocument(
             path.to_string_lossy().into_owned(),
         )),
@@ -442,11 +447,15 @@ mod tests {
         fs::write(&document, "# note").unwrap();
         fs::write(dir.path().join("shape.svg"), "<svg/>").unwrap();
         fs::write(dir.path().join("diagram.drawio"), "<mxGraphModel/>").unwrap();
+        fs::write(dir.path().join("table.csv"), "a,b\n1,2").unwrap();
         let loaded = read_document_asset(&document.to_string_lossy(), "shape.svg").unwrap();
         assert_eq!(loaded.text.as_deref(), Some("<svg/>"));
         let drawio = read_document_asset(&document.to_string_lossy(), "diagram.drawio").unwrap();
         assert_eq!(drawio.media_type, "application/vnd.jgraph.mxfile");
         assert_eq!(drawio.text.as_deref(), Some("<mxGraphModel/>"));
+        let table = read_document_asset(&document.to_string_lossy(), "table.csv").unwrap();
+        assert_eq!(table.media_type, "text/csv");
+        assert_eq!(table.text.as_deref(), Some("a,b\n1,2"));
         assert!(read_document_asset(&document.to_string_lossy(), "../outside.png").is_err());
     }
 

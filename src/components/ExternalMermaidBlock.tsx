@@ -3,6 +3,7 @@ import { loadMarkdown } from "../lib/commands";
 import { getFileName, resolveLocalImagePath } from "../lib/path";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { MermaidBlock } from "./MermaidBlock";
+import { ExternalFileHeader } from "./ExternalFileHeader";
 
 export function ExternalMermaidBlock({
   source,
@@ -14,6 +15,8 @@ export function ExternalMermaidBlock({
   editable = true,
   stagedSource,
   onStorageConvert,
+  onRename,
+  onError,
   onMediaOpen,
 }: {
   source: string;
@@ -25,6 +28,8 @@ export function ExternalMermaidBlock({
   editable?: boolean;
   stagedSource?: string;
   onStorageConvert?: (source: string) => boolean | void | Promise<boolean | void>;
+  onRename?: (filename: string) => boolean | void | Promise<boolean | void>;
+  onError?: (message: string) => void;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
   const path = useMemo(() => resolveLocalImagePath(source, baseDir), [baseDir, source]);
@@ -72,6 +77,7 @@ export function ExternalMermaidBlock({
       diagramIndex={0}
       diagramCount={1}
       headingTitle={alt?.trim() || getFileName(path ?? source)}
+      headingLabel={<ExternalFileHeader source={source} path={path} kind="Mermaid" status={version > 0 ? "更新あり" : undefined} onRename={onRename} onError={onError} />}
       editable={editable}
       storage="external"
       onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(diagramSource) : undefined}

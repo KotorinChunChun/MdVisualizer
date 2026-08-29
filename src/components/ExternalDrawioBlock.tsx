@@ -4,6 +4,7 @@ import { getFileName, resolveLocalImagePath } from "../lib/path";
 import type { MarkdownLoadResult } from "../types/app";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { DrawioBlock } from "./DrawioBlock";
+import { ExternalFileHeader } from "./ExternalFileHeader";
 
 function emitToast(type: "success" | "error", message: string) {
   window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message } }));
@@ -19,6 +20,8 @@ export function ExternalDrawioBlock({
   editable = true,
   stagedSource,
   onStorageConvert,
+  onRename,
+  onError,
   onStagedSourceChange,
   onMediaOpen,
 }: {
@@ -31,6 +34,8 @@ export function ExternalDrawioBlock({
   editable?: boolean;
   stagedSource?: string;
   onStorageConvert?: (source: string) => boolean | void | Promise<boolean | void>;
+  onRename?: (filename: string) => boolean | void | Promise<boolean | void>;
+  onError?: (message: string) => void;
   onStagedSourceChange?: (source: string) => boolean | void;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
@@ -107,6 +112,7 @@ export function ExternalDrawioBlock({
       theme={theme}
       blockId={blockId}
       headingTitle={alt?.trim() || getFileName(path ?? source)}
+      headingLabel={<ExternalFileHeader source={source} path={path} kind="draw.io" status={version > 0 ? "更新あり" : undefined} onRename={onRename} onError={onError} />}
       storage="external"
       onStorageConvert={editable && onStorageConvert ? () => onStorageConvert(stagedSource ?? document!.content) : undefined}
       onSave={editable && (document || (stagedSource !== undefined && onStagedSourceChange)) ? save : undefined}

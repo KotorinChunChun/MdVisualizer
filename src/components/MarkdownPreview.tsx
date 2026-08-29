@@ -28,11 +28,14 @@ import { sanitizeSvgXml } from "../lib/svgSafety";
 import { DrawioBlock } from "./DrawioBlock";
 import { ExternalDrawioBlock } from "./ExternalDrawioBlock";
 import { ExternalMermaidBlock } from "./ExternalMermaidBlock";
+import { ExternalDelimitedTableBlock } from "./ExternalDelimitedTableBlock";
+import { ExternalTextBlock } from "./ExternalTextBlock";
 import { PlantUmlBlock } from "./PlantUmlBlock";
 import { isPlantUmlFenceLanguage } from "@markdown-viewer/markdown-core";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
 import type { DrawioStorageConversionContext } from "../lib/drawioStorage";
 import type { MermaidStorageConversionContext } from "../lib/mermaidStorage";
+import type { TableStorageConversionContext } from "../lib/tableStorage";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
 import { calculateTableAggregates, isTableAggregateResultCell, type TableAggregationResult } from "../lib/tableAggregation";
@@ -95,9 +98,17 @@ interface MarkdownPreviewProps {
   stagedMermaidSources?: Record<string, string>;
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onMermaidStorageConvert?: (context: MermaidStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onTableStorageConvert?: (context: TableStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onExternalFileRename?: (context: ExternalFileRenameContext, filename: string) => boolean | void | Promise<boolean | void>;
   onStagedTextAssetChange?: (filename: string, text: string) => boolean | void;
   diffChangedLines?: ReadonlySet<number>;
   staticMode?: boolean;
+}
+
+export interface ExternalFileRenameContext {
+  documentPath: string;
+  filePath: string;
+  source: string;
 }
 
 type DiffHastNode = {
@@ -169,6 +180,8 @@ interface MarkdownRenderContextValue {
   stagedMermaidSources: Record<string, string>;
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onMermaidStorageConvert?: (context: MermaidStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onTableStorageConvert?: (context: TableStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onExternalFileRename?: (context: ExternalFileRenameContext, filename: string) => boolean | void | Promise<boolean | void>;
   onStagedTextAssetChange?: (filename: string, text: string) => boolean | void;
   staticMode: boolean;
 }
@@ -236,6 +249,10 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       language={language}
       source={String(children ?? "").replace(/\n$/, "")}
       onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
+      storage={occurrence ? "embedded" : undefined}
+      onStorageConvert={occurrence && context.documentPath && context.onTableStorageConvert
+        ? () => context.onTableStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence, source: String(children ?? "").replace(/\n$/, ""), language })
+        : undefined}
     />;
   }
   if (isPlantUmlFenceLanguage(language)) {
@@ -347,6 +364,24 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
   const occurrence = sourceOffset === undefined ? undefined : context.imageOccurrenceByOffset.get(sourceOffset);
   const source = String(src ?? "");
   const local = source && !/^(?:https?:|file:|\/\/)/i.test(source);
+  const tableLanguage = local && /\.csv(?:[?#]|$)/i.test(source) ? "csv" : local && /\.tsv(?:[?#]|$)/i.test(source) ? "tsv" : null;
+  const tablePath = tableLanguage ? resolveLocalImagePath(source, context.baseDir) : null;
+  if (tableLanguage && tablePath && occurrence && context.documentPath) {
+    return <ExternalDelimitedTableBlock
+      source={source}
+      baseDir={context.baseDir}
+      documentPath={context.documentPath}
+      language={tableLanguage}
+      version={context.imageVersions[tablePath] ?? 0}
+      onStorageConvert={context.onTableStorageConvert
+        ? (tableSource) => context.onTableStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: tableSource, language: tableLanguage })
+        : undefined}
+      onRename={context.onExternalFileRename
+        ? (filename) => context.onExternalFileRename?.({ documentPath: context.documentPath!, filePath: tablePath, source }, filename)
+        : undefined}
+      onError={context.onError}
+    />;
+  }
   const drawioPath = local && /\.drawio(?:[?#]|$)/i.test(source)
     ? resolveLocalImagePath(source, context.baseDir)
     : null;
@@ -366,6 +401,10 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       onStorageConvert={occurrence && context.documentPath && context.onDrawioStorageConvert
         ? (drawioSource) => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: drawioSource })
         : undefined}
+      onRename={context.documentPath && context.onExternalFileRename
+        ? (filename) => context.onExternalFileRename?.({ documentPath: context.documentPath!, filePath: drawioPath, source }, filename)
+        : undefined}
+      onError={context.onError}
       onMediaOpen={context.onMediaOpen}
     />;
   }
@@ -385,7 +424,26 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       onStorageConvert={occurrence && context.documentPath && context.onMermaidStorageConvert
         ? (mermaidSource) => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: mermaidSource })
         : undefined}
+      onRename={context.documentPath && context.onExternalFileRename
+        ? (filename) => context.onExternalFileRename?.({ documentPath: context.documentPath!, filePath: mermaidPath, source }, filename)
+        : undefined}
+      onError={context.onError}
       onMediaOpen={context.onMediaOpen}
+    />;
+  }
+  const textPath = local && /\.(?:txt|md|json|xml|html?|css|jsx?|tsx?|py|rs|cs|java|c|h|cpp|hpp|sql|ya?ml|toml|ini|log|sh|ps1|vb)(?:[?#]|$)/i.test(source)
+    ? resolveLocalImagePath(source, context.baseDir)
+    : null;
+  if (textPath && occurrence && context.documentPath) {
+    return <ExternalTextBlock
+      source={source}
+      baseDir={context.baseDir}
+      documentPath={context.documentPath}
+      version={context.imageVersions[textPath] ?? 0}
+      onRename={context.onExternalFileRename
+        ? (filename) => context.onExternalFileRename?.({ documentPath: context.documentPath!, filePath: textPath, source }, filename)
+        : undefined}
+      onError={context.onError}
     />;
   }
   const assetKind = parseRasterDataUri(source) || /\.(?:png|jpe?g|gif|webp|bmp)(?:[?#]|$)/i.test(source) ? "raster" : /\.svg(?:[?#]|$)/i.test(source) ? "svg" : null;
@@ -412,6 +470,10 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
     sourceOffset={isObsidianImage ? undefined : sourceOffset}
     conversionContext={conversionContext}
     previewSrc={context.stagedAssetPreviews[source]}
+    onExternalRename={conversionContext?.storage === "external" && context.onExternalFileRename
+      ? (filename) => context.onExternalFileRename?.({ documentPath: conversionContext.documentPath, filePath: resolveLocalImagePath(source, context.baseDir)!, source }, filename)
+      : undefined}
+    onError={context.onError}
   />;
 };
 
@@ -490,6 +552,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   stagedMermaidSources = {},
   onDrawioStorageConvert,
   onMermaidStorageConvert,
+  onTableStorageConvert,
+  onExternalFileRename,
   onStagedTextAssetChange,
   diffChangedLines,
   staticMode = false,
@@ -543,12 +607,14 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     stagedMermaidSources,
     onDrawioStorageConvert,
     onMermaidStorageConvert,
+    onTableStorageConvert,
+    onExternalFileRename,
     onStagedTextAssetChange,
     staticMode,
   }), [
     baseDir, codeFenceByOffset, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onExternalFileRename, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
     onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 

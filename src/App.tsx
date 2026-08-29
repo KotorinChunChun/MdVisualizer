@@ -5,7 +5,7 @@ import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
 import { PreviewContextMenu } from "./components/PreviewContextMenu";
 import { StatusBar } from "./components/StatusBar";
-import { MarkdownPreview } from "./components/MarkdownPreview";
+import { MarkdownPreview, type ExternalFileRenameContext } from "./components/MarkdownPreview";
 import { StandaloneDocumentPreview } from "./components/StandaloneDocumentPreview";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
@@ -33,14 +33,16 @@ import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
 import { createMarkdown, diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
-import { ToastState } from "./types/app";
+import { ToastState, type MarkdownLoadResult } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
-import { replaceCodeFenceBody, replaceMarkdownOccurrence, type CodeFenceOccurrence, type MarkdownTableOccurrence } from "./lib/markdownOccurrences";
-import { parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./lib/assetConversion";
+import { codeFenceTitle, replaceCodeFenceBody, replaceMarkdownOccurrence, type CodeFenceOccurrence, type EditableMarkdownOccurrence, type MarkdownTableOccurrence } from "./lib/markdownOccurrences";
+import { normalizedAssetFilename, parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./lib/assetConversion";
 import { sanitizeSvgXml } from "./lib/svgSafety";
+import { relocateUnchangedOccurrence, replaceRelocatedOccurrence } from "./lib/immediateMarkdownMutation";
+import { rebaseRenamedExternalReferences } from "./lib/externalFile";
 import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
@@ -48,6 +50,7 @@ import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccur
 import { resolveImageSrc, resolveLocalImagePath } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
 import type { ViewMode } from "./lib/viewMode";
+import type { TableStorageConversionContext } from "./lib/tableStorage";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { isSharePointDocument } from "./lib/sharePoint";
 import { moveZoomLevel } from "./lib/zoom";
@@ -1278,26 +1281,41 @@ export function App() {
     setToast({ id: String(Date.now()), message: "キャプションを保存しました", type: "success" });
   }, []);
 
-  const renamePreviewImage = useCallback(async (context: ImageEditContext, filename: string) => {
-    if (tabsStateRef.current.tabs.some((tab) => localPathIdentity(tab.path) === localPathIdentity(context.markdownPath) && tab.dirty)) {
-      throw new Error("未保存のMarkdown編集があります。先に文書を保存してから画像名を変更してください。");
-    }
+  const renameExternalFile = useCallback(async (context: ExternalFileRenameContext, filename: string) => {
     const result = await renameImageAndReferences({
-      markdownPath: context.markdownPath,
-      imagePath: context.imagePath,
+      markdownPath: context.documentPath,
+      imagePath: context.filePath,
       newFilename: filename,
     });
     const changed = new Set(result.updatedDocuments.map(localPathIdentity));
-    tabsStateRef.current.tabs
-      .filter((tab) => changed.has(localPathIdentity(tab.path)))
-      .forEach((tab) => dispatch({ type: "RELOAD", id: tab.id }));
-    setMediaPreview(null);
+    await Promise.all(tabsStateRef.current.tabs
+      .filter((tab) => changed.has(localPathIdentity(tab.path)) && tab.document)
+      .map(async (tab) => {
+        const latest = await loadMarkdown(tab.path);
+        const current = tabsStateRef.current.tabs.find((candidate) => candidate.id === tab.id);
+        if (!current?.document) return;
+        const draft = current.dirty
+          ? rebaseRenamedExternalReferences(current.draft, current.document.base_dir, result.oldPath, filename)
+          : latest.content;
+        dispatch({ type: "DRAFT_CHANGED", id: current.id, content: draft });
+        dispatch({ type: "SAVED", id: current.id, document: latest });
+      }));
     setToast({
       id: String(Date.now()),
-      message: `${result.updatedDocuments.length}文書・${result.updatedReferences}箇所の画像参照とファイル名を更新しました`,
+      message: `${result.updatedDocuments.length}文書・${result.updatedReferences}箇所の参照とファイル名を即時更新しました`,
       type: "success",
     });
+    return true;
   }, []);
+
+  const renamePreviewImage = useCallback(async (context: ImageEditContext, filename: string) => {
+    await renameExternalFile({
+      documentPath: context.markdownPath,
+      filePath: context.imagePath,
+      source: context.source,
+    }, filename);
+    setMediaPreview(null);
+  }, [renameExternalFile]);
 
   const handleImageDisplaySizeChange = useCallback((source: string, size: ImageSize) => {
     if (activeTab) dispatch({ type: "IMAGE_DISPLAY_SIZE", id: activeTab.id, source, size });
@@ -1409,56 +1427,94 @@ export function App() {
     }
   }, []);
 
+  const persistImmediateOccurrence = useCallback(async ({
+    tabId,
+    documentPath,
+    draft,
+    latest,
+    occurrence,
+    replacement,
+    committedAssetIds = [],
+  }: {
+    tabId: string;
+    documentPath: string;
+    draft: string;
+    latest: MarkdownLoadResult;
+    occurrence: EditableMarkdownOccurrence;
+    replacement: string;
+    committedAssetIds?: string[];
+  }) => {
+    // Prepare both replacements before writing anything. This guarantees that
+    // an unresolvable in-memory conflict cannot occur after storage changed.
+    const nextStoredContent = replaceRelocatedOccurrence(latest.content, occurrence, replacement);
+    const nextDraft = replaceRelocatedOccurrence(draft, occurrence, replacement);
+    const identity = localPathIdentity(documentPath);
+    const selfSaveUntil = Date.now() + 2000;
+    recentSelfSaves.current.set(identity, selfSaveUntil);
+    window.setTimeout(() => {
+      if (recentSelfSaves.current.get(identity) === selfSaveUntil) recentSelfSaves.current.delete(identity);
+    }, 2100);
+    const result = await saveMarkdown({
+      path: latest.path,
+      content: nextStoredContent,
+      expectedRevision: latest.revision,
+      stagedAssetIds: committedAssetIds,
+    });
+    if (result.status === "conflict") throw new Error("保存直前にMarkdownが更新されました。最新状態を確認してから再実行してください。");
+    dispatch({ type: "DRAFT_CHANGED", id: tabId, content: nextDraft });
+    dispatch({ type: "SAVED", id: tabId, document: result.document, committedAssetIds });
+    return result.document;
+  }, []);
+
   const convertDocumentAsset = useCallback(async (context: AssetConversionContext) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
     if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) throw new Error("この文書は閲覧専用です。");
+    const latest = await loadMarkdown(tab.document.path);
+    if (latest.kind !== "markdown") throw new Error("最新のMarkdownを読み込めませんでした。");
+    const latestOccurrence = relocateUnchangedOccurrence(latest.content, context.occurrence);
     if (context.storage === "embedded") {
       let extension: string;
-      let mediaType: string;
       let base64: string | undefined;
       let text: string | undefined;
-      let previewSource: string;
-      if (context.assetKind === "raster" && context.occurrence.kind === "image") {
-        const parsed = parseRasterDataUri(context.occurrence.source);
+      if (context.assetKind === "raster" && latestOccurrence.kind === "image") {
+        const parsed = parseRasterDataUri(latestOccurrence.source);
         if (!parsed) throw new Error("未対応のBase64ラスタ画像です。");
-        ({ extension, mediaType, base64 } = parsed);
-        previewSource = context.occurrence.source;
-      } else if (context.assetKind === "svg" && context.occurrence.kind === "inline-svg") {
-        extension = "svg"; mediaType = "image/svg+xml"; text = sanitizeSvgXml(context.occurrence.svg);
-        previewSource = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(text)}`;
+        ({ extension, base64 } = parsed);
+      } else if (context.assetKind === "svg" && latestOccurrence.kind === "inline-svg") {
+        extension = "svg"; text = sanitizeSvgXml(latestOccurrence.svg);
       } else throw new Error("この埋め込み形式は外部ファイルへ変換できません。");
       const staged = await stageDocumentAsset({ documentPath: tab.document.path, preferredFilename: preferredAssetFilename(context, extension), base64, text });
-      const content = context.occurrence.kind === "image"
-        ? replaceImageOccurrenceSource(tab.draft, context.occurrence, staged.filename)
-        : replaceMarkdownOccurrence(tab.draft, context.occurrence, `![SVG](${staged.filename})`);
-      dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, mediaType, base64, text, previewSource } });
+      const replacement = latestOccurrence.kind === "image"
+        ? latestOccurrence.expected.replace(latestOccurrence.source, staged.filename)
+        : `![SVG](${staged.filename})`;
+      try {
+        await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: context.occurrence, replacement, committedAssetIds: [staged.id] });
+      } catch (error) {
+        await discardStagedAssets([staged.id]);
+        throw error;
+      }
       setMediaPreview(null);
-      setToast({ id: String(Date.now()), message: `${staged.filename} を一時ステージしました。Markdown保存時に確定します。`, type: "success" });
+      setToast({ id: String(Date.now()), message: `${staged.filename} へ外部化し、Markdownへ即時保存しました。`, type: "success" });
       return;
     }
 
-    if (context.occurrence.kind !== "image") throw new Error("外部アセットの参照形式が不正です。");
-    const occurrence = context.occurrence;
-    const pending = (tab.pendingAssets ?? []).find((asset) => asset.filename === occurrence.source);
-    const loaded = pending ? null : await readDocumentAsset(tab.document.path, occurrence.source);
-    let content: string;
+    if (latestOccurrence.kind !== "image") throw new Error("外部アセットの参照形式が不正です。");
+    const loaded = await readDocumentAsset(tab.document.path, latestOccurrence.source);
+    let replacement: string;
     if (context.assetKind === "raster") {
-      const mediaType = pending?.mediaType ?? loaded?.mediaType;
-      const base64 = pending?.base64 ?? loaded?.base64;
+      const mediaType = loaded.mediaType;
+      const base64 = loaded.base64;
       if (!mediaType || !base64) throw new Error("ラスタ画像データを読み込めませんでした。");
-      content = replaceImageOccurrenceSource(tab.draft, occurrence, `data:${mediaType};base64,${base64}`);
+      replacement = latestOccurrence.expected.replace(latestOccurrence.source, `data:${mediaType};base64,${base64}`);
     } else {
-      const text = pending?.text ?? loaded?.text;
+      const text = loaded.text;
       if (!text) throw new Error("SVG XMLを読み込めませんでした。");
-      content = replaceMarkdownOccurrence(tab.draft, occurrence, sanitizeSvgXml(text));
+      replacement = sanitizeSvgXml(text);
     }
-    if (pending) {
-      await discardStagedAssets([pending.id]);
-      dispatch({ type: "STAGED_ASSET_REMOVED", id: tab.id, content, stagingId: pending.id });
-    } else dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+    await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: context.occurrence, replacement });
     setMediaPreview(null);
-    setToast({ id: String(Date.now()), message: "埋め込み形式へ変換しました。", type: "success" });
-  }, []);
+    setToast({ id: String(Date.now()), message: "埋め込み形式へ切り替え、Markdownへ即時保存しました。外部ファイルは削除していません。", type: "success" });
+  }, [persistImmediateOccurrence]);
 
   const openSearch = useCallback(() => {
     if (activeTab?.document) {
@@ -1664,19 +1720,30 @@ export function App() {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document
       && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
     if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) throw new Error("この文書は閲覧専用です。");
+    const latest = await loadMarkdown(tab.document.path);
+    if (latest.kind !== "markdown") throw new Error("最新のMarkdownを読み込めませんでした。");
+    const latestOccurrence = relocateUnchangedOccurrence(latest.content, context.occurrence);
 
     if (context.storage === "embedded") {
+      if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込みdraw.ioの位置を確認できませんでした。");
       const staged = await stageDocumentAsset({
         documentPath: tab.document.path,
         preferredFilename: preferredDrawioFilename(context.occurrence),
-        text: context.source,
+        text: latestOccurrence.body,
       });
       try {
-        const content = replaceMarkdownOccurrence(tab.draft, context.occurrence, drawioExternalReference(staged.filename));
-        dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, text: context.source } });
+        await persistImmediateOccurrence({
+          tabId: tab.id,
+          documentPath: tab.document.path,
+          draft: tab.draft,
+          latest,
+          occurrence: context.occurrence,
+          replacement: drawioExternalReference(staged.filename),
+          committedAssetIds: [staged.id],
+        });
         setToast({
           id: crypto.randomUUID(),
-          message: `${staged.filename} を一時ステージしました。Markdown保存時に外部ファイルとして確定します。`,
+          message: `${staged.filename} へ外部化し、Markdownへ即時保存しました。`,
           type: "success",
           onMessageClick: async () => {
             try { await openContainingFolder(tab.document!.path); }
@@ -1690,36 +1757,48 @@ export function App() {
       return;
     }
 
-    const pending = (tab.pendingAssets ?? []).find((asset) => asset.filename === context.occurrence.source && asset.text !== undefined);
-    const content = replaceMarkdownOccurrence(
-      tab.draft,
-      context.occurrence,
-      drawioEmbeddedFence(context.source, markdownLineEnding(tab.draft)),
-    );
-    if (pending) {
-      await discardStagedAssets([pending.id]);
-      dispatch({ type: "STAGED_ASSET_REMOVED", id: tab.id, content, stagingId: pending.id });
-    } else dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
-    setToast({ id: crypto.randomUUID(), message: "draw.ioをMarkdown埋め込みへ切り替えました。外部ファイルは削除していません。", type: "success" });
-  }, []);
+    if (latestOccurrence.kind !== "image") throw new Error("外部draw.io参照の位置を確認できませんでした。");
+    const asset = await readDocumentAsset(tab.document.path, latestOccurrence.source);
+    if (!asset.text) throw new Error("draw.ioファイルの最新内容を読み込めませんでした。");
+    await persistImmediateOccurrence({
+      tabId: tab.id,
+      documentPath: tab.document.path,
+      draft: tab.draft,
+      latest,
+      occurrence: context.occurrence,
+      replacement: drawioEmbeddedFence(asset.text, markdownLineEnding(latest.content)),
+    });
+    setToast({ id: crypto.randomUUID(), message: "draw.ioを埋め込みへ切り替え、Markdownへ即時保存しました。外部ファイルは削除していません。", type: "success" });
+  }, [persistImmediateOccurrence]);
 
   const convertMermaidStorage = useCallback(async (context: MermaidStorageConversionContext) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document
       && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
     if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) throw new Error("この文書は閲覧専用です。");
+    const latest = await loadMarkdown(tab.document.path);
+    if (latest.kind !== "markdown") throw new Error("最新のMarkdownを読み込めませんでした。");
+    const latestOccurrence = relocateUnchangedOccurrence(latest.content, context.occurrence);
 
     if (context.storage === "embedded") {
+      if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込みMermaidの位置を確認できませんでした。");
       const staged = await stageDocumentAsset({
         documentPath: tab.document.path,
         preferredFilename: preferredMermaidFilename(context.occurrence),
-        text: context.source,
+        text: latestOccurrence.body,
       });
       try {
-        const content = replaceMarkdownOccurrence(tab.draft, context.occurrence, mermaidExternalReference(staged.filename));
-        dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content, asset: { ...staged, text: context.source } });
+        await persistImmediateOccurrence({
+          tabId: tab.id,
+          documentPath: tab.document.path,
+          draft: tab.draft,
+          latest,
+          occurrence: context.occurrence,
+          replacement: mermaidExternalReference(staged.filename),
+          committedAssetIds: [staged.id],
+        });
         setToast({
           id: crypto.randomUUID(),
-          message: `${staged.filename} を一時ステージしました。Markdown保存時に外部ファイルとして確定します。`,
+          message: `${staged.filename} へ外部化し、Markdownへ即時保存しました。`,
           type: "success",
           onMessageClick: async () => {
             try { await openContainingFolder(tab.document!.path); }
@@ -1733,14 +1812,68 @@ export function App() {
       return;
     }
 
-    const pending = (tab.pendingAssets ?? []).find((asset) => asset.filename === context.occurrence.source && asset.text !== undefined);
-    const content = replaceMarkdownOccurrence(tab.draft, context.occurrence, mermaidEmbeddedFence(context.source, markdownLineEnding(tab.draft)));
-    if (pending) {
-      await discardStagedAssets([pending.id]);
-      dispatch({ type: "STAGED_ASSET_REMOVED", id: tab.id, content, stagingId: pending.id });
-    } else dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
-    setToast({ id: crypto.randomUUID(), message: "MermaidをMarkdown埋め込みへ切り替えました。外部ファイルは削除していません。", type: "success" });
-  }, []);
+    if (latestOccurrence.kind !== "image") throw new Error("外部Mermaid参照の位置を確認できませんでした。");
+    const asset = await readDocumentAsset(tab.document.path, latestOccurrence.source);
+    if (!asset.text) throw new Error("Mermaidファイルの最新内容を読み込めませんでした。");
+    await persistImmediateOccurrence({
+      tabId: tab.id,
+      documentPath: tab.document.path,
+      draft: tab.draft,
+      latest,
+      occurrence: context.occurrence,
+      replacement: mermaidEmbeddedFence(asset.text, markdownLineEnding(latest.content)),
+    });
+    setToast({ id: crypto.randomUUID(), message: "Mermaidを埋め込みへ切り替え、Markdownへ即時保存しました。外部ファイルは削除していません。", type: "success" });
+  }, [persistImmediateOccurrence]);
+
+  const convertTableStorage = useCallback(async (context: TableStorageConversionContext) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document
+      && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) throw new Error("この文書は閲覧専用です。");
+    const latest = await loadMarkdown(tab.document.path);
+    if (latest.kind !== "markdown") throw new Error("最新のMarkdownを読み込めませんでした。");
+    const latestOccurrence = relocateUnchangedOccurrence(latest.content, context.occurrence);
+
+    if (context.storage === "embedded") {
+      if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込み表の位置を確認できませんでした。");
+      const staged = await stageDocumentAsset({
+        documentPath: tab.document.path,
+        preferredFilename: normalizedAssetFilename(codeFenceTitle(latestOccurrence.meta) ?? "", context.language.startsWith("csv") ? "csv" : "tsv", "table"),
+        text: latestOccurrence.body,
+      });
+      try {
+        await persistImmediateOccurrence({
+          tabId: tab.id,
+          documentPath: tab.document.path,
+          draft: tab.draft,
+          latest,
+          occurrence: context.occurrence,
+          replacement: `![${context.language.toUpperCase()}表](${staged.filename})`,
+          committedAssetIds: [staged.id],
+        });
+      } catch (error) {
+        await discardStagedAssets([staged.id]);
+        throw error;
+      }
+      setToast({ id: crypto.randomUUID(), message: `${staged.filename} へ書き出し、Markdownへ即時保存しました。`, type: "success" });
+      return;
+    }
+
+    if (latestOccurrence.kind !== "image") throw new Error("外部表参照の位置を確認できませんでした。");
+    const asset = await readDocumentAsset(tab.document.path, latestOccurrence.source);
+    if (asset.text === null || asset.text === undefined) throw new Error("表ファイルの最新内容を読み込めませんでした。");
+    const lineEnding = markdownLineEnding(latest.content);
+    const body = asset.text.replace(/^\uFEFF/, "").replace(/[\r\n]+$/, "");
+    await persistImmediateOccurrence({
+      tabId: tab.id,
+      documentPath: tab.document.path,
+      draft: tab.draft,
+      latest,
+      occurrence: context.occurrence,
+      replacement: `\`\`\`${context.language}${lineEnding}${body}${lineEnding}\`\`\``,
+    });
+    setToast({ id: crypto.randomUUID(), message: "表を埋め込みへ切り替え、Markdownへ即時保存しました。外部ファイルは削除していません。", type: "success" });
+  }, [persistImmediateOccurrence]);
 
   const updateStagedTextAsset = useCallback((filename: string, text: string): boolean => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
@@ -2042,6 +2175,8 @@ export function App() {
             onMarkdownTableChange={updateMarkdownTable}
             onDrawioStorageConvert={convertDrawioStorage}
             onMermaidStorageConvert={convertMermaidStorage}
+            onTableStorageConvert={convertTableStorage}
+            onExternalFileRename={renameExternalFile}
             onStagedTextAssetChange={updateStagedTextAsset}
             stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
             stagedDrawioSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.drawio$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}

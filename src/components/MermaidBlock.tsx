@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { mermaidInputError, mermaidRenderId, renderMermaid } from "../lib/mermaidService";
 import { removeMermaidBlockStatus, setMermaidBlockStatus } from "../lib/mermaidStatus";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
@@ -23,6 +23,7 @@ interface MermaidBlockProps {
   mediaSource?: string;
   diagramAlt?: string;
   headingTitle?: string;
+  headingLabel?: ReactNode;
   editable?: boolean;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
@@ -45,6 +46,7 @@ export function MermaidBlock({
   mediaSource,
   diagramAlt = "Mermaid図",
   headingTitle,
+  headingLabel,
   editable = false,
   storage,
   onStorageConvert,
@@ -122,7 +124,7 @@ export function MermaidBlock({
   }, [diagramCount, diagramIndex, localId, mode, source, stableBlockId, statusId, tabId, theme, visible, windowId]);
 
   const toolbarLabel = `Mermaid${headingTitle?.trim() ? ` — ${headingTitle.trim()}` : ""}`;
-  const toolbar = showToolbar && <ResponsiveToolbar collapseAll className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={<span>{toolbarLabel}</span>} items={[
+  const toolbar = showToolbar && <ResponsiveToolbar collapseAll className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
     ...(editable ? [{ id: "edit", priority: 80, node: <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button> }] : []),
     { id: "copy-view", priority: 100, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} /> },
     ...(storage && onStorageConvert ? [{ id: "storage", priority: 10, node: <button className="diagram-action-button" type="button" disabled={convertingStorage} onClick={() => {

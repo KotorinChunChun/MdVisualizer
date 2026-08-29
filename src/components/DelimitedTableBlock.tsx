@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   compareDelimitedValues,
   parseDelimitedTable,
@@ -15,6 +15,9 @@ interface DelimitedTableBlockProps {
   language: DelimitedTableLanguage;
   source: string;
   onSave?: (body: string) => boolean | void;
+  headingLabel?: ReactNode;
+  storage?: "embedded" | "external";
+  onStorageConvert?: () => boolean | void | Promise<boolean | void>;
 }
 
 type SortCriterion = { column: number; direction: "ascending" | "descending" };
@@ -24,7 +27,7 @@ function emitToast(type: "success" | "error" | "info", message: string, actions?
   window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message, actions } }));
 }
 
-export function DelimitedTableBlock({ language, source, onSave }: DelimitedTableBlockProps) {
+export function DelimitedTableBlock({ language, source, onSave, headingLabel, storage, onStorageConvert }: DelimitedTableBlockProps) {
   const parsed = useMemo(() => {
     try { return { data: parseDelimitedTable(source, language), error: null }; }
     catch (error) { return { data: null, error: String(error) }; }
@@ -44,6 +47,7 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
   const [contextMenu, setContextMenu] = useState<TableContextMenu>(null);
   const [selectedColumn, setSelectedColumn] = useState<number | null>(null);
   const [selectedRow, setSelectedRow] = useState<string[] | null>(null);
+  const [convertingStorage, setConvertingStorage] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -201,7 +205,7 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
   };
 
   return <section ref={cardRef} className="data-grid-card" aria-label={`${language.toUpperCase()}表`}>
-    <ResponsiveToolbar label={<strong className="data-grid-kind">{language.toUpperCase()}</strong>} className="data-grid-toolbar" ariaLabel="表操作" items={[
+    <ResponsiveToolbar label={headingLabel ?? <strong className="data-grid-kind">{language.toUpperCase()}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</strong>} className="data-grid-toolbar" ariaLabel="表操作" items={[
       { id: "search", priority: 120, fixed: true, measurementWidth: 180, node: <label className="data-grid-search"><input aria-label="検索キーワードを入力" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="検索キーワードを入力" /></label> },
       { id: "columns", priority: 20, node: <button type="button" aria-pressed={columnsOpen} className={columnsOpen ? "active" : ""} onClick={() => setColumnsOpen((open) => !open)}>列表示</button> },
       { id: "slicer", priority: 25, node: <button type="button" aria-pressed={panesOpen} className={panesOpen ? "active" : ""} onClick={() => setPanesOpen((open) => !open)}>スライサー</button> },
@@ -210,6 +214,10 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
       { id: "copy-csv", priority: 100, node: <button type="button" onClick={() => void copy("csv")}>CSVコピー</button> },
       { id: "copy-tsv", priority: 95, node: <button type="button" onClick={() => void copy("tsv")}>TSVコピー</button> },
       { id: "print", priority: 15, node: <button type="button" onClick={printTable}>印刷</button> },
+      ...(storage && onStorageConvert ? [{ id: "storage", priority: 90, node: <button type="button" disabled={convertingStorage} onClick={() => {
+        setConvertingStorage(true);
+        void Promise.resolve().then(onStorageConvert).catch((error) => emitToast("error", error instanceof Error ? error.message : String(error))).finally(() => setConvertingStorage(false));
+      }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "別ファイルに書き出し" : "埋め込みに変更"}</button> }] : []),
     ]} />
     {columnsOpen && <div className="data-grid-column-panel" aria-label="列表示の選択">{headers.map((header, column) => <label key={column}><input type="checkbox" checked={visibleColumns[column] !== false} onChange={(event) => setVisibleColumns((current) => headers.map((_, index) => index === column ? event.target.checked : current[index] !== false))} />{header}</label>)}</div>}
     {panesOpen && <div className="search-panes" aria-label="スライサー">{headers.map((header, column) => {

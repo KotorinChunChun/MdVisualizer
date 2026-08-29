@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { classifyDrawioSource, prepareDrawioLoad } from "../lib/drawio";
 import { normalizeSvgForClipboard } from "../lib/mermaidClipboard";
 import { sanitizeSvgXml } from "../lib/svgSafety";
@@ -108,11 +108,12 @@ export function isEmptyDrawioSource(source: string): boolean {
   return Boolean(parsed.querySelector("mxGraphModel, mxfile"));
 }
 
-export function DrawioBlock({ source, theme, blockId, headingTitle, storage, onStorageConvert, onSave, onMediaOpen }: {
+export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel, storage, onStorageConvert, onSave, onMediaOpen }: {
   source: string;
   theme: string;
   blockId: string;
   headingTitle?: string;
+  headingLabel?: ReactNode;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
   onSave?: (source: string) => boolean | void | Promise<boolean | void>;
@@ -278,7 +279,7 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, storage, onS
   }
 
   return <div className="drawio-block" data-drawio-block={blockId}>
-    <ResponsiveToolbar collapseAll className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={<span>{toolbarLabel}</span>} items={[
+    <ResponsiveToolbar collapseAll className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
       { id: "copy-view-edit", priority: 100, node: <MermaidToolbar
         source={source}
         svg={renderedSvg}

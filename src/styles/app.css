@@ -96,6 +96,24 @@ body {
 .responsive-toolbar__menu button { width: 100%; min-width: max-content; margin: 0; border-radius: 6px; text-align: left; white-space: nowrap; }
 .responsive-toolbar__menu .mermaid-toolbar__view button:first-child,
 .responsive-toolbar__menu .mermaid-toolbar__view button:last-child { margin: 0; border-radius: 6px; }
+.external-file-header { position: relative; display: inline-flex; min-width: 0; max-width: 100%; align-items: center; gap: 5px; color: var(--text-secondary); }
+.external-file-header button { padding: 2px 5px; border: 1px solid var(--border-color); border-radius: 4px; color: inherit; background: var(--btn-bg); cursor: pointer; }
+.external-file-header button:disabled { border-color: transparent; background: transparent; cursor: default; opacity: 1; }
+.external-file-header__filename { min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.external-file-header__kind { flex: 0 0 auto; color: var(--text-primary); }
+.external-file-header__status { flex: 0 0 auto; padding: 1px 5px; border: 1px solid var(--border-color); border-radius: 999px; font-size: 10px; font-weight: 500; }
+.external-file-header__status.is-未保存,
+.external-file-header__status.is-更新あり { color: #f0a33a; border-color: #f0a33a; }
+.content-storage-status { display: inline-block; margin-left: 6px; padding: 1px 5px; border: 1px solid var(--border-color); border-radius: 999px; font-size: 10px; font-weight: 500; }
+.external-file-header__editor { display: inline-flex; align-items: center; gap: 3px; }
+.external-file-header__editor input { width: min(240px, 34vw); padding: 3px 5px; }
+.external-file-header__extension { flex: 0 0 auto; color: var(--text-secondary); }
+.external-file-header__path { position: absolute; z-index: 5; top: 100%; left: 0; max-width: min(680px, 80vw); padding: 5px 7px; overflow: hidden; border: 1px solid var(--border-color); border-radius: 4px; background: var(--panel-bg); box-shadow: 0 4px 14px #0006; text-overflow: ellipsis; white-space: nowrap; }
+.external-file-header__menu { position: fixed; z-index: 12030; display: grid; min-width: 180px; gap: 3px; padding: 5px; border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); background: var(--panel-bg); box-shadow: 0 8px 24px #0008; }
+.external-file-header__menu button { width: 100%; padding: 5px 8px; border: 0; border-radius: 4px; color: inherit; background: transparent; text-align: left; white-space: nowrap; cursor: pointer; }
+.external-file-header__menu button:hover { background: var(--btn-hover); }
+.external-text-block { margin: 0.8rem 0; }
+.external-text-block > .external-file-header { position: relative; display: flex; margin-bottom: 5px; }
 .preview-context-menu [role="separator"] { height: 1px; margin: 4px 2px; background: var(--border-color); }
 .status-bar { min-height: 28px; padding: 5px 12px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 12px; background: var(--panel-bg); }
 .view-controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; padding:7px 12px; background:var(--panel-bg); border-bottom:1px solid var(--border-color); font-size:12px; }
@@ -494,7 +512,7 @@ body {
 .diagram-block__header { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid var(--border-color); }
 .diagram-block__header > span { margin-right: auto; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
 .diagram-block__header > .mermaid-toolbar { padding: 0; }
-.diagram-edit-button { flex: 0 0 auto; width: 30px; padding-inline: 0; font-size: 16px; }
+.diagram-edit-button { flex: 0 0 auto; width: auto; min-height: 30px; padding: 5px 9px; font-size: inherit; white-space: nowrap; }
 .mermaid-container > .mermaid-source { margin: 0; border: 0; border-radius: 0; }
 .plantuml-container > .mermaid-toolbar { justify-content: flex-end; }
 .plantuml-container > .mermaid-toolbar strong { margin-right: auto; color: var(--text-secondary); font-size: 12px; }
@@ -708,7 +726,9 @@ body {
   bottom: 24px;
   right: 24px;
   display: flex;
+  max-width: min(720px, calc(100vw - 48px));
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 12px 18px;
   border-radius: 8px;

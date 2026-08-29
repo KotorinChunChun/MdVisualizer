@@ -12,6 +12,13 @@
   line-height: 0;
 }
 
+.inline-image-resize > .external-file-header {
+  position: relative;
+  display: flex;
+  margin-bottom: 0.35rem;
+  line-height: 1.4;
+}
+
 .inline-image-resize__caption {
   display: block;
   max-width: 100%;
