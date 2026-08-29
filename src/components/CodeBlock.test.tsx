@@ -1,9 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CodeBlock, powerShellWorkingDirectory } from "./CodeBlock";
-import { runPowerShell } from "../lib/commands";
+import { copyTextFile, runPowerShell } from "../lib/commands";
 
-vi.mock("../lib/commands", () => ({ runPowerShell: vi.fn() }));
+vi.mock("../lib/commands", () => ({ copyTextFile: vi.fn(), runPowerShell: vi.fn() }));
 
 describe("CodeBlock", () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); });
@@ -18,7 +18,7 @@ describe("CodeBlock", () => {
     button.focus();
     fireEvent.click(button);
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("const answer = 42;"));
-    expect(listener).toHaveBeenCalledWith(expect.objectContaining({ detail: { type: "success", message: "コードをコピーしました" } }));
+    expect(listener).toHaveBeenCalledWith(expect.objectContaining({ detail: expect.objectContaining({ type: "success", message: "コードをコピーしました" }) }));
     expect(document.activeElement).not.toBe(button);
     window.removeEventListener("markdown-toast", listener);
   });
@@ -62,6 +62,26 @@ describe("CodeBlock", () => {
     expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
     rerender(<CodeBlock className="language-powershell">Write-Output no-path</CodeBlock>);
     expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
+  });
+
+  it("offers TXT and source-file copies from the copy notification", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    vi.mocked(copyTextFile).mockResolvedValue("C:\\temp\\code.ts");
+    let detail: { actions?: Array<{ label: string; onAction: () => Promise<void> }> } | undefined;
+    const listener = (event: Event) => { detail = (event as CustomEvent).detail; };
+    window.addEventListener("markdown-toast", listener);
+    render(<CodeBlock className="language-typescript">{"const value = 1;"}</CodeBlock>);
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await waitFor(() => expect(detail?.actions?.map((action) => action.label)).toEqual(["TXTファイルでコピー", "ソースファイルとしてコピー"]));
+    const actions = detail?.actions;
+    await actions?.[0].onAction();
+    await actions?.[1].onAction();
+
+    expect(copyTextFile).toHaveBeenNthCalledWith(1, { filename: "code.txt", content: "const value = 1;" });
+    expect(copyTextFile).toHaveBeenNthCalledWith(2, { filename: "code.ts", content: "const value = 1;" });
+    window.removeEventListener("markdown-toast", listener);
   });
 
   it("normalizes Windows verbatim paths before showing the Markdown directory", () => {

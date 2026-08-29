@@ -84,5 +84,6 @@ export interface ToastState {
   restorePath?: string;
   actionLabel?: string;
   onAction?: () => void | Promise<void>;
+  actions?: Array<{ label: string; onAction: () => void | Promise<void> }>;
   onMessageClick?: () => void | Promise<void>;
 }

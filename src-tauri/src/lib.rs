@@ -267,6 +267,7 @@ pub fn run() {
             save_markdown_style,
             open_markdown_style,
             copy_mermaid_file,
+            copy_text_file,
             update_external_app_settings,
             save_fold_state,
             get_initial_files,

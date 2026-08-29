@@ -115,6 +115,48 @@ pub struct MermaidFileCopyRequest {
     pub png_bytes: Vec<u8>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TextFileCopyRequest {
+    pub filename: String,
+    pub content: String,
+    #[serde(default)]
+    pub utf8_bom: bool,
+}
+
+fn text_clipboard_file(request: TextFileCopyRequest) -> Result<(String, String, Vec<u8>), String> {
+    let filename = request.filename.trim();
+    if filename.is_empty()
+        || filename.contains(['/', '\\', ':', '*', '?', '"', '<', '>', '|'])
+        || filename == "."
+        || filename == ".."
+    {
+        return Err("ファイル名に使用できない文字が含まれています。".into());
+    }
+    let path = Path::new(filename);
+    let extension = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .filter(|value| !value.is_empty() && value.len() <= 16 && value.chars().all(|character| character.is_ascii_alphanumeric()))
+        .ok_or_else(|| "コピーするファイルの拡張子が不正です。".to_string())?
+        .to_ascii_lowercase();
+    let prefix = path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("file")
+        .chars()
+        .filter(|character| character.is_alphanumeric() || matches!(character, '-' | '_'))
+        .take(48)
+        .collect::<String>();
+    let prefix = if prefix.is_empty() { "file".to_string() } else { prefix };
+    let mut bytes = Vec::with_capacity(request.content.len() + if request.utf8_bom { 3 } else { 0 });
+    if request.utf8_bom {
+        bytes.extend_from_slice(&[0xef, 0xbb, 0xbf]);
+    }
+    bytes.extend_from_slice(request.content.as_bytes());
+    Ok((prefix, extension, bytes))
+}
+
 fn mermaid_clipboard_file(request: MermaidFileCopyRequest) -> Result<(String, String, Vec<u8>), String> {
     let (prefix, code_extension) = match request.diagram_kind.as_str() {
         "mermaid" => ("mermaid", "mmd"),
@@ -230,6 +272,17 @@ fn copy_file_to_clipboard(_path: &Path) -> Result<(), String> {
 #[tauri::command]
 pub fn copy_mermaid_file(request: MermaidFileCopyRequest) -> Result<String, String> {
     let (prefix, extension, bytes) = mermaid_clipboard_file(request)?;
+    let path = write_mermaid_clipboard_file(&prefix, &extension, &bytes)?;
+    if let Err(error) = copy_file_to_clipboard(&path) {
+        let _ = std::fs::remove_file(&path);
+        return Err(error);
+    }
+    Ok(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub fn copy_text_file(request: TextFileCopyRequest) -> Result<String, String> {
+    let (prefix, extension, bytes) = text_clipboard_file(request)?;
     let path = write_mermaid_clipboard_file(&prefix, &extension, &bytes)?;
     if let Err(error) = copy_file_to_clipboard(&path) {
         let _ = std::fs::remove_file(&path);
@@ -1870,6 +1923,28 @@ mod tests {
             mermaid_clipboard_file(drawio).unwrap(),
             ("drawio".into(), "drawio".into(), b"<mxfile/>".to_vec())
         );
+    }
+
+    #[test]
+    fn prepares_validated_text_clipboard_files_with_optional_utf8_bom() {
+        assert_eq!(
+            text_clipboard_file(TextFileCopyRequest {
+                filename: "table.csv".into(),
+                content: "a,b\n1,2".into(),
+                utf8_bom: true,
+            }).unwrap(),
+            ("table".into(), "csv".into(), [vec![0xef, 0xbb, 0xbf], b"a,b\n1,2".to_vec()].concat()),
+        );
+        assert!(text_clipboard_file(TextFileCopyRequest {
+            filename: "../escape.txt".into(),
+            content: "x".into(),
+            utf8_bom: false,
+        }).is_err());
+        assert!(text_clipboard_file(TextFileCopyRequest {
+            filename: "no-extension".into(),
+            content: "x".into(),
+            utf8_bom: false,
+        }).is_err());
     }
 
     #[test]

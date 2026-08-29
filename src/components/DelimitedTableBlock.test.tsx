@@ -3,11 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DelimitedTableBlock } from "./DelimitedTableBlock";
 
 const nativeMocks = vi.hoisted(() => ({
-  showSaveDialog: vi.fn(),
-  saveTableCsv: vi.fn(),
+  copyTextFile: vi.fn(),
 }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ save: nativeMocks.showSaveDialog }));
-vi.mock("../lib/commands", () => ({ saveTableCsv: nativeMocks.saveTableCsv }));
+vi.mock("../lib/commands", () => ({ copyTextFile: nativeMocks.copyTextFile }));
 
 describe("DelimitedTableBlock", () => {
   afterEach(() => {
@@ -35,12 +33,12 @@ describe("DelimitedTableBlock", () => {
 
   it("filters and sorts rows without changing the source table", () => {
     render(<DelimitedTableBlock language="csv-h" source={"name,score\nAlice,10\nBob,2\nCarol,30"} />);
-    fireEvent.change(screen.getByRole("searchbox", { name: "検索" }), { target: { value: "Bob" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "検索キーワードを入力" }), { target: { value: "Bob" } });
     expect(screen.queryByText("Alice")).toBeNull();
     expect(screen.getByText("Bob")).toBeTruthy();
     expect(screen.getByText("1 / 3 行")).toBeTruthy();
 
-    fireEvent.change(screen.getByRole("searchbox", { name: "検索" }), { target: { value: "" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "検索キーワードを入力" }), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: /score/ }));
     const bodyRows = screen.getByRole("table").querySelectorAll("tbody tr");
     expect(bodyRows[0].textContent).toContain("Bob");
@@ -78,9 +76,12 @@ describe("DelimitedTableBlock", () => {
     const items = toolbar.querySelector(".responsive-toolbar__items")!;
     const firstItem = items.firstElementChild!;
 
-    expect(firstItem.querySelector('input[type="search"]')).toBe(screen.getByRole("searchbox", { name: "検索" }));
+    expect(firstItem.querySelector('input[type="search"]')).toBe(screen.getByRole("searchbox", { name: "検索キーワードを入力" }));
     expect(firstItem.nextElementSibling?.querySelector("button")?.textContent).toBe("列表示");
     expect(firstItem.querySelector(".data-grid-search")).toBeTruthy();
+    expect(screen.queryByText("検索")).toBeNull();
+    expect(screen.getByPlaceholderText("検索キーワードを入力")).toBeTruthy();
+    expect(toolbar.querySelector(".responsive-toolbar__label")?.textContent).toBe("CSV-H");
   });
 
   it("displays vertical and horizontal aggregate results from the source", () => {
@@ -146,38 +147,26 @@ describe("DelimitedTableBlock", () => {
     expect(onSave).toHaveBeenCalledWith("項目,値\nA,10\nB,20\n合計,30");
   });
 
-  it("requests the current Blob-based CSV download", () => {
-    vi.useFakeTimers();
-    const createObjectUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:table");
-    const revokeObjectUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
-    let clickedAnchor: { href: string; download: string } | null = null;
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
-      clickedAnchor = { href: this.href, download: this.download };
-    });
+  it("offers separate CSV and TSV copies without the old CSV menu", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    const notices: Array<{ message: string; actions?: Array<{ label: string; onAction: () => Promise<void> }> }> = [];
+    const listener = (event: Event) => { notices.push((event as CustomEvent).detail); };
+    window.addEventListener("markdown-toast", listener);
     render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "CSV" }));
+    expect(screen.queryByRole("button", { name: "CSV" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "CSVコピー" }));
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("name,score\nAlice,10"));
+    fireEvent.click(screen.getByRole("button", { name: "TSVコピー" }));
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("name\tscore\nAlice\t10"));
 
-    expect(createObjectUrl).toHaveBeenCalledWith(expect.objectContaining({ type: "text/csv;charset=utf-8" }));
-    expect(clickedAnchor).toEqual({ href: "blob:table", download: "table.csv" });
-    expect(revokeObjectUrl).not.toHaveBeenCalled();
-    vi.runAllTimers();
-    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:table");
-  });
-
-  it("uses the native save dialog and reports the selected CSV path", async () => {
-    Object.defineProperty(window, "__TAURI_INTERNALS__", { configurable: true, value: {} });
-    nativeMocks.showSaveDialog.mockResolvedValue("C:\\exports\\table.csv");
-    nativeMocks.saveTableCsv.mockResolvedValue("C:\\exports\\table.csv");
-    const toast = vi.fn();
-    window.addEventListener("markdown-toast", toast);
-    render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "CSV" }));
-
-    await vi.waitFor(() => expect(nativeMocks.saveTableCsv).toHaveBeenCalledWith("C:\\exports\\table.csv", "\uFEFFname,score\nAlice,10"));
-    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ detail: { type: "success", message: "CSVを保存しました: C:\\exports\\table.csv" } }));
-    window.removeEventListener("markdown-toast", toast);
+    const actions = notices[notices.length - 1]?.actions;
+    expect(actions?.map((action) => action.label)).toEqual(["ファイルとしてコピー", "CSVでコピー", "Excel形式でコピー"]);
+    nativeMocks.copyTextFile.mockResolvedValue("C:\\temp\\table.tsv");
+    await actions?.[0].onAction();
+    expect(nativeMocks.copyTextFile).toHaveBeenCalledWith({ filename: "table.tsv", content: "name\tscore\nAlice\t10", utf8Bom: false });
+    window.removeEventListener("markdown-toast", listener);
   });
 
   it("prints only the selected table with all rows outside paging", () => {

@@ -7,8 +7,7 @@ import {
 } from "../lib/delimitedTable";
 import { TableEditorDialog } from "./TableEditorDialog";
 import { calculateTableAggregates } from "../lib/tableAggregation";
-import { save as showSaveDialog } from "@tauri-apps/plugin-dialog";
-import { saveTableCsv } from "../lib/commands";
+import { copyTextFile } from "../lib/commands";
 import { ResponsiveToolbar } from "./ResponsiveToolbar";
 import "../styles/delimited-table.css";
 
@@ -21,8 +20,8 @@ interface DelimitedTableBlockProps {
 type SortCriterion = { column: number; direction: "ascending" | "descending" };
 type TableContextMenu = { kind: "column"; column: number; x: number; y: number } | { kind: "row"; row: string[]; x: number; y: number } | null;
 
-function emitToast(type: "success" | "error" | "info", message: string): void {
-  window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message } }));
+function emitToast(type: "success" | "error" | "info", message: string, actions?: Array<{ label: string; onAction: () => void | Promise<void> }>): void {
+  window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message, actions } }));
 }
 
 export function DelimitedTableBlock({ language, source, onSave }: DelimitedTableBlockProps) {
@@ -110,45 +109,42 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
   const clearFilters = () => { setQuery(""); setSelectedValues({}); };
   const exportRows = [visibleIndexes.map((index) => headers[index]), ...filteredRows.map((row) => visibleIndexes.map((index) => row[index] ?? ""))];
 
-  const copy = async () => {
+  const serialized = (format: "csv" | "tsv") => serializeDelimitedTable({
+    delimiter: format === "csv" ? "," : "\t",
+    headers: exportRows[0],
+    rows: exportRows.slice(1),
+  });
+  const copyTableFile = async (format: "csv" | "tsv") => {
     try {
-      await navigator.clipboard.writeText(exportRows.map((row) => row.join("\t")).join("\n"));
-      emitToast("success", "表をコピーしました");
-    } catch { emitToast("error", "表をコピーできませんでした"); }
+      await copyTextFile({ filename: `table.${format}`, content: serialized(format), utf8Bom: format === "csv" });
+      emitToast("success", `${format.toUpperCase()}ファイルをコピーしました`);
+    } catch { emitToast("error", `${format.toUpperCase()}ファイルをコピーできませんでした`); }
   };
-  const downloadCsv = async () => {
-    const body = serializeDelimitedTable({ delimiter: ",", headers: exportRows[0], rows: exportRows.slice(1) });
-    const content = `\uFEFF${body}`;
+  const copyExcel = async () => {
+    const plain = serialized("tsv");
+    const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const html = `<table>${exportRows.map((row, rowIndex) => `<tr>${row.map((cell) => `<${rowIndex === 0 ? "th" : "td"}>${escape(cell)}</${rowIndex === 0 ? "th" : "td"}>`).join("")}</tr>`).join("")}</table>`;
     try {
-      if ("__TAURI_INTERNALS__" in window) {
-        const path = await showSaveDialog({
-          title: "表をCSVとして保存",
-          defaultPath: "table.csv",
-          filters: [{ name: "CSV", extensions: ["csv"] }],
-        });
-        if (!path) {
-          emitToast("info", "CSV保存をキャンセルしました");
-          return;
-        }
-        const savedPath = await saveTableCsv(path, content);
-        emitToast("success", `CSVを保存しました: ${savedPath}`);
-        return;
-      }
-      const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = "table.csv";
-      anchor.hidden = true;
-      document.body.append(anchor);
-      anchor.click();
-      window.setTimeout(() => {
-        anchor.remove();
-        URL.revokeObjectURL(url);
-      }, 0);
-      emitToast("success", "CSVのダウンロードを開始しました");
-    } catch (error) {
-      emitToast("error", `CSVを保存できませんでした: ${String(error)}`);
+      if (navigator.clipboard.write && typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([new ClipboardItem({
+          "text/plain": new Blob([plain], { type: "text/plain" }),
+          "text/html": new Blob([html], { type: "text/html" }),
+        })]);
+      } else await navigator.clipboard.writeText(plain);
+      emitToast("success", "Excel形式で表をコピーしました");
+    } catch {
+      emitToast("error", "Excel形式で表をコピーできませんでした");
     }
+  };
+  const copy = async (format: "csv" | "tsv") => {
+    try {
+      await navigator.clipboard.writeText(serialized(format));
+      emitToast("success", `${format.toUpperCase()}で表をコピーしました`, [
+        { label: "ファイルとしてコピー", onAction: () => copyTableFile(format) },
+        { label: format === "csv" ? "TSVでコピー" : "CSVでコピー", onAction: () => copy(format === "csv" ? "tsv" : "csv") },
+        { label: "Excel形式でコピー", onAction: copyExcel },
+      ]);
+    } catch { emitToast("error", `${format.toUpperCase()}で表をコピーできませんでした`); }
   };
 
   const printTable = () => {
@@ -205,14 +201,14 @@ export function DelimitedTableBlock({ language, source, onSave }: DelimitedTable
   };
 
   return <section ref={cardRef} className="data-grid-card" aria-label={`${language.toUpperCase()}表`}>
-    <ResponsiveToolbar className="data-grid-toolbar" ariaLabel="表操作" items={[
-      { id: "search", priority: 100, fixed: true, measurementWidth: 160, node: <label className="data-grid-search">検索<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="全列を検索" /></label> },
-      { id: "columns", priority: 50, node: <button type="button" aria-pressed={columnsOpen} className={columnsOpen ? "active" : ""} onClick={() => setColumnsOpen((open) => !open)}>列表示</button> },
-      { id: "slicer", priority: 60, node: <button type="button" aria-pressed={panesOpen} className={panesOpen ? "active" : ""} onClick={() => setPanesOpen((open) => !open)}>スライサー</button> },
+    <ResponsiveToolbar label={<strong className="data-grid-kind">{language.toUpperCase()}</strong>} className="data-grid-toolbar" ariaLabel="表操作" items={[
+      { id: "search", priority: 120, fixed: true, measurementWidth: 180, node: <label className="data-grid-search"><input aria-label="検索キーワードを入力" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="検索キーワードを入力" /></label> },
+      { id: "columns", priority: 20, node: <button type="button" aria-pressed={columnsOpen} className={columnsOpen ? "active" : ""} onClick={() => setColumnsOpen((open) => !open)}>列表示</button> },
+      { id: "slicer", priority: 25, node: <button type="button" aria-pressed={panesOpen} className={panesOpen ? "active" : ""} onClick={() => setPanesOpen((open) => !open)}>スライサー</button> },
       ...(panesOpen ? [{ id: "clear", priority: 20, node: <button type="button" disabled={!query && Object.values(selectedValues).every((values) => values.length === 0)} onClick={clearFilters}>フィルタ解除</button> }] : []),
-      ...(onSave ? [{ id: "edit", priority: 70, node: <button type="button" onClick={() => setEditing(true)}>表を編集</button> }] : []),
-      { id: "copy", priority: 30, node: <button type="button" onClick={() => void copy()}>コピー</button> },
-      { id: "csv", priority: 10, node: <button type="button" onClick={() => void downloadCsv()}>CSV</button> },
+      ...(onSave ? [{ id: "edit", priority: 110, node: <button type="button" onClick={() => setEditing(true)}>表を編集</button> }] : []),
+      { id: "copy-csv", priority: 100, node: <button type="button" onClick={() => void copy("csv")}>CSVコピー</button> },
+      { id: "copy-tsv", priority: 95, node: <button type="button" onClick={() => void copy("tsv")}>TSVコピー</button> },
       { id: "print", priority: 15, node: <button type="button" onClick={printTable}>印刷</button> },
     ]} />
     {columnsOpen && <div className="data-grid-column-panel" aria-label="列表示の選択">{headers.map((header, column) => <label key={column}><input type="checkbox" checked={visibleColumns[column] !== false} onChange={(event) => setVisibleColumns((current) => headers.map((_, index) => index === column ? event.target.checked : current[index] !== false))} />{header}</label>)}</div>}

@@ -15,8 +15,9 @@ export const Toast: React.FC<ToastProps> = ({ toast, onRestore, onClose }) => {
   useEffect(() => {
     if (!toast) return;
     setFading(false);
-    const fadeTimer = window.setTimeout(() => setFading(true), 3000);
-    const closeTimer = window.setTimeout(() => onCloseRef.current?.(), 4000);
+    const actionable = Boolean(toast.actionLabel || toast.actions?.length || toast.restorePath || toast.onMessageClick);
+    const fadeTimer = window.setTimeout(() => setFading(true), actionable ? 7000 : 3000);
+    const closeTimer = window.setTimeout(() => onCloseRef.current?.(), actionable ? 8000 : 4000);
     return () => {
       window.clearTimeout(fadeTimer);
       window.clearTimeout(closeTimer);
@@ -53,6 +54,11 @@ export const Toast: React.FC<ToastProps> = ({ toast, onRestore, onClose }) => {
           {toast.actionLabel}
         </button>
       )}
+      {toast.actions?.map((action) => <button
+        key={action.label}
+        className="btn btn-toast-action"
+        onClick={() => void action.onAction()}
+      >{action.label}</button>)}
       {onClose && (
         <button className="btn-close" onClick={onClose}>
           ✕

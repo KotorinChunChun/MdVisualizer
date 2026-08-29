@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LanguageFn } from "highlight.js";
-import { runPowerShell, type PowerShellRunResult } from "../lib/commands";
+import { copyTextFile, runPowerShell, type PowerShellRunResult } from "../lib/commands";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 
 interface CodeBlockProps {
@@ -40,9 +40,15 @@ const languageAliases: Record<string, string> = {
   shell: "bash", ts: "typescript", tsx: "typescript", yml: "yaml",
 };
 
-function emitCopyToast(type: "success" | "error", message: string): void {
-  window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message } }));
+function emitCopyToast(type: "success" | "error", message: string, actions?: Array<{ label: string; onAction: () => void | Promise<void> }>): void {
+  window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message, actions } }));
 }
+
+const sourceExtensions: Record<string, string> = {
+  bash: "sh", c: "c", cpp: "cpp", csharp: "cs", css: "css", go: "go", html: "html",
+  java: "java", javascript: "js", json: "json", markdown: "md", powershell: "ps1",
+  python: "py", rust: "rs", sql: "sql", typescript: "ts", xml: "xml", yaml: "yaml",
+};
 
 export function CodeBlock({ className, children, onHighlightComplete, documentPath }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
@@ -57,6 +63,14 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
   const language = rawLanguage ? languageAliases[rawLanguage] ?? rawLanguage : undefined;
   const source = String(children ?? "").replace(/\n$/, "");
   const shortcutKeyBlock = rawLanguage === "key";
+  const copyCodeFile = async (extension: string, label: string) => {
+    try {
+      await copyTextFile({ filename: `code.${extension}`, content: source });
+      emitCopyToast("success", `${label}をファイルとしてコピーしました`);
+    } catch {
+      emitCopyToast("error", `${label}をファイルとしてコピーできませんでした`);
+    }
+  };
   useEffect(() => {
     let cancelled = false;
     void Promise.all([
@@ -87,7 +101,11 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
     try {
       await navigator.clipboard.writeText(source);
       setCopied(true);
-      emitCopyToast("success", "コードをコピーしました");
+      const sourceExtension = sourceExtensions[language ?? ""] ?? rawLanguage?.replace(/[^a-z0-9]/g, "") ?? "txt";
+      emitCopyToast("success", "コードをコピーしました", [
+        { label: "TXTファイルでコピー", onAction: () => copyCodeFile("txt", "TXT") },
+        { label: "ソースファイルとしてコピー", onAction: () => copyCodeFile(sourceExtension || "txt", "ソース") },
+      ]);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
       emitCopyToast("error", "コードをコピーできませんでした");

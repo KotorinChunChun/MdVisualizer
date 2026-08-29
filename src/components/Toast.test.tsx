@@ -30,6 +30,25 @@ describe("Toast", () => {
     expect(onAction).toHaveBeenCalledOnce();
   });
 
+  it("offers multiple quick actions and keeps an actionable toast visible longer", () => {
+    vi.useFakeTimers();
+    const csv = vi.fn();
+    const tsv = vi.fn();
+    const onClose = vi.fn();
+    const { container } = render(<Toast toast={{ id: "notice-actions", message: "コピー済み", type: "success", actions: [
+      { label: "CSVでコピー", onAction: csv },
+      { label: "TSVでコピー", onAction: tsv },
+    ] }} onClose={onClose} />);
+
+    screen.getByRole("button", { name: "CSVでコピー" }).click();
+    screen.getByRole("button", { name: "TSVでコピー" }).click();
+    expect(csv).toHaveBeenCalledOnce();
+    expect(tsv).toHaveBeenCalledOnce();
+    act(() => vi.advanceTimersByTime(4000));
+    expect(container.querySelector(".toast")?.classList.contains("is-fading")).toBe(false);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("opens the save folder when the staged-file message is clicked or activated from the keyboard", () => {
     const onMessageClick = vi.fn();
     render(<Toast toast={{ id: "notice-3", message: "diagram.drawio を一時ステージしました", type: "success", onMessageClick }} onClose={vi.fn()} />);
