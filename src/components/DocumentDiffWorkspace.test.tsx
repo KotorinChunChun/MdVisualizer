@@ -68,6 +68,18 @@ describe("DocumentDiffWorkspace", () => {
     expect(await screen.findByLabelText("Markdown編集", {}, { timeout: 5_000 })).toBeTruthy();
   });
 
+  it("routes an adopted storage hunk to the persistence callback", () => {
+    const onAdopt = vi.fn();
+    render(<DocumentDiffWorkspace
+      target={{ ...target, openedContent: "a\nb\nc", storageContent: "a\nstorage\nc", editingContent: "a\nediting\nc" }}
+      editorMode="preview"
+      theme="dark"
+      onAdopt={onAdopt}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: /行変更を採用/ }));
+    expect(onAdopt).toHaveBeenCalledWith("a\nstorage\nc");
+  });
+
   it("shows an explicit overwrite action only for a save conflict", () => {
     const onOverwrite = vi.fn();
     render(<DocumentDiffWorkspace target={{ ...target, conflict: true, storageRevision: "r2" }} editorMode="preview" theme="dark" onOverwrite={onOverwrite} />);

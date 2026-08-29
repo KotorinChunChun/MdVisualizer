@@ -56,6 +56,13 @@ describe("save conflict wiring", () => {
     expect(source.slice(saveSuccess, saveToast)).toContain("openedContent: document.content");
     expect(source.slice(saveSuccess, saveToast)).not.toContain("setDocumentDiff(null)");
   });
+
+  it("persists Diff adoption through the reviewed storage revision", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    expect(source).toContain("onAdopt={adoptDiffHunk}");
+    expect(source).toContain("await saveTab(tabId, reviewedRevision, content)");
+    expect(source).toContain("force: draftOverride !== undefined");
+  });
 });
 
 describe("Edit and View pane coordination", () => {

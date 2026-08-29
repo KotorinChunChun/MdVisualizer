@@ -181,6 +181,15 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].document?.content).toBe("# Test");
   });
 
+  it("allows an adopted clean draft to enter the saving state", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+    expect(state.tabs[0].dirty).toBe(false);
+    state = tabsReducer(state, { type: "SAVE_STARTED", id, force: true });
+    expect(state.tabs[0].saving).toBe(true);
+  });
+
   it("keeps the last saved content as the Diff baseline after reloads", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
     const id = state.tabs[0].id;

@@ -653,14 +653,15 @@ export function App() {
 
   useEffect(() => { setDocumentDiff(null); }, [activeTab?.id]);
 
-  const saveTab = useCallback(async (id: string, reviewedStorageRevision?: string) => {
+  const saveTab = useCallback(async (id: string, reviewedStorageRevision?: string, draftOverride?: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
-    if (!tab?.document || !tab.dirty || tab.saving) return;
+    const draft = draftOverride ?? tab?.draft;
+    if (!tab?.document || draft === undefined || (draftOverride === undefined && !tab.dirty) || tab.saving) return;
     if (tab.document.kind !== "markdown") {
       setToast({ id: String(Date.now()), message: "この文書は閲覧専用です。", type: "error" });
       return;
     }
-    dispatch({ type: "SAVE_STARTED", id });
+    dispatch({ type: "SAVE_STARTED", id, force: draftOverride !== undefined });
     let identity = !tab.untitled && !isSharePointDocument(tab.document) ? localPathIdentity(tab.document.path) : null;
     const selfSaveUntil = Date.now() + 2000;
     const markSelfSave = (nextIdentity: string | null) => {
@@ -674,12 +675,12 @@ export function App() {
     };
     markSelfSave(identity);
     try {
-      const stagedAssetIds = referencedStagedAssetIds(tab.draft, tab.document.base_dir, tab.pendingAssets ?? []);
+      const stagedAssetIds = referencedStagedAssetIds(draft, tab.document.base_dir, tab.pendingAssets ?? []);
       let document;
       if (tab.untitled) {
         const result = await saveUntitledDocument({
           defaultPath: tab.path,
-          content: tab.draft,
+          content: draft,
           openDocumentPaths: tabsStateRef.current.tabs.flatMap((candidate) => candidate.id !== id && !candidate.untitled
             ? [candidate.document?.path ?? candidate.path]
             : []),
@@ -700,7 +701,7 @@ export function App() {
       } else {
         const result = await saveMarkdown({
           path: tab.document.path,
-          content: tab.draft,
+          content: draft,
           expectedRevision: reviewedStorageRevision ?? tab.document.revision,
           stagedAssetIds,
         });
@@ -944,6 +945,20 @@ export function App() {
     }));
     return true;
   }, []);
+
+  const adoptDiffHunk = useCallback(async (content: string) => {
+    const tabId = tabsStateRef.current.activeId;
+    if (!tabId) return;
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId);
+    if (!tab?.document || tab.document.kind !== "markdown") return;
+    const reviewedRevision = documentDiff && localPathIdentity(documentDiff.path) === localPathIdentity(tab.document.path)
+      ? documentDiff.storageRevision
+      : undefined;
+    // Queue the draft update before saving so the reducer keeps the adopted
+    // content as the current value after the save result is applied.
+    dispatch({ type: "DRAFT_CHANGED", id: tabId, content });
+    await saveTab(tabId, reviewedRevision, content);
+  }, [documentDiff, saveTab]);
 
   const saveStandaloneDrawio = useCallback(async (id: string, content: string): Promise<boolean> => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
@@ -2118,7 +2133,9 @@ export function App() {
         editorMode={editorMode}
         theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
         onEditingChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
+        onAdopt={adoptDiffHunk}
         onSave={() => void saveTab(activeTab.id)}
+        saving={activeTab.saving}
         onOverwrite={documentDiff.conflict && documentDiff.storageRevision
           ? () => void saveTab(activeTab.id, documentDiff.storageRevision)
           : undefined}

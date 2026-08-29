@@ -160,13 +160,15 @@ function RenderedPane({ pane, target, theme, currentLine, onActivateLine }: { pa
   </div>;
 }
 
-export function DocumentDiffWorkspace({ target, editorMode, theme, onEditingChange, onSave, onOverwrite }: {
+export function DocumentDiffWorkspace({ target, editorMode, theme, onEditingChange, onAdopt, onSave, onOverwrite, saving = false }: {
   target: DocumentDiffTarget;
   editorMode: EditorWorkspaceMode;
   theme: string;
   onEditingChange?: (content: string) => void;
+  onAdopt?: (content: string) => void | Promise<void>;
   onSave?: () => void;
   onOverwrite?: () => void;
+  saving?: boolean;
 }) {
   const workspace = useMemo(() => buildWorkspaceDiffPanes(target, editorMode), [editorMode, target]);
   const storageHunks = useMemo(() => documentDiffHunks(target.openedContent, target.storageContent), [target.openedContent, target.storageContent]);
@@ -274,8 +276,12 @@ export function DocumentDiffWorkspace({ target, editorMode, theme, onEditingChan
       {storageHunks.map((hunk, index) => <button
         type="button"
         key={hunk.id}
-        onClick={() => onEditingChange?.(applyStorageHunk(target.openedContent, target.editingContent, hunk))}
-        disabled={!onEditingChange}
+        onClick={() => {
+          const content = applyStorageHunk(target.openedContent, target.editingContent, hunk);
+          if (onAdopt) void onAdopt(content);
+          else onEditingChange?.(content);
+        }}
+        disabled={saving || (!onAdopt && !onEditingChange)}
       >{index + 1}: {hunk.kind === "add" ? "行追加" : hunk.kind === "delete" ? "行削除" : "行変更"}を採用</button>)}
     </div>}
     <div className={`document-diff__panes document-diff__panes--${workspace.mode}`}>

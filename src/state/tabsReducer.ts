@@ -59,7 +59,7 @@ export type TabsAction =
   | { type: "SEARCH_VISIBILITY"; id: string; open: boolean }
   | { type: "EXTERNAL_CHANGED"; id: string; changed: boolean }
   | { type: "DRAFT_CHANGED"; id: string; content: string }
-  | { type: "SAVE_STARTED"; id: string }
+  | { type: "SAVE_STARTED"; id: string; force?: boolean }
   | { type: "SAVED"; id: string; document: MarkdownLoadResult; committedAssetIds?: string[] }
   | { type: "IMMEDIATE_SAVED"; id: string; document: MarkdownLoadResult; draft: string; openedContent: string; committedAssetIds?: string[] }
   | { type: "SAVE_FAILED"; id: string; error: string }
@@ -218,7 +218,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         };
       });
     case "SAVE_STARTED":
-      return updateTab(state, action.id, (tab) => tab.document && tab.dirty
+      return updateTab(state, action.id, (tab) => tab.document && (tab.dirty || action.force)
         ? { ...tab, saving: true, saveError: null }
         : tab);
     case "SAVED":
