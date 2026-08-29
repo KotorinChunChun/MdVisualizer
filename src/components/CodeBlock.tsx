@@ -156,8 +156,11 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
 
   if (shortcutKeyBlock) {
     return <div className="code-block shortcut-key-block">
-      <div className="code-actions">
-        <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
+      <div className="code-block__header">
+        <span className="code-block__language">キーボードショートカット</span>
+        <div className="code-actions">
+          <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
+        </div>
       </div>
       <div className="shortcut-key-block__preview">
         <ShortcutKeySvg source={source} variant="block" />
@@ -166,19 +169,19 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
   }
 
   return <div className="code-block">
-    {(languageName || normalizedHeadingTitle) && <div className="code-block__header">
+    <div className="code-block__header">
       {languageName && <span className="code-block__language">{languageName}</span>}
       {normalizedHeadingTitle && <strong className="code-block__heading">{normalizedHeadingTitle}</strong>}
-    </div>}
-    <div className="code-actions">
-      {storage && onStorageConvert && <button type="button" className="code-storage" disabled={convertingStorage} onClick={() => {
-        setConvertingStorage(true);
-        void Promise.resolve().then(onStorageConvert).catch((error) => emitCopyToast("error", error instanceof Error ? error.message : String(error))).finally(() => setConvertingStorage(false));
-      }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button>}
-      {executable && <button type="button" className="code-run" disabled={running} onClick={() => {
-        setConfirmationOpen(true);
-      }}>{running ? "実行中…" : "PowerShellを実行"}</button>}
-      <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
+      <div className="code-actions">
+        {storage && onStorageConvert && <button type="button" className="code-storage" disabled={convertingStorage} onClick={() => {
+          setConvertingStorage(true);
+          void Promise.resolve().then(onStorageConvert).catch((error) => emitCopyToast("error", error instanceof Error ? error.message : String(error))).finally(() => setConvertingStorage(false));
+        }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button>}
+        {executable && <button type="button" className="code-run" disabled={running} onClick={() => {
+          setConfirmationOpen(true);
+        }}>{running ? "実行中…" : "PowerShellを実行"}</button>}
+        <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
+      </div>
     </div>
     <pre><code className={className} {...(html ? { dangerouslySetInnerHTML: { __html: html } } : {})}>{html ? undefined : source}</code></pre>
     {(runResult || runError) && <section className="code-run-result" aria-label="PowerShell実行結果">

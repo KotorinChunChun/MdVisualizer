@@ -22,6 +22,12 @@ describe("button interaction styles", () => {
     expect(appCss).toContain(".code-copy, .code-run, .code-storage { padding: 3px 8px;");
   });
 
+  it("gives ordinary code blocks a diagram-like title bar and body", () => {
+    expect(appCss).toContain(".code-block { min-width: 0; max-width: 100%;");
+    expect(appCss).toContain(".code-block__header { display: flex; min-width: 0; align-items: center;");
+    expect(appCss).toContain(".code-block > pre { margin: 0; padding: 16px;");
+  });
+
   it("renders responsive overflow actions as a foreground vertical menu", () => {
     expect(appCss).toContain(".responsive-toolbar__menu { position: fixed; z-index: 12020;");
     expect(appCss).toContain("flex-direction: column;");

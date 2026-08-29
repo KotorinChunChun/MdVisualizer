@@ -9,10 +9,12 @@ describe("CodeBlock", () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); });
 
   it("shows the normalized syntax highlighting language and embedded file title", () => {
-    render(<CodeBlock className="language-ts" headingTitle="src/index.ts">const value = 1;</CodeBlock>);
+    const { container } = render(<CodeBlock className="language-ts" headingTitle="src/index.ts">const value = 1;</CodeBlock>);
 
     expect(screen.getByText("TypeScript").className).toContain("code-block__language");
     expect(screen.getByText("src/index.ts").className).toContain("code-block__heading");
+    expect(container.querySelector(".code-block__header .code-actions")).not.toBeNull();
+    expect(container.querySelector(".code-block > .code-actions")).toBeNull();
     expect(syntaxHighlightLanguageName("ps1")).toBe("PowerShell");
     expect(syntaxHighlightLanguageName("unknown-language")).toBe("unknown-language");
   });
