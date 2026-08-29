@@ -22,6 +22,12 @@ describe("externalFile", () => {
       .toBe("![対象](images/new.png)\n![別](images/other.png)");
   });
 
+  it("Obsidian形式のMermaid参照も未保存Markdownへ反映する", () => {
+    const markdown = "![[images/old.mmd|処理フロー]]\n![[images/other.mmd|別図]]";
+    expect(rebaseRenamedExternalReferences(markdown, "C:/docs", "C:/docs/images/old.mmd", "new.mmd"))
+      .toBe("![[images/new.mmd|処理フロー]]\n![[images/other.mmd|別図]]");
+  });
+
   it("名称編集用に拡張子を分離する", () => {
     expect(splitExternalFilename("report.final.csv")).toEqual({ stem: "report.final", extension: ".csv" });
     expect(splitExternalFilename("README")).toEqual({ stem: "README", extension: "" });
