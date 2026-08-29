@@ -20,6 +20,20 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#1f2328", monochrome: false });
     expect(onSave.mock.calls[0][6]).toMatchObject({ breakMode: "commonmark", useThemeColor: true, fontSize: 16, lineHeight: 1.65 });
     expect(onSave.mock.calls[0][7]).toEqual({ storage: "base64", pngLocation: "images", absoluteDirectory: "" });
+    expect(onSave.mock.calls[0][8]).toBe("fence-title");
+  });
+
+  it("外部ファイルパスの埋め込み表現を選択して保存する", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} embeddedPathStyle="heading" onSave={onSave} />);
+
+    const select = screen.getByLabelText("外部ファイルパスの埋め込み表現") as HTMLSelectElement;
+    expect(select.value).toBe("heading");
+    fireEvent.change(select, { target: { value: "fence-colon" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][8]).toBe("fence-colon");
   });
 
   it("keeps required built-ins undeletable and validates a new document app", async () => {

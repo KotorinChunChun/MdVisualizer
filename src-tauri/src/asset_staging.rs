@@ -17,6 +17,7 @@ struct StagedAsset {
     temp_path: PathBuf,
     destination: PathBuf,
     markdown_source: String,
+    overwrite: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -77,6 +78,36 @@ impl AssetStagingManager {
         self.stage_at(document_path, preferred_filename, "document", None, bytes)
     }
 
+    pub fn stage_relative(
+        &self,
+        document_path: &str,
+        preferred_source: &str,
+        bytes: &[u8],
+    ) -> AppResult<StagedAssetResult> {
+        if bytes.is_empty() || bytes.len() > MAX_ASSET_BYTES {
+            return Err(AppError::IoError("Asset data is empty or exceeds 50 MiB.".into()));
+        }
+        let normalized = preferred_source.trim().replace('\\', "/");
+        let relative = Path::new(&normalized);
+        if normalized.split('/').any(|part| part.is_empty() || part == "." || part == "..")
+            || relative.is_absolute()
+            || relative.components().any(|component| !matches!(component, Component::Normal(_)))
+        {
+            return Err(AppError::PermissionDenied("Asset path must be a safe relative path.".into()));
+        }
+        let filename = relative.file_name().and_then(|value| value.to_str()).unwrap_or_default();
+        validate_filename(filename)?;
+        let document = canonical_markdown(document_path)?;
+        let parent = document.parent().ok_or_else(|| AppError::IoError("Markdown parent folder is unavailable.".into()))?;
+        let destination = parent.join(relative);
+        let entries = self.entries.lock().unwrap();
+        if entries.values().any(|entry| entry.document == document && entry.destination == destination) {
+            return Err(AppError::Conflict(format!("Asset path is already staged: {normalized}")));
+        }
+        drop(entries);
+        self.write_staged_entry(document, destination, normalized, true, bytes)
+    }
+
     pub fn stage_at(
         &self,
         document_path: &str,
@@ -114,7 +145,7 @@ impl AssetStagingManager {
                 ))
             }
         };
-        let mut entries = self.entries.lock().unwrap();
+        let entries = self.entries.lock().unwrap();
         let reserved = entries
             .values()
             .filter(|entry| entry.document == document)
@@ -133,6 +164,18 @@ impl AssetStagingManager {
         } else {
             filename.clone()
         };
+        drop(entries);
+        self.write_staged_entry(document, file_destination, markdown_source, false, bytes)
+    }
+
+    fn write_staged_entry(
+        &self,
+        document: PathBuf,
+        destination: PathBuf,
+        markdown_source: String,
+        overwrite: bool,
+        bytes: &[u8],
+    ) -> AppResult<StagedAssetResult> {
         let sequence = self.sequence.fetch_add(1, Ordering::Relaxed);
         let id = format!("{}-{sequence}", std::process::id());
         let temp_path = self.session_dir.join(format!("{id}.stage"));
@@ -143,13 +186,14 @@ impl AssetStagingManager {
             .open(&temp_path)
             .and_then(|file| file.sync_all())
             .map_err(|error| AppError::IoError(format!("sync staged asset: {error}")))?;
-        entries.insert(
+        self.entries.lock().unwrap().insert(
             id.clone(),
             StagedAsset {
                 document,
                 temp_path,
-                destination: file_destination,
+                destination,
                 markdown_source: markdown_source.clone(),
+                overwrite,
             },
         );
         Ok(StagedAssetResult { id, filename: markdown_source })
@@ -190,7 +234,7 @@ impl AssetStagingManager {
                 "Staged asset belongs to another Markdown document.".into(),
             ));
         }
-        let mut created = Vec::new();
+        let mut committed: Vec<(PathBuf, Option<Vec<u8>>)> = Vec::new();
         for entry in &staged {
             let destination = &entry.destination;
             let write_result = (|| {
@@ -199,29 +243,38 @@ impl AssetStagingManager {
                 })?;
                 fs::create_dir_all(parent)
                     .map_err(|error| AppError::IoError(format!("create image folder: {error}")))?;
+                if entry.overwrite {
+                    let document_parent = document.parent().ok_or_else(|| AppError::IoError("Markdown parent folder is unavailable.".into()))?;
+                    let resolved_parent = parent.canonicalize()
+                        .map_err(|error| AppError::IoError(format!("canonicalize asset folder: {error}")))?;
+                    if !resolved_parent.starts_with(document_parent) {
+                        return Err(AppError::PermissionDenied("Asset path escaped the Markdown folder.".into()));
+                    }
+                }
                 let bytes = fs::read(&entry.temp_path)
                     .map_err(|error| AppError::IoError(format!("read staged asset: {error}")))?;
-                let mut output = OpenOptions::new()
-                    .create_new(true)
-                    .write(true)
-                    .open(destination)
+                let previous = if entry.overwrite && destination.exists() {
+                    Some(fs::read(destination).map_err(|error| AppError::IoError(format!("backup existing asset: {error}")))?)
+                } else { None };
+                let mut options = OpenOptions::new();
+                options.write(true);
+                if entry.overwrite { options.create(true).truncate(true); } else { options.create_new(true); }
+                let mut output = options.open(destination)
                     .map_err(|error| AppError::Conflict(format!(
                         "Asset filename is no longer available ({}): {error}",
                         entry.markdown_source
                     )))?;
                 if let Err(error) = output.write_all(&bytes).and_then(|_| output.sync_all()) {
-                    let _ = fs::remove_file(destination);
+                    if let Some(bytes) = &previous { let _ = fs::write(destination, bytes); }
+                    else { let _ = fs::remove_file(destination); }
                     return Err(AppError::IoError(format!("commit staged asset: {error}")));
                 }
-                Ok::<(), AppError>(())
+                Ok::<Option<Vec<u8>>, AppError>(previous)
             })();
-            if let Err(error) = write_result {
-                for path in &created {
-                    let _ = fs::remove_file(path);
-                }
-                return Err(error);
+            match write_result {
+                Ok(previous) => committed.push((destination.clone(), previous)),
+                Err(error) => { rollback_committed_assets(&committed); return Err(error); }
             }
-            created.push(destination.clone());
         }
         match save() {
             Ok(result) => {
@@ -233,9 +286,7 @@ impl AssetStagingManager {
                 Ok(result)
             }
             Err(error) => {
-                for path in created {
-                    let _ = fs::remove_file(path);
-                }
+                rollback_committed_assets(&committed);
                 Err(error)
             }
         }
@@ -489,6 +540,51 @@ mod tests {
     }
 
     #[test]
+    fn stages_relative_path_and_overwrites_existing_asset() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        let asset = dir.path().join("src").join("main.rs");
+        fs::create_dir_all(asset.parent().unwrap()).unwrap();
+        fs::write(&document, "old markdown").unwrap();
+        fs::write(&asset, "old code").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let staged = manager.stage_relative(&document.to_string_lossy(), "src/main.rs", b"new code").unwrap();
+        assert_eq!(staged.filename, "src/main.rs");
+        manager.commit_with(&document, &[staged.id], || {
+            fs::write(&document, "new markdown").unwrap();
+            Ok(())
+        }).unwrap();
+        assert_eq!(fs::read_to_string(asset).unwrap(), "new code");
+    }
+
+    #[test]
+    fn restores_overwritten_relative_asset_when_markdown_save_fails() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        let asset = dir.path().join("src").join("main.rs");
+        fs::create_dir_all(asset.parent().unwrap()).unwrap();
+        fs::write(&document, "old markdown").unwrap();
+        fs::write(&asset, "old code").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let staged = manager.stage_relative(&document.to_string_lossy(), "src/main.rs", b"new code").unwrap();
+        let result = manager.commit_with(&document, &[staged.id], || Err::<(), _>(AppError::Conflict("stale".into())));
+        assert!(result.is_err());
+        assert_eq!(fs::read_to_string(asset).unwrap(), "old code");
+    }
+
+    #[test]
+    fn rejects_unsafe_relative_asset_paths() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        fs::write(&document, "old markdown").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+
+        for source in ["../main.rs", "src/../main.rs", "/main.rs", "src//main.rs"] {
+            assert!(manager.stage_relative(&document.to_string_lossy(), source, b"code").is_err(), "{source}");
+        }
+    }
+
+    #[test]
     fn stages_images_subfolder_and_absolute_folder_references() {
         let dir = tempdir().unwrap();
         let document = dir.path().join("note.md");
@@ -542,5 +638,12 @@ mod tests {
 
         assert!(manager.commit_with(&document, &[first.id, second.id], || Ok(())).is_err());
         assert!(!dir.path().join("images/first.png").exists());
+    }
+}
+
+fn rollback_committed_assets(committed: &[(PathBuf, Option<Vec<u8>>)]) {
+    for (path, previous) in committed.iter().rev() {
+        if let Some(bytes) = previous { let _ = fs::write(path, bytes); }
+        else { let _ = fs::remove_file(path); }
     }
 }

@@ -4,12 +4,13 @@ import { resolveLocalImagePath } from "../lib/path";
 import { CodeBlock } from "./CodeBlock";
 import { ExternalFileHeader } from "./ExternalFileHeader";
 
-export function ExternalTextBlock({ source, baseDir, documentPath, version, onRename, onError }: {
+export function ExternalTextBlock({ source, baseDir, documentPath, version, onRename, onStorageConvert, onError }: {
   source: string;
   baseDir: string;
   documentPath: string;
   version: number;
   onRename?: (filename: string) => boolean | void | Promise<boolean | void>;
+  onStorageConvert?: (source: string) => boolean | void | Promise<boolean | void>;
   onError?: (message: string) => void;
 }) {
   const path = useMemo(() => resolveLocalImagePath(source, baseDir), [baseDir, source]);
@@ -33,6 +34,6 @@ export function ExternalTextBlock({ source, baseDir, documentPath, version, onRe
   if (content === null) return <div className="code-loading">外部テキストファイルを読み込んでいます…</div>;
   return <section className="external-text-block">
     <ExternalFileHeader source={source} path={path} kind={extension.toUpperCase()} status={version > 0 ? "更新あり" : undefined} onRename={onRename} onError={onError} />
-    <CodeBlock className={`language-${extension}`} documentPath={documentPath}>{content}</CodeBlock>
+    <CodeBlock className={`language-${extension}`} documentPath={documentPath} storage="external" onStorageConvert={onStorageConvert ? () => onStorageConvert(content) : undefined}>{content}</CodeBlock>
   </section>;
 }

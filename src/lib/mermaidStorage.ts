@@ -2,7 +2,7 @@ import type { CodeFenceOccurrence, ImageMarkdownOccurrence } from "./markdownOcc
 import { normalizedAssetFilename } from "./assetConversion";
 
 export type MermaidStorageConversionContext =
-  | { documentPath: string; storage: "embedded"; occurrence: CodeFenceOccurrence; source: string }
+  | { documentPath: string; storage: "embedded"; occurrence: CodeFenceOccurrence; source: string; relativePath?: string }
   | { documentPath: string; storage: "external"; occurrence: ImageMarkdownOccurrence; source: string };
 
 function markdownDestination(source: string): string {

@@ -375,6 +375,7 @@ pub struct StageDocumentAssetRequest {
     preferred_filename: String,
     base64: Option<String>,
     text: Option<String>,
+    preferred_source: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -410,13 +411,11 @@ pub fn stage_document_asset(
         )
         .map_err(|_| "Base64 asset data is invalid.".to_string())?
     };
-    state
-        .asset_staging
-        .stage(
-            &request.document_path,
-            &request.preferred_filename,
-            &bytes,
-        )
+    if let Some(source) = request.preferred_source.filter(|value| !value.trim().is_empty()) {
+        state.asset_staging.stage_relative(&request.document_path, &source, &bytes)
+    } else {
+        state.asset_staging.stage(&request.document_path, &request.preferred_filename, &bytes)
+    }
         .map_err(|error| error.to_string())
 }
 

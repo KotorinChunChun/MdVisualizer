@@ -7,6 +7,7 @@ export type DrawioStorageConversionContext =
     storage: "embedded";
     occurrence: CodeFenceOccurrence;
     source: string;
+    relativePath?: string;
   }
   | {
     documentPath: string;

@@ -191,6 +191,21 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].openedContent).toBe("opened");
   });
 
+  it("即時保存では起動時コードの確定部分と未保存ドラフトを同時更新する", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
+    const id = state.tabs[0].id;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: { ...loadedDocument("C:\\docs\\a.md"), content: "opened" } });
+    state = tabsReducer(state, {
+      type: "IMMEDIATE_SAVED",
+      id,
+      document: { ...loadedDocument("C:\\docs\\a.md"), content: "forced", revision: "revision-2" },
+      openedContent: "forced",
+      draft: "forced\nunsaved",
+    });
+    expect(state.tabs[0]).toMatchObject({ openedContent: "forced", draft: "forced\nunsaved", dirty: true });
+    expect(state.tabs[0].document?.revision).toBe("revision-2");
+  });
+
   it("keeps the editor workspace mode independently in each tab", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;

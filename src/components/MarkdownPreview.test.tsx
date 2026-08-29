@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { countMermaidFences, MarkdownPreview } from "./MarkdownPreview";
 import { openExternalUrl } from "../lib/commands";
@@ -89,6 +89,26 @@ describe("MarkdownPreview sanitization", () => {
   it("offers confirmed execution only for PowerShell fences backed by a document path", () => {
     render(<MarkdownPreview content={"```pwsh\nWrite-Output safe\n```\n\n```bash\necho no\n```"} baseDir="C:\\docs" documentPath="C:\\docs\\sample.md" imageVersions={{}} />);
     expect(screen.getAllByRole("button", { name: "PowerShellを実行" })).toHaveLength(1);
+  });
+
+  it("コードフェンスの相対パス表現を外部ファイル切替へ渡す", async () => {
+    const onTextStorageConvert = vi.fn();
+    render(<MarkdownPreview
+      content={"```ts:src/index.ts\nexport const value = 1;\n```"}
+      baseDir="C:\\docs"
+      documentPath="C:\\docs\\sample.md"
+      imageVersions={{}}
+      onTextStorageConvert={onTextStorageConvert}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: "外部ファイルへ切替" }));
+
+    await waitFor(() => expect(onTextStorageConvert).toHaveBeenCalledWith(expect.objectContaining({
+      storage: "embedded",
+      language: "ts",
+      relativePath: "src/index.ts",
+      source: "export const value = 1;",
+    })));
   });
 
   it("preserves a Mermaid block DOM node when surrounding render context changes", () => {

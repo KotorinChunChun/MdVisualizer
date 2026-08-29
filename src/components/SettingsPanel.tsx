@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { ClipboardImagePngLocation, ClipboardImageSettings, ExternalAppConfig, ExternalAppTarget } from "../types/settings";
-import { DEFAULT_CLIPBOARD_IMAGE_SETTINGS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, isAbsoluteDirectory, normalizeClipboardImageSettings, validateExternalApp } from "../types/settings";
+import type { ClipboardImagePngLocation, ClipboardImageSettings, EmbeddedPathStyle, ExternalAppConfig, ExternalAppTarget } from "../types/settings";
+import { DEFAULT_CLIPBOARD_IMAGE_SETTINGS, DEFAULT_EMBEDDED_PATH_STYLE, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, isAbsoluteDirectory, normalizeClipboardImageSettings, normalizeEmbeddedPathStyle, validateExternalApp } from "../types/settings";
 import { DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, SYNTAX_HIGHLIGHT_THEMES, type SyntaxHighlightSettings, type SyntaxHighlightTheme } from "../lib/syntaxHighlight";
 import { DEFAULT_PRINT_STYLE_SETTINGS, PRINT_FONT_FAMILIES, type PrintFontFamily, type PrintStyleSettings } from "../lib/printStyle";
 import {
@@ -21,6 +21,7 @@ export function SettingsPanel({
   imageA4TargetWidth = DEFAULT_IMAGE_A4_TARGET_WIDTH,
   imageEqualPadding = DEFAULT_IMAGE_EQUAL_PADDING,
   clipboardImage = DEFAULT_CLIPBOARD_IMAGE_SETTINGS,
+  embeddedPathStyle = DEFAULT_EMBEDDED_PATH_STYLE,
   syntaxHighlight = DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS,
   printStyle = DEFAULT_PRINT_STYLE_SETTINGS,
   markdownStyle = DEFAULT_MARKDOWN_STYLE_SETTINGS,
@@ -35,6 +36,7 @@ export function SettingsPanel({
   imageA4TargetWidth?: number;
   imageEqualPadding?: number;
   clipboardImage?: ClipboardImageSettings;
+  embeddedPathStyle?: EmbeddedPathStyle;
   syntaxHighlight?: SyntaxHighlightSettings;
   printStyle?: PrintStyleSettings;
   markdownStyle?: MarkdownStyleSettings;
@@ -42,13 +44,14 @@ export function SettingsPanel({
   markdownStylePath?: string;
   onOpenMarkdownStyle?: () => Promise<void>;
   onReloadMarkdownStyle?: () => Promise<void>;
-  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings, markdownStyle: MarkdownStyleSettings, clipboardImage: ClipboardImageSettings) => Promise<void>;
+  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings, markdownStyle: MarkdownStyleSettings, clipboardImage: ClipboardImageSettings, embeddedPathStyle: EmbeddedPathStyle) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => apps.map((app) => ({ ...app, args: [...app.args] })));
   const [lineThreshold, setLineThreshold] = useState(presentationLineThreshold);
   const [a4TargetWidth, setA4TargetWidth] = useState(imageA4TargetWidth);
   const [equalPadding, setEqualPadding] = useState(imageEqualPadding);
   const [clipboardImageDraft, setClipboardImageDraft] = useState<ClipboardImageSettings>(() => ({ ...clipboardImage }));
+  const [embeddedPathStyleDraft, setEmbeddedPathStyleDraft] = useState<EmbeddedPathStyle>(embeddedPathStyle);
   const [syntaxDraft, setSyntaxDraft] = useState<SyntaxHighlightSettings>(() => ({ ...syntaxHighlight }));
   const [printDraft, setPrintDraft] = useState<PrintStyleSettings>(() => ({ ...printStyle }));
   const [markdownStyleDraft, setMarkdownStyleDraft] = useState<MarkdownStyleSettings>(() => ({ ...markdownStyle }));
@@ -60,6 +63,7 @@ export function SettingsPanel({
   useEffect(() => setA4TargetWidth(imageA4TargetWidth), [imageA4TargetWidth]);
   useEffect(() => setEqualPadding(imageEqualPadding), [imageEqualPadding]);
   useEffect(() => setClipboardImageDraft({ ...clipboardImage }), [clipboardImage]);
+  useEffect(() => setEmbeddedPathStyleDraft(embeddedPathStyle), [embeddedPathStyle]);
   useEffect(() => setSyntaxDraft({ ...syntaxHighlight }), [syntaxHighlight]);
   useEffect(() => setPrintDraft({ ...printStyle }), [printStyle]);
   useEffect(() => { setMarkdownStyleDraft({ ...markdownStyle }); setMarkdownStyleDirty(false); }, [markdownStyle, markdownStyleCss]);
@@ -99,7 +103,7 @@ export function SettingsPanel({
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, printDraft, normalizeMarkdownStyleSettings(markdownStyleDraft), normalizeClipboardImageSettings(clipboardImageDraft));
+      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, printDraft, normalizeMarkdownStyleSettings(markdownStyleDraft), normalizeClipboardImageSettings(clipboardImageDraft), normalizeEmbeddedPathStyle(embeddedPathStyleDraft));
       setMarkdownStyleDirty(false);
     } catch (reason) {
       setError(String(reason));
@@ -114,6 +118,18 @@ export function SettingsPanel({
       <button type="button" className="settings-save" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
     </header>
     {error && <p role="alert" className="settings-error">{error}</p>}
+    <fieldset className="settings-section embedded-path-settings">
+      <legend>外部ファイルパスの埋め込み表現</legend>
+      <label>表現方式
+        <select aria-label="外部ファイルパスの埋め込み表現" value={embeddedPathStyleDraft} onChange={(event) => setEmbeddedPathStyleDraft(event.target.value as EmbeddedPathStyle)}>
+          <option value="heading">見出し: ### src-tauri/src/main.rs</option>
+          <option value="bold-code">インラインコード: **`src/index.ts`**</option>
+          <option value="fence-title">title属性: ```ts title=&quot;main.ts&quot;</option>
+          <option value="fence-colon">コロン記法: ```ts:src/main.ts</option>
+        </select>
+      </label>
+      <p>外部ファイルを埋め込む際に相対パスを残し、再び外部化するときの保存先候補として使用します。</p>
+    </fieldset>
     <fieldset className="settings-section">
       <legend>プレゼンテーション</legend>
       <label>短い子見出しを親へ含める最大ソース行数

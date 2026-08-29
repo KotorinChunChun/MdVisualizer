@@ -36,6 +36,8 @@ import { normalizeStructuredListIndentationForRendering } from "../lib/markdownE
 import type { DrawioStorageConversionContext } from "../lib/drawioStorage";
 import type { MermaidStorageConversionContext } from "../lib/mermaidStorage";
 import type { TableStorageConversionContext } from "../lib/tableStorage";
+import { codeFencePathDecoration, splitFenceLanguagePath } from "../lib/externalPathRepresentation";
+import type { TextStorageConversionContext } from "../lib/textStorage";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
 import { calculateTableAggregates, isTableAggregateResultCell, type TableAggregationResult } from "../lib/tableAggregation";
@@ -53,7 +55,7 @@ function collectMermaidFenceOffsets(markdown: string): number[] {
   const offsets: number[] = [];
 
   const visit = (node: MarkdownNode) => {
-    if (node.type === "code" && node.lang?.toLowerCase() === "mermaid") {
+    if (node.type === "code" && splitFenceLanguagePath(node.lang?.toLowerCase() ?? "").language === "mermaid") {
       offsets.push(node.position?.start?.offset ?? offsets.length);
     }
     node.children?.forEach(visit);
@@ -99,6 +101,7 @@ interface MarkdownPreviewProps {
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onMermaidStorageConvert?: (context: MermaidStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onTableStorageConvert?: (context: TableStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onTextStorageConvert?: (context: TextStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onExternalFileRename?: (context: ExternalFileRenameContext, filename: string) => boolean | void | Promise<boolean | void>;
   onStagedTextAssetChange?: (filename: string, text: string) => boolean | void;
   diffChangedLines?: ReadonlySet<number>;
@@ -147,6 +150,7 @@ function rehypeDiffLines(options?: { changedLines?: number[] }) {
 }
 
 interface MarkdownRenderContextValue {
+  content: string;
   baseDir: string;
   imageVersions: Record<string, number>;
   theme: string;
@@ -181,6 +185,7 @@ interface MarkdownRenderContextValue {
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onMermaidStorageConvert?: (context: MermaidStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onTableStorageConvert?: (context: TableStorageConversionContext) => boolean | void | Promise<boolean | void>;
+  onTextStorageConvert?: (context: TextStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onExternalFileRename?: (context: ExternalFileRenameContext, filename: string) => boolean | void | Promise<boolean | void>;
   onStagedTextAssetChange?: (filename: string, text: string) => boolean | void;
   staticMode: boolean;
@@ -229,14 +234,15 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
   if (language === "drawio") {
     const sourceOffset = node?.position?.start.offset;
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
+    const decoration = occurrence ? codeFencePathDecoration(context.content, occurrence) : undefined;
     return <DrawioBlock
       source={String(children ?? "").replace(/\n$/, "")}
       theme={context.theme}
       blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
       headingTitle={codeFenceTitle(occurrence?.meta)}
       storage={occurrence ? "embedded" : undefined}
-      onStorageConvert={occurrence && context.documentPath && context.onDrawioStorageConvert
-        ? () => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence, source: String(children ?? "").replace(/\n$/, "") })
+      onStorageConvert={decoration && context.documentPath && context.onDrawioStorageConvert
+        ? () => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: String(children ?? "").replace(/\n$/, ""), relativePath: decoration.relativePath })
         : undefined}
       onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
       onMediaOpen={context.onMediaOpen}
@@ -245,13 +251,14 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
   if (isDelimitedTableLanguage(language)) {
     const sourceOffset = node?.position?.start.offset;
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
+    const decoration = occurrence ? codeFencePathDecoration(context.content, occurrence) : undefined;
     return <DelimitedTableBlock
       language={language}
       source={String(children ?? "").replace(/\n$/, "")}
       onSave={occurrence && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
       storage={occurrence ? "embedded" : undefined}
-      onStorageConvert={occurrence && context.documentPath && context.onTableStorageConvert
-        ? () => context.onTableStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence, source: String(children ?? "").replace(/\n$/, ""), language })
+      onStorageConvert={decoration && context.documentPath && context.onTableStorageConvert
+        ? () => context.onTableStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: String(children ?? "").replace(/\n$/, ""), language, relativePath: decoration.relativePath })
         : undefined}
     />;
   }
@@ -272,6 +279,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
     const diagramIndex = sourceOffset === undefined ? 0 : context.mermaidIndexByOffset.get(sourceOffset) ?? 0;
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
     const mermaidSource = String(children ?? "").replace(/\n$/, "");
+    const decoration = occurrence ? codeFencePathDecoration(context.content, occurrence) : undefined;
     return <MermaidBlock
       source={mermaidSource}
       theme={context.theme}
@@ -285,14 +293,26 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       onMediaOpen={context.onMediaOpen}
       editable={!context.staticMode && !context.presentationMode && Boolean(context.documentPath)}
       storage={occurrence ? "embedded" : undefined}
-      onStorageConvert={occurrence && context.documentPath && context.onMermaidStorageConvert
-        ? () => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence, source: mermaidSource })
+      onStorageConvert={decoration && context.documentPath && context.onMermaidStorageConvert
+        ? () => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: mermaidSource, relativePath: decoration.relativePath })
         : undefined}
     />;
   }
-  return className?.includes("language-")
-    ? <CodeBlock className={className} documentPath={context.presentationMode ? undefined : context.documentPath} onHighlightComplete={context.onCodeHighlightComplete}>{children}</CodeBlock>
-    : <code className={className} {...props}>{children}</code>;
+  if (className?.includes("language-")) {
+    const sourceOffset = node?.position?.start.offset;
+    const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
+    const decoration = occurrence ? codeFencePathDecoration(context.content, occurrence) : undefined;
+    return <CodeBlock
+      className={className}
+      documentPath={context.presentationMode ? undefined : context.documentPath}
+      onHighlightComplete={context.onCodeHighlightComplete}
+      storage={decoration ? "embedded" : undefined}
+      onStorageConvert={decoration && context.documentPath && context.onTextStorageConvert
+        ? () => context.onTextStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: String(children ?? "").replace(/\n$/, ""), language, relativePath: decoration.relativePath })
+        : undefined}
+    >{children}</CodeBlock>;
+  }
+  return <code className={className} {...props}>{children}</code>;
 };
 
 function calculatedMarkdownTableChildren(children: React.ReactNode, calculation: TableAggregationResult): React.ReactNode {
@@ -435,6 +455,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
     ? resolveLocalImagePath(source, context.baseDir)
     : null;
   if (textPath && occurrence && context.documentPath) {
+    const textLanguage = textPath.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase() ?? "txt";
     return <ExternalTextBlock
       source={source}
       baseDir={context.baseDir}
@@ -442,6 +463,9 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       version={context.imageVersions[textPath] ?? 0}
       onRename={context.onExternalFileRename
         ? (filename) => context.onExternalFileRename?.({ documentPath: context.documentPath!, filePath: textPath, source }, filename)
+        : undefined}
+      onStorageConvert={context.onTextStorageConvert
+        ? (textSource) => context.onTextStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: textSource, language: textLanguage })
         : undefined}
       onError={context.onError}
     />;
@@ -553,6 +577,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onDrawioStorageConvert,
   onMermaidStorageConvert,
   onTableStorageConvert,
+  onTextStorageConvert,
   onExternalFileRename,
   onStagedTextAssetChange,
   diffChangedLines,
@@ -574,6 +599,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   const inlineSvgByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is InlineSvgOccurrence => occurrence.kind === "inline-svg").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const tableByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is MarkdownTableOccurrence => occurrence.kind === "table").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const renderContext = React.useMemo<MarkdownRenderContextValue>(() => ({
+    content,
     baseDir,
     imageVersions,
     theme,
@@ -608,13 +634,14 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     onDrawioStorageConvert,
     onMermaidStorageConvert,
     onTableStorageConvert,
+    onTextStorageConvert,
     onExternalFileRename,
     onStagedTextAssetChange,
     staticMode,
   }), [
-    baseDir, codeFenceByOffset, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
+    baseDir, codeFenceByOffset, content, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onExternalFileRename, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
     onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 

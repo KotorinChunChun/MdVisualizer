@@ -7,4 +7,5 @@ export interface TableStorageConversionContext {
   occurrence: CodeFenceOccurrence | ImageMarkdownOccurrence;
   source: string;
   language: DelimitedTableLanguage;
+  relativePath?: string;
 }

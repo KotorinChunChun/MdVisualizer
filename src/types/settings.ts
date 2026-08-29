@@ -70,6 +70,13 @@ export const DEFAULT_PRESENTATION_LINE_THRESHOLD = 10;
 export const DEFAULT_IMAGE_A4_TARGET_WIDTH = 3508;
 export const DEFAULT_IMAGE_EQUAL_PADDING = 32;
 
+export type EmbeddedPathStyle = "heading" | "bold-code" | "fence-title" | "fence-colon";
+export const DEFAULT_EMBEDDED_PATH_STYLE: EmbeddedPathStyle = "fence-title";
+
+export function normalizeEmbeddedPathStyle(value: unknown): EmbeddedPathStyle {
+  return value === "heading" || value === "bold-code" || value === "fence-colon" ? value : "fence-title";
+}
+
 export type ClipboardImageStorage = "base64" | "png";
 export type ClipboardImagePngLocation = "absolute" | "document" | "images";
 

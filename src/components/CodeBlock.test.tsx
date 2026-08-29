@@ -84,6 +84,18 @@ describe("CodeBlock", () => {
     window.removeEventListener("markdown-toast", listener);
   });
 
+  it.each([
+    ["embedded", "外部ファイルへ切替"],
+    ["external", "埋め込みへ切替"],
+  ] as const)("%s保存形式の切替ボタンを表示して処理を呼ぶ", async (storage, label) => {
+    const onStorageConvert = vi.fn().mockResolvedValue(undefined);
+    render(<CodeBlock className="language-typescript" storage={storage} onStorageConvert={onStorageConvert}>const value = 1;</CodeBlock>);
+
+    fireEvent.click(screen.getByRole("button", { name: label }));
+
+    await waitFor(() => expect(onStorageConvert).toHaveBeenCalledTimes(1));
+  });
+
   it("normalizes Windows verbatim paths before showing the Markdown directory", () => {
     expect(powerShellWorkingDirectory(String.raw`\\?\C:\docs\sample.md`)).toBe(String.raw`C:\docs`);
     expect(powerShellWorkingDirectory(String.raw`\\?\UNC\server\share\sample.md`)).toBe(String.raw`\\server\share`);

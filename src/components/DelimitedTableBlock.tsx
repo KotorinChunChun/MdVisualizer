@@ -217,7 +217,7 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
       ...(storage && onStorageConvert ? [{ id: "storage", priority: 90, node: <button type="button" disabled={convertingStorage} onClick={() => {
         setConvertingStorage(true);
         void Promise.resolve().then(onStorageConvert).catch((error) => emitToast("error", error instanceof Error ? error.message : String(error))).finally(() => setConvertingStorage(false));
-      }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "別ファイルに書き出し" : "埋め込みに変更"}</button> }] : []),
+      }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button> }] : []),
     ]} />
     {columnsOpen && <div className="data-grid-column-panel" aria-label="列表示の選択">{headers.map((header, column) => <label key={column}><input type="checkbox" checked={visibleColumns[column] !== false} onChange={(event) => setVisibleColumns((current) => headers.map((_, index) => index === column ? event.target.checked : current[index] !== false))} />{header}</label>)}</div>}
     {panesOpen && <div className="search-panes" aria-label="スライサー">{headers.map((header, column) => {

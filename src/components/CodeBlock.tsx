@@ -9,6 +9,8 @@ interface CodeBlockProps {
   /** Signals that highlight.js has finished replacing the code DOM. */
   onHighlightComplete?: () => void;
   documentPath?: string;
+  storage?: "embedded" | "external";
+  onStorageConvert?: () => boolean | void | Promise<boolean | void>;
 }
 
 type LanguageModule = { default: LanguageFn };
@@ -50,13 +52,14 @@ const sourceExtensions: Record<string, string> = {
   python: "py", rust: "rs", sql: "sql", typescript: "ts", xml: "xml", yaml: "yaml",
 };
 
-export function CodeBlock({ className, children, onHighlightComplete, documentPath }: CodeBlockProps) {
+export function CodeBlock({ className, children, onHighlightComplete, documentPath, storage, onStorageConvert }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [html, setHtml] = useState("");
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<PowerShellRunResult | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
+  const [convertingStorage, setConvertingStorage] = useState(false);
   const runGeneration = useRef(0);
   const runInFlight = useRef(false);
   const rawLanguage = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
@@ -149,6 +152,10 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
 
   return <div className="code-block">
     <div className="code-actions">
+      {storage && onStorageConvert && <button type="button" className="code-storage" disabled={convertingStorage} onClick={() => {
+        setConvertingStorage(true);
+        void Promise.resolve().then(onStorageConvert).catch((error) => emitCopyToast("error", error instanceof Error ? error.message : String(error))).finally(() => setConvertingStorage(false));
+      }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button>}
       {executable && <button type="button" className="code-run" disabled={running} onClick={() => {
         setConfirmationOpen(true);
       }}>{running ? "実行中…" : "PowerShellを実行"}</button>}
