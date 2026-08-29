@@ -13,8 +13,22 @@ export function normalizeRelativeAssetPath(value: string | null | undefined): st
   if (!path || /^(?:[a-z][a-z0-9+.-]*:|\/|[a-z]:\/)/i.test(path)) return undefined;
   const parts = path.split("/");
   if (parts.some((part) => !part || part === "." || part === "..")) return undefined;
-  if (!path.includes("/") && !/\.[^./]+$/.test(path)) return undefined;
   return path;
+}
+
+/** Removes only the final extension from the filename part of a safe relative path. */
+export function removeFilenameExtension(value: string): string {
+  const path = value.trim().replace(/^<|>$/g, "").split(/[?#]/, 1)[0].replace(/\\/g, "/");
+  const slash = path.lastIndexOf("/");
+  const dot = path.lastIndexOf(".");
+  return dot > slash + 1 ? path.slice(0, dot) : path;
+}
+
+/** Replaces or appends the final filename extension while preserving its relative directory. */
+export function appendFilenameExtension(value: string, extension: string): string {
+  const normalizedExtension = extension.trim().replace(/^\.+/, "").toLowerCase();
+  const stem = removeFilenameExtension(value);
+  return normalizedExtension ? `${stem}.${normalizedExtension}` : stem;
 }
 
 export function splitFenceLanguagePath(language: string): { language: string; relativePath?: string } {
@@ -101,7 +115,7 @@ export function embeddedFenceWithPath({ language, body, relativePath, style, lin
   lineEnding?: "\n" | "\r\n" | "\r";
   continuationPrefix?: string;
 }): string {
-  const normalizedPath = normalizeRelativeAssetPath(relativePath) ?? relativePath.replace(/\\/g, "/");
+  const normalizedPath = removeFilenameExtension(normalizeRelativeAssetPath(relativePath) ?? relativePath.replace(/\\/g, "/"));
   const normalizedBody = body.trim().replace(/\r\n|\r|\n/g, lineEnding);
   const longestBacktickRun = Math.max(0, ...Array.from(normalizedBody.matchAll(/`+/g), (match) => match[0].length));
   const marker = "`".repeat(Math.max(3, longestBacktickRun + 1));

@@ -36,7 +36,7 @@ import { normalizeStructuredListIndentationForRendering } from "../lib/markdownE
 import type { DrawioStorageConversionContext } from "../lib/drawioStorage";
 import type { MermaidStorageConversionContext } from "../lib/mermaidStorage";
 import type { TableStorageConversionContext } from "../lib/tableStorage";
-import { codeFencePathDecoration, splitFenceLanguagePath } from "../lib/externalPathRepresentation";
+import { codeFencePathDecoration, removeFilenameExtension, splitFenceLanguagePath } from "../lib/externalPathRepresentation";
 import type { TextStorageConversionContext } from "../lib/textStorage";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
@@ -244,7 +244,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       source={String(children ?? "").replace(/\n$/, "")}
       theme={context.theme}
       blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
-      headingTitle={codeFenceTitle(occurrence?.meta)}
+      headingTitle={removeFilenameExtension(codeFenceTitle(occurrence?.meta) ?? "") || undefined}
       storage={occurrence ? "embedded" : undefined}
       onStorageConvert={decoration && context.documentPath && context.onDrawioStorageConvert
         ? () => context.onDrawioStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: String(children ?? "").replace(/\n$/, ""), relativePath: decoration.relativePath })
@@ -294,7 +294,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       blockId={`offset-${sourceOffset ?? diagramIndex}`}
       diagramIndex={diagramIndex}
       diagramCount={context.mermaidFenceOffsets.length}
-      headingTitle={codeFenceTitle(occurrence?.meta)}
+      headingTitle={removeFilenameExtension(codeFenceTitle(occurrence?.meta) ?? "") || undefined}
       onMediaOpen={context.onMediaOpen}
       editable={!context.staticMode && !context.presentationMode && Boolean(context.documentPath)}
       storage={occurrence ? "embedded" : undefined}
@@ -307,8 +307,8 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
     const sourceOffset = node?.position?.start.offset;
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
     const decoration = occurrence ? codeFencePathDecoration(context.content, occurrence) : undefined;
-    const headingTitle = codeFenceTitle(occurrence?.meta)
-      ?? (decoration?.style === "fence-title" || decoration?.style === "fence-colon" ? decoration.relativePath : undefined);
+    const headingTitle = removeFilenameExtension(codeFenceTitle(occurrence?.meta)
+      ?? (decoration?.style === "fence-title" || decoration?.style === "fence-colon" ? decoration.relativePath ?? "" : "")) || undefined;
     return <CodeBlock
       className={className}
       headingTitle={headingTitle}

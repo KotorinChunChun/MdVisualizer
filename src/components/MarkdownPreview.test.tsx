@@ -102,7 +102,8 @@ describe("MarkdownPreview sanitization", () => {
     />);
 
     await waitFor(() => expect(screen.getByText("TypeScript")).toBeTruthy());
-    expect(screen.getByText("src/index.ts").className).toContain("code-block__heading");
+    expect(screen.getByText("src/index").className).toContain("code-block__heading");
+    expect(screen.queryByText("src/index.ts")).toBeNull();
   });
 
   it("finds decorated heading fences by their actual AST fence position", async () => {

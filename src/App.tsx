@@ -53,7 +53,7 @@ import type { ViewMode } from "./lib/viewMode";
 import type { TableStorageConversionContext } from "./lib/tableStorage";
 import type { TextStorageConversionContext } from "./lib/textStorage";
 import { sourceExtensionForLanguage, textExternalReference } from "./lib/textStorage";
-import { embeddedFenceWithPath, markdownContinuationPrefix, normalizeRelativeAssetPath } from "./lib/externalPathRepresentation";
+import { appendFilenameExtension, embeddedFenceWithPath, markdownContinuationPrefix, normalizeRelativeAssetPath, removeFilenameExtension } from "./lib/externalPathRepresentation";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { isSharePointDocument } from "./lib/sharePoint";
 import { moveZoomLevel } from "./lib/zoom";
@@ -63,8 +63,8 @@ import { buildDebugWindowState } from "./lib/debugState";
 import { clipboardImageDestination, formatClipboardImageFilename, referencedStagedAssetIds, type ClipboardImageData, type ResolvedClipboardImage } from "./lib/clipboardImage";
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
-import { drawioExternalReference, markdownLineEnding, preferredDrawioFilename, type DrawioStorageConversionContext } from "./lib/drawioStorage";
-import { mermaidExternalReference, preferredMermaidFilename, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
+import { drawioExternalReference, markdownLineEnding, type DrawioStorageConversionContext } from "./lib/drawioStorage";
+import { mermaidExternalReference, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
 import "./styles/app.css";
@@ -1741,8 +1741,8 @@ export function App() {
       if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込みdraw.ioの位置を確認できませんでした。");
       const staged = await stageDocumentAsset({
         documentPath: tab.document.path,
-        preferredFilename: preferredDrawioFilename(context.occurrence),
-        preferredSource: context.relativePath,
+        preferredFilename: normalizedAssetFilename(removeFilenameExtension(context.relativePath ?? codeFenceTitle(context.occurrence.meta) ?? ""), "drawio", "diagram"),
+        preferredSource: context.relativePath ? appendFilenameExtension(context.relativePath, "drawio") : undefined,
         text: latestOccurrence.body,
       });
       try {
@@ -1804,8 +1804,8 @@ export function App() {
       if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込みMermaidの位置を確認できませんでした。");
       const staged = await stageDocumentAsset({
         documentPath: tab.document.path,
-        preferredFilename: preferredMermaidFilename(context.occurrence),
-        preferredSource: context.relativePath,
+        preferredFilename: normalizedAssetFilename(removeFilenameExtension(context.relativePath ?? codeFenceTitle(context.occurrence.meta) ?? ""), "mmd", "diagram"),
+        preferredSource: context.relativePath ? appendFilenameExtension(context.relativePath, "mmd") : undefined,
         text: latestOccurrence.body,
       });
       try {
@@ -1867,8 +1867,8 @@ export function App() {
       if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込み表の位置を確認できませんでした。");
       const staged = await stageDocumentAsset({
         documentPath: tab.document.path,
-        preferredFilename: normalizedAssetFilename(codeFenceTitle(latestOccurrence.meta) ?? "", context.language.startsWith("csv") ? "csv" : "tsv", "table"),
-        preferredSource: context.relativePath,
+        preferredFilename: normalizedAssetFilename(removeFilenameExtension(context.relativePath ?? codeFenceTitle(latestOccurrence.meta) ?? ""), context.language.startsWith("csv") ? "csv" : "tsv", "table"),
+        preferredSource: context.relativePath ? appendFilenameExtension(context.relativePath, context.language.startsWith("csv") ? "csv" : "tsv") : undefined,
         text: latestOccurrence.body,
       });
       try {
@@ -1925,8 +1925,8 @@ export function App() {
       const extension = sourceExtensionForLanguage(context.language);
       const staged = await stageDocumentAsset({
         documentPath: tab.document.path,
-        preferredFilename: normalizedAssetFilename(codeFenceTitle(latestOccurrence.meta) ?? "", extension, "code"),
-        preferredSource: context.relativePath,
+        preferredFilename: normalizedAssetFilename(removeFilenameExtension(context.relativePath ?? codeFenceTitle(latestOccurrence.meta) ?? ""), extension, "code"),
+        preferredSource: context.relativePath ? appendFilenameExtension(context.relativePath, extension) : undefined,
         text: latestOccurrence.body,
       });
       try {
