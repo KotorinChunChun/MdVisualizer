@@ -158,14 +158,19 @@ describe("DelimitedTableBlock", () => {
     expect(screen.queryByRole("button", { name: "CSV" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "CSVコピー" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("name,score\nAlice,10"));
+    const csvActions = notices[notices.length - 1]?.actions;
+    expect(csvActions?.map((action) => action.label)).toEqual(["ファイルとしてコピー"]);
+    nativeMocks.copyTextFile.mockResolvedValue("C:\\temp\\table.csv");
+    await csvActions?.[0].onAction();
+    expect(nativeMocks.copyTextFile).toHaveBeenLastCalledWith({ filename: "table.csv", content: "name,score\nAlice,10", utf8Bom: true });
+
     fireEvent.click(screen.getByRole("button", { name: "TSVコピー" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("name\tscore\nAlice\t10"));
-
-    const actions = notices[notices.length - 1]?.actions;
-    expect(actions?.map((action) => action.label)).toEqual(["ファイルとしてコピー", "CSVでコピー", "Excel形式でコピー"]);
+    const tsvActions = notices[notices.length - 1]?.actions;
+    expect(tsvActions?.map((action) => action.label)).toEqual(["ファイルとしてコピー"]);
     nativeMocks.copyTextFile.mockResolvedValue("C:\\temp\\table.tsv");
-    await actions?.[0].onAction();
-    expect(nativeMocks.copyTextFile).toHaveBeenCalledWith({ filename: "table.tsv", content: "name\tscore\nAlice\t10", utf8Bom: false });
+    await tsvActions?.[0].onAction();
+    expect(nativeMocks.copyTextFile).toHaveBeenLastCalledWith({ filename: "table.tsv", content: "name\tscore\nAlice\t10", utf8Bom: false });
     window.removeEventListener("markdown-toast", listener);
   });
 

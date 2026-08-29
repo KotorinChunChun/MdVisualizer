@@ -124,29 +124,11 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
       emitToast("success", `${format.toUpperCase()}ファイルをコピーしました`);
     } catch { emitToast("error", `${format.toUpperCase()}ファイルをコピーできませんでした`); }
   };
-  const copyExcel = async () => {
-    const plain = serialized("tsv");
-    const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    const html = `<table>${exportRows.map((row, rowIndex) => `<tr>${row.map((cell) => `<${rowIndex === 0 ? "th" : "td"}>${escape(cell)}</${rowIndex === 0 ? "th" : "td"}>`).join("")}</tr>`).join("")}</table>`;
-    try {
-      if (navigator.clipboard.write && typeof ClipboardItem !== "undefined") {
-        await navigator.clipboard.write([new ClipboardItem({
-          "text/plain": new Blob([plain], { type: "text/plain" }),
-          "text/html": new Blob([html], { type: "text/html" }),
-        })]);
-      } else await navigator.clipboard.writeText(plain);
-      emitToast("success", "Excel形式で表をコピーしました");
-    } catch {
-      emitToast("error", "Excel形式で表をコピーできませんでした");
-    }
-  };
   const copy = async (format: "csv" | "tsv") => {
     try {
       await navigator.clipboard.writeText(serialized(format));
       emitToast("success", `${format.toUpperCase()}で表をコピーしました`, [
         { label: "ファイルとしてコピー", onAction: () => copyTableFile(format) },
-        { label: format === "csv" ? "TSVでコピー" : "CSVでコピー", onAction: () => copy(format === "csv" ? "tsv" : "csv") },
-        { label: "Excel形式でコピー", onAction: copyExcel },
       ]);
     } catch { emitToast("error", `${format.toUpperCase()}で表をコピーできませんでした`); }
   };
