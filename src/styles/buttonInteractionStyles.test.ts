@@ -18,6 +18,10 @@ describe("button interaction styles", () => {
     expect(appCss).toContain(".diagram-action-button { min-height: 30px;");
   });
 
+  it("shares the code action button shape with storage conversion", () => {
+    expect(appCss).toContain(".code-copy, .code-run, .code-storage { padding: 3px 8px;");
+  });
+
   it("renders responsive overflow actions as a foreground vertical menu", () => {
     expect(appCss).toContain(".responsive-toolbar__menu { position: fixed; z-index: 12020;");
     expect(appCss).toContain("flex-direction: column;");

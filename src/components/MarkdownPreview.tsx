@@ -196,6 +196,11 @@ const EMPTY_FOLD_STATE: Record<string, boolean> = {};
 const EMPTY_IMAGE_DISPLAY_SIZES: Record<string, ImageSize> = {};
 const EMPTY_SEARCH_EXPANDED_IDS: string[] = [];
 
+function codeFenceAstStart(occurrence: CodeFenceOccurrence): number {
+  const start = occurrence.bodyStart - occurrence.opening.length;
+  return start >= 0 ? start : occurrence.start;
+}
+
 function markdownUrlTransform(url: string, key: string): string {
   if (key === "src" && /^data:image\/(?:png|jpe?g|gif|webp|bmp);base64,[a-z0-9+/=\s]+$/i.test(url)) return url;
   return defaultUrlTransform(url);
@@ -302,8 +307,11 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
     const sourceOffset = node?.position?.start.offset;
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
     const decoration = occurrence ? codeFencePathDecoration(context.content, occurrence) : undefined;
+    const headingTitle = codeFenceTitle(occurrence?.meta)
+      ?? (decoration?.style === "fence-title" || decoration?.style === "fence-colon" ? decoration.relativePath : undefined);
     return <CodeBlock
       className={className}
+      headingTitle={headingTitle}
       documentPath={context.presentationMode ? undefined : context.documentPath}
       onHighlightComplete={context.onCodeHighlightComplete}
       storage={decoration ? "embedded" : undefined}
@@ -590,11 +598,16 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     [mermaidFenceOffsets],
   );
   const editableOccurrences = React.useMemo(() => collectEditableMarkdownOccurrences(content), [content]);
-  const codeFenceByOffset = React.useMemo(() => new Map(
+  const codeFenceByOffset = React.useMemo(() => {
+    const map = new Map<number, CodeFenceOccurrence>();
     editableOccurrences
       .filter((occurrence): occurrence is CodeFenceOccurrence => occurrence.kind === "code-fence")
-      .map((occurrence) => [occurrence.start, occurrence]),
-  ), [editableOccurrences]);
+      .forEach((occurrence) => {
+        map.set(occurrence.start, occurrence);
+        map.set(codeFenceAstStart(occurrence), occurrence);
+      });
+    return map;
+  }, [editableOccurrences]);
   const imageOccurrenceByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is ImageMarkdownOccurrence => occurrence.kind === "image").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const inlineSvgByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is InlineSvgOccurrence => occurrence.kind === "inline-svg").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const tableByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is MarkdownTableOccurrence => occurrence.kind === "table").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);

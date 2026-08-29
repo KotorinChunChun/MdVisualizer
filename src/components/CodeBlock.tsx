@@ -8,6 +8,7 @@ interface CodeBlockProps {
   children?: React.ReactNode;
   /** Signals that highlight.js has finished replacing the code DOM. */
   onHighlightComplete?: () => void;
+  headingTitle?: string;
   documentPath?: string;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
@@ -38,7 +39,7 @@ const languageLoaders: Record<string, () => Promise<LanguageModule>> = {
 
 const languageAliases: Record<string, string> = {
   cs: "csharp", cxx: "cpp", htm: "html", js: "javascript", jsx: "javascript",
-  ps: "powershell", ps1: "powershell", py: "python", rs: "rust", sh: "bash",
+  ps: "powershell", ps1: "powershell", pwsh: "powershell", py: "python", rs: "rust", sh: "bash",
   shell: "bash", ts: "typescript", tsx: "typescript", yml: "yaml",
 };
 
@@ -52,7 +53,19 @@ const sourceExtensions: Record<string, string> = {
   python: "py", rust: "rs", sql: "sql", typescript: "ts", xml: "xml", yaml: "yaml",
 };
 
-export function CodeBlock({ className, children, onHighlightComplete, documentPath, storage, onStorageConvert }: CodeBlockProps) {
+const languageNames: Record<string, string> = {
+  bash: "Bash", c: "C", cpp: "C++", csharp: "C#", css: "CSS", go: "Go", html: "HTML",
+  java: "Java", javascript: "JavaScript", json: "JSON", markdown: "Markdown", powershell: "PowerShell",
+  python: "Python", rust: "Rust", sql: "SQL", typescript: "TypeScript", xml: "XML", yaml: "YAML",
+};
+
+export function syntaxHighlightLanguageName(language: string | undefined): string | undefined {
+  if (!language) return undefined;
+  const normalized = languageAliases[language.trim().toLowerCase()] ?? language.trim().toLowerCase();
+  return normalized ? languageNames[normalized] ?? normalized : undefined;
+}
+
+export function CodeBlock({ className, children, onHighlightComplete, headingTitle, documentPath, storage, onStorageConvert }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [html, setHtml] = useState("");
   const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -64,6 +77,8 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
   const runInFlight = useRef(false);
   const rawLanguage = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
   const language = rawLanguage ? languageAliases[rawLanguage] ?? rawLanguage : undefined;
+  const languageName = syntaxHighlightLanguageName(language);
+  const normalizedHeadingTitle = headingTitle?.trim() || undefined;
   const source = String(children ?? "").replace(/\n$/, "");
   const shortcutKeyBlock = rawLanguage === "key";
   const copyCodeFile = async (extension: string, label: string) => {
@@ -151,6 +166,10 @@ export function CodeBlock({ className, children, onHighlightComplete, documentPa
   }
 
   return <div className="code-block">
+    {(languageName || normalizedHeadingTitle) && <div className="code-block__header">
+      {languageName && <span className="code-block__language">{languageName}</span>}
+      {normalizedHeadingTitle && <strong className="code-block__heading">{normalizedHeadingTitle}</strong>}
+    </div>}
     <div className="code-actions">
       {storage && onStorageConvert && <button type="button" className="code-storage" disabled={convertingStorage} onClick={() => {
         setConvertingStorage(true);

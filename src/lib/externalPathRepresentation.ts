@@ -33,6 +33,11 @@ function expandedOccurrence(markdown: string, occurrence: CodeFenceOccurrence, s
   };
 }
 
+function codeFenceOpeningStart(occurrence: CodeFenceOccurrence): number {
+  const start = occurrence.bodyStart - occurrence.opening.length;
+  return start >= 0 ? start : occurrence.start;
+}
+
 function previousDescriptorLine(markdown: string, occurrenceStart: number): { line: string; start: number } | undefined {
   let cursor = Math.max(markdown.lastIndexOf("\n", Math.max(0, occurrenceStart - 1)), markdown.lastIndexOf("\r", Math.max(0, occurrenceStart - 1))) + 1;
   while (cursor > 0) {
@@ -58,7 +63,7 @@ export function codeFencePathDecoration(markdown: string, occurrence: CodeFenceO
   const colon = splitFenceLanguagePath(occurrence.language);
   if (colon.relativePath) return { occurrence, relativePath: colon.relativePath, style: "fence-colon" };
 
-  const descriptor = previousDescriptorLine(markdown, occurrence.start);
+  const descriptor = previousDescriptorLine(markdown, codeFenceOpeningStart(occurrence));
   const heading = descriptor ? headingDescriptor.exec(descriptor.line) : null;
   const headingPath = normalizeRelativeAssetPath(heading?.[3]);
   if (descriptor && heading && headingPath) {

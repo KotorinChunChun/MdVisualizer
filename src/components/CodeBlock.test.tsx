@@ -1,12 +1,21 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CodeBlock, powerShellWorkingDirectory } from "./CodeBlock";
+import { CodeBlock, powerShellWorkingDirectory, syntaxHighlightLanguageName } from "./CodeBlock";
 import { copyTextFile, runPowerShell } from "../lib/commands";
 
 vi.mock("../lib/commands", () => ({ copyTextFile: vi.fn(), runPowerShell: vi.fn() }));
 
 describe("CodeBlock", () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); });
+
+  it("shows the normalized syntax highlighting language and embedded file title", () => {
+    render(<CodeBlock className="language-ts" headingTitle="src/index.ts">const value = 1;</CodeBlock>);
+
+    expect(screen.getByText("TypeScript").className).toContain("code-block__language");
+    expect(screen.getByText("src/index.ts").className).toContain("code-block__heading");
+    expect(syntaxHighlightLanguageName("ps1")).toBe("PowerShell");
+    expect(syntaxHighlightLanguageName("unknown-language")).toBe("unknown-language");
+  });
 
   it("copies only code text and emits a success notification", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);

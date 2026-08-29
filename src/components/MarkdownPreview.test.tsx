@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { countMermaidFences, MarkdownPreview } from "./MarkdownPreview";
 import { openExternalUrl } from "../lib/commands";
 
@@ -7,6 +7,8 @@ vi.mock("./ImageRenderer", () => ({
   ImageRenderer: ({ alt, headingMode }: { alt?: string; headingMode?: boolean }) => <span data-testid={`image-${alt}`} data-heading-mode={headingMode ? "true" : "false"} />,
 }));
 vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn(), runPowerShell: vi.fn() }));
+
+afterEach(cleanup);
 
 describe("MarkdownPreview sanitization", () => {
   it("renders safe HTML and removes scripts, event handlers, and unsafe URLs", () => {
@@ -89,6 +91,36 @@ describe("MarkdownPreview sanitization", () => {
   it("offers confirmed execution only for PowerShell fences backed by a document path", () => {
     render(<MarkdownPreview content={"```pwsh\nWrite-Output safe\n```\n\n```bash\necho no\n```"} baseDir="C:\\docs" documentPath="C:\\docs\\sample.md" imageVersions={{}} />);
     expect(screen.getAllByRole("button", { name: "PowerShellを実行" })).toHaveLength(1);
+  });
+
+  it("shows the embedded fence title and normalized language name", async () => {
+    render(<MarkdownPreview
+      content={'```ts title="src/index.ts"\nexport const value = 1;\n```'}
+      baseDir="C:\\docs"
+      documentPath="C:\\docs\\sample.md"
+      imageVersions={{}}
+    />);
+
+    await waitFor(() => expect(screen.getByText("TypeScript")).toBeTruthy());
+    expect(screen.getByText("src/index.ts").className).toContain("code-block__heading");
+  });
+
+  it("finds decorated heading fences by their actual AST fence position", async () => {
+    const onTextStorageConvert = vi.fn();
+    render(<MarkdownPreview
+      content={'### src/index.ts\n\n```ts\nexport const value = 1;\n```'}
+      baseDir="C:\\docs"
+      documentPath="C:\\docs\\sample.md"
+      imageVersions={{}}
+      onTextStorageConvert={onTextStorageConvert}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: "外部ファイルへ切替" }));
+    await waitFor(() => expect(onTextStorageConvert).toHaveBeenCalledWith(expect.objectContaining({
+      storage: "embedded",
+      relativePath: "src/index.ts",
+      source: "export const value = 1;",
+    })));
   });
 
   it("コードフェンスの相対パス表現を外部ファイル切替へ渡す", async () => {
