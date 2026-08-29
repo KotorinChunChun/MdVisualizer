@@ -715,7 +715,7 @@ export function App() {
             baseDir: result.latest.base_dir,
             openedContent: latestTab.openedContent ?? tab.document.content,
             storageContent: result.latest.content,
-            editingContent: latestTab.draft,
+            editingContent: draft,
             storageRevision: result.latest.revision,
             conflict: true,
           });
