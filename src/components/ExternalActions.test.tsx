@@ -26,6 +26,16 @@ describe("ExternalActions", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
+  it("closes the other-actions menu with Escape", () => {
+    render(<ExternalActions apps={DEFAULT_EXTERNAL_APPS} onExecute={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /その他/ }));
+    expect(screen.getByRole("menu")).toBeTruthy();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
   it("adds an in-app new-window action without putting it in the other menu", () => {
     const onOpenInNewWindow = vi.fn();
     render(<ExternalActions apps={DEFAULT_EXTERNAL_APPS} onExecute={vi.fn()} onOpenInNewWindow={onOpenInNewWindow} />);

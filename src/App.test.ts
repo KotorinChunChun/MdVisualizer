@@ -20,6 +20,24 @@ describe("new Markdown shortcut wiring", () => {
   });
 });
 
+describe("keyboard-complete document actions", () => {
+  it("routes search, print, fold, and Escape actions from the document key handler", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    const handlerStart = source.indexOf("const onKeyDown = (event: KeyboardEvent) => {");
+    const handlerEnd = source.indexOf("window.addEventListener(\"keydown\", onKeyDown)", handlerStart);
+    const handler = source.slice(handlerStart, handlerEnd);
+
+    expect(handler).toContain('event.key.toLowerCase() === "f"');
+    expect(handler).toContain("openSearch();");
+    expect(handler).toContain('event.key.toLowerCase() === "p"');
+    expect(handler).toContain("void printDocument();");
+    expect(handler).toContain('event.ctrlKey && event.altKey && event.key.toLowerCase() === "t"');
+    expect(handler).toContain("toggleFoldAll();");
+    expect(handler).toContain('event.key === "Escape" && activeTab?.searchOpen');
+    expect(handler).toContain("closeSearch();");
+  });
+});
+
 describe("F5 reload protection", () => {
   it("blocks F5 for an unsaved document and permits a saved document", () => {
     expect(shouldBlockF5Reload({ dirty: true })).toBe(true);
