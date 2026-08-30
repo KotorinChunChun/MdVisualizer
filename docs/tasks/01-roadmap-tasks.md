@@ -1,0 +1,91 @@
+# MarkdownViewer 全体タスクリスト
+
+作成日: 2026-08-30
+工数単位: 人日。1人日には実装、レビュー対応、対象テスト、文書更新を含む。
+状態: `TODO` / `IN_PROGRESS` / `REVIEW` / `DONE` / `BLOCKED`
+
+## 1. v0.0.14 品質・アーキテクチャ基盤
+
+| ID | タスク名 | 優先度 | 工数 | 依存関係 | 状態 | 完了条件 |
+| --- | --- | --- | ---: | --- | --- | --- |
+| R14-001 | 現状資産監査と製品方針確定 | P0 | 3 | なし | DONE | `docs/roadmap`と判断表がレビュー可能 |
+| R14-002 | v0.0.13検索性能テスト | P0 | 2 | なし | TODO | 10,000行fixtureで基準値を記録し回帰test化 |
+| R14-003 | 印刷ページ番号方式の実証 | P0 | 3 | なし | TODO | WebView2/Microsoft Print to PDFの採否と制約を記録 |
+| R14-004 | 印刷セッション復元テスト | P0 | 2 | R14-003 | TODO | 成功、timeout、例外、取消後の状態が一致 |
+| R14-005 | キーボード完結テスト | P0 | 3 | なし | TODO | 検索、診断、印刷、目次、その他をマウスなしで操作可能 |
+| R14-006 | v0.0.13統合受入と対応表 | P0 | 3 | R14-002〜005 | TODO | 全test/build/規定smoke/PDF受入と旧基準対応表が完成 |
+| R14-010 | CIワークフロー作成 | P0 | 4 | R14-006 | TODO | frontend/core/Rust/SPFxをPRごとに自動実行 |
+| R14-011 | カバレッジ基準導入 | P0 | 3 | R14-010 | TODO | Vitest、SPFx、Rustのreportと閾値判定が成功 |
+| R14-012 | Playwrightブラウザーハーネス | P0 | 5 | R14-010 | TODO | fake providerで主要画面E2Eがheadless実行可能 |
+| R14-013 | WebView実画面smokeのCI整理 | P1 | 3 | R14-010 | TODO | 5秒guardを維持し手動/専用runnerで再現可能 |
+| R14-014 | テストデータ生成CLI | P0 | 4 | R14-011 | TODO | seed固定でMarkdown/表/画像参照/DB fixtureを生成 |
+| R14-020 | `packages/application-core`新設 | P0 | 4 | R14-006 | TODO | domain型、error、contract testがbuild成功 |
+| R14-021 | DocumentRepository導入 | P0 | 5 | R14-020 | TODO | local/SharePoint/SPFx/Fakeが共通contractを通る |
+| R14-022 | AppShell分離 | P0 | 5 | R14-021 | TODO | タブ/グローバルUI所有をAppShellへ移管 |
+| R14-023 | DocumentWorkspace分離 | P0 | 7 | R14-022 | TODO | 文書session、保存、競合をfeature配下へ移管 |
+| R14-024 | Navigation/検索/診断分離 | P1 | 5 | R14-023 | TODO | 共通source locationを保ちApp依存を除去 |
+| R14-025 | Print/Presentation分離 | P1 | 5 | R14-023 | TODO | 印刷sessionと表示状態復元を専用controllerへ移管 |
+| R14-026 | `App.tsx`縮小 | P0 | 3 | R14-022〜025 | TODO | 800行以下、配線と最上位error boundary中心 |
+| R14-030 | Rust document command分割 | P0 | 5 | R14-006 | TODO | load/save/create/stagingを`commands/document.rs`へ移管 |
+| R14-031 | Rust diagnostics/watch分割 | P1 | 4 | R14-030 | TODO | 診断とwatchを独立module・testへ移管 |
+| R14-032 | Rust process command分割 | P0 | 4 | R14-030 | TODO | PowerShell/外部アプリ/VS Codeをprocess境界へ移管 |
+| R14-033 | `commands.rs`縮小 | P0 | 2 | R14-030〜032 | TODO | 400行以下、再公開と共通DTO中心 |
+| R14-040 | Security capability一覧 | P0 | 2 | R14-021,R14-033 | TODO | 全command、path、network、processの規則が表で網羅 |
+| R14-041 | CSP有効化 | P0 | 4 | R14-040 | TODO | releaseでCSP有効、既存主要機能が動作 |
+| R14-042 | asset protocol全域許可撤廃 | P0 | 7 | R14-040 | TODO | backend read＋Blob URLへ移行し`["**"]`を削除 |
+| R14-043 | SecretStore汎用化 | P0 | 3 | R14-040 | TODO | SharePoint/将来AI secretを値非公開で管理 |
+| R14-044 | security regression corpus | P0 | 4 | R14-041〜043 | TODO | XSS/SVG/path/redirect/secret testがCI成功 |
+| R14-050 | SQLite schemaとrepository | P0 | 5 | R14-020 | TODO | migration 0001、transaction、temp DB testが成功 |
+| R14-051 | JSON設定移行 | P0 | 4 | R14-050 | TODO | 全旧fixtureを移行、失敗時fallbackが成功 |
+| R14-052 | セッション・最近項目保存 | P1 | 4 | R14-050,R14-023 | TODO | 本文を保存せず再開候補を復元 |
+| R14-053 | DB破損回復 | P0 | 3 | R14-050 | TODO | 隔離、新規作成、読取専用fallbackを検証 |
+| R14-060 | ProviderRegistry/Fake作成 | P0 | 4 | R14-020,R14-050 | TODO | document/sync/AI contractとfake障害注入が利用可能 |
+| R14-061 | デスクトップprovider adapter | P0 | 4 | R14-060 | TODO | UIの直接Tauri呼出しを対象領域から除去 |
+| R14-062 | SPFx provider adapter | P0 | 4 | R14-060 | TODO | 共通snapshot/error/capability contractを満たす |
+| R14-070 | UX情報設計の適用 | P1 | 5 | R14-023,R14-060 | TODO | 初心者/上級者導線、状態表示、狭幅が受入可能 |
+| R14-071 | アクセシビリティ自動検査 | P0 | 3 | R14-012,R14-070 | TODO | axe重大違反0、キーボードE2E成功 |
+| R14-072 | SPFxモバイル基礎受入 | P1 | 4 | R14-062,R14-070 | TODO | 320/390/768pxで閲覧・簡易編集が成立 |
+| R14-080 | MIT OSS文書整備 | P0 | 2 | なし | TODO | LICENSE、SECURITY、CONTRIBUTING、第三者license方針が存在 |
+| R14-081 | 統合性能・セキュリティ・GUI受入 | P0 | 5 | R14-010〜080 | TODO | 全品質基準を満たし結果を記録 |
+| R14-082 | v0.0.14リリース判断 | P0 | 2 | R14-081 | TODO | beta成果物・SPFx・公開検証または延期理由が確定 |
+
+概算: 135人日前後。並行可能な作業を含むため、暦期間は担当人数とレビュー待ちに依存する。
+
+## 2. v0.0.15 SharePoint同期
+
+| ID | タスク名 | 優先度 | 工数 | 依存関係 | 状態 | 完了条件 |
+| --- | --- | --- | ---: | --- | --- | --- |
+| R15-001 | 同期状態機械 | P0 | 5 | R14-060 | TODO | 全遷移と禁止遷移がUnit test済み |
+| R15-002 | SQLite同期schema | P0 | 4 | R14-050,R15-001 | TODO | migration、再起動復旧、本文非保存を検証 |
+| R15-003 | Graph metadata/pull adapter | P0 | 5 | R14-043,R14-060 | TODO | eTag確認、clean pull、redirect制限が成功 |
+| R15-004 | push queue/retry | P0 | 6 | R15-002,R15-003 | TODO | offline、429、5xx、再起動で再送可能 |
+| R15-005 | 競合Diff | P0 | 5 | R15-004 | TODO | 412/dirty remote変更を自動上書きしない |
+| R15-006 | 同期UI | P1 | 5 | R15-001〜005 | TODO | 追加、停止、再開、今すぐ同期、解除が可能 |
+| R15-007 | 同期E2E/性能/セキュリティ | P0 | 6 | R15-006 | TODO | 100対象、認証失効、ログredactionが合格 |
+
+## 3. v0.0.16 AI支援
+
+| ID | タスク名 | 優先度 | 工数 | 依存関係 | 状態 | 完了条件 |
+| --- | --- | --- | ---: | --- | --- | --- |
+| R16-001 | AI request/result/event model | P0 | 5 | R14-060 | TODO | API/CLI共通contractとfakeが成功 |
+| R16-002 | API Secret/HTTP adapter | P0 | 6 | R14-043,R16-001 | TODO | key非露出、stream、cancel、429が成功 |
+| R16-003 | CLI能力検出 | P0 | 4 | R14-032,R16-001 | TODO | Claude/Codex候補のpath、版、login状態を検出 |
+| R16-004 | CLI一時workspace runner | P0 | 7 | R16-003 | TODO | 元ファイル非変更、timeout、上限、cleanupを検証 |
+| R16-005 | 校正・要約・質問・構成 | P1 | 8 | R16-002〜004 | TODO | 各schemaとUI受入が成功 |
+| R16-006 | Markdown/表/図表生成・診断 | P1 | 7 | R16-005 | TODO | 構文検証と安全な提案表示が成功 |
+| R16-007 | 複数文書scope/chunk | P1 | 6 | R16-005 | TODO | 利用者選択範囲だけを送信し根拠を表示 |
+| R16-008 | ファイルDiff承認 | P0 | 7 | R16-004,R16-005 | TODO | ファイル単位採否、revision guard、保存境界が成功 |
+| R16-009 | AI security/E2E | P0 | 7 | R16-002〜008 | TODO | prompt/shell/path injectionと秘密非露出が合格 |
+
+## 4. 工程別Definition of Ready / Done
+
+| 工程 | Definition of Ready | Definition of Done |
+| --- | --- | --- |
+| 現行受入 | 再現fixtureと期待結果がある | 機械test、実画面、記録が一致 |
+| アーキテクチャ | 現行責務・event・公開DTO一覧がある | 移動前後のcontractと全回帰が成功 |
+| セキュリティ | capability/脅威/許可先がレビュー済み | 最小権限、redaction、攻撃fixture、既存機能が合格 |
+| SQLite | 保存データ分類と移行fixtureがある | migration/rollback/破損/本文非保存が合格 |
+| Provider | 共通型にUI/OS依存がない | 全adapterが同一contract testを通る |
+| 同期 | offline本文保持と対象範囲が確定 | 上書き損失0、再試行、停止、競合、再起動が合格 |
+| AI | 送信同意、provider実契約、SPFx範囲が確定 | 元ファイル非変更、Diff承認、秘密・一時領域管理が合格 |
+| リリース | 全必須taskがDONE/明示延期 | 版・署名・成果物・公開先・HTTP・rollbackを検証 |
