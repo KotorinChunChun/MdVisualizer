@@ -283,6 +283,7 @@ pub fn run() {
             read_document_asset,
             save_sharepoint_asset,
             diagnose_document,
+            document_watch_targets,
             start_watch,
             stop_watch,
             sync_watch_targets,

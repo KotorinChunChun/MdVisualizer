@@ -173,6 +173,7 @@ body {
 }
 .markdown-body mark[data-markdown-search] { background: #fbbf24; color: #111827; border-radius: 2px; }
 .markdown-body mark[data-markdown-search][data-active="true"] { outline: 2px solid #f97316; }
+.source-navigation-target { outline: 2px solid var(--accent-color); outline-offset: 4px; }
 
 .header-bar {
   display: flex;
@@ -830,9 +831,17 @@ body {
   :root[data-print-monochrome="true"] .markdown-body { filter: grayscale(1); }
   .markdown-body pre, .markdown-body table, .markdown-body img, .mermaid-container { break-inside: avoid; }
   .fold-content { display: block !important; }
+  .app-container.is-printing[data-print-fold-mode="current"] .fold-content[hidden] { display: none !important; }
   .fold-toggle { cursor: default; }.fold-chevron { display: none; }
   .view-presentation .presentation-stage { display: none; }
   .view-presentation .presentation-print-pages { display: block; }
   .presentation-print-page { display: block; break-after: page; page-break-after: always; min-height: 1px; }
   .presentation-print-page:last-child { break-after: auto; page-break-after: auto; }
+  .print-metadata { display: block !important; page-break-after: avoid; color: var(--print-effective-heading); border-bottom: 1px solid var(--print-effective-border); margin-bottom: 1rem; padding-bottom: .5rem; }
+  .print-metadata__page-number::after { content: counter(page); }
+}
+
+.print-metadata { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
 }

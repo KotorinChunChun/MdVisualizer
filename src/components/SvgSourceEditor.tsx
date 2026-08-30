@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { SharePointAssetEditContext } from "../hooks/useCropEditor";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import "../styles/svg-source-editor.css";
 
@@ -20,6 +21,7 @@ export function SvgSourceEditor({
   const [source, setSource] = useState(target.svg);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const modalRef = useFocusTrap<HTMLDivElement>(true, onCancel);
   const parsed = useMemo(() => {
     try {
       return { svg: sanitizeSvgXml(source), error: null };
@@ -41,7 +43,7 @@ export function SvgSourceEditor({
     }
   };
 
-  return <div className="svg-source-editor" role="dialog" aria-modal="true" aria-label={`SVG編集: ${target.filename}`}>
+  return <div ref={modalRef} className="svg-source-editor" role="dialog" aria-modal="true" tabIndex={-1} aria-label={`SVG編集: ${target.filename}`}>
     <header className="svg-source-editor__header">
       <strong>SVG編集: {target.filename}</strong>
       <div>

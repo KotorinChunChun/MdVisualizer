@@ -22,6 +22,8 @@
 .print-style-settings__colors label { justify-content: flex-start; }
 .print-style-settings__colors input[type="color"] { width: 3.5rem; height: 2.25rem; padding: 0.15rem; }
 .print-style-settings__toggle { justify-content: flex-start !important; }
+.print-style-settings__toggles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem .75rem; }
+.print-style-settings__toggles label { justify-content: flex-start; }
 .print-style-settings__toggle input { width: auto; }
 .print-style-preview { padding: 0.8rem; border: 2px solid; border-radius: 0.4rem; }
 .print-style-preview strong { display: block; padding-bottom: 0.3rem; border-bottom: 1px solid currentColor; }

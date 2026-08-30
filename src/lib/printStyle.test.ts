@@ -9,7 +9,7 @@ describe("print style settings", () => {
 
   it("applies a fixed font stack and print-only variables", () => {
     const root = document.createElement("div");
-    applyPrintStyleSettings(root, { headingColor: "#111111", borderColor: "#222222", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true });
+    applyPrintStyleSettings(root, { ...DEFAULT_PRINT_STYLE_SETTINGS, headingColor: "#111111", borderColor: "#222222", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true });
     expect(root.style.getPropertyValue("--print-heading-color")).toBe("#111111");
     expect(root.style.getPropertyValue("--print-font-family")).toContain("Georgia");
     expect(root.dataset.printMonochrome).toBe("true");

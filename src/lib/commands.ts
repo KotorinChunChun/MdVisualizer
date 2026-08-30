@@ -87,6 +87,9 @@ export async function saveSharePointAsset(request: import("../types/app").ShareP
 export async function diagnoseDocument(path: string): Promise<DiagnosticItem[]> {
   return await invoke<DiagnosticItem[]>("diagnose_document", { path });
 }
+export async function documentWatchTargets(path: string): Promise<string[]> {
+  return await invoke<string[]>("document_watch_targets", { path });
+}
 
 export async function startWatch(path: string): Promise<void> {
   return await invoke<void>("start_watch", { path });

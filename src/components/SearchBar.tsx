@@ -6,7 +6,7 @@ export function SearchBar({ search, inputRef, onClose, embedded = false }: Searc
   return (
     <div className={`search-bar-wrap${embedded ? " search-bar-wrap--embedded" : ""}`}>
     <div className="search-bar" role="search">
-      <input ref={inputRef} value={search.query} onChange={(event) => search.setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.shiftKey ? search.previous() : search.next(); } }} placeholder="Search document" aria-label="文書を検索" />
+      <input ref={inputRef} value={search.query} onChange={(event) => search.setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.shiftKey ? search.previous() : search.next(); } }} placeholder="検索キーワードを入力" aria-label="検索キーワードを入力" />
       <label><input type="checkbox" checked={search.caseSensitive} onChange={(event) => search.setCaseSensitive(event.target.checked)} />Aa</label>
       <label><input type="checkbox" checked={search.regex} onChange={(event) => search.setRegex(event.target.checked)} />.*</label>
       <label>文脈 <select aria-label="文脈行数" value={search.contextLines} onChange={(event) => search.setContextLines(Number(event.target.value))}>{[0, 1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>

@@ -7,6 +7,11 @@ export interface PrintStyleSettings {
   backgroundColor: string;
   fontFamily: PrintFontFamily;
   monochrome: boolean;
+  foldMode: "all" | "current";
+  showTitle: boolean;
+  showFilename: boolean;
+  showDate: boolean;
+  showPageNumbers: boolean;
 }
 
 export const DEFAULT_PRINT_STYLE_SETTINGS: PrintStyleSettings = {
@@ -15,6 +20,11 @@ export const DEFAULT_PRINT_STYLE_SETTINGS: PrintStyleSettings = {
   backgroundColor: "#ffffff",
   fontFamily: "system",
   monochrome: false,
+  foldMode: "all",
+  showTitle: true,
+  showFilename: true,
+  showDate: true,
+  showPageNumbers: true,
 };
 
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
@@ -35,6 +45,11 @@ export function normalizePrintStyleSettings(value: unknown): PrintStyleSettings 
     backgroundColor: color(candidate.backgroundColor, DEFAULT_PRINT_STYLE_SETTINGS.backgroundColor),
     fontFamily: PRINT_FONT_FAMILIES.includes(candidate.fontFamily as PrintFontFamily) ? candidate.fontFamily as PrintFontFamily : DEFAULT_PRINT_STYLE_SETTINGS.fontFamily,
     monochrome: candidate.monochrome === true,
+    foldMode: candidate.foldMode === "current" ? "current" : "all",
+    showTitle: candidate.showTitle !== false,
+    showFilename: candidate.showFilename !== false,
+    showDate: candidate.showDate !== false,
+    showPageNumbers: candidate.showPageNumbers !== false,
   };
 }
 

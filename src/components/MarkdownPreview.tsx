@@ -92,6 +92,7 @@ interface MarkdownPreviewProps {
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   documentPath?: string;
   sourcePath?: string;
+  sourceLineOffset?: number;
   onCodeHighlightComplete?: () => void;
   onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
   onMarkdownTableChange?: (occurrence: MarkdownTableOccurrence, replacement: string) => boolean | void;
@@ -178,6 +179,7 @@ interface MarkdownRenderContextValue {
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   documentPath?: string;
   sourcePath?: string;
+  sourceLineOffset: number;
   onCodeHighlightComplete?: () => void;
   mermaidFenceOffsets: number[];
   mermaidIndexByOffset: Map<number, number>;
@@ -592,6 +594,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onMediaOpen,
   documentPath,
   sourcePath,
+  sourceLineOffset = 0,
   onCodeHighlightComplete,
   onCodeFenceBodyChange,
   onMarkdownTableChange,
@@ -650,6 +653,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     onMediaOpen,
     documentPath,
     sourcePath,
+    sourceLineOffset,
     onCodeHighlightComplete,
     mermaidFenceOffsets,
     mermaidIndexByOffset,
@@ -675,7 +679,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     baseDir, codeFenceByOffset, content, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
     onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onExternalTableChange, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
-    onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, stagedTableSources, staticMode, tabId, tableByOffset, theme, windowId,
+    onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourceLineOffset, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, stagedTableSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 
   return (
@@ -686,7 +690,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
           rehypePlugins={[
             rehypeRaw,
             rehypeFoldSections,
-            rehypeBlockAnchors,
+            [rehypeBlockAnchors, { lineOffset: sourceLineOffset }],
             [rehypeSanitize, markdownSanitizeSchema],
             [rehypeDiffLines, { changedLines: [...(diffChangedLines ?? [])] }],
           ]}

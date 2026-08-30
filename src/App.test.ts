@@ -218,7 +218,7 @@ describe("document link focus", () => {
 });
 
 describe("TOC pointer focus", () => {
-  it("returns a fold id only while the pointer target is inside that section's heading", () => {
+  it("returns the nearest fold id while the pointer target is inside that section", () => {
     const root = document.createElement("div");
     root.innerHTML = '<section data-fold-id="first"><h2><button><span>First</span></button></h2><div><p>Between headings</p></div></section><section data-fold-id="second"><h2>Second</h2></section>';
     const headingText = root.querySelector("h2 span");
@@ -226,17 +226,17 @@ describe("TOC pointer focus", () => {
     const outside = document.createElement("h2");
 
     expect(tocHeadingIdAtPointer(headingText, root)).toBe("first");
-    expect(tocHeadingIdAtPointer(betweenHeadings, root)).toBeNull();
+    expect(tocHeadingIdAtPointer(betweenHeadings, root)).toBe("first");
     expect(tocHeadingIdAtPointer(outside, root)).toBeNull();
     expect(tocHeadingIdAtPointer(null, root)).toBeNull();
   });
 
-  it("uses the pointer event target and clears focus when leaving the preview", () => {
+  it("uses the pointer event target and preserves focus when leaving the preview", () => {
     const source = readFileSync(join(process.cwd(), "src/App.tsx"), "utf8");
     expect(source).toContain("const target = event.target instanceof Element ? event.target : null;");
     expect(source).not.toContain("document.elementFromPoint(event.clientX, event.clientY)");
     expect(source).toContain("onPointerLeave={handlePreviewPointerLeave}");
-    expect(source).toContain("setActiveTocHeadingId(null);");
+    expect(source).not.toContain("pendingTocHeadingId.current = null;\n    setActiveTocHeadingId(null);");
   });
 });
 

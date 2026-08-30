@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import "../styles/document-side-panel.css";
 
 export type DocumentSidePanelTab = "toc" | "search" | "images";
@@ -28,6 +29,7 @@ export function DocumentSidePanel({
 }) {
   const generatedId = useId().replace(/:/g, "");
   const panelId = `document-side-panel-${generatedId}`;
+  const panelRef = useFocusTrap<HTMLElement>(Boolean(activeTab), onClose);
   const content = activeTab === "toc" ? toc : activeTab === "search" ? search : images;
 
   return <section className={`document-side-panel-root${activeTab ? " is-open" : ""}`} aria-label="文書サイドパネル">
@@ -47,7 +49,7 @@ export function DocumentSidePanel({
     </nav>
     {activeTab && <>
       <button type="button" className="document-side-panel__backdrop" aria-label="サイドパネルを閉じる" onClick={onClose} />
-      <aside id={panelId} className="document-side-panel" aria-label={`${PANEL_LABELS[activeTab]}パネルの内容`}>
+      <aside ref={panelRef} id={panelId} className="document-side-panel" role="dialog" aria-modal="true" tabIndex={-1} aria-label={`${PANEL_LABELS[activeTab]}パネルの内容`}>
         <header className="document-side-panel__header">
           <strong>{PANEL_LABELS[activeTab]}</strong>
           <button type="button" aria-label="サイドパネルを閉じる" onClick={onClose}>×</button>

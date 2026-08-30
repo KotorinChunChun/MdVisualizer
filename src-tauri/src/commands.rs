@@ -524,7 +524,7 @@ pub struct DiagnosticItem {
     message: String,
 }
 
-fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>) -> String {
+fn heading_base_id(value: &str) -> String {
     let normalized = value.trim().to_lowercase();
     let mut slug = String::new();
     let mut separator = false;
@@ -538,11 +538,15 @@ fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>
         }
     }
     let slug = slug.trim_matches('-').to_string();
-    let base = if slug.is_empty() {
+    if slug.is_empty() {
         "section".to_string()
     } else {
         slug
-    };
+    }
+}
+
+fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>) -> String {
+    let base = heading_base_id(value);
     let count = counts
         .entry(base.clone())
         .and_modify(|value| *value += 1)
@@ -554,6 +558,75 @@ fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>
     }
 }
 
+fn decode_reference(value: &str) -> String {
+    percent_encoding::percent_decode_str(value).decode_utf8_lossy().into_owned()
+}
+
+fn markdown_heading_ids(source: &str) -> (std::collections::HashSet<String>, std::collections::HashMap<String, usize>) {
+    let mut counts = std::collections::HashMap::new();
+    let mut ids = std::collections::HashSet::new();
+    let mut bases = std::collections::HashMap::new();
+    let mut in_fence = false;
+    for line in source.replace("\r\n", "\n").lines() {
+        if line.trim_start().starts_with("```") || line.trim_start().starts_with("~~~") { in_fence = !in_fence; continue; }
+        if in_fence { continue; }
+        if let Some(captures) = regex::Regex::new(r"^(#{1,6})\s+(.+?)\s*#*\s*$").unwrap().captures(line) {
+            let title = captures.get(2).map(|value| value.as_str()).unwrap_or_default();
+            let id = heading_id(title, &mut counts);
+            let base = heading_base_id(title);
+            *bases.entry(base).or_insert(0) += 1;
+            ids.insert(id);
+        }
+    }
+    (ids, bases)
+}
+
+fn diagnostic_reference_target(reference: &str, base: &Path, document_path: &Path) -> (PathBuf, Option<String>) {
+    let decoded = decode_reference(reference);
+    let (file_part, anchor) = decoded.split_once('#').map_or((decoded.as_str(), None), |(file, anchor)| (file, Some(anchor.to_string())));
+    let path_part = file_part.split_once('?').map_or(file_part, |(path, _)| path);
+    let target = if path_part.is_empty() {
+        document_path.to_path_buf()
+    } else {
+        let candidate = PathBuf::from(path_part);
+        if candidate.is_absolute() { candidate } else { base.join(candidate) }
+    };
+    (target, anchor)
+}
+
+fn collect_document_watch_targets(loaded: &MarkdownLoadResult) -> Vec<String> {
+    if loaded.kind != DocumentKind::Markdown { return vec![loaded.path.clone()]; }
+    let source = loaded.content.replace("\r\n", "\n");
+    let base = PathBuf::from(&loaded.base_dir);
+    let markdown_link = regex::Regex::new(r#"!?\[[^\]]*\]\(\s*<?([^>\s)]+)>?(?:\s+[^)]*)?\)"#).unwrap();
+    let html_image = regex::Regex::new(r#"(?i)<img\b[^>]*\bsrc\s*=\s*[\"']([^\"']+)[\"'][^>]*>"#).unwrap();
+    let obsidian = regex::Regex::new(r#"!?\[\[([^\]|#]+)(?:\|[^\]]*)?\]\]"#).unwrap();
+    let mut result = vec![PathBuf::from(&loaded.path)];
+    let mut in_fence = false;
+    for line in source.lines() {
+        if line.trim_start().starts_with("```") || line.trim_start().starts_with("~~~") { in_fence = !in_fence; continue; }
+        if in_fence { continue; }
+        let mut refs: Vec<String> = markdown_link.captures_iter(line).filter_map(|capture| capture.get(1).map(|value| value.as_str().to_owned())).collect();
+        refs.extend(html_image.captures_iter(line).filter_map(|capture| capture.get(1).map(|value| value.as_str().to_owned())));
+        refs.extend(obsidian.captures_iter(line).filter_map(|capture| capture.get(1).map(|value| value.as_str().trim().to_owned())));
+        for reference in refs {
+            let decoded = decode_reference(&reference);
+            if decoded.starts_with("http://") || decoded.starts_with("https://") || decoded.starts_with("mailto:") || decoded.starts_with("data:") { continue; }
+            let (target, _) = diagnostic_reference_target(&reference, &base, Path::new(&loaded.path));
+            if target != Path::new(&loaded.path) { result.push(target); }
+        }
+    }
+    result.sort();
+    result.dedup();
+    result.into_iter().map(|path| path.to_string_lossy().into_owned()).collect()
+}
+
+#[tauri::command]
+pub fn document_watch_targets(path: String) -> Result<Vec<String>, String> {
+    let loaded = do_load_markdown(&path).map_err(|error| error.to_string())?;
+    Ok(collect_document_watch_targets(&loaded))
+}
+
 #[tauri::command]
 pub fn diagnose_document(path: String) -> Result<Vec<DiagnosticItem>, String> {
     let loaded = do_load_markdown(&path).map_err(|error| error.to_string())?;
@@ -563,98 +636,58 @@ pub fn diagnose_document(path: String) -> Result<Vec<DiagnosticItem>, String> {
     let source = loaded.content.replace("\r\n", "\n");
     let base = PathBuf::from(&loaded.base_dir);
     let mut diagnostics = Vec::new();
-    let mut ids = std::collections::HashMap::new();
-    let mut heading_ids = std::collections::HashSet::new();
+    let (heading_ids, heading_bases) = markdown_heading_ids(&source);
+    let mut seen_heading_bases = std::collections::HashMap::new();
+    let mut in_heading_fence = false;
     for (index, line) in source.lines().enumerate() {
-        if let Some(captures) = regex::Regex::new(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
-            .unwrap()
-            .captures(line)
-        {
-            let id = heading_id(
-                captures
-                    .get(2)
-                    .map(|value| value.as_str())
-                    .unwrap_or_default(),
-                &mut ids,
-            );
-            if !heading_ids.insert(id.clone()) {
-                diagnostics.push(DiagnosticItem {
-                    severity: "warning".into(),
-                    kind: "見出しID".into(),
-                    line: index + 1,
-                    reference: id,
-                    message: "見出しIDが重複しています。".into(),
-                });
+        if line.trim_start().starts_with("```") || line.trim_start().starts_with("~~~") { in_heading_fence = !in_heading_fence; continue; }
+        if in_heading_fence { continue; }
+        if line.trim_start().starts_with('#') {
+            // Heading duplicate checks are based on the renderer's base slug,
+            // before its deterministic -2/-3 suffix is applied.
+            if let Some(captures) = regex::Regex::new(r"^#{1,6}\s+(.+?)\s*#*\s*$").unwrap().captures(line) {
+                let base_id = heading_base_id(captures.get(1).map(|value| value.as_str()).unwrap_or_default());
+                let seen = seen_heading_bases.entry(base_id.to_string()).or_insert(0);
+                *seen += 1;
+                if *seen > 1 && heading_bases.get(&base_id).copied().unwrap_or(0) > 1 {
+                    diagnostics.push(DiagnosticItem { severity: "warning".into(), kind: "見出しID".into(), line: index + 1, reference: base_id.into(), message: "見出しIDの基底値が重複しています。自動採番されたアンカーを使用してください。".into() });
+                }
             }
         }
     }
-    let link = regex::Regex::new(r"!?\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)").unwrap();
+    let markdown_link = regex::Regex::new(r#"!?\[[^\]]*\]\(\s*<?([^>\s)]+)>?(?:\s+[^)]*)?\)"#).unwrap();
+    let html_image = regex::Regex::new(r#"(?i)<img\b[^>]*\bsrc\s*=\s*[\"']([^\"']+)[\"'][^>]*>"#).unwrap();
+    let html_alt = regex::Regex::new(r#"(?i)\balt\s*=\s*[\"']([^\"']*)[\"']"#).unwrap();
+    let mut in_fence = false;
     for (index, line) in source.lines().enumerate() {
-        for captures in link.captures_iter(line) {
-            let reference = captures
-                .get(1)
-                .map(|value| value.as_str())
-                .unwrap_or_default();
-            if reference.starts_with("http://")
-                || reference.starts_with("https://")
-                || reference.starts_with("mailto:")
-            {
-                continue;
-            }
-            let (file_part, anchor) = reference
-                .split_once('#')
-                .map_or((reference, None), |(file, anchor)| (file, Some(anchor)));
-            let target = if file_part.is_empty() {
-                PathBuf::from(&loaded.path)
-            } else {
-                let candidate = PathBuf::from(file_part);
-                if candidate.is_absolute() {
-                    candidate
-                } else {
-                    base.join(candidate)
-                }
-            };
+        if line.trim_start().starts_with("```") || line.trim_start().starts_with("~~~") { in_fence = !in_fence; continue; }
+        if in_fence { continue; }
+        let mut references: Vec<(String, bool)> = markdown_link.captures_iter(line).filter_map(|captures| captures.get(1).map(|value| (value.as_str().into(), line.trim_start().starts_with("!")))).collect();
+        references.extend(html_image.captures_iter(line).filter_map(|captures| captures.get(1).map(|value| (value.as_str().into(), true))));
+        for (reference, is_image) in references {
+            let decoded = decode_reference(&reference);
+            if decoded.starts_with("http://") || decoded.starts_with("https://") || decoded.starts_with("mailto:") || decoded.starts_with("data:") { continue; }
+            let (target, anchor) = diagnostic_reference_target(&reference, &base, Path::new(&loaded.path));
             if !target.exists() {
                 diagnostics.push(DiagnosticItem {
                     severity: "error".into(),
-                    kind: if line.trim_start().starts_with("!") {
-                        "画像".into()
-                    } else {
-                        "Markdownリンク".into()
-                    },
-                    line: index + 1,
-                    reference: reference.into(),
+                    kind: if is_image { "画像".into() } else { "Markdownリンク".into() }, line: index + 1, reference: reference.clone(),
                     message: "参照先ファイルが存在しません。".into(),
                 });
             } else if let Some(anchor) = anchor {
-                if target == PathBuf::from(&loaded.path) && !heading_ids.contains(anchor) {
+                let target_ids = if target == Path::new(&loaded.path) { heading_ids.clone() } else if target.extension().is_some_and(|extension| extension.eq_ignore_ascii_case("md")) {
+                    match std::fs::read_to_string(&target) { Ok(content) => markdown_heading_ids(&content).0, Err(_) => std::collections::HashSet::new() }
+                } else { std::collections::HashSet::new() };
+                if !target_ids.contains(&anchor) {
                     diagnostics.push(DiagnosticItem {
-                        severity: "error".into(),
-                        kind: "見出しアンカー".into(),
-                        line: index + 1,
-                        reference: reference.into(),
-                        message: "参照先見出しが存在しません。".into(),
+                        severity: "error".into(), kind: "見出しアンカー".into(), line: index + 1, reference: reference.clone(), message: "参照先見出しが存在しません。".into(),
                     });
                 }
             }
         }
-        if let Some(captures) = regex::Regex::new(r"!\[([^\]]*)\]\(")
-            .unwrap()
-            .captures(line)
-        {
-            if captures
-                .get(1)
-                .map(|value| value.as_str().trim().is_empty())
-                .unwrap_or(false)
-            {
-                diagnostics.push(DiagnosticItem {
-                    severity: "warning".into(),
-                    kind: "画像alt".into(),
-                    line: index + 1,
-                    reference: line.trim().into(),
-                    message: "画像のaltテキストが空です。".into(),
-                });
-            }
+        let markdown_alt = regex::Regex::new(r#"!\[([^\]]*)\]\("#).unwrap();
+        if markdown_alt.captures_iter(line).any(|captures| captures.get(1).is_some_and(|value| value.as_str().trim().is_empty())) || html_image.captures_iter(line).any(|_| html_alt.captures_iter(line).next().is_none_or(|capture| capture.get(1).is_none_or(|value| value.as_str().trim().is_empty()))) {
+            diagnostics.push(DiagnosticItem { severity: "warning".into(), kind: "画像alt".into(), line: index + 1, reference: line.trim().into(), message: "画像のaltテキストが空です。".into() });
         }
     }
     Ok(diagnostics)
@@ -1972,5 +2005,20 @@ mod tests {
         assert!(diagnose_document(svg.to_string_lossy().into_owned())
             .unwrap()
             .is_empty());
+    }
+
+    #[test]
+    fn diagnostics_decode_references_and_check_external_anchors_and_html_alt() {
+        let directory = tempfile::tempdir().unwrap();
+        let target = directory.path().join("参照先.md");
+        std::fs::write(&target, "# 見出し\n").unwrap();
+        let source = directory.path().join("main.md");
+        std::fs::write(&source, "# 重複\n# 重複\n[ok](%E5%8F%82%E7%85%A7%E5%85%88.md#%E8%A6%8B%E5%87%BA%E3%81%97)\n[bad](%E5%8F%82%E7%85%A7%E5%85%88.md#missing)\n<img src=\"missing.png\" alt=\"\">\n```md\n[ignored](missing.md)\n````\n").unwrap();
+        let items = diagnose_document(source.to_string_lossy().into_owned()).unwrap();
+        assert!(items.iter().any(|item| item.kind == "見出しID"));
+        assert!(items.iter().any(|item| item.kind == "見出しアンカー" && item.reference.contains("missing")));
+        assert!(items.iter().any(|item| item.kind == "画像" && item.reference == "missing.png"));
+        assert!(items.iter().any(|item| item.kind == "画像alt"));
+        assert!(!items.iter().any(|item| item.reference.contains("ignored")));
     }
 }

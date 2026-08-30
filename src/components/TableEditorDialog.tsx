@@ -1,6 +1,7 @@
 import { ClipboardEvent, KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { calculateTableAggregates, isTableAggregateResultCell } from "../lib/tableAggregation";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export type TableColumnAlignment = "left" | "center" | "right" | null;
 
@@ -75,6 +76,7 @@ export function TableEditorDialog({
   onSave,
 }: TableEditorDialogProps) {
   const titleId = useId();
+  const dialogRef = useFocusTrap<HTMLElement>(true, onCancel);
   const [headers, setHeaders] = useState(() => [...initialHeaders]);
   const [rows, setRows] = useState(() => initialRows.map((row) => [...row]));
   const [alignments, setAlignments] = useState<TableColumnAlignment[]>(() => initialHeaders.map((_, index) => initialAlignments?.[index] ?? null));
@@ -83,7 +85,6 @@ export function TableEditorDialog({
   const cellRefs = useRef(new Map<string, HTMLInputElement>());
   const dragging = useRef(false);
   const programmaticFocus = useRef<string | null>(null);
-  const dialogRef = useRef<HTMLElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const pointerDrag = useRef<TablePointerDragSession | null>(null);
   const suppressHandleClick = useRef(false);
@@ -504,7 +505,7 @@ export function TableEditorDialog({
   });
 
   return <div className="table-editor-overlay" onContextMenu={(event) => openContextMenu(event)}>
-    <section ref={dialogRef} className="table-editor-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onCopy={handleCopy} onPointerMove={moveHandlePointer} onPointerUp={finishHandlePointer} onPointerCancel={(event) => finishHandlePointer(event, true)} onContextMenu={(event) => openContextMenu(event)}>
+    <section ref={dialogRef} className="table-editor-dialog" role="dialog" aria-modal="true" tabIndex={-1} aria-labelledby={titleId} onCopy={handleCopy} onPointerMove={moveHandlePointer} onPointerUp={finishHandlePointer} onPointerCancel={(event) => finishHandlePointer(event, true)} onContextMenu={(event) => openContextMenu(event)}>
       <header className="table-editor-toolbar">
         <strong id={titleId}>表を編集</strong>
         <div className="table-editor-aggregate-menu">

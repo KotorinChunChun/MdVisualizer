@@ -95,6 +95,7 @@ export function PresentationView({
   onOpenDocumentWindow,
   lineThreshold = 10,
   initialHeadingId,
+  searchSourceLine,
   onPageChange,
   onMediaOpen,
   onBeforeNavigate,
@@ -113,6 +114,7 @@ export function PresentationView({
   onOpenDocumentWindow?: (path: string) => void;
   lineThreshold?: number;
   initialHeadingId?: string;
+  searchSourceLine?: number;
   onPageChange?: (headingId: string, sourceLine: number) => void;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   onBeforeNavigate?: () => void;
@@ -121,6 +123,8 @@ export function PresentationView({
   const initialIndex = () => Math.max(0, model.pages.findIndex((candidate) => candidate.id === initialHeadingId || candidate.mergedHeadingIds.includes(initialHeadingId ?? "")));
   const [pageIndex, setPageIndex] = useState(initialIndex);
   const currentCrumbRef = useRef<HTMLButtonElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const appliedSearchLineRef = useRef<number | null>(null);
   const synchronizedHeadingRef = useRef(initialHeadingId);
   const synchronizedModelRef = useRef(model);
   const pendingExternalPageRef = useRef<number | null>(null);
@@ -150,6 +154,20 @@ export function PresentationView({
   useEffect(() => {
     currentCrumbRef.current?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
   }, [pageIndex]);
+  useEffect(() => {
+    if (searchSourceLine === undefined || appliedSearchLineRef.current === searchSourceLine) return;
+    const target = [...(stageRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
+      .map((candidate) => ({ candidate, line: Number(candidate.dataset.sourceLine) }))
+      .filter((entry) => Number.isFinite(entry.line))
+      .sort((left, right) => left.line - right.line)
+      .reverse()
+      .find((entry) => entry.line <= searchSourceLine)?.candidate;
+    if (!target) return;
+    appliedSearchLineRef.current = searchSourceLine;
+    target.classList.add("source-navigation-target");
+    window.setTimeout(() => target.classList.remove("source-navigation-target"), 1400);
+    target.scrollIntoView({ block: "center" });
+  }, [pageIndex, searchSourceLine]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!shouldHandlePresentationArrowKey(event)) return;
@@ -186,7 +204,7 @@ export function PresentationView({
       </nav>
     </div>
     <div className="presentation-main">
-      <div className="presentation-stage">
+      <div ref={stageRef} className="presentation-stage">
         <MarkdownPreview
           content={page.markdown}
           baseDir={baseDir}
@@ -200,6 +218,7 @@ export function PresentationView({
           imageDisplaySizes={imageDisplaySizes}
           onOpenDocument={onOpenDocument} onOpenDocumentWindow={onOpenDocumentWindow}
           presentationMode
+          sourceLineOffset={page.sourceLine - 1}
           onMediaOpen={onMediaOpen}
         />
         <PresentationChildHeadings childIds={page.childIds} headings={model.headings} currentHeadingId={currentHeadingId} onSelect={jumpToHeading} />
@@ -207,7 +226,7 @@ export function PresentationView({
     </div>
     <div className="presentation-print-pages" aria-hidden="true">
       {model.pages.map((printPage) => <article className="presentation-print-page" key={printPage.id}>
-        <MarkdownPreview content={printPage.markdown} baseDir={baseDir} sourcePath={sourcePath} imageVersions={imageVersions} theme={theme} onError={onError} mermaidMode={mermaidMode} windowId={windowId} tabId={`${tabId}:print:${printPage.id}`} imageDisplaySizes={imageDisplaySizes} onOpenDocument={onOpenDocument} onOpenDocumentWindow={onOpenDocumentWindow} presentationMode onMediaOpen={onMediaOpen} />
+        <MarkdownPreview content={printPage.markdown} baseDir={baseDir} sourcePath={sourcePath} sourceLineOffset={printPage.sourceLine - 1} imageVersions={imageVersions} theme={theme} onError={onError} mermaidMode={mermaidMode} windowId={windowId} tabId={`${tabId}:print:${printPage.id}`} imageDisplaySizes={imageDisplaySizes} onOpenDocument={onOpenDocument} onOpenDocumentWindow={onOpenDocumentWindow} presentationMode onMediaOpen={onMediaOpen} />
         <PresentationChildHeadings childIds={printPage.childIds} headings={model.headings} readOnly />
       </article>)}
     </div>

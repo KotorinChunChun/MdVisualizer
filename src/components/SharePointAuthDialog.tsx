@@ -1,4 +1,5 @@
 import type { SharePointAuthPrompt } from "../lib/sharePoint";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import "../styles/sharepoint-auth.css";
 
 export function SharePointAuthDialog({
@@ -10,8 +11,9 @@ export function SharePointAuthDialog({
   onOpenBrowser: () => void;
   onDismiss: () => void;
 }) {
+  const dialogRef = useFocusTrap<HTMLElement>(true, onDismiss);
   return <div className="sharepoint-auth-backdrop" role="presentation">
-    <section className="sharepoint-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="sharepoint-auth-title">
+    <section ref={dialogRef} className="sharepoint-auth-dialog" role="dialog" aria-modal="true" tabIndex={-1} aria-labelledby="sharepoint-auth-title">
       <h2 id="sharepoint-auth-title">Microsoftへサインイン</h2>
       <p>ブラウザで次のコードを入力してください。サインインが完了すると文書を表示します。</p>
       <output className="sharepoint-auth-code" aria-label="サインインコード">{prompt.userCode}</output>

@@ -100,7 +100,7 @@ describe("SettingsPanel", () => {
     expect(screen.getByLabelText("印刷スタイルプレビュー").getAttribute("style")).toContain("rgb(255, 255, 255)");
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0][5]).toEqual({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true });
+    expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true, foldMode: "all", showTitle: true, showFilename: true, showDate: true, showPageNumbers: true });
   });
 
   it("previews and saves Markdown layout settings with a generated CSS file", async () => {

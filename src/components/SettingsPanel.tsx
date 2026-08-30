@@ -177,6 +177,15 @@ export function SettingsPanel({
         {PRINT_FONT_FAMILIES.map((value) => <option key={value} value={value}>{({ system: "システム", serif: "明朝／セリフ", "sans-serif": "ゴシック／サンセリフ", monospace: "等幅" } as const)[value]}</option>)}
       </select></label>
       <label className="print-style-settings__toggle"><span>白黒で印刷</span><input aria-label="白黒印刷" type="checkbox" checked={printDraft.monochrome} onChange={(event) => setPrintDraft((current) => ({ ...current, monochrome: event.target.checked }))} /></label>
+      <label>折りたたみ状態<select aria-label="印刷時の折りたたみ" value={printDraft.foldMode} onChange={(event) => setPrintDraft((current) => ({ ...current, foldMode: event.target.value as PrintStyleSettings["foldMode"] }))}>
+        <option value="all">すべて展開</option><option value="current">現在の状態</option>
+      </select></label>
+      <div className="print-style-settings__toggles">
+        <label><input type="checkbox" checked={printDraft.showTitle} onChange={(event) => setPrintDraft((current) => ({ ...current, showTitle: event.target.checked }))} />文書タイトル</label>
+        <label><input type="checkbox" checked={printDraft.showFilename} onChange={(event) => setPrintDraft((current) => ({ ...current, showFilename: event.target.checked }))} />元ファイル名</label>
+        <label><input type="checkbox" checked={printDraft.showDate} onChange={(event) => setPrintDraft((current) => ({ ...current, showDate: event.target.checked }))} />印刷日時</label>
+        <label><input type="checkbox" checked={printDraft.showPageNumbers} onChange={(event) => setPrintDraft((current) => ({ ...current, showPageNumbers: event.target.checked }))} />ページ番号</label>
+      </div>
       <div className="print-style-preview" aria-label="印刷スタイルプレビュー" style={{ color: printDraft.headingColor, background: printDraft.monochrome ? "#ffffff" : printDraft.backgroundColor, borderColor: printDraft.monochrome ? "#000000" : printDraft.borderColor }}>
         <strong>見出しプレビュー</strong><p>本文と罫線の印刷イメージ</p>
       </div>

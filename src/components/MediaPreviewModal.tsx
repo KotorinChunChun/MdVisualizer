@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { MermaidToolbar } from "./MermaidToolbar";
 import { ImageMetadataEditor } from "./ImageMetadataEditor";
 import { ExternalActions } from "./ExternalActions";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { ExternalAppConfig } from "../types/settings";
 import type { AssetConversionContext } from "../lib/assetConversion";
 
@@ -98,6 +99,7 @@ export function MediaPreviewModal({
   initialViewState?: MediaPreviewViewState | null;
   onViewStateChange?: (state: MediaPreviewViewState) => void;
 }) {
+  const modalRef = useFocusTrap<HTMLDivElement>(true, onClose);
   const svgSize = useMemo(
     () => content.kind === "svg" ? svgIntrinsicSize(content.svg) : null,
     [content],
@@ -196,10 +198,12 @@ export function MediaPreviewModal({
   };
 
   return createPortal(<div
+    ref={modalRef}
     className="media-preview"
     role="dialog"
     aria-modal="true"
     aria-label={`${content.alt || "メディア"}の拡大表示`}
+    tabIndex={-1}
     onClick={onClose}
   >
     <div className="media-preview__toolbar" onClick={(event) => event.stopPropagation()}>

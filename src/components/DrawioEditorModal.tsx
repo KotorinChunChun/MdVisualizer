@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { disableDrawioPageView, DRAWIO_EDITOR_URL, DRAWIO_ORIGIN, extractDrawioFenceData, parseTrustedDrawioMessage, prepareDrawioLoad } from "../lib/drawio";
 
 export function DrawioEditorModal({ source, onSave, onCancel }: {
@@ -8,6 +9,7 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
   onCancel: () => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const modalRef = useFocusTrap<HTMLDivElement>(true, onCancel);
   const payload = useMemo(() => prepareDrawioLoad(source), [source]);
   const [status, setStatus] = useState("draw.ioを読み込んでいます…");
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
     };
   }, [onCancel, onSave, payload, retryToken]);
 
-  return createPortal(<div className="drawio-editor" role="dialog" aria-modal="true" aria-label="draw.io図の編集">
+  return createPortal(<div ref={modalRef} className="drawio-editor" role="dialog" aria-modal="true" aria-label="draw.io図の編集" tabIndex={-1}>
     <header className="drawio-editor__header">
       <strong>draw.io図の編集</strong>
       <span>{saving ? "Markdownへ反映中…" : status}</span>

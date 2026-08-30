@@ -32,7 +32,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { createMarkdown, diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
+import { createMarkdown, diagnoseDocument, discardStagedAssets, documentWatchTargets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
 import { ToastState, type MarkdownLoadResult } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -67,6 +67,7 @@ import { drawioExternalReference, markdownLineEnding, type DrawioStorageConversi
 import { mermaidExternalReference, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
+import { foldIdsForElement, nearestRenderedSourceBlock } from "./lib/sourceNavigation";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -95,9 +96,7 @@ export function documentLinkTarget(target: EventTarget | null): string | null {
 
 export function tocHeadingIdAtPointer(target: Element | null, markdownRoot: HTMLElement | null): string | null {
   if (!target || !markdownRoot || !markdownRoot.contains(target)) return null;
-  const heading = target.closest<HTMLElement>("h1, h2, h3, h4, h5, h6");
-  if (!heading || !markdownRoot.contains(heading)) return null;
-  return heading.closest<HTMLElement>("[data-fold-id]")?.dataset.foldId ?? null;
+  return target.closest<HTMLElement>("[data-fold-id]")?.dataset.foldId ?? null;
 }
 
 export function resolveDocumentSidePanel(searchOpen: boolean, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): DocumentSidePanelTab | null {
@@ -195,6 +194,7 @@ export function App() {
   const recentSelfSaves = useRef(new Map<string, number>());
   const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
   const [presentationPositions, setPresentationPositions] = useState<Record<string, string>>({});
+  const [presentationSearchLines, setPresentationSearchLines] = useState<Record<string, number>>({});
   const presentationPositionsRef = useRef<Record<string, string>>({});
   const presentationSourceLines = useRef<Record<string, number>>({});
   const wasPresentationMode = useRef(false);
@@ -251,7 +251,9 @@ export function App() {
   const panelBeforeSearchRef = useRef<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([]);
+  const [diagnosticWatchTargets, setDiagnosticWatchTargets] = useState<Record<string, string[]>>({});
   const [printing, setPrinting] = useState(false);
+  const [printStartedAt, setPrintStartedAt] = useState<Date | null>(null);
   const [activeTocHeadingId, setActiveTocHeadingId] = useState<string | null>(null);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
   const [focusedLinkTarget, setFocusedLinkTarget] = useState<string | null>(null);
@@ -574,8 +576,22 @@ export function App() {
   }, [tabsState.tabs, loadTab]);
 
   const watchTargetKey = JSON.stringify(
-    [...new Set(tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document) ? [tab.document.path, ...tab.document.image_paths] : []))].sort(),
+    [...new Set(tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document)
+      ? [...(diagnosticWatchTargets[tab.document.path] ?? [tab.document.path]), ...tab.document.image_paths]
+      : []))].sort(),
   );
+
+  const watchableDocumentsKey = JSON.stringify(tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document) ? [tab.document.path, tab.document.revision] : []));
+  useEffect(() => {
+    let disposed = false;
+    const paths = tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document) ? [tab.document.path] : []);
+    void Promise.all(paths.map(async (path) => [path, await documentWatchTargets(path)] as const)).then((entries) => {
+      if (!disposed) setDiagnosticWatchTargets(Object.fromEntries(entries));
+    }).catch(() => {
+      // The normal image_paths watcher remains active when diagnostics cannot load.
+    });
+    return () => { disposed = true; };
+  }, [watchableDocumentsKey]);
 
   useEffect(() => {
     const targets: string[] = JSON.parse(watchTargetKey);
@@ -1001,22 +1017,57 @@ export function App() {
         presentationPositionsRef.current[activeTab.id] = result.headingId;
         setPresentationPositions((current) => ({ ...current, [activeTab.id]: result.headingId! }));
       }
+      setPresentationSearchLines((current) => ({ ...current, [activeTab.id]: result.line }));
       return;
     }
-    if (result.headingId) {
-      jumpToDocumentHeading(result.headingId);
+    const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
+      .map((block) => ({ block, line: Number(block.dataset.sourceLine) }))
+      .filter((item) => Number.isFinite(item.line))
+      .sort((left, right) => left.line - right.line);
+    const rendered = nearestRenderedSourceBlock(blocks, result.line)?.block;
+    if (rendered) {
+      const foldIds = foldIdsForElement(rendered);
+      if (foldIds.length > 0 && activeTab.path) {
+        setFoldStates((current) => {
+          const currentForPath = current[activeTab.path] ?? {};
+          const nextForPath = { ...currentForPath };
+          let changed = false;
+          for (const foldId of foldIds) if (nextForPath[foldId]) { nextForPath[foldId] = false; changed = true; }
+          return changed ? { ...current, [activeTab.path]: nextForPath } : current;
+        });
+      }
+      rendered.classList.add("source-navigation-target");
+      window.setTimeout(() => rendered.classList.remove("source-navigation-target"), 1400);
+      requestAnimationFrame(() => requestAnimationFrame(() => rendered.scrollIntoView({ block: "center" })));
+      return;
     }
-  }, [activeTab?.document, activeTab?.id, jumpToDocumentHeading, recordNavigationPoint, search]);
+    if (result.headingId) jumpToDocumentHeading(result.headingId);
+  }, [activeTab, jumpToDocumentHeading, recordNavigationPoint, search]);
 
   const jumpToDiagnostic = useCallback((item: DiagnosticItem) => {
     if (!activeTab?.document) return;
     recordNavigationPoint();
-    const lines = activeTab.document.content.split(/\r?\n/);
-    const needle = lines[item.line - 1]?.trim();
-    const target = [...(markdownRef.current?.querySelectorAll<HTMLElement>(".markdown-body *") ?? [])]
-      .find((element) => element.childElementCount === 0 && element.textContent?.trim() === needle);
-    target?.scrollIntoView({ block: "center" });
-  }, [activeTab?.document, recordNavigationPoint]);
+    const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
+      .map((block) => ({ block, line: Number(block.dataset.sourceLine) }))
+      .filter((entry) => Number.isFinite(entry.line))
+      .sort((left, right) => left.line - right.line);
+    const target = nearestRenderedSourceBlock(blocks, item.line)?.block;
+    if (!target) return;
+    const foldIds = foldIdsForElement(target);
+    if (foldIds.length > 0) {
+      setFoldStates((current) => {
+        const currentForPath = current[activeTab.path] ?? {};
+        const nextForPath = { ...currentForPath };
+        let changed = false;
+        for (const foldId of foldIds) if (nextForPath[foldId]) { nextForPath[foldId] = false; changed = true; }
+        return changed ? { ...current, [activeTab.path]: nextForPath } : current;
+      });
+      setActiveTocHeadingId(foldIds[0]);
+    }
+    target.classList.add("source-navigation-target");
+    window.setTimeout(() => target.classList.remove("source-navigation-target"), 1400);
+    requestAnimationFrame(() => requestAnimationFrame(() => target.scrollIntoView({ block: "center" })));
+  }, [activeTab, recordNavigationPoint]);
 
   const releasePaneSync = useCallback(() => {
     if (paneSyncFrame.current) window.cancelAnimationFrame(paneSyncFrame.current);
@@ -1193,8 +1244,8 @@ export function App() {
 
   const handlePreviewPointerLeave = useCallback(() => {
     if (viewModeRef.current === "presentation") return;
-    pendingTocHeadingId.current = null;
-    setActiveTocHeadingId(null);
+    // Keep the last confirmed heading lit while the pointer is outside the
+    // document. It is cleared only by a new pointer position or tab change.
   }, []);
 
   useEffect(() => () => { if (tocPointerFrame.current) window.cancelAnimationFrame(tocPointerFrame.current); }, []);
@@ -1596,13 +1647,14 @@ export function App() {
 
   const printDocument = useCallback(async () => {
     if (!activeTab?.document || printing) return;
+    setPrintStartedAt(new Date());
     setPrinting(true);
     const deadline = Date.now() + 5000;
     while (getMermaidStatus().pending > 0 && Date.now() < deadline) {
       await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
     }
     if (getMermaidStatus().pending > 0) setToast({ id: String(Date.now()), message: "Mermaidの描画待機がタイムアウトしたため、現在の状態で印刷します。", type: "info" });
-    const restore = () => setPrinting(false);
+    const restore = () => { setPrinting(false); setPrintStartedAt(null); };
     window.addEventListener("afterprint", restore, { once: true });
     try { window.print(); window.setTimeout(restore, 1000); } catch (error) { restore(); setToast({ id: String(Date.now()), message: `印刷を開始できません: ${String(error)}`, type: "error" }); }
   }, [activeTab?.document, printing]);
@@ -2107,8 +2159,14 @@ export function App() {
   const scopedMarkdownStyle = scopeMarkdownStyleCss(markdownStyleCss) ?? "";
 
   return (
-    <div className={`app-container${printing ? " is-printing" : ""}`}>
+    <div className={`app-container${printing ? " is-printing" : ""}`} data-print-fold-mode={printStyle.foldMode}>
       <style data-markdown-custom-style>{scopedMarkdownStyle}</style>
+      {printing && activeTab?.document && <div className="print-metadata" aria-hidden="true">
+        {printStyle.showTitle && <strong>{activeTab.document.path.split(/[\\/]/).pop() ?? activeTab.document.path}</strong>}
+        {printStyle.showFilename && <span>元ファイル: {activeTab.document.path}</span>}
+        {printStyle.showDate && printStartedAt && <time dateTime={printStartedAt.toISOString()}>印刷日時: {printStartedAt.toLocaleString("ja-JP")}</time>}
+        {printStyle.showPageNumbers && <span className="print-metadata__page-number">ページ </span>}
+      </div>}
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
@@ -2286,6 +2344,7 @@ export function App() {
             onOpenDocumentWindow={handleOpenDocumentWindow}
             lineThreshold={presentationLineThreshold}
             initialHeadingId={presentationPositions[activeTab.id]}
+            searchSourceLine={presentationSearchLines[activeTab.id]}
             onPageChange={(headingId, sourceLine) => {
               presentationPositionsRef.current[activeTab.id] = headingId;
               setPresentationPositions((current) => current[activeTab.id] === headingId ? current : { ...current, [activeTab.id]: headingId });
