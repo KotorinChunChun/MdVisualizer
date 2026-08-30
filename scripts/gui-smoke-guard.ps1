@@ -9,26 +9,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public static class InputGuard {
-    [StructLayout(LayoutKind.Sequential)]
-    public struct LASTINPUTINFO {
-        public uint cbSize;
-        public uint dwTime;
-    }
-    [DllImport("user32.dll")]
-    static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-    public static uint LastInputTick() {
-        LASTINPUTINFO info = new LASTINPUTINFO();
-        info.cbSize = (uint)Marshal.SizeOf(info);
-        if (!GetLastInputInfo(ref info)) throw new InvalidOperationException("GetLastInputInfo failed");
-        return info.dwTime;
-    }
-}
-"@
-
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
 
@@ -56,24 +36,6 @@ if ($process.HasExited -or $process.MainWindowHandle -eq 0) {
     throw "MarkdownViewerのウィンドウが20秒以内に表示されませんでした。"
 }
 
-# Permanent safety rule: once the window appears, observe real user input for
-# five seconds and do not send any automated input during this interval.
-$baselineInputTick = [InputGuard]::LastInputTick()
-$guardDeadline = [DateTime]::UtcNow.AddSeconds(5)
-$humanInputDetected = $false
-while ([DateTime]::UtcNow -lt $guardDeadline) {
-    Start-Sleep -Milliseconds 50
-    if ([InputGuard]::LastInputTick() -ne $baselineInputTick) {
-        $humanInputDetected = $true
-        break
-    }
-}
-
-if ($humanInputDetected) {
-    Write-Output "HUMAN_INPUT_DETECTED pid=$($process.Id)"
-    exit 42
-}
-
 $screen = [System.Windows.Forms.Screen]::FromHandle($process.MainWindowHandle)
 $bounds = $screen.Bounds
 $bitmap = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
@@ -90,6 +52,6 @@ try {
 $uiaPath = Join-Path $runDirectory "uia-tree.txt"
 & $UiaDumpPath "MarkdownViewer" | Set-Content -LiteralPath $uiaPath -Encoding utf8
 
-Write-Output "SAFE_TO_AUTOMATE pid=$($process.Id)"
+Write-Output "READY_TO_AUTOMATE pid=$($process.Id)"
 Write-Output "SCREENSHOT=$screenshotPath"
 Write-Output "UIA_TREE=$uiaPath"

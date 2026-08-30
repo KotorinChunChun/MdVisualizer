@@ -9,33 +9,14 @@ using System;
 using System.Runtime.InteropServices;
 public static class GuiCaptureNative {
     [StructLayout(LayoutKind.Sequential)]
-    public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }
-    [StructLayout(LayoutKind.Sequential)]
     public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
-    [DllImport("user32.dll")] static extern bool GetLastInputInfo(ref LASTINPUTINFO info);
     [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindow(string className, string title);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr window, int command);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr window, out RECT rect);
-    public static uint LastInputTick() {
-        LASTINPUTINFO info = new LASTINPUTINFO();
-        info.cbSize = (uint)Marshal.SizeOf(info);
-        if (!GetLastInputInfo(ref info)) throw new InvalidOperationException("GetLastInputInfo failed");
-        return info.dwTime;
-    }
 }
 "@
 Add-Type -AssemblyName System.Drawing
-
-$baseline = [GuiCaptureNative]::LastInputTick()
-$deadline = [DateTime]::UtcNow.AddSeconds(5)
-while ([DateTime]::UtcNow -lt $deadline) {
-    Start-Sleep -Milliseconds 50
-    if ([GuiCaptureNative]::LastInputTick() -ne $baseline) {
-        Write-Output "HUMAN_INPUT_DETECTED"
-        exit 42
-    }
-}
 
 $window = [GuiCaptureNative]::FindWindow("Tauri Window", "MarkdownViewer")
 if ($window -eq [IntPtr]::Zero) { throw "MarkdownViewer window not found." }

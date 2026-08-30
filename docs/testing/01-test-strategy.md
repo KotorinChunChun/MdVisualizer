@@ -16,8 +16,10 @@
 | Contract | Local/SharePoint/SPFx/Fake provider | 共通fixture＋Vitest/Jest/Rust | PRごと |
 | Integration | Tauri境界、SQLite、Graph/AI mock、CLI process | Rust test、temp DB、mock transport | PRごと |
 | Browser E2E | AppShell、保存、Diff、レスポンシブ、AI fake | Playwright＋ブラウザーハーネス | PRごと |
-| Desktop E2E | 実WebView、Mermaid/draw.io、ファイル、印刷前状態 | 既存CDP smoke＋PowerShell guard | 専用runner/beta前 |
-| UI受入 | OS印刷、資格情報、MSIX、外部アプリ | 5秒人間入力監視付き手順 | beta前 |
+| Desktop E2E | 実WebView、Mermaid/draw.io、ファイル、印刷前状態 | 既存CDP smoke（専用runner） | 専用runner/beta前 |
+| UI受入 | OS印刷、資格情報、MSIX、外部アプリ | 専用runnerまたは手動手順 | beta前 |
+
+当該PCではDesktop E2EとUI受入を実施しない。5秒入力監視は廃止し、必要な実画面確認は別PCまたは専用runnerで行う。
 | Security | XSS、SVG、path、redirect、secret、CLI | corpus test、dependency audit | PR/nightly |
 | Performance | 起動、検索、描画、DB、同期、AI stream | benchmark script、Playwright trace | nightly/beta前 |
 

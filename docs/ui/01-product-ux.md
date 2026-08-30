@@ -276,7 +276,7 @@ toastだけで重要状態を伝えない。競合・offline・未適用AI提案
 - beginner scenario「開く→検索→編集→保存」を5操作群以内で完了する。
 - advanced scenario「診断→該当箇所→Diff→外部図編集」をkeyboard中心で完了する。
 - 同じ操作名と保存意味がdesktop/SPFxで一致する。
-- GUI変更は実画面で5秒入力監視後に確認し、対象画面を証跡保存する。
+- GUI変更の実画面確認は当該PCでは行わず、別PCまたは専用runnerで証跡保存する。
 
 ## 16. 将来拡張案
 

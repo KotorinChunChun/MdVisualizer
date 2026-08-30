@@ -55,8 +55,10 @@ describe("useSearch", () => {
   it("marks matching text and removes only its owned marks", async () => {
     render(<Harness />);
     act(() => screen.getByRole("button", { name: "search" }).click());
-    await waitFor(() => expect(screen.getAllByText(/alpha/i, { selector: "mark" })).toHaveLength(2));
-    expect(screen.getByRole("status", { hidden: true }).textContent).toBe("2");
+    await waitFor(() => {
+      expect(screen.getAllByText(/alpha/i, { selector: "mark" })).toHaveLength(2);
+      expect(screen.getByRole("status", { hidden: true }).textContent).toBe("2");
+    });
     await waitFor(() => expect(document.querySelector("mark[data-active='true']")?.textContent?.toLowerCase()).toBe("alpha"));
     act(() => screen.getByRole("button", { name: "clear" }).click());
     await waitFor(() => expect(document.querySelectorAll("mark[data-markdown-search]")).toHaveLength(0));

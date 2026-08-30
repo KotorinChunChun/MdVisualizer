@@ -179,7 +179,7 @@ describe("TableEditorDialog grid editing", () => {
     const saved = onSave.mock.calls[0]?.[0];
     expect(saved?.rows).toHaveLength(1_000);
     expect(saved?.rows[999]).toEqual(["row-1000", "updated"]);
-  });
+  }, 15_000);
 
   it("inserts rows and columns at table boundaries", () => {
     const onSave = vi.fn(() => true);

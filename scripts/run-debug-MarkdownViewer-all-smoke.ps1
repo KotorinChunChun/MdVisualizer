@@ -16,23 +16,6 @@ $sampleAnalyzer = Join-Path $PSScriptRoot "debug-sample-suite.mjs"
 $runDirectory = Join-Path $OutputDirectory (Get-Date -Format "yyyyMMdd-HHmmss")
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 
-Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public static class MarkdownViewerInputGuard {
-    [StructLayout(LayoutKind.Sequential)]
-    public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }
-    [DllImport("user32.dll")]
-    static extern bool GetLastInputInfo(ref LASTINPUTINFO info);
-    public static uint LastInputTick() {
-        LASTINPUTINFO info = new LASTINPUTINFO();
-        info.cbSize = (uint)Marshal.SizeOf(info);
-        if (!GetLastInputInfo(ref info)) throw new InvalidOperationException("GetLastInputInfo failed");
-        return info.dwTime;
-    }
-}
-"@
-
 function Get-MarkdownViewerProcesses {
     @(Get-Process -ErrorAction SilentlyContinue | Where-Object {
         $_.ProcessName -in @("markdown-viewer", "MarkdownViewer") -and $_.Path
@@ -81,18 +64,6 @@ function Wait-ForMainWindow([Diagnostics.Process]$Process, [int]$TimeoutSeconds 
     if ($Process.HasExited -or $Process.MainWindowHandle -eq 0) {
         throw "MarkdownViewerのウィンドウが$TimeoutSeconds秒以内に表示されませんでした。"
     }
-}
-
-function Wait-ForNoHumanInput {
-    $baseline = [MarkdownViewerInputGuard]::LastInputTick()
-    $deadline = [DateTime]::UtcNow.AddSeconds(5)
-    while ([DateTime]::UtcNow -lt $deadline) {
-        Start-Sleep -Milliseconds 50
-        if ([MarkdownViewerInputGuard]::LastInputTick() -ne $baseline) {
-            return $false
-        }
-    }
-    return $true
 }
 
 $running = Get-MarkdownViewerProcesses
@@ -172,12 +143,7 @@ try {
     $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = $previousWebViewArguments
 }
 Wait-ForMainWindow -Process $process
-
-if (-not (Wait-ForNoHumanInput)) {
-    Write-Output "HUMAN_INPUT_DETECTED pid=$($process.Id)"
-    exit 42
-}
-Write-Output "SAFE_TO_ANALYZE pid=$($process.Id)"
+Write-Output "READY_TO_ANALYZE pid=$($process.Id)"
 
 $restoredState = $null
 $stateDeadline = [DateTime]::UtcNow.AddSeconds(20)
