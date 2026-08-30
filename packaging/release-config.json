@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "entryScript": "scripts\\publish-MarkdownViewer.ps1",
   "application": {
     "displayName": "MarkdownViewer",
     "artifactBaseName": "MarkdownViewer",

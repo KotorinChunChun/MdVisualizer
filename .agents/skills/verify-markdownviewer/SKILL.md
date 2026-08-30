@@ -24,7 +24,7 @@ description: MarkdownViewerの変更、対象版、受入状況をレビュー�
 ## 判定原則
 
 - test成功は実画面品質、OSダイアログ、WebView DOM、外部サービス連携の成功を意味しない。
-- 当該PCではGUI実画面smoke、自動mouse／key入力、画面captureを行わない。別PCまたは専用runnerの残件として明記する。
+- GUI、実画面smoke、自動入力、画面captureの可否は、常にルート`AGENTS.md`の当該PC方針を正本とし、このskillへ固定値を複製しない。
 - test件数、所要時間、p50／p95、warningは今回の出力から取得し、過去文書の値を再利用しない。
 - flaky testを無条件retryで成功扱いにしない。初回失敗と再実行結果を分け、時刻、乱数、network、process依存を調べる。
 - 作業ツリーに無関係な変更がある場合、検証対象と結果への影響を明示する。ユーザー差分を修正、削除、stageしない。
