@@ -98,12 +98,14 @@ interface MarkdownPreviewProps {
   stagedAssetPreviews?: Record<string, string>;
   stagedDrawioSources?: Record<string, string>;
   stagedMermaidSources?: Record<string, string>;
+  stagedTableSources?: Record<string, string>;
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onMermaidStorageConvert?: (context: MermaidStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onTableStorageConvert?: (context: TableStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onTextStorageConvert?: (context: TextStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onExternalFileRename?: (context: ExternalFileRenameContext, filename: string) => boolean | void | Promise<boolean | void>;
-  onStagedTextAssetChange?: (filename: string, text: string) => boolean | void;
+  onExternalTableChange?: (context: ExternalTableChangeContext) => boolean | void | Promise<boolean | void>;
+  onStagedTextAssetChange?: (filename: string, text: string) => boolean | void | Promise<boolean | void>;
   diffChangedLines?: ReadonlySet<number>;
   staticMode?: boolean;
 }
@@ -112,6 +114,12 @@ export interface ExternalFileRenameContext {
   documentPath: string;
   filePath: string;
   source: string;
+}
+
+export interface ExternalTableChangeContext {
+  documentPath: string;
+  source: string;
+  text: string;
 }
 
 type DiffHastNode = {
@@ -182,12 +190,14 @@ interface MarkdownRenderContextValue {
   stagedAssetPreviews: Record<string, string>;
   stagedDrawioSources: Record<string, string>;
   stagedMermaidSources: Record<string, string>;
+  stagedTableSources: Record<string, string>;
   onDrawioStorageConvert?: (context: DrawioStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onMermaidStorageConvert?: (context: MermaidStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onTableStorageConvert?: (context: TableStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onTextStorageConvert?: (context: TextStorageConversionContext) => boolean | void | Promise<boolean | void>;
   onExternalFileRename?: (context: ExternalFileRenameContext, filename: string) => boolean | void | Promise<boolean | void>;
-  onStagedTextAssetChange?: (filename: string, text: string) => boolean | void;
+  onExternalTableChange?: (context: ExternalTableChangeContext) => boolean | void | Promise<boolean | void>;
+  onStagedTextAssetChange?: (filename: string, text: string) => boolean | void | Promise<boolean | void>;
   staticMode: boolean;
 }
 
@@ -403,6 +413,10 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       documentPath={context.documentPath}
       language={tableLanguage}
       version={context.imageVersions[tablePath] ?? 0}
+      stagedSource={context.stagedTableSources[source]}
+      onSave={!context.staticMode && !context.presentationMode && context.onExternalTableChange
+        ? (text) => context.onExternalTableChange?.({ documentPath: context.documentPath!, source, text })
+        : undefined}
       onStorageConvert={context.onTableStorageConvert
         ? (tableSource) => context.onTableStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: tableSource, language: tableLanguage })
         : undefined}
@@ -584,11 +598,13 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   stagedAssetPreviews = {},
   stagedDrawioSources = {},
   stagedMermaidSources = {},
+  stagedTableSources = {},
   onDrawioStorageConvert,
   onMermaidStorageConvert,
   onTableStorageConvert,
   onTextStorageConvert,
   onExternalFileRename,
+  onExternalTableChange,
   onStagedTextAssetChange,
   diffChangedLines,
   staticMode = false,
@@ -646,18 +662,20 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     stagedAssetPreviews,
     stagedDrawioSources,
     stagedMermaidSources,
+    stagedTableSources,
     onDrawioStorageConvert,
     onMermaidStorageConvert,
     onTableStorageConvert,
     onTextStorageConvert,
     onExternalFileRename,
+    onExternalTableChange,
     onStagedTextAssetChange,
     staticMode,
   }), [
     baseDir, codeFenceByOffset, content, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
-    onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, staticMode, tabId, tableByOffset, theme, windowId,
+    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onExternalTableChange, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, stagedTableSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 
   return (

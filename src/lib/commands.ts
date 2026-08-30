@@ -71,6 +71,9 @@ export async function createMarkdown(request: CreateMarkdownRequest): Promise<Ma
 export async function stageDocumentAsset(request: { documentPath: string; preferredFilename: string; preferredSource?: string; base64?: string; text?: string }): Promise<import("../types/app").StagedDocumentAsset> {
   return await invoke("stage_document_asset", { request });
 }
+export async function updateStagedTextAsset(id: string, text: string): Promise<void> {
+  await invoke("update_staged_text_asset", { id, text });
+}
 export async function stageClipboardImage(request: { documentPath: string; preferredFilename: string; base64: string; destination: import("../types/settings").ClipboardImagePngLocation; absoluteDirectory?: string }): Promise<import("../types/app").StagedDocumentAsset> {
   return await invoke("stage_clipboard_image", { request });
 }

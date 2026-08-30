@@ -420,6 +420,18 @@ pub fn stage_document_asset(
 }
 
 #[tauri::command]
+pub fn update_staged_text_asset(
+    state: State<'_, AppState>,
+    id: String,
+    text: String,
+) -> Result<(), String> {
+    state
+        .asset_staging
+        .update_text(&id, &text)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 pub fn stage_clipboard_image(
     state: State<'_, AppState>,
     request: StageClipboardImageRequest,

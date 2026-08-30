@@ -91,6 +91,8 @@ describe("DelimitedTableBlock", () => {
     expect(screen.queryByText("検索")).toBeNull();
     expect(screen.getByPlaceholderText("検索キーワードを入力")).toBeTruthy();
     expect(toolbar.querySelector(".responsive-toolbar__label")?.textContent).toBe("CSV-H");
+    expect(items.getAttribute("style")).toContain("width: auto");
+    expect(items.getAttribute("style")).toContain("flex: 1 1 0px");
   });
 
   it("displays vertical and horizontal aggregate results from the source", () => {

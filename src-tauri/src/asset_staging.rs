@@ -199,6 +199,27 @@ impl AssetStagingManager {
         Ok(StagedAssetResult { id, filename: markdown_source })
     }
 
+    pub fn update_text(&self, id: &str, text: &str) -> AppResult<()> {
+        let bytes = text.as_bytes();
+        if bytes.is_empty() || bytes.len() > MAX_ASSET_BYTES {
+            return Err(AppError::IoError(
+                "Asset data is empty or exceeds 50 MiB.".into(),
+            ));
+        }
+        let entries = self.entries.lock().unwrap();
+        let entry = entries
+            .get(id)
+            .ok_or_else(|| AppError::Conflict(format!("Staged asset is unavailable: {id}")))?;
+        fs::write(&entry.temp_path, bytes)
+            .map_err(|error| AppError::IoError(format!("update staged asset: {error}")))?;
+        OpenOptions::new()
+            .write(true)
+            .open(&entry.temp_path)
+            .and_then(|file| file.sync_all())
+            .map_err(|error| AppError::IoError(format!("sync staged asset: {error}")))?;
+        Ok(())
+    }
+
     pub fn discard(&self, ids: &[String]) {
         let mut entries = self.entries.lock().unwrap();
         for id in ids {
@@ -555,6 +576,26 @@ mod tests {
             Ok(())
         }).unwrap();
         assert_eq!(fs::read_to_string(asset).unwrap(), "new code");
+    }
+
+    #[test]
+    fn updates_staged_text_before_commit() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        let asset = dir.path().join("table.tsv");
+        fs::write(&document, "![TSV](table.tsv)").unwrap();
+        fs::write(&asset, "a\nold").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let staged = manager
+            .stage_relative(&document.to_string_lossy(), "table.tsv", b"a\nfirst")
+            .unwrap();
+
+        manager.update_text(&staged.id, "a\nsecond").unwrap();
+        manager
+            .commit_with(&document, &[staged.id], || Ok(()))
+            .unwrap();
+
+        assert_eq!(fs::read_to_string(asset).unwrap(), "a\nsecond");
     }
 
     #[test]

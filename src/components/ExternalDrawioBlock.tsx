@@ -36,7 +36,7 @@ export function ExternalDrawioBlock({
   onStorageConvert?: (source: string, alt?: string) => boolean | void | Promise<boolean | void>;
   onRename?: (filename: string) => boolean | void | Promise<boolean | void>;
   onError?: (message: string) => void;
-  onStagedSourceChange?: (source: string) => boolean | void;
+  onStagedSourceChange?: (source: string) => boolean | void | Promise<boolean | void>;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
   const path = useMemo(() => resolveLocalImagePath(source, baseDir), [baseDir, source]);
@@ -77,7 +77,7 @@ export function ExternalDrawioBlock({
   const save = async (content: string): Promise<boolean> => {
     if (stagedSource !== undefined) {
       if (!onStagedSourceChange) return false;
-      const accepted = onStagedSourceChange(content);
+      const accepted = await onStagedSourceChange(content);
       if (accepted === false) return false;
       emitToast("success", `${source} の一時ステージを更新しました`);
       return true;

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export interface ResponsiveToolbarItem {
@@ -39,11 +39,12 @@ export function resolvedResponsiveOverflowIds(
   return collapseAll && progressiveIds.length > 0 ? items.map((item) => item.id) : progressiveIds;
 }
 
-export function ResponsiveToolbar({ label, ariaLabel, className = "", items, collapseAll = false }: {
+export function ResponsiveToolbar({ label, ariaLabel, className = "", items, itemsStyle, collapseAll = false }: {
   label?: ReactNode;
   ariaLabel: string;
   className?: string;
   items: ResponsiveToolbarItem[];
+  itemsStyle?: CSSProperties;
   collapseAll?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -127,7 +128,7 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items, col
   const overflow = new Set(overflowIds);
   return <div ref={rootRef} className={`responsive-toolbar ${className}`.trim()} role="toolbar" aria-label={ariaLabel}>
     {label && <div ref={labelRef} className="responsive-toolbar__label">{label}</div>}
-    <div className="responsive-toolbar__items">
+    <div className="responsive-toolbar__items" style={itemsStyle}>
       {items.map((item) => <div
         key={item.id}
         ref={(element) => { if (element) itemRefs.current.set(item.id, element); else itemRefs.current.delete(item.id); }}

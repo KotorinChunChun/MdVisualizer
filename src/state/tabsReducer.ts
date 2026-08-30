@@ -213,7 +213,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         return {
           ...tab,
           draft: action.content,
-          dirty: action.content !== tab.document.content,
+          dirty: action.content !== tab.document.content || Boolean(tab.pendingAssets?.length),
           saveError: null,
         };
       });
@@ -224,6 +224,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "SAVED":
       return updateTab(state, action.id, (tab) => {
         const draft = tab.draft === action.document.content ? action.document.content : tab.draft;
+        const pendingAssets = (tab.pendingAssets ?? []).filter((asset) => !(action.committedAssetIds ?? []).includes(asset.id));
         return {
           ...tab,
           path: action.document.path,
@@ -231,27 +232,30 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
           document: action.document,
           openedContent: action.document.content,
           draft,
-          dirty: draft !== action.document.content,
+          dirty: draft !== action.document.content || pendingAssets.length > 0,
           saving: false,
           saveError: null,
           externalChanged: false,
-          pendingAssets: (tab.pendingAssets ?? []).filter((asset) => !(action.committedAssetIds ?? []).includes(asset.id)),
+          pendingAssets,
         };
       });
     case "IMMEDIATE_SAVED":
-      return updateTab(state, action.id, (tab) => ({
-        ...tab,
-        path: action.document.path,
-        untitled: false,
-        document: action.document,
-        openedContent: action.openedContent,
-        draft: action.draft,
-        dirty: action.draft !== action.document.content,
-        saving: false,
-        saveError: null,
-        externalChanged: false,
-        pendingAssets: (tab.pendingAssets ?? []).filter((asset) => !(action.committedAssetIds ?? []).includes(asset.id)),
-      }));
+      return updateTab(state, action.id, (tab) => {
+        const pendingAssets = (tab.pendingAssets ?? []).filter((asset) => !(action.committedAssetIds ?? []).includes(asset.id));
+        return {
+          ...tab,
+          path: action.document.path,
+          untitled: false,
+          document: action.document,
+          openedContent: action.openedContent,
+          draft: action.draft,
+          dirty: action.draft !== action.document.content || pendingAssets.length > 0,
+          saving: false,
+          saveError: null,
+          externalChanged: false,
+          pendingAssets,
+        };
+      });
     case "SAVE_FAILED":
       return updateTab(state, action.id, (tab) => ({ ...tab, saving: false, saveError: action.error }));
     case "SAVE_CANCELLED":
@@ -259,13 +263,18 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "EDITOR_MODE":
       return updateTab(state, action.id, (tab) => tab.editorMode === action.mode ? tab : { ...tab, editorMode: action.mode });
     case "STAGED_ASSET_ADDED":
-      return updateTab(state, action.id, (tab) => !tab.document ? tab : ({ ...tab, draft: action.content, dirty: action.content !== tab.document.content, pendingAssets: [...(tab.pendingAssets ?? []), action.asset], saveError: null }));
+      return updateTab(state, action.id, (tab) => !tab.document ? tab : ({ ...tab, draft: action.content, dirty: true, pendingAssets: [...(tab.pendingAssets ?? []), action.asset], saveError: null }));
     case "STAGED_ASSET_REMOVED":
-      return updateTab(state, action.id, (tab) => !tab.document ? tab : ({ ...tab, draft: action.content, dirty: action.content !== tab.document.content, pendingAssets: (tab.pendingAssets ?? []).filter((asset) => asset.id !== action.stagingId), saveError: null }));
+      return updateTab(state, action.id, (tab) => {
+        if (!tab.document) return tab;
+        const pendingAssets = (tab.pendingAssets ?? []).filter((asset) => asset.id !== action.stagingId);
+        return { ...tab, draft: action.content, dirty: action.content !== tab.document.content || pendingAssets.length > 0, pendingAssets, saveError: null };
+      });
     case "STAGED_ASSET_UPDATED":
       return updateTab(state, action.id, (tab) => !tab.document ? tab : ({
         ...tab,
         pendingAssets: (tab.pendingAssets ?? []).map((asset) => asset.id === action.stagingId ? { ...asset, text: action.text } : asset),
+        dirty: (tab.pendingAssets ?? []).some((asset) => asset.id === action.stagingId) || tab.dirty,
         saveError: null,
       }));
     case "IMAGE_DISPLAY_SIZE":

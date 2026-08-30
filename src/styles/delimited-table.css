@@ -2,7 +2,8 @@
 .data-grid-toolbar, .data-grid-footer, .table-editor-toolbar, .table-editor-footer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px; background: var(--panel-bg); }
 .data-grid-toolbar { border-bottom: 1px solid var(--border-color); }
 .data-grid-toolbar.responsive-toolbar { flex-wrap: nowrap; }
-.data-grid-toolbar .responsive-toolbar__items { width: 100%; flex: 1 1 auto; }
+.data-grid-toolbar .responsive-toolbar__label { flex: 0 1 auto; }
+.data-grid-toolbar .responsive-toolbar__items { width: auto; flex: 1 1 0; }
 .data-grid-toolbar .responsive-toolbar__item:has(.data-grid-search) { min-width: 160px; flex: 1 1 360px; margin-right: auto; }
 .data-grid-toolbar button, .data-grid-footer button, .table-editor-dialog button { min-height: 30px; padding: 4px 9px; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 5px; background: var(--btn-bg); cursor: pointer; }
 .data-grid-toolbar button.active { color: #fff; border-color: var(--accent-color); background: var(--accent-color); }

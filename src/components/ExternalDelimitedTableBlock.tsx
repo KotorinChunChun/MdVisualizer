@@ -11,6 +11,8 @@ export function ExternalDelimitedTableBlock({
   documentPath,
   language,
   version,
+  stagedSource,
+  onSave,
   onStorageConvert,
   onRename,
   onError,
@@ -20,6 +22,8 @@ export function ExternalDelimitedTableBlock({
   documentPath: string;
   language: DelimitedTableLanguage;
   version: number;
+  stagedSource?: string;
+  onSave?: (source: string) => boolean | void | Promise<boolean | void>;
   onStorageConvert?: (source: string) => boolean | void | Promise<boolean | void>;
   onRename?: (filename: string) => boolean | void | Promise<boolean | void>;
   onError?: (message: string) => void;
@@ -43,12 +47,17 @@ export function ExternalDelimitedTableBlock({
   }, [documentPath, retryToken, source, version]);
 
   if (error) return <div className="data-grid-error" role="alert">{error}<button type="button" onClick={() => setRetryToken((value) => value + 1)}>再読込</button></div>;
-  if (content === null) return <div className="data-grid-error">表ファイルを読み込んでいます…</div>;
+  if (content === null && stagedSource === undefined) return <div className="data-grid-error">表ファイルを読み込んでいます…</div>;
+  const displayedSource = stagedSource ?? content!;
   return <DelimitedTableBlock
     language={language}
-    source={content}
-    headingLabel={<ExternalFileHeader source={source} path={path} kind={language.toUpperCase()} status={version > 0 ? "更新あり" : undefined} onRename={onRename} onError={onError} />}
+    source={displayedSource}
+    headingLabel={<ExternalFileHeader source={source} path={path} kind={language.toUpperCase()} status={stagedSource !== undefined ? "未保存" : version > 0 ? "更新あり" : undefined} onRename={onRename} onError={onError} />}
     storage="external"
-    onStorageConvert={onStorageConvert ? () => onStorageConvert(content) : undefined}
+    onSave={onSave ? (nextSource) => {
+      void Promise.resolve(onSave(nextSource)).catch((saveError) => onError?.(saveError instanceof Error ? saveError.message : String(saveError)));
+      return true;
+    } : undefined}
+    onStorageConvert={onStorageConvert ? () => onStorageConvert(displayedSource) : undefined}
   />;
 }

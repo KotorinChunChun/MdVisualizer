@@ -266,4 +266,28 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].pendingAssets).toEqual([]);
     expect(state.tabs[0].dirty).toBe(true);
   });
+
+  it("marks an unchanged Markdown draft dirty while an external text asset is staged", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:/docs/a.md" });
+    const document = { ...loadedDocument("C:/docs/a.md"), content: "![TSV](table.tsv)" };
+    state = tabsReducer(state, { type: "LOADED", id: "tab-1", generation: 1, document });
+    state = tabsReducer(state, {
+      type: "STAGED_ASSET_ADDED",
+      id: "tab-1",
+      content: document.content,
+      asset: { id: "stage-table", filename: "table.tsv", text: "a\n1" },
+    });
+
+    expect(state.tabs[0].dirty).toBe(true);
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id: "tab-1", content: "temporary" });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id: "tab-1", content: document.content });
+    expect(state.tabs[0].dirty).toBe(true);
+    state = tabsReducer(state, {
+      type: "SAVED",
+      id: "tab-1",
+      document: { ...document, revision: "revision-2" },
+      committedAssetIds: ["stage-table"],
+    });
+    expect(state.tabs[0]).toMatchObject({ dirty: false, pendingAssets: [] });
+  });
 });

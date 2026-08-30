@@ -5,7 +5,7 @@ import { TabBar } from "./components/TabBar";
 import { ContextMenu } from "./components/ContextMenu";
 import { PreviewContextMenu } from "./components/PreviewContextMenu";
 import { StatusBar } from "./components/StatusBar";
-import { MarkdownPreview, type ExternalFileRenameContext } from "./components/MarkdownPreview";
+import { MarkdownPreview, type ExternalFileRenameContext, type ExternalTableChangeContext } from "./components/MarkdownPreview";
 import { StandaloneDocumentPreview } from "./components/StandaloneDocumentPreview";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
@@ -32,7 +32,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { createMarkdown, diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption } from "./lib/commands";
+import { createMarkdown, diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
 import { ToastState, type MarkdownLoadResult } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -1994,11 +1994,35 @@ export function App() {
     setToast({ id: crypto.randomUUID(), message: "外部テキストを埋め込みへ切り替え、Markdownへ即時保存しました。外部ファイルは削除していません。", type: "success" });
   }, [embeddedPathStyle, persistImmediateOccurrence]);
 
-  const updateStagedTextAsset = useCallback((filename: string, text: string): boolean => {
+  const updateStagedTextAssetContent = useCallback(async (filename: string, text: string): Promise<boolean> => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
     const asset = tab?.pendingAssets?.find((candidate) => candidate.filename === filename && candidate.text !== undefined);
     if (!tab || !asset) return false;
+    await updateStagedTextAsset(asset.id, text);
     dispatch({ type: "STAGED_ASSET_UPDATED", id: tab.id, stagingId: asset.id, text });
+    return true;
+  }, []);
+
+  const stageExternalTableEdit = useCallback(async (context: ExternalTableChangeContext): Promise<boolean> => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.document
+      && localPathIdentity(candidate.document.path) === localPathIdentity(context.documentPath));
+    if (!tab?.document || tab.document.kind !== "markdown" || isSharePointDocument(tab.document)) return false;
+    const source = normalizeRelativeAssetPath(context.source);
+    if (!source) throw new Error("外部表の保存先がMarkdownフォルダー内の相対パスではありません。");
+    const existing = tab.pendingAssets?.find((asset) => asset.filename === source && asset.text !== undefined);
+    if (existing) {
+      await updateStagedTextAsset(existing.id, context.text);
+      dispatch({ type: "STAGED_ASSET_UPDATED", id: tab.id, stagingId: existing.id, text: context.text });
+    } else {
+      const staged = await stageDocumentAsset({
+        documentPath: tab.document.path,
+        preferredFilename: source.slice(source.lastIndexOf("/") + 1) || `table.${source.toLowerCase().endsWith(".csv") ? "csv" : "tsv"}`,
+        preferredSource: source,
+        text: context.text,
+      });
+      dispatch({ type: "STAGED_ASSET_ADDED", id: tab.id, content: tab.draft, asset: { ...staged, text: context.text } });
+    }
+    setToast({ id: crypto.randomUUID(), message: `${source} の変更を一時保存しました。文書の保存時に反映します。`, type: "success" });
     return true;
   }, []);
 
@@ -2300,10 +2324,12 @@ export function App() {
             onTableStorageConvert={convertTableStorage}
             onTextStorageConvert={convertTextStorage}
             onExternalFileRename={renameExternalFile}
-            onStagedTextAssetChange={updateStagedTextAsset}
+            onExternalTableChange={stageExternalTableEdit}
+            onStagedTextAssetChange={updateStagedTextAssetContent}
             stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
             stagedDrawioSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.drawio$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
             stagedMermaidSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.(?:mmd|mermaid)$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
+            stagedTableSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.(?:csv|tsv)$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
           />
         ) : (
           <div className="empty-state">
