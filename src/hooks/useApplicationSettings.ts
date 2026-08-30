@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { loadMarkdownStyle, loadSettingsStatus, openMarkdownStyle, saveMarkdownStyle, saveSettings, updateExternalAppSettings, type MarkdownStyleFile } from "../lib/commands";
 import { DEFAULT_MARKDOWN_STYLE_SETTINGS, generateMarkdownStyleCss, normalizeMarkdownStyleSettings, validateMarkdownStyleCss, type MarkdownStyleSettings } from "../lib/markdownStyle";
-import { applyPrintStyleSettings, DEFAULT_PRINT_STYLE_SETTINGS, normalizePrintStyleSettings, type PrintStyleSettings } from "../lib/printStyle";
+import { applyPrintStyleSettings, DEFAULT_PRINT_STYLE_SETTINGS, needsPrintStyleSettingsMigration, normalizePrintStyleSettings, type PrintStyleSettings } from "../lib/printStyle";
 import { applySyntaxHighlightSettings, DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, normalizeSyntaxHighlightSettings, type SyntaxHighlightSettings } from "../lib/syntaxHighlight";
 import { normalizeDocumentViewModes, type ViewMode } from "../lib/viewMode";
 import { normalizeZoom } from "../lib/zoom";
@@ -161,7 +161,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
         || settings.imageEqualPadding === undefined
         || settings.clipboardImage === undefined
         || settings.syntaxHighlight === undefined
-        || settings.printStyle === undefined
+        || needsPrintStyleSettingsMigration(settings.printStyle)
         || settings.markdownStyle === undefined
         || settings.embeddedPathStyle === undefined
         || JSON.stringify(settings.documentViewModes) !== JSON.stringify(normalizedDocumentViewModes);
