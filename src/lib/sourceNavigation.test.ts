@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { foldIdsForElement, headingIdForSourceLine, nearestRenderedSourceBlock, normalizeSourceLines, sourceLineAtTextOffset } from "./sourceNavigation";
+import { foldIdsForElement, headingIdForSourceLine, nearestRenderedSourceBlock, normalizeSourceLines, presentationPageIdForSourceLine, sourceAnchorForLine, sourceLineAtTextOffset } from "./sourceNavigation";
 
 describe("source navigation", () => {
   it("normalizes LF and CRLF without changing source line numbers", () => {
@@ -26,5 +26,13 @@ describe("source navigation", () => {
 
   it("maps offsets to one-based source positions", () => {
     expect(sourceLineAtTextOffset("a\r\nb\nc", 5)).toEqual({ line: 3, column: 1 });
+  });
+
+  it("resolves a rendered source anchor and presentation page by source line", () => {
+    document.body.innerHTML = `<div id="root"><section data-fold-id="heading"><p data-source-line="4" data-block-id="block">本文</p></section></div>`;
+    const root = document.getElementById("root") as HTMLElement;
+    expect(sourceAnchorForLine(root, 4, 3)).toMatchObject({ source: { line: 4, column: 3 }, headingId: "heading", blockId: "block" });
+    expect(presentationPageIdForSourceLine([{ id: "one", sourceLine: 1 }, { id: "two", sourceLine: 8 }], 6)).toBe("one");
+    expect(presentationPageIdForSourceLine([{ id: "one", sourceLine: 1 }, { id: "two", sourceLine: 8 }], 20)).toBe("two");
   });
 });

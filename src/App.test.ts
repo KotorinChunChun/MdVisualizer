@@ -237,6 +237,8 @@ describe("TOC pointer focus", () => {
     expect(source).not.toContain("document.elementFromPoint(event.clientX, event.clientY)");
     expect(source).toContain("onPointerLeave={handlePreviewPointerLeave}");
     expect(source).not.toContain("pendingTocHeadingId.current = null;\n    setActiveTocHeadingId(null);");
+    expect(source).toContain("setActiveTocHeadingId(foldIds[0])");
+    expect(source).toContain("setActiveTocHeadingId((previous) => previous === pending ? previous : pending)");
   });
 });
 

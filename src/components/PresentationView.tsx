@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
 import type { ImageSize } from "../hooks/useInlineImageResize";
 import { buildPresentationModel } from "../lib/presentationModel";
 import type { PresentationHeading } from "../lib/presentationModel";
@@ -90,6 +90,7 @@ export function PresentationView({
   mermaidMode,
   windowId,
   tabId,
+  contentRef,
   imageDisplaySizes,
   onOpenDocument,
   onOpenDocumentWindow,
@@ -109,6 +110,7 @@ export function PresentationView({
   mermaidMode: "on" | "off" | "error-code" | "always-code";
   windowId: string;
   tabId: string;
+  contentRef?: Ref<HTMLDivElement>;
   imageDisplaySizes: Record<string, ImageSize>;
   onOpenDocument?: (path: string) => void;
   onOpenDocumentWindow?: (path: string) => void;
@@ -209,6 +211,7 @@ export function PresentationView({
           content={page.markdown}
           baseDir={baseDir}
           sourcePath={sourcePath}
+          contentRef={contentRef}
           imageVersions={imageVersions}
           theme={theme}
           onError={onError}

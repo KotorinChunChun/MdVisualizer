@@ -67,7 +67,8 @@ import { drawioExternalReference, markdownLineEnding, type DrawioStorageConversi
 import { mermaidExternalReference, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
-import { foldIdsForElement, nearestRenderedSourceBlock } from "./lib/sourceNavigation";
+import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } from "./lib/sourceNavigation";
+import { waitForMermaidPrintReady } from "./lib/printSession";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -252,8 +253,10 @@ export function App() {
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([]);
   const [diagnosticWatchTargets, setDiagnosticWatchTargets] = useState<Record<string, string[]>>({});
+  const [diagnosticsRefresh, setDiagnosticsRefresh] = useState(0);
   const [printing, setPrinting] = useState(false);
   const [printStartedAt, setPrintStartedAt] = useState<Date | null>(null);
+  const printSnapshotRef = useRef<{ tabId: string; scrollTop: number; viewMode: ViewMode } | null>(null);
   const [activeTocHeadingId, setActiveTocHeadingId] = useState<string | null>(null);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
   const [focusedLinkTarget, setFocusedLinkTarget] = useState<string | null>(null);
@@ -477,7 +480,7 @@ export function App() {
       if (!disposed) setDiagnostics([{ severity: "warning", kind: "診断", line: 1, reference: activeTab.document!.path, message: `診断を完了できません: ${String(error)}` }]);
     });
     return () => { disposed = true; };
-  }, [activeSharePoint, activeTab?.document?.path, activeTab?.generation, activeTab?.untitled]);
+  }, [activeSharePoint, activeTab?.document?.path, activeTab?.generation, activeTab?.untitled, diagnosticsRefresh]);
   const restoringSearchFor = useRef<string | null>(null);
 
   useLayoutEffect(() => {
@@ -855,21 +858,36 @@ export function App() {
     navigationHistoryRef.current = recordNavigation(navigationHistoryRef.current, captureNavigationSnapshot());
   }, [captureNavigationSnapshot]);
 
-  const jumpToImageOccurrence = useCallback((occurrenceId: string) => {
-    const target = document.getElementById(occurrenceId);
-    if (!target || !activeTab?.document) return;
+  const navigateToSourceLine = useCallback((line: number, options: { headingId?: string; blockId?: string; targetElement?: HTMLElement; closePanel?: boolean; block?: ScrollLogicalPosition } = {}): boolean => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
+    const root = markdownRef.current;
+    if (!tab?.document || !root || !Number.isFinite(line) || line < 1) return false;
+    const findTarget = () => {
+      if (options.targetElement && root.contains(options.targetElement)) return options.targetElement;
+      if (options.blockId) {
+        const exact = [...root.querySelectorAll<HTMLElement>("[data-block-id]")]
+          .find((candidate) => candidate.dataset.blockId === options.blockId);
+        if (exact) return exact;
+      }
+      if (options.headingId) {
+        const heading = [...root.querySelectorAll<HTMLElement>("[data-fold-id]")]
+          .find((candidate) => candidate.dataset.foldId === options.headingId);
+        if (heading) return heading;
+      }
+      const blocks = [...root.querySelectorAll<HTMLElement>("[data-source-line]")]
+        .map((element) => ({ block: element, line: Number(element.dataset.sourceLine) }))
+        .filter((entry) => Number.isFinite(entry.line))
+        .sort((left, right) => left.line - right.line);
+      return nearestRenderedSourceBlock(blocks, line)?.block ?? null;
+    };
+    if (!sourceAnchorForLine(root, line)) return false;
+    const initialTarget = findTarget();
+    if (!initialTarget) return false;
     recordNavigationPoint();
-    setActiveImageOccurrenceId(occurrenceId);
-
-    const foldIds: string[] = [];
-    let section = target.closest<HTMLElement>("[data-fold-id]");
-    while (section) {
-      if (section.dataset.foldId) foldIds.push(section.dataset.foldId);
-      section = section.parentElement?.closest<HTMLElement>("[data-fold-id]") ?? null;
-    }
+    const foldIds = foldIdsForElement(initialTarget);
     if (foldIds.length > 0) {
       setFoldStates((current) => {
-        const currentForPath = current[activeTab.path] ?? {};
+        const currentForPath = current[tab.path] ?? {};
         const nextForPath = { ...currentForPath };
         let changed = false;
         for (const foldId of foldIds) {
@@ -879,52 +897,48 @@ export function App() {
           }
         }
         if (!changed) return current;
-        void saveFoldState(activeTab.path, nextForPath).catch((error) => setToast({
+        void saveFoldState(tab.path, nextForPath).catch((error) => setToast({
           id: String(Date.now()),
           message: `折りたたみ状態の保存に失敗しました: ${String(error)}`,
           type: "error",
         }));
-        return { ...current, [activeTab.path]: nextForPath };
+        return { ...current, [tab.path]: nextForPath };
       });
+      setActiveTocHeadingId(foldIds[0]);
     }
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) {
-      setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
+    if (options.closePanel && (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches)) {
+      setDocumentPanels((current) => ({ ...current, [tab.id]: null }));
     }
+    const scroll = () => {
+      const target = findTarget();
+      if (!target) return;
+      target.classList.add("source-navigation-target");
+      window.setTimeout(() => target.classList.remove("source-navigation-target"), 1400);
+      target.scrollIntoView({ block: options.block ?? "center", behavior: "auto" });
+    };
+    window.requestAnimationFrame(() => window.requestAnimationFrame(scroll));
+    return true;
+  }, [recordNavigationPoint, setFoldStates]);
+
+  const jumpToImageOccurrence = useCallback((occurrenceId: string) => {
+    const target = document.getElementById(occurrenceId);
+    if (!target || !activeTab?.document) return;
+    setActiveImageOccurrenceId(occurrenceId);
+    const line = Number(target.getAttribute("data-source-line"));
+    if (Number.isFinite(line) && navigateToSourceLine(line, { targetElement: target, closePanel: true })) return;
+    recordNavigationPoint();
+    target.classList.add("source-navigation-target");
+    window.setTimeout(() => target.classList.remove("source-navigation-target"), 1400);
     requestAnimationFrame(() => requestAnimationFrame(() => target.scrollIntoView({ block: "center" })));
-  }, [activeTab?.document, activeTab?.id, activeTab?.path, recordNavigationPoint]);
+  }, [activeTab?.document, navigateToSourceLine, recordNavigationPoint]);
 
   const jumpToDocumentHeading = useCallback((headingId: string) => {
     const section = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-fold-id]") ?? [])]
       .find((candidate) => candidate.dataset.foldId === headingId);
     if (!section || !activeTab?.document) return;
-    recordNavigationPoint();
-    setActiveTocHeadingId(headingId);
-    const parentIds = ancestorFoldIds(section);
-    if (parentIds.length > 0) {
-      setFoldStates((current) => {
-        const currentForPath = current[activeTab.path] ?? {};
-        const nextForPath = { ...currentForPath };
-        let changed = false;
-        for (const parentId of parentIds) {
-          if (nextForPath[parentId]) {
-            nextForPath[parentId] = false;
-            changed = true;
-          }
-        }
-        if (!changed) return current;
-        void saveFoldState(activeTab.path, nextForPath).catch((error) => setToast({
-          id: String(Date.now()),
-          message: `折りたたみ状態の保存に失敗しました: ${String(error)}`,
-          type: "error",
-        }));
-        return { ...current, [activeTab.path]: nextForPath };
-      });
-    }
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 860px)").matches) {
-      setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
-    }
-    requestAnimationFrame(() => requestAnimationFrame(() => section.scrollIntoView({ block: "start" })));
-  }, [activeTab?.document, activeTab?.id, activeTab?.path, recordNavigationPoint]);
+    const line = Number(section.querySelector<HTMLElement>("[data-source-line]")?.dataset.sourceLine ?? section.dataset.sourceLine);
+    navigateToSourceLine(line, { headingId, closePanel: true, block: "start" });
+  }, [activeTab?.document, activeTab?.id, navigateToSourceLine]);
 
   const jumpToTocHeading = useCallback((headingId: string) => {
     if (viewModeRef.current !== "presentation") {
@@ -1020,54 +1034,14 @@ export function App() {
       setPresentationSearchLines((current) => ({ ...current, [activeTab.id]: result.line }));
       return;
     }
-    const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
-      .map((block) => ({ block, line: Number(block.dataset.sourceLine) }))
-      .filter((item) => Number.isFinite(item.line))
-      .sort((left, right) => left.line - right.line);
-    const rendered = nearestRenderedSourceBlock(blocks, result.line)?.block;
-    if (rendered) {
-      const foldIds = foldIdsForElement(rendered);
-      if (foldIds.length > 0 && activeTab.path) {
-        setFoldStates((current) => {
-          const currentForPath = current[activeTab.path] ?? {};
-          const nextForPath = { ...currentForPath };
-          let changed = false;
-          for (const foldId of foldIds) if (nextForPath[foldId]) { nextForPath[foldId] = false; changed = true; }
-          return changed ? { ...current, [activeTab.path]: nextForPath } : current;
-        });
-      }
-      rendered.classList.add("source-navigation-target");
-      window.setTimeout(() => rendered.classList.remove("source-navigation-target"), 1400);
-      requestAnimationFrame(() => requestAnimationFrame(() => rendered.scrollIntoView({ block: "center" })));
-      return;
-    }
+    if (navigateToSourceLine(result.line, { closePanel: false })) return;
     if (result.headingId) jumpToDocumentHeading(result.headingId);
-  }, [activeTab, jumpToDocumentHeading, recordNavigationPoint, search]);
+  }, [activeTab, jumpToDocumentHeading, navigateToSourceLine, recordNavigationPoint, search]);
 
   const jumpToDiagnostic = useCallback((item: DiagnosticItem) => {
     if (!activeTab?.document) return;
-    recordNavigationPoint();
-    const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]
-      .map((block) => ({ block, line: Number(block.dataset.sourceLine) }))
-      .filter((entry) => Number.isFinite(entry.line))
-      .sort((left, right) => left.line - right.line);
-    const target = nearestRenderedSourceBlock(blocks, item.line)?.block;
-    if (!target) return;
-    const foldIds = foldIdsForElement(target);
-    if (foldIds.length > 0) {
-      setFoldStates((current) => {
-        const currentForPath = current[activeTab.path] ?? {};
-        const nextForPath = { ...currentForPath };
-        let changed = false;
-        for (const foldId of foldIds) if (nextForPath[foldId]) { nextForPath[foldId] = false; changed = true; }
-        return changed ? { ...current, [activeTab.path]: nextForPath } : current;
-      });
-      setActiveTocHeadingId(foldIds[0]);
-    }
-    target.classList.add("source-navigation-target");
-    window.setTimeout(() => target.classList.remove("source-navigation-target"), 1400);
-    requestAnimationFrame(() => requestAnimationFrame(() => target.scrollIntoView({ block: "center" })));
-  }, [activeTab, recordNavigationPoint]);
+    navigateToSourceLine(item.line, { closePanel: false });
+  }, [activeTab?.document, navigateToSourceLine]);
 
   const releasePaneSync = useCallback(() => {
     if (paneSyncFrame.current) window.cancelAnimationFrame(paneSyncFrame.current);
@@ -1647,19 +1621,39 @@ export function App() {
 
   const printDocument = useCallback(async () => {
     if (!activeTab?.document || printing) return;
+    printSnapshotRef.current = {
+      tabId: activeTab.id,
+      scrollTop: containerRef.current?.scrollTop ?? activeTab.scrollTop,
+      viewMode: viewModeRef.current,
+    };
     setPrintStartedAt(new Date());
     setPrinting(true);
-    const deadline = Date.now() + 5000;
-    while (getMermaidStatus().pending > 0 && Date.now() < deadline) {
-      await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
+    try {
+      const mermaidWait = await waitForMermaidPrintReady(getMermaidStatus);
+      if (mermaidWait.timedOut) setToast({ id: String(Date.now()), message: "Mermaidの描画待機がタイムアウトしたため、現在の状態で印刷します。", type: "info" });
+    } catch (error) {
+      setToast({ id: String(Date.now()), message: `Mermaidの描画状態を確認できないため、現在の状態で印刷します: ${String(error)}`, type: "info" });
     }
-    if (getMermaidStatus().pending > 0) setToast({ id: String(Date.now()), message: "Mermaidの描画待機がタイムアウトしたため、現在の状態で印刷します。", type: "info" });
     let restored = false;
     const restore = () => {
       if (restored) return;
       restored = true;
       setPrinting(false);
       setPrintStartedAt(null);
+      const snapshot = printSnapshotRef.current;
+      printSnapshotRef.current = null;
+      if (snapshot) {
+        dispatch({ type: "SCROLL", id: snapshot.tabId, scrollTop: snapshot.scrollTop });
+        if (viewModeRef.current !== snapshot.viewMode) {
+          viewModeRef.current = snapshot.viewMode;
+          setViewMode(snapshot.viewMode);
+        }
+        window.requestAnimationFrame(() => {
+          if (tabsStateRef.current.activeId === snapshot.tabId && containerRef.current) {
+            containerRef.current.scrollTop = snapshot.scrollTop;
+          }
+        });
+      }
     };
     window.addEventListener("afterprint", restore, { once: true });
     try { window.print(); window.setTimeout(restore, 1000); } catch (error) { restore(); setToast({ id: String(Date.now()), message: `印刷を開始できません: ${String(error)}`, type: "error" }); }
@@ -2087,6 +2081,9 @@ export function App() {
   const handleMarkdownChanged = useCallback(
     ({ path, changeKind }: { path: string; changeKind: string }) => {
       const identity = localPathIdentity(path);
+      if (Object.values(diagnosticWatchTargets).some((targets) => targets.some((target) => localPathIdentity(target) === identity))) {
+        setDiagnosticsRefresh((value) => value + 1);
+      }
       const selfSaveUntil = recentSelfSaves.current.get(identity);
       if (selfSaveUntil && selfSaveUntil >= Date.now()) return;
       if (selfSaveUntil) recentSelfSaves.current.delete(identity);
@@ -2101,14 +2098,18 @@ export function App() {
         else dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true });
       });
     },
-    [tabsState.tabs, autoReload, reloadTab, updateImageVersion]
+    [tabsState.tabs, autoReload, diagnosticWatchTargets, reloadTab, updateImageVersion]
   );
 
   const handleImageChanged = useCallback(
     ({ path, changeKind }: { path: string; changeKind: string }) => {
+      const identity = localPathIdentity(path);
+      if (Object.values(diagnosticWatchTargets).some((targets) => targets.some((target) => localPathIdentity(target) === identity))) {
+        setDiagnosticsRefresh((value) => value + 1);
+      }
       if (changeKind !== "deleted" && changeKind !== "renamed") updateImageVersion(path);
     },
-    [updateImageVersion]
+    [diagnosticWatchTargets, updateImageVersion]
   );
 
   useTauriEvents(handleMarkdownChanged, handleImageChanged);
@@ -2345,6 +2346,7 @@ export function App() {
             mermaidMode="on"
             windowId={windowLabel}
             tabId={activeTab.id}
+            contentRef={markdownRef}
             imageDisplaySizes={activeTab.imageDisplaySizes}
             onOpenDocument={handleOpenDocument}
             onOpenDocumentWindow={handleOpenDocumentWindow}
