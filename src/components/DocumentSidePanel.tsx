@@ -29,6 +29,7 @@ export function DocumentSidePanel({
 }) {
   const generatedId = useId().replace(/:/g, "");
   const panelId = `document-side-panel-${generatedId}`;
+  const panelTitleId = `${panelId}-title`;
   const panelRef = useFocusTrap<HTMLElement>(Boolean(activeTab), onClose);
   const content = activeTab === "toc" ? toc : activeTab === "search" ? search : images;
 
@@ -49,9 +50,9 @@ export function DocumentSidePanel({
     </nav>
     {activeTab && <>
       <button type="button" className="document-side-panel__backdrop" aria-label="サイドパネルを閉じる" onClick={onClose} />
-      <aside ref={panelRef} id={panelId} className="document-side-panel" role="dialog" aria-modal="true" tabIndex={-1} aria-label={`${PANEL_LABELS[activeTab]}パネルの内容`}>
+      <aside ref={panelRef} id={panelId} className="document-side-panel" role="dialog" aria-modal="true" tabIndex={-1} aria-labelledby={panelTitleId}>
         <header className="document-side-panel__header">
-          <strong>{PANEL_LABELS[activeTab]}</strong>
+          <strong id={panelTitleId}>{PANEL_LABELS[activeTab]}</strong>
           <button type="button" aria-label="サイドパネルを閉じる" onClick={onClose}>×</button>
         </header>
         <div className="document-side-panel__content">{content}</div>

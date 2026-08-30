@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 interface PreviewContextMenuProps {
   x: number;
@@ -17,22 +18,16 @@ interface PreviewContextMenuProps {
 }
 
 export function PreviewContextMenu({ x, y, plainText, markdownText, rowTsv, canEdit, onEdit, onSelectLine, onSelectRow, onSelectAll, onResult, onError, onDismiss }: PreviewContextMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useFocusTrap<HTMLDivElement>(true, onDismiss);
 
   useEffect(() => {
-    menuRef.current?.focus();
     const onPointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Node) || !menuRef.current?.contains(event.target)) onDismiss();
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onDismiss();
-    };
     window.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("keydown", onKeyDown);
     window.addEventListener("blur", onDismiss);
     return () => {
       window.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("blur", onDismiss);
     };
   }, [onDismiss]);

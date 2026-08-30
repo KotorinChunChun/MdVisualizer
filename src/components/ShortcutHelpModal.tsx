@@ -1,4 +1,4 @@
-import { useEffect, type MouseEvent } from "react";
+import { type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { SHORTCUTS } from "../lib/shortcuts";
 import { APP_INFO } from "../lib/appInfo";
@@ -17,15 +17,6 @@ function openProjectLink(event: MouseEvent<HTMLAnchorElement>, url: string) {
 
 export function ShortcutHelpModal({ onClose }: { onClose: () => void }) {
   const modalRef = useFocusTrap<HTMLDivElement>(true, onClose);
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
 
   return createPortal(
     <div ref={modalRef} className="shortcut-help" role="dialog" aria-modal="true" aria-labelledby="shortcut-help-title" tabIndex={-1} onMouseDown={(event) => {

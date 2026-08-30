@@ -20,4 +20,5 @@
 .drawio-editor__warnings p { margin: 2px 0; }
 .drawio-editor__error { display: flex; align-items: center; gap: 12px; color: #b42318; background: #fff1f0; }
 .drawio-editor__error button { margin-left: auto; }
+.drawio-editor:focus-visible { outline: 2px solid var(--accent-color); outline-offset: -2px; }
 .drawio-editor iframe { flex: 1 1 auto; width: 100%; min-height: 0; border: 0; background: #fff; }

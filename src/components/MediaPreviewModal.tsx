@@ -180,17 +180,6 @@ export function MediaPreviewModal({
     zoomAnchorRef.current = null;
   }, [display, effectiveScale, mediaLeft, mediaTop]);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
-
   const toggleMode = () => {
     setMode((current) => current === "fit" ? "actual" : "fit");
     scaleRef.current = 1;
