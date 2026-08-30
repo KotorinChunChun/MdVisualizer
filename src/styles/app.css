@@ -855,8 +855,12 @@ body {
   .print-metadata { display: grid !important; grid-template-columns: minmax(0, 1fr); gap: .2rem .8rem; page-break-after: avoid; break-after: avoid; color: var(--print-effective-heading); border-bottom: 1px solid var(--print-effective-border); margin-bottom: 1rem; padding-bottom: .5rem; }
   .print-metadata > strong { font-size: 1.25em; }
   .print-metadata > span, .print-metadata > time { font-size: .85em; }
-  .print-metadata__page-number { position: fixed; right: 14mm; bottom: 7mm; color: var(--print-effective-heading); }
-  .print-metadata__page-number::after { content: counter(page); }
+  /*
+   * WebView2 exposes the actual page number in its print UI footer. Chromium's
+   * counter(page) is 0 in the document body during that preview, so rendering
+   * a second number here would produce a misleading "ページ 0" footer.
+   */
+  .print-metadata__page-number { display: none !important; }
 }
 
 .print-metadata { display: none; }

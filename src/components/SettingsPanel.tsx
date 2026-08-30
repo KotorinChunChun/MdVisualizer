@@ -184,7 +184,7 @@ export function SettingsPanel({
         <label><input aria-label="文書タイトル" type="checkbox" checked={printDraft.showTitle} onChange={(event) => setPrintDraft((current) => ({ ...current, showTitle: event.target.checked }))} />文書タイトル</label>
         <label><input aria-label="元ファイル名" type="checkbox" checked={printDraft.showFilename} onChange={(event) => setPrintDraft((current) => ({ ...current, showFilename: event.target.checked }))} />元ファイル名</label>
         <label><input aria-label="印刷日時" type="checkbox" checked={printDraft.showDate} onChange={(event) => setPrintDraft((current) => ({ ...current, showDate: event.target.checked }))} />印刷日時</label>
-        <label><input aria-label="ページ番号" type="checkbox" checked={printDraft.showPageNumbers} onChange={(event) => setPrintDraft((current) => ({ ...current, showPageNumbers: event.target.checked }))} />ページ番号</label>
+        <label><input aria-label="ページ番号" type="checkbox" checked={printDraft.showPageNumbers} onChange={(event) => setPrintDraft((current) => ({ ...current, showPageNumbers: event.target.checked }))} />ページ番号（印刷ダイアログ側）</label>
       </div>
       <div className="print-style-preview" aria-label="印刷スタイルプレビュー" style={{ color: printDraft.headingColor, background: printDraft.monochrome ? "#ffffff" : printDraft.backgroundColor, borderColor: printDraft.monochrome ? "#000000" : printDraft.borderColor }}>
         <strong>見出しプレビュー</strong><p>本文と罫線の印刷イメージ</p>

@@ -60,6 +60,7 @@ describe("Markdown and presentation print styles", () => {
     expect(appCss).toContain("margin: 14mm 14mm 16mm");
     expect(appCss).toContain(".presentation-print-page:not(:first-child)");
     expect(appCss).toContain("break-before: page");
-    expect(appCss).toContain(".print-metadata__page-number::after { content: counter(page); }");
+    expect(appCss).toContain(".print-metadata__page-number { display: none !important; }");
+    expect(appCss).not.toContain(".print-metadata__page-number::after");
   });
 });
