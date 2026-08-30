@@ -68,7 +68,7 @@ import { mermaidExternalReference, type MermaidStorageConversionContext } from "
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
 import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } from "./lib/sourceNavigation";
-import { waitForMermaidPrintReady } from "./lib/printSession";
+import { createIdempotentPrintRestorer, waitForMermaidPrintReady } from "./lib/printSession";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -1634,15 +1634,12 @@ export function App() {
     } catch (error) {
       setToast({ id: String(Date.now()), message: `Mermaidの描画状態を確認できないため、現在の状態で印刷します: ${String(error)}`, type: "info" });
     }
-    let restored = false;
-    const restore = () => {
-      if (restored) return;
-      restored = true;
-      setPrinting(false);
-      setPrintStartedAt(null);
-      const snapshot = printSnapshotRef.current;
-      printSnapshotRef.current = null;
-      if (snapshot) {
+    const restoreState = createIdempotentPrintRestorer(
+      () => printSnapshotRef.current,
+      (snapshot) => {
+        setPrinting(false);
+        setPrintStartedAt(null);
+        printSnapshotRef.current = null;
         dispatch({ type: "SCROLL", id: snapshot.tabId, scrollTop: snapshot.scrollTop });
         if (viewModeRef.current !== snapshot.viewMode) {
           viewModeRef.current = snapshot.viewMode;
@@ -1653,7 +1650,11 @@ export function App() {
             containerRef.current.scrollTop = snapshot.scrollTop;
           }
         });
-      }
+      },
+    );
+    const restore = () => {
+      window.removeEventListener("afterprint", restore);
+      restoreState();
     };
     window.addEventListener("afterprint", restore, { once: true });
     try { window.print(); window.setTimeout(restore, 1000); } catch (error) { restore(); setToast({ id: String(Date.now()), message: `印刷を開始できません: ${String(error)}`, type: "error" }); }

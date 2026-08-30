@@ -6,6 +6,24 @@ export interface MermaidPrintWaitResult {
   timedOut: boolean;
 }
 
+/**
+ * Creates a print-session restore callback that can safely be called from
+ * both `afterprint` and a fallback timeout without restoring twice.
+ */
+export function createIdempotentPrintRestorer<T>(
+  getSnapshot: () => T | null,
+  onRestore: (snapshot: T) => void,
+): () => boolean {
+  let restored = false;
+  return () => {
+    if (restored) return false;
+    restored = true;
+    const snapshot = getSnapshot();
+    if (snapshot) onRestore(snapshot);
+    return true;
+  };
+}
+
 /** Waits for Mermaid renderers without coupling the print flow to React state. */
 export async function waitForMermaidPrintReady(
   getStatus: () => MermaidPrintStatus,
