@@ -2173,7 +2173,6 @@ export function App() {
         {printStyle.showTitle && <strong>{activeTab.document.path.split(/[\\/]/).pop() ?? activeTab.document.path}</strong>}
         {printStyle.showFilename && <span>元ファイル: {activeTab.document.path}</span>}
         {printStyle.showDate && printStartedAt && <time dateTime={printStartedAt.toISOString()}>印刷日時: {printStartedAt.toLocaleString("ja-JP")}</time>}
-        {printStyle.showPageNumbers && <span className="print-metadata__page-number">ページ </span>}
       </div>}
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">

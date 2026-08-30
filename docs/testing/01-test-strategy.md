@@ -19,7 +19,7 @@
 | Desktop E2E | 実WebView、Mermaid/draw.io、ファイル、印刷前状態 | 既存CDP smoke（専用runner） | 専用runner/beta前 |
 | UI受入 | OS印刷、資格情報、MSIX、外部アプリ | 専用runnerまたは手動手順 | beta前 |
 
-当該PCではDesktop E2EとUI受入を実施しない。5秒入力監視は廃止し、必要な実画面確認は別PCまたは専用runnerで行う。
+当該PCではDesktop E2EとUI受入を実施しない。必要な実画面確認は別PCまたは専用runnerで行う。
 | Security | XSS、SVG、path、redirect、secret、CLI | corpus test、dependency audit | PR/nightly |
 | Performance | 起動、検索、描画、DB、同期、AI stream | benchmark script、Playwright trace | nightly/beta前 |
 

@@ -45,9 +45,9 @@ describe("useApplicationSettings print migration", () => {
     const setToast = vi.fn();
     const { result } = renderHook(() => useApplicationSettings(setToast));
     await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalledWith(expect.objectContaining({
-      printStyle: expect.objectContaining({ foldMode: "all", showTitle: true, showFilename: true, showDate: true, showPageNumbers: true }),
+      printStyle: expect.objectContaining({ foldMode: "all", showTitle: true, showFilename: true, showDate: true }),
     })));
-    expect(result.current.printStyle).toMatchObject({ foldMode: "all", showTitle: true, showFilename: true, showDate: true, showPageNumbers: true });
+    expect(result.current.printStyle).toMatchObject({ foldMode: "all", showTitle: true, showFilename: true, showDate: true });
   });
 
   it("applies normalized print CSS variables without changing document view state", async () => {

@@ -100,7 +100,7 @@ describe("SettingsPanel", () => {
     expect(screen.getByLabelText("印刷スタイルプレビュー").getAttribute("style")).toContain("rgb(255, 255, 255)");
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true, foldMode: "all", showTitle: true, showFilename: true, showDate: true, showPageNumbers: true });
+    expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true, foldMode: "all", showTitle: true, showFilename: true, showDate: true });
   });
 
   it("saves the selected fold mode and metadata visibility flags", async () => {
@@ -109,10 +109,9 @@ describe("SettingsPanel", () => {
     fireEvent.change(screen.getByLabelText("印刷時の折りたたみ"), { target: { value: "current" } });
     fireEvent.click(screen.getByLabelText("文書タイトル"));
     fireEvent.click(screen.getByLabelText("印刷日時"));
-    fireEvent.click(screen.getByLabelText("ページ番号"));
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0][5]).toMatchObject({ foldMode: "current", showTitle: false, showFilename: true, showDate: false, showPageNumbers: false });
+    expect(onSave.mock.calls[0][5]).toMatchObject({ foldMode: "current", showTitle: false, showFilename: true, showDate: false });
   });
 
   it("previews and saves Markdown layout settings with a generated CSS file", async () => {

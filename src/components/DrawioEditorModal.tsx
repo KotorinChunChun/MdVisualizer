@@ -19,12 +19,23 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
   useEffect(() => {
     const timeout = window.setTimeout(() => setError("draw.ioから初期化通知を受信できませんでした。ネットワーク接続を確認して再試行してください。"), 20_000);
     const centerTimers: number[] = [];
-    const centerDrawing = (frameWindow: Window | null) => {
-      frameWindow?.postMessage(JSON.stringify({ action: "fit", border: 48, maxScale: 1 }), DRAWIO_ORIGIN);
-      frameWindow?.postMessage(JSON.stringify({ action: "invokeAction", actionName: "fitWindow" }), DRAWIO_ORIGIN);
+    const postToCurrentFrame = (frameWindow: Window | null, message: Record<string, unknown>) => {
+      if (!frameWindow || iframeRef.current?.contentWindow !== frameWindow) return false;
+      try {
+        frameWindow.postMessage(JSON.stringify(message), DRAWIO_ORIGIN);
+        return true;
+      } catch {
+        // Best-effort layout messages may race with iframe replacement or close.
+        return false;
+      }
     };
-    const scheduleCentering = (frameWindow: Window | null, delays: number[]) => {
-      delays.forEach((delay) => centerTimers.push(window.setTimeout(() => centerDrawing(frameWindow), delay)));
+    const centerDrawing = () => {
+      const frameWindow = iframeRef.current?.contentWindow ?? null;
+      postToCurrentFrame(frameWindow, { action: "fit", border: 48, maxScale: 1 });
+      postToCurrentFrame(frameWindow, { action: "invokeAction", actionName: "fitWindow" });
+    };
+    const scheduleCentering = (delays: number[]) => {
+      delays.forEach((delay) => centerTimers.push(window.setTimeout(centerDrawing, delay)));
     };
     const receive = (event: MessageEvent) => {
       const frameWindow = iframeRef.current?.contentWindow ?? null;
@@ -45,13 +56,13 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
         };
         if ("descriptor" in payload) load.descriptor = payload.descriptor;
         else load.xml = disableDrawioPageView(payload.xml);
-        frameWindow?.postMessage(JSON.stringify(load), DRAWIO_ORIGIN);
-        scheduleCentering(frameWindow, [80, 320, 900]);
+        postToCurrentFrame(frameWindow, load);
+        scheduleCentering([80, 320, 900]);
       } else if (message.event === "load") {
         // 読み込み後に図形境界が確定するため、編集領域のレイアウト確定後にも
         // draw.io標準の「ウィンドウに合わせる」を繰り返して中央へ配置する。
-        centerDrawing(frameWindow);
-        scheduleCentering(frameWindow, [240, 720]);
+        centerDrawing();
+        scheduleCentering([240, 720]);
       } else if (message.event === "save" && typeof message.xml === "string" && message.xml.length <= 20 * 1024 * 1024) {
         setSaving(true);
         Promise.resolve(onSave(extractDrawioFenceData(message.xml))).then((saved) => {

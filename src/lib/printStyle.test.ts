@@ -14,6 +14,12 @@ describe("print style settings", () => {
     expect(needsPrintStyleSettingsMigration(DEFAULT_PRINT_STYLE_SETTINGS)).toBe(false);
   });
 
+  it("removes the retired page-number flag from persisted settings", () => {
+    const retired = { ...DEFAULT_PRINT_STYLE_SETTINGS, showPageNumbers: false };
+    expect(needsPrintStyleSettingsMigration(retired)).toBe(true);
+    expect(normalizePrintStyleSettings(retired)).toEqual(DEFAULT_PRINT_STYLE_SETTINGS);
+  });
+
   it("does not accept a partial runtime value when applying CSS variables", () => {
     const root = document.createElement("div");
     applyPrintStyleSettings(root, { headingColor: "url(x)", borderColor: "red", backgroundColor: "#ABCDEF", fontFamily: "serif", monochrome: true } as never);

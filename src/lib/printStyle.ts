@@ -13,7 +13,6 @@ export interface PrintStyleSettings {
   showTitle: boolean;
   showFilename: boolean;
   showDate: boolean;
-  showPageNumbers: boolean;
 }
 
 export const DEFAULT_PRINT_STYLE_SETTINGS: PrintStyleSettings = {
@@ -26,7 +25,6 @@ export const DEFAULT_PRINT_STYLE_SETTINGS: PrintStyleSettings = {
   showTitle: true,
   showFilename: true,
   showDate: true,
-  showPageNumbers: true,
 };
 
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
@@ -40,7 +38,6 @@ const PRINT_STYLE_KEYS = [
   "showTitle",
   "showFilename",
   "showDate",
-  "showPageNumbers",
 ] as const;
 const FONT_STACKS: Record<PrintFontFamily, string> = {
   system: 'system-ui, -apple-system, "Segoe UI", sans-serif',
@@ -63,7 +60,6 @@ export function normalizePrintStyleSettings(value: unknown): PrintStyleSettings 
     showTitle: candidate.showTitle !== false,
     showFilename: candidate.showFilename !== false,
     showDate: candidate.showDate !== false,
-    showPageNumbers: candidate.showPageNumbers !== false,
   };
 }
 

@@ -4,7 +4,7 @@ import { DRAWIO_ORIGIN } from "../lib/drawio";
 import { DrawioEditorModal } from "./DrawioEditorModal";
 
 describe("DrawioEditorModal", () => {
-  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+  afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
   it("loads and saves only messages from the expected diagrams.net frame", async () => {
     const onSave = vi.fn(() => true);
@@ -42,5 +42,19 @@ describe("DrawioEditorModal", () => {
     window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "exit", modified: true } }));
     expect(onSave).not.toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("ignores delayed layout messages after the iframe window becomes unavailable", () => {
+    vi.useFakeTimers();
+    const { unmount } = render(<DrawioEditorModal source="" onSave={vi.fn()} onCancel={vi.fn()} />);
+    const frame = (screen.getByTitle("draw.io editor") as HTMLIFrameElement).contentWindow!;
+    const postMessage = vi.spyOn(frame, "postMessage").mockImplementation(() => undefined);
+
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: JSON.stringify({ event: "init" }) }));
+    postMessage.mockImplementation(() => { throw new TypeError("iframe is unavailable"); });
+
+    expect(() => vi.advanceTimersByTime(1_000)).not.toThrow();
+    unmount();
+    expect(() => vi.runAllTimers()).not.toThrow();
   });
 });
