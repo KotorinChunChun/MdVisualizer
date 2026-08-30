@@ -9,6 +9,7 @@ import { TableEditorDialog } from "./TableEditorDialog";
 import { calculateTableAggregates } from "../lib/tableAggregation";
 import { copyTextFile } from "../lib/commands";
 import { ResponsiveToolbar } from "./ResponsiveToolbar";
+import { executePrintSession, type PrintDevice } from "../lib/printSession";
 import "../styles/delimited-table.css";
 
 interface DelimitedTableBlockProps {
@@ -18,6 +19,7 @@ interface DelimitedTableBlockProps {
   headingLabel?: ReactNode;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
+  printDevice?: PrintDevice;
 }
 
 type SortCriterion = { column: number; direction: "ascending" | "descending" };
@@ -27,7 +29,7 @@ function emitToast(type: "success" | "error" | "info", message: string, actions?
   window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type, message, actions } }));
 }
 
-export function DelimitedTableBlock({ language, source, onSave, headingLabel, storage, onStorageConvert }: DelimitedTableBlockProps) {
+export function DelimitedTableBlock({ language, source, onSave, headingLabel, storage, onStorageConvert, printDevice }: DelimitedTableBlockProps) {
   const parsed = useMemo(() => {
     try { return { data: parseDelimitedTable(source, language), error: null }; }
     catch (error) { return { data: null, error: String(error) }; }
@@ -139,6 +141,7 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
   };
 
   const printTable = () => {
+    if (document.body.classList.contains("table-print-active")) return;
     const host = document.createElement("div");
     host.className = "table-print-host";
     const printTableElement = document.createElement("table");
@@ -160,20 +163,12 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
     host.append(printTableElement);
     document.body.append(host);
     document.body.classList.add("table-print-active");
-    let cleaned = false;
     const cleanupPrint = () => {
-      if (cleaned) return;
-      cleaned = true;
-      window.removeEventListener("afterprint", cleanupPrint);
       document.body.classList.remove("table-print-active");
       host.remove();
     };
-    window.addEventListener("afterprint", cleanupPrint);
-    try {
-      window.print();
-    } finally {
-      window.setTimeout(cleanupPrint, 0);
-    }
+    void executePrintSession({ print: printDevice, restore: cleanupPrint })
+      .catch((error) => emitToast("error", `表を印刷できません: ${String(error)}`));
   };
 
   const copyText = async (text: string, success: string) => {

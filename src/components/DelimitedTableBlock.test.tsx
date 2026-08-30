@@ -221,6 +221,34 @@ describe("DelimitedTableBlock", () => {
     expect(document.body.classList.contains("table-print-active")).toBe(false);
   });
 
+  it("非同期PDF作成が終わるまで選択表の印刷DOMを保持する", async () => {
+    vi.useFakeTimers();
+    let finishPdf!: () => void;
+    const pendingPdf = new Promise<void>((resolve) => { finishPdf = resolve; });
+    render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} printDevice={() => pendingPdf} />);
+    fireEvent.click(screen.getByRole("button", { name: "印刷" }));
+    window.dispatchEvent(new Event("afterprint"));
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(document.querySelector(".table-print-host")?.textContent).toContain("Alice");
+    finishPdf();
+    await Promise.resolve();
+    expect(document.querySelector(".table-print-host")).toBeNull();
+    expect(document.body.classList.contains("table-print-active")).toBe(false);
+  });
+
+  it("PDF出力失敗時にも印刷DOMを破棄しエラーを通知する", async () => {
+    const listener = vi.fn();
+    window.addEventListener("markdown-toast", listener);
+    try {
+      render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} printDevice={() => { throw new Error("PDF failed"); }} />);
+      fireEvent.click(screen.getByRole("button", { name: "印刷" }));
+      await Promise.resolve();
+      expect(document.querySelector(".table-print-host")).toBeNull();
+      expect(document.body.classList.contains("table-print-active")).toBe(false);
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({ detail: expect.objectContaining({ type: "error", message: expect.stringContaining("PDF failed") }) }));
+    } finally { window.removeEventListener("markdown-toast", listener); }
+  });
+
   it("shows a clear parsing error and does not render controls", () => {
     render(<DelimitedTableBlock language="csv" source={'name,note\nAlice,"broken'} />);
     expect(screen.getByRole("alert").textContent).toContain("閉じられていません");

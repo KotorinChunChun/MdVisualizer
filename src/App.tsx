@@ -68,7 +68,8 @@ import { mermaidExternalReference, type MermaidStorageConversionContext } from "
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
 import { markdownForPreviewRange } from "./lib/previewContext";
 import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } from "./lib/sourceNavigation";
-import { createIdempotentPrintRestorer, waitForMermaidPrintReady } from "./lib/printSession";
+import { useDocumentPrint } from "./hooks/useDocumentPrint";
+import { PrintMetadata } from "./components/PrintMetadata";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -254,9 +255,6 @@ export function App() {
   const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([]);
   const [diagnosticWatchTargets, setDiagnosticWatchTargets] = useState<Record<string, string[]>>({});
   const [diagnosticsRefresh, setDiagnosticsRefresh] = useState(0);
-  const [printing, setPrinting] = useState(false);
-  const [printStartedAt, setPrintStartedAt] = useState<Date | null>(null);
-  const printSnapshotRef = useRef<{ tabId: string; scrollTop: number; viewMode: ViewMode } | null>(null);
   const [activeTocHeadingId, setActiveTocHeadingId] = useState<string | null>(null);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
   const [focusedLinkTarget, setFocusedLinkTarget] = useState<string | null>(null);
@@ -1619,46 +1617,27 @@ export function App() {
     setDocumentPanels((current) => ({ ...current, [activeTab.id]: null }));
   }, [activeTab, search]);
 
-  const printDocument = useCallback(async () => {
-    if (!activeTab?.document || printing) return;
-    printSnapshotRef.current = {
+  const { printing, printStartedAt, printDocument } = useDocumentPrint({
+    getSnapshot: () => !activeTab?.document ? null : ({
       tabId: activeTab.id,
       scrollTop: containerRef.current?.scrollTop ?? activeTab.scrollTop,
       viewMode: viewModeRef.current,
-    };
-    setPrintStartedAt(new Date());
-    setPrinting(true);
-    try {
-      const mermaidWait = await waitForMermaidPrintReady(getMermaidStatus);
-      if (mermaidWait.timedOut) setToast({ id: String(Date.now()), message: "Mermaidの描画待機がタイムアウトしたため、現在の状態で印刷します。", type: "info" });
-    } catch (error) {
-      setToast({ id: String(Date.now()), message: `Mermaidの描画状態を確認できないため、現在の状態で印刷します: ${String(error)}`, type: "info" });
-    }
-    const restoreState = createIdempotentPrintRestorer(
-      () => printSnapshotRef.current,
-      (snapshot) => {
-        setPrinting(false);
-        setPrintStartedAt(null);
-        printSnapshotRef.current = null;
-        dispatch({ type: "SCROLL", id: snapshot.tabId, scrollTop: snapshot.scrollTop });
-        if (viewModeRef.current !== snapshot.viewMode) {
-          viewModeRef.current = snapshot.viewMode;
-          setViewMode(snapshot.viewMode);
+    }),
+    restore: (snapshot) => {
+      dispatch({ type: "SCROLL", id: snapshot.tabId, scrollTop: snapshot.scrollTop });
+      if (viewModeRef.current !== snapshot.viewMode) {
+        viewModeRef.current = snapshot.viewMode;
+        setViewMode(snapshot.viewMode);
+      }
+      window.requestAnimationFrame(() => {
+        if (tabsStateRef.current.activeId === snapshot.tabId && containerRef.current) {
+          containerRef.current.scrollTop = snapshot.scrollTop;
         }
-        window.requestAnimationFrame(() => {
-          if (tabsStateRef.current.activeId === snapshot.tabId && containerRef.current) {
-            containerRef.current.scrollTop = snapshot.scrollTop;
-          }
-        });
-      },
-    );
-    const restore = () => {
-      window.removeEventListener("afterprint", restore);
-      restoreState();
-    };
-    window.addEventListener("afterprint", restore, { once: true });
-    try { window.print(); window.setTimeout(restore, 1000); } catch (error) { restore(); setToast({ id: String(Date.now()), message: `印刷を開始できません: ${String(error)}`, type: "error" }); }
-  }, [activeTab?.document, printing]);
+      });
+    },
+    onInfo: (message) => setToast({ id: String(Date.now()), message, type: "info" }),
+    onError: (message) => setToast({ id: String(Date.now()), message, type: "error" }),
+  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -2169,11 +2148,7 @@ export function App() {
   return (
     <div className={`app-container${printing ? " is-printing" : ""}`} data-print-fold-mode={printStyle.foldMode}>
       <style data-markdown-custom-style>{scopedMarkdownStyle}</style>
-      {printing && activeTab?.document && <div className="print-metadata" aria-hidden="true">
-        {printStyle.showTitle && <strong>{activeTab.document.path.split(/[\\/]/).pop() ?? activeTab.document.path}</strong>}
-        {printStyle.showFilename && <span>元ファイル: {activeTab.document.path}</span>}
-        {printStyle.showDate && printStartedAt && <time dateTime={printStartedAt.toISOString()}>印刷日時: {printStartedAt.toLocaleString("ja-JP")}</time>}
-      </div>}
+      {printing && activeTab?.document && <PrintMetadata path={activeTab.document.path} startedAt={printStartedAt} settings={printStyle} />}
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
