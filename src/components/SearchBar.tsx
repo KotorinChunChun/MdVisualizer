@@ -12,7 +12,7 @@ export function SearchBar({ search, inputRef, onClose, embedded = false }: Searc
       <label>文脈 <select aria-label="文脈行数" value={search.contextLines} onChange={(event) => search.setContextLines(Number(event.target.value))}>{[0, 1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
       <button type="button" onClick={search.previous} disabled={!search.resultCount} aria-label="前の検索結果">↑</button>
       <button type="button" onClick={search.next} disabled={!search.resultCount} aria-label="次の検索結果">↓</button>
-      <span aria-live="polite">{search.error ?? `${search.resultCount ? `${search.activeIndex + 1}/${search.resultCount}` : "0 matches"}`}</span>
+      <span aria-live="polite">{search.error ?? `${search.resultCount ? `${search.activeIndex + 1}/${search.resultCount}` : "0件"}`}</span>
       {!embedded && <button type="button" onClick={onClose} aria-label="検索を閉じる">×</button>}
     </div>
     </div>

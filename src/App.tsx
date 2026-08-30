@@ -1654,7 +1654,13 @@ export function App() {
       await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
     }
     if (getMermaidStatus().pending > 0) setToast({ id: String(Date.now()), message: "Mermaidの描画待機がタイムアウトしたため、現在の状態で印刷します。", type: "info" });
-    const restore = () => { setPrinting(false); setPrintStartedAt(null); };
+    let restored = false;
+    const restore = () => {
+      if (restored) return;
+      restored = true;
+      setPrinting(false);
+      setPrintStartedAt(null);
+    };
     window.addEventListener("afterprint", restore, { once: true });
     try { window.print(); window.setTimeout(restore, 1000); } catch (error) { restore(); setToast({ id: String(Date.now()), message: `印刷を開始できません: ${String(error)}`, type: "error" }); }
   }, [activeTab?.document, printing]);

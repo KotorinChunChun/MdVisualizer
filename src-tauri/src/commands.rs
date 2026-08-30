@@ -567,7 +567,7 @@ fn markdown_heading_ids(source: &str) -> (std::collections::HashSet<String>, std
     let mut ids = std::collections::HashSet::new();
     let mut bases = std::collections::HashMap::new();
     let mut in_fence = false;
-    for line in source.replace("\r\n", "\n").lines() {
+    for line in source.replace("\r\n", "\n").replace('\r', "\n").lines() {
         if line.trim_start().starts_with("```") || line.trim_start().starts_with("~~~") { in_fence = !in_fence; continue; }
         if in_fence { continue; }
         if let Some(captures) = regex::Regex::new(r"^(#{1,6})\s+(.+?)\s*#*\s*$").unwrap().captures(line) {
@@ -599,7 +599,7 @@ fn collect_document_watch_targets(loaded: &MarkdownLoadResult) -> Vec<String> {
     let source = loaded.content.replace("\r\n", "\n");
     let base = PathBuf::from(&loaded.base_dir);
     let markdown_link = regex::Regex::new(r#"!?\[[^\]]*\]\(\s*<?([^>\s)]+)>?(?:\s+[^)]*)?\)"#).unwrap();
-    let html_image = regex::Regex::new(r#"(?i)<img\b[^>]*\bsrc\s*=\s*[\"']([^\"']+)[\"'][^>]*>"#).unwrap();
+    let html_image = regex::Regex::new(r#"(?i)<img\b[^>]*\bsrc\s*=\s*(?:[\"']([^\"']+)[\"']|([^\s>]+))[^>]*>"#).unwrap();
     let obsidian = regex::Regex::new(r#"!?\[\[([^\]|#]+)(?:\|[^\]]*)?\]\]"#).unwrap();
     let mut result = vec![PathBuf::from(&loaded.path)];
     let mut in_fence = false;
@@ -607,7 +607,7 @@ fn collect_document_watch_targets(loaded: &MarkdownLoadResult) -> Vec<String> {
         if line.trim_start().starts_with("```") || line.trim_start().starts_with("~~~") { in_fence = !in_fence; continue; }
         if in_fence { continue; }
         let mut refs: Vec<String> = markdown_link.captures_iter(line).filter_map(|capture| capture.get(1).map(|value| value.as_str().to_owned())).collect();
-        refs.extend(html_image.captures_iter(line).filter_map(|capture| capture.get(1).map(|value| value.as_str().to_owned())));
+        refs.extend(html_image.captures_iter(line).filter_map(|capture| capture.get(1).or_else(|| capture.get(2)).map(|value| value.as_str().to_owned())));
         refs.extend(obsidian.captures_iter(line).filter_map(|capture| capture.get(1).map(|value| value.as_str().trim().to_owned())));
         for reference in refs {
             let decoded = decode_reference(&reference);
@@ -656,14 +656,14 @@ pub fn diagnose_document(path: String) -> Result<Vec<DiagnosticItem>, String> {
         }
     }
     let markdown_link = regex::Regex::new(r#"!?\[[^\]]*\]\(\s*<?([^>\s)]+)>?(?:\s+[^)]*)?\)"#).unwrap();
-    let html_image = regex::Regex::new(r#"(?i)<img\b[^>]*\bsrc\s*=\s*[\"']([^\"']+)[\"'][^>]*>"#).unwrap();
+    let html_image = regex::Regex::new(r#"(?i)<img\b[^>]*\bsrc\s*=\s*(?:[\"']([^\"']+)[\"']|([^\s>]+))[^>]*>"#).unwrap();
     let html_alt = regex::Regex::new(r#"(?i)\balt\s*=\s*[\"']([^\"']*)[\"']"#).unwrap();
     let mut in_fence = false;
     for (index, line) in source.lines().enumerate() {
         if line.trim_start().starts_with("```") || line.trim_start().starts_with("~~~") { in_fence = !in_fence; continue; }
         if in_fence { continue; }
         let mut references: Vec<(String, bool)> = markdown_link.captures_iter(line).filter_map(|captures| captures.get(1).map(|value| (value.as_str().into(), line.trim_start().starts_with("!")))).collect();
-        references.extend(html_image.captures_iter(line).filter_map(|captures| captures.get(1).map(|value| (value.as_str().into(), true))));
+        references.extend(html_image.captures_iter(line).filter_map(|captures| captures.get(1).or_else(|| captures.get(2)).map(|value| (value.as_str().into(), true))));
         for (reference, is_image) in references {
             let decoded = decode_reference(&reference);
             if decoded.starts_with("http://") || decoded.starts_with("https://") || decoded.starts_with("mailto:") || decoded.starts_with("data:") { continue; }
