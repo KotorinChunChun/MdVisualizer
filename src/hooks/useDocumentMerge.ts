@@ -25,7 +25,8 @@ export function useDocumentMerge(target: DocumentDiffTarget, onChange?: (content
   const local = session.threeWay ? session.local : target.editingContent;
   // 2wayでも履歴内の採用元が不必要に変わらないよう、表示用localは結果から独立させる。
   const alignmentLocal = session.local;
-  const sourceKey = JSON.stringify([target.openedContent, target.storageContent, alignmentLocal]);
+  const sourceKey = useMemo(() => JSON.stringify([target.openedContent, target.storageContent, alignmentLocal]),
+    [target.openedContent, target.storageContent, alignmentLocal]);
   const { rows, error } = useMemo(() => {
     try { return { rows: session.present.sourceKey === sourceKey && session.present.rows ? session.present.rows
       : buildMergeRows(target.openedContent, target.storageContent, alignmentLocal, session.present.content), error: null }; }
@@ -45,6 +46,7 @@ export function useDocumentMerge(target: DocumentDiffTarget, onChange?: (content
     const ctx = context.current;
     let nextRows: MergeRow[] | undefined;
     try {
+      if (ctx.error) throw new Error(ctx.error);
       nextRows = editMergeResult(previous.present.content, ctx.rows, content);
       const old = new Map(ctx.rows.map((row) => [row.id, row]));
       for (const row of nextRows) if (row.result?.text !== old.get(row.id)?.result?.text) decisions[row.id] = {

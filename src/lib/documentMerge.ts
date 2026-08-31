@@ -110,6 +110,7 @@ export function buildMergeRows(baseContent: string, storageContent: string, loca
 }
 
 function withResult(row: MergeRow, result?: MergeCell): MergeRow {
+  if (row.result?.text === result?.text && row.result?.line === result?.line) return row;
   return { ...row, result, changed: row.storage?.text !== row.base || row.local?.text !== row.base || result?.text !== row.base };
 }
 
@@ -125,29 +126,33 @@ export function adoptMergeResult(content: string, rows: readonly MergeRow[], id:
   if (!line) {
     const blank = aligned.findIndex((row) => row[side]?.text === "");
     if (blank >= 0) aligned[blank] = withResult(aligned[blank], { text: "", line: 1 });
-    else aligned.push(manualRow(aligned, { text: "", line: 1 }));
+    else aligned.push(manualRowFactory(aligned)({ text: "", line: 1 }));
   }
   return { content: nextContent, rows: aligned };
 }
 
-function manualRow(rows: readonly MergeRow[], cell: MergeCell): MergeRow {
+function manualRowFactory(rows: readonly MergeRow[]) {
+  const ids = new Set(rows.map((row) => row.id));
   let sequence = rows.length;
-  while (rows.some((row) => row.id === `manual:${sequence}`)) sequence++;
-  const id = `manual:${sequence}`;
-  return { id, result: cell, changed: true, externalChanged: false, fingerprint: JSON.stringify([id, null, null, null]) };
+  return (cell: MergeCell): MergeRow => {
+    while (ids.has(`manual:${sequence}`)) sequence++;
+    const id = `manual:${sequence++}`; ids.add(id);
+    return { id, result: cell, changed: true, externalChanged: false, fingerprint: JSON.stringify([id, null, null, null]) };
+  };
 }
 
 /** 手入力は直前の結果行へ対応付け、既存の採用元と空行の位置を維持する。 */
 export function editMergeResult(content: string, rows: readonly MergeRow[], nextContent: string): MergeRow[] {
   const edits = slots(mergeLines(content), nextContent, (left, right) => left === right);
   const aligned: MergeRow[] = [];
+  const manualRow = manualRowFactory(rows);
   for (const row of rows) {
     if (!row.result) { aligned.push(row); continue; }
     const index = row.result.line - 1;
-    for (const cell of edits.insertions.get(index) ?? []) aligned.push(manualRow([...rows, ...aligned], cell));
+    for (const cell of edits.insertions.get(index) ?? []) aligned.push(manualRow(cell));
     aligned.push(withResult(row, edits.cells.get(index)));
   }
-  for (const cell of edits.insertions.get(mergeLines(content).length) ?? []) aligned.push(manualRow([...rows, ...aligned], cell));
+  for (const cell of edits.insertions.get(mergeLines(content).length) ?? []) aligned.push(manualRow(cell));
   return aligned;
 }
 

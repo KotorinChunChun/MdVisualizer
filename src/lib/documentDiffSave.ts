@@ -2,6 +2,11 @@ import type { DiffSaveReview } from "../components/DocumentDiffWorkspace";
 import type { TabState } from "../state/tabsReducer";
 import { documentSourceIdentity } from "./pathIdentity";
 
+/** 本文が基準と同じでも、3wayの判断中は自動再読込で採用結果を破棄しない。 */
+export function documentDiffProtectsDraft(tab: TabState | undefined, review: DiffSaveReview | null): boolean {
+  return Boolean(tab && review?.hasExternalChanges && documentSourceIdentity(review.path) === documentSourceIdentity(tab.path));
+}
+
 /** UIのボタン状態だけに頼らず、Ctrl+S等の全保存入口でレビュー対象の版を検証する。 */
 export function documentDiffSavePermission(tab: TabState, review: DiffSaveReview | null): { error?: string; expectedRevision: string; force: boolean } {
   const baseline = tab.document?.revision ?? "";

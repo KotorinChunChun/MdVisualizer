@@ -4,6 +4,7 @@ import type { MarkdownLoadResult } from "../types/app";
 import { createDocumentStorageRefresh } from "./documentStorageRefresh";
 import { documentDiffTarget } from "./documentDiffTarget";
 import { buildWorkspaceDiffPanes } from "../components/DocumentDiffWorkspace";
+import { documentDiffProtectsDraft } from "./documentDiffSave";
 
 const doc = (content: string, revision = content): MarkdownLoadResult => ({
   path: "C:/docs/a.md", kind: "markdown", content, revision, base_dir: "C:/docs", image_paths: [],
@@ -109,5 +110,15 @@ describe("ストレージ通知とDiff基準", () => {
     s.dispatch({ type: "OPEN", path: "C:/docs/b.md" });
     s.requests[0].resolve(doc("external")); await pending;
     expect(s.state().tabs[0].path).toBe("C:/docs/b.md"); expect(s.state().tabs[0].document).toBeNull();
+  });
+  it("3wayで基準本文を残す判断をした後の重複通知でも、結果と基準を自動置換しない", async () => {
+    const s = setup();
+    s.dispatch({ type: "STORAGE_CONFLICT", id: s.id, document: doc("external", "r2") });
+    const review = { path: s.tab().path, content: "base", baselineRevision: "base", storageRevision: "r2",
+      hasExternalChanges: true, blocked: false, unresolved: 0 };
+    const refresh = createDocumentStorageRefresh({ getTab: () => s.tab(), dispatch: s.dispatch,
+      shouldReload: () => !documentDiffProtectsDraft(s.tab(), review), load: async () => doc("external", "r2") });
+    await refresh(s.id);
+    expect(s.tab()).toMatchObject({ openedContent: "base", draft: "base", dirty: false, storageDocument: { revision: "r2" } });
   });
 });

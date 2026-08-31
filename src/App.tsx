@@ -72,7 +72,7 @@ import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
 import { createDocumentStorageRefresh } from "./lib/documentStorageRefresh";
 import { documentDiffTarget } from "./lib/documentDiffTarget";
-import { documentDiffSavePermission } from "./lib/documentDiffSave";
+import { documentDiffProtectsDraft, documentDiffSavePermission } from "./lib/documentDiffSave";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -301,7 +301,8 @@ export function App() {
   autoReloadRef.current = autoReload;
   const refreshTabStorage = useMemo(() => createDocumentStorageRefresh({
     getTab: (id) => tabsStateRef.current.tabs.find((tab) => tab.id === id),
-    load: loadMarkdown, dispatch, shouldReload: () => autoReloadRef.current === "on",
+    load: loadMarkdown, dispatch, shouldReload: (id) => autoReloadRef.current === "on"
+      && !documentDiffProtectsDraft(tabsStateRef.current.tabs.find((tab) => tab.id === id), diffReviewRef.current),
   }), []);
   const resolvePastedImage = useCallback(async (image: ClipboardImageData): Promise<ResolvedClipboardImage> => {
     const embedded = { source: `data:${image.mediaType};base64,${image.base64}` };

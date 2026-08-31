@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 const appSource = readFileSync(join(process.cwd(), "src/App.tsx"), "utf8");
 const headerSource = readFileSync(join(process.cwd(), "src/components/HeaderBar.tsx"), "utf8");
 const appCss = readFileSync(join(process.cwd(), "src/styles/app.css"), "utf8");
-const diffCss = readFileSync(join(process.cwd(), "src/styles/document-diff.css"), "utf8");
 
 describe("editor mode segmented control", () => {
   it("groups the three editor modes for assistive technology", () => {
@@ -38,13 +37,5 @@ describe("editor mode segmented control", () => {
     expect(appCss).toContain("#fde68a");
   });
 
-  it("uses identical font declarations for opened and current DIFF code", () => {
-    for (const declaration of [
-      'font-family: Consolas, "Cascadia Code", monospace;',
-      "font-size: 13px;",
-      "line-height: 1.55;",
-    ]) {
-      expect(diffCss.match(new RegExp(declaration.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))).toHaveLength(2);
-    }
-  });
+  // Diffの書式・行位置はtest:diff-layoutで実ブラウザーのcomputed styleと座標を検証する。
 });

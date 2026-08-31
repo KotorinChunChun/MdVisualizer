@@ -24,6 +24,7 @@
     "test:run-scripts": "pwsh -NoProfile -File ./scripts/test-run-script-naming.ps1",
     "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
     "test": "vitest run",
+    "test:diff-layout": "tsc --project tests/diff-layout/tsconfig.json && node ./scripts/test-diff-layout.mjs",
     "test:drawio-editing": "vitest run src/components/DrawioEditingFlow.test.tsx src/components/DrawioEditorModal.test.tsx src/components/DrawioBlock.test.tsx src/components/ExternalDrawioBlock.test.tsx src/components/MarkdownPreview.drawio.test.tsx src/components/StandaloneDocumentPreview.test.tsx src/lib/drawio.test.ts src/lib/drawioStorage.test.ts",
     "report:editing": "node ./scripts/generate-editing-test-report.mjs",
     "preview": "vite preview",
@@ -58,6 +59,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "jsdom": "^29.1.1",
+    "playwright-core": "1.62.1",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
     "vitest": "^4.1.10"

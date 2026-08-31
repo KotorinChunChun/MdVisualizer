@@ -6,7 +6,7 @@ export function createDocumentStorageRefresh({ getTab, load, dispatch, shouldRel
   getTab: (id: string) => TabState | undefined;
   load: (path: string) => Promise<MarkdownLoadResult>;
   dispatch: (action: TabsAction) => void;
-  shouldReload: () => boolean;
+  shouldReload: (id: string) => boolean;
 }) {
   let request = 0;
   return async (id: string, allowReload = true): Promise<void> => {
@@ -19,7 +19,7 @@ export function createDocumentStorageRefresh({ getTab, load, dispatch, shouldRel
     try {
       const document = await load(tab.document.path);
       dispatch({ type: "STORAGE_LOADED", id, request: token, generation, changeSequence,
-        reloadIfClean: allowReload && shouldReload(), document });
+        reloadIfClean: allowReload && shouldReload(id), document });
     } catch (error) {
       dispatch({ type: "STORAGE_FAILED", id, request: token, generation, error: String(error) });
     }

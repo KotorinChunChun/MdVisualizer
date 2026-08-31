@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { initialTabsState, tabsReducer } from "../state/tabsReducer";
 import type { DiffSaveReview } from "../components/DocumentDiffWorkspace";
-import { documentDiffSavePermission } from "./documentDiffSave";
+import { documentDiffProtectsDraft, documentDiffSavePermission } from "./documentDiffSave";
 
 function fixture() {
   let state = tabsReducer(initialTabsState, { type: "NEW_MARKDOWN" });
   const document = { ...state.tabs[0].document!, path: "C:/a.md", content: "base", revision: "r1" };
+  state = tabsReducer(state, { type: "DRAFT_CHANGED", id: state.activeId!, content: "base" });
   state = tabsReducer(state, { type: "SAVED", id: state.activeId!, document });
   state = tabsReducer(state, { type: "STORAGE_CONFLICT", id: state.activeId!, document: { ...document, content: "storage", revision: "r2" } });
   const tab = state.tabs[0];
@@ -13,6 +14,14 @@ function fixture() {
   return { tab, review };
 }
 describe("Diffの全保存入口の保護", () => {
+  it("基準と同じ内容を選びdirtyが消えても、3way判断中の自動再読込から保護する", () => {
+    const { tab, review } = fixture();
+    expect(tab.dirty).toBe(false);
+    expect(documentDiffProtectsDraft(tab, review)).toBe(true);
+    expect(documentDiffProtectsDraft(tab, { ...review, hasExternalChanges: false })).toBe(false);
+    expect(documentDiffProtectsDraft(tab, { ...review, path: "C:/other.md" })).toBe(false);
+    expect(documentDiffProtectsDraft(tab, null)).toBe(false);
+  });
   it("採用を確定した最新リビジョンへだけ保存する", () => {
     const { tab, review } = fixture(); expect(documentDiffSavePermission(tab, review)).toEqual({ expectedRevision: "r2", force: true });
   });

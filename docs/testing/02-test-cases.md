@@ -27,6 +27,8 @@
 
 ## 3. Markdown編集・Diff
 
+ローカルMarkdownのDiffについては、実装済みの[変更パターンと検証](04-document-diff.md)に自動検証と別環境の受入を分けて記録する。
+
 | テストID | 観点 | 前提条件 | 手順 | 期待結果 |
 | --- | --- | --- | --- | --- |
 | EDT-N-001 | 正常 | ATX見出し・list・table | toolbar/key操作、Undo/Redo、保存 | 対象構文だけ変更、1操作単位でUndo |
