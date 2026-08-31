@@ -5,19 +5,22 @@ Windows SDKの`MakeAppx.exe`と`SignTool.exe`を使い、x64版のMarkdownViewer
 ## 自己署名版を作る
 
 ```powershell
-pwsh -NoProfile -File .\scripts\build-msix.ps1
+pwsh -NoProfile -File .\scripts\publish-MarkdownViewer.ps1 -Mode Build -Channel beta -ReleaseIntentConfirmed
 ```
 
 `release\msix`へ署名済み`.msix`と公開鍵`MarkdownViewer.cer`を出力する。公開鍵のファイル名は
-バージョンにかかわらず固定し、同じ証明書を使用している間は既存ファイルを再利用する。初回はCurrent Userの
-`Personal (My)`証明書ストアへ`MarkdownViewer Self-Signed Code Signing`というFriendly Nameの
-コード署名証明書を作成し、秘密鍵を永続保存する。2回目以降は同じ証明書を再利用する。
+バージョンにかかわらず固定し、同じ証明書を使用している間は既存ファイルを再利用する。
+署名はPC共通設定 `%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json` の拇印で指定した
+`CurrentUser\My` の証明書を使用する。秘密鍵はWindows管理下に保持し、アプリごとには作らない。
+共通設定なし・鍵欠落・期限切れでは停止し、証明書を自動発行しない。
 
-証明書のThumbprintを明示して再利用する場合は次のように指定する。
+共通設定の初期登録と他アプリへの導入は[PC共通MSIX署名](MSIX_SIGNING.md)を参照する。
+下位スクリプトの`-CertificateThumbprint`は共通設定と同じ値だけを許可する。別証明書への切替には使用しない。
 
 ```powershell
-pwsh -NoProfile -File .\scripts\build-msix.ps1 `
-  -CertificateThumbprint "<thumbprint>"
+pwsh -NoProfile -File .\scripts\initialize-msix-signing.ps1 `
+  -CertificateThumbprint "475BABC3C3D1E871D90503D45CC5236216D85EE8" `
+  -Publisher "CN=KotorinChunChun"
 ```
 
 開発用証明書はOSに信頼されていない。内容を確認したうえで、現在のユーザーの`TrustedPeople`へ
@@ -48,17 +51,9 @@ betaと正式版は別のApp Installer URIを使用し、Package Identityと署�
 
 ## 本番署名版を作る
 
-正式なコード署名証明書をPFXで指定する。マニフェストのPublisherは証明書のSubjectから自動設定する。
-
-```powershell
-pwsh -NoProfile -File .\scripts\build-msix.ps1 `
-  -PfxPath C:\secure\publisher.pfx `
-  -PfxPassword "<password>" `
-  -TimestampUrl "<RFC 3161 timestamp URL>"
-```
-
-コマンドライン引数のパスワードはプロセス一覧や履歴へ残る可能性がある。CIではシークレット管理された
-一時環境から実行し、PFXとパスワードをリポジトリへ保存しない。
+本PCのStore外署名は共通証明書を使用する。個別PFX・パスワード引数とPublisherの自動上書きを廃止した。
+有料証明書や別PCへ移行する場合は、全アプリのPublisher・利用者側の信頼・更新経路を確認してから
+証明書ストアと共通設定を移行する。共通化だけで公的に信頼された署名になるわけではない。
 
 Microsoft Storeへ提出する場合は、Partner Centerで割り当てられたIdentityとPublisherへ変更し、Storeの
 署名フローを使用する。

@@ -16,6 +16,7 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $PSScriptRoot "ReleaseTools.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "MsixSigning.psm1") -Force
 $configuration = Import-ReleaseConfiguration -Path $ConfigPath -ProjectRoot $projectRoot
 
 $releaseModes = @("Build", "Stage", "Publish", "Full")
@@ -78,6 +79,7 @@ function Show-ReleasePlan {
     Write-Host "Identity: $($configuration.Raw.application.identityName)"
     Write-Host "Publisher: $($configuration.Raw.application.publisher)"
     Write-Host "Certificate: $($configuration.Raw.application.certificateFriendlyName)"
+    Write-Host "Signing profile: $(Get-MsixSigningProfilePath)"
     Write-Host "Site directory: $($configuration.SiteDirectory)"
     foreach ($channelName in @("beta", "stable")) {
         $plannedArtifacts = Get-ReleaseArtifacts `
@@ -97,6 +99,9 @@ function Invoke-BuildRelease {
         [string]$SelectedChannel
     )
 
+    # 重いビルドより前に署名設定の不備を検出する。
+    $certificate = Get-MsixSigningCertificate -Publisher $configuration.Raw.application.publisher
+    $certificate.Dispose()
     Write-Host "Running frontend tests for the explicitly requested release..."
     Invoke-CheckedExternalCommand -FilePath "npm.cmd" -ArgumentList @("test") -WorkingDirectory $projectRoot
     Write-Host "Running Rust tests for the explicitly requested release..."
