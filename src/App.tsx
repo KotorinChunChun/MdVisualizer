@@ -23,7 +23,7 @@ import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
-import { DocumentDiffWorkspace, type DocumentDiffTarget } from "./components/DocumentDiffWorkspace";
+import { DocumentDiffWorkspace, type DocumentDiffTarget, type DiffSaveReview } from "./components/DocumentDiffWorkspace";
 import type { MarkdownEditorHandle } from "./components/MarkdownEditor";
 import { useCropEditor, type ImageEditTarget } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
@@ -72,6 +72,7 @@ import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
 import { createDocumentStorageRefresh } from "./lib/documentStorageRefresh";
 import { documentDiffTarget } from "./lib/documentDiffTarget";
+import { documentDiffSavePermission } from "./lib/documentDiffSave";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -244,6 +245,8 @@ export function App() {
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [mediaPreviewInitialViewState, setMediaPreviewInitialViewState] = useState<MediaPreviewViewState | null>(null);
   const [documentDiff, setDocumentDiff] = useState<DocumentDiffTarget | null>(null);
+  const diffReviewRef = useRef<DiffSaveReview | null>(null);
+  const updateDiffReview = useCallback((review: DiffSaveReview | null) => { diffReviewRef.current = review; }, []);
   const [annotationTarget, setAnnotationTarget] = useState<ImageEditTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
   const [svgEditorTarget, setSvgEditorTarget] = useState<SvgSourceEditTarget | null>(null);
@@ -670,15 +673,21 @@ export function App() {
 
   useEffect(() => { setDocumentDiff(null); }, [activeTab?.id]);
 
-  const saveTab = useCallback(async (id: string, reviewedStorageRevision?: string, draftOverride?: string) => {
+  const saveTab = useCallback(async (id: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
-    const draft = draftOverride ?? tab?.draft;
-    if (!tab?.document || draft === undefined || (draftOverride === undefined && !tab.dirty) || tab.saving) return;
+    const draft = tab?.draft;
+    if (!tab?.document || draft === undefined || tab.saving) return;
+    const permission = documentDiffSavePermission(tab, diffReviewRef.current);
+    if (permission.error) {
+      setToast({ id: crypto.randomUUID(), message: permission.error, type: "error" });
+      return;
+    }
+    if (!tab.dirty && !permission.force) return;
     if (tab.document.kind !== "markdown") {
       setToast({ id: String(Date.now()), message: "この文書は閲覧専用です。", type: "error" });
       return;
     }
-    dispatch({ type: "SAVE_STARTED", id, force: draftOverride !== undefined });
+    dispatch({ type: "SAVE_STARTED", id, force: permission.force });
     let identity = !tab.untitled && !isSharePointDocument(tab.document) ? localPathIdentity(tab.document.path) : null;
     const selfSaveUntil = Date.now() + 2000;
     const markSelfSave = (nextIdentity: string | null) => {
@@ -719,7 +728,7 @@ export function App() {
         const result = await saveMarkdown({
           path: tab.document.path,
           content: draft,
-          expectedRevision: reviewedStorageRevision ?? tab.document.revision,
+          expectedRevision: permission.expectedRevision,
           stagedAssetIds,
         });
         if (result.status === "conflict") {
@@ -728,7 +737,7 @@ export function App() {
           dispatch({ type: "SAVE_FAILED", id, error: "保存先が更新されています。差分を確認してください。" });
           dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
           dispatch({ type: "STORAGE_CONFLICT", id, document: result.latest });
-          setDocumentDiff({
+          if (tabsStateRef.current.activeId === id) setDocumentDiff({
             path: result.latest.path,
             baseDir: result.latest.base_dir,
             openedContent: latestTab.openedContent ?? tab.document.content,
@@ -976,20 +985,6 @@ export function App() {
     }));
     return true;
   }, []);
-
-  const adoptDiffHunk = useCallback(async (content: string) => {
-    const tabId = tabsStateRef.current.activeId;
-    if (!tabId) return;
-    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId);
-    if (!tab?.document || tab.document.kind !== "markdown") return;
-    const reviewedRevision = documentDiff && localPathIdentity(documentDiff.path) === localPathIdentity(tab.document.path)
-      ? tab.storageDocument?.revision ?? documentDiff.storageRevision
-      : undefined;
-    // Queue the draft update before saving so the reducer keeps the adopted
-    // content as the current value after the save result is applied.
-    dispatch({ type: "DRAFT_CHANGED", id: tabId, content });
-    await saveTab(tabId, reviewedRevision, content);
-  }, [documentDiff, saveTab]);
 
   const saveStandaloneDrawio = useCallback(async (id: string, content: string): Promise<boolean> => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
@@ -2194,17 +2189,16 @@ export function App() {
       </div>}
 
       <div className={`document-workspace editor-workspace-${editorMode}`}>
-      {documentDiff && activeTab?.document?.kind === "markdown" ? <DocumentDiffWorkspace
+      {documentDiff && activeTab?.document?.kind === "markdown" && documentSourceIdentity(documentDiff.path) === documentSourceIdentity(activeTab.path) ? <DocumentDiffWorkspace
+        key={activeTab.id}
         target={documentDiffTarget(activeTab, documentDiff.conflict)}
         editorMode={editorMode}
         theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
-        onEditingChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
-        onAdopt={adoptDiffHunk}
-        onSave={() => void saveTab(activeTab.id)}
+        onEditingChange={isSharePointDocument(activeTab.document) ? undefined : (content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
+        onSave={isSharePointDocument(activeTab.document) ? undefined : () => void saveTab(activeTab.id)}
+        onReviewChange={updateDiffReview}
+        onRefresh={() => void refreshTabStorage(activeTab.id, false)}
         saving={activeTab.saving}
-        onOverwrite={documentDiff.conflict && documentDiff.storageRevision
-          ? () => void saveTab(activeTab.id, documentDiff.storageRevision)
-          : undefined}
       /> : <>
       {editorMode === "preview" && activeTab?.document && <DocumentSidePanel
         activeTab={documentSidePanel}

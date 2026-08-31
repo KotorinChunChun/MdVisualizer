@@ -1,143 +1,103 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
+import { EditorView } from "@codemirror/view";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { buildWorkspaceDiffPanes, DocumentDiffWorkspace, synchronizedDiffScrollTop, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
+import { DocumentDiffWorkspace, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
 
 afterEach(cleanup);
-
 beforeAll(() => {
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
   Range.prototype.getBoundingClientRect = () => new DOMRect();
 });
+const target: DocumentDiffTarget = { path: "C:\\docs\\note.md", baseDir: "C:\\docs", openedContent: "a\nb\nc",
+  storageContent: "a\nb\nc", editingContent: "a\nL\nc", baselineRevision: "r1", storageRevision: "r1" };
+function Fixture({ storage = target.storageContent, mode = "edit", error = null, refreshing = false, onSave = () => {} }: {
+  storage?: string; mode?: "edit" | "split" | "preview"; error?: string | null; refreshing?: boolean; onSave?: () => void;
+}) {
+  const [content, setContent] = useState(target.editingContent);
+  return <><DocumentDiffWorkspace target={{ ...target, storageContent: storage, editingContent: content, storageError: error, refreshing }}
+    editorMode={mode} theme="dark" onEditingChange={setContent} onSave={onSave} />
+    <output data-testid="draft">{content}</output></>;
+}
+const draft = () => screen.getByTestId("draft").textContent;
+const choose = (side: "ストレージ" | "自分") => fireEvent.click(screen.getByRole("button", { name: new RegExp(`${side}側の2行目を採用`) }));
+const save = () => screen.getByRole<HTMLButtonElement>("button", { name: "採用結果を保存" });
+const editor = () => EditorView.findFromDOM(document.querySelector('[data-pane-key="result"] .cm-editor')!)!;
 
-const target: DocumentDiffTarget = {
-  path: "C:\\docs\\note.md",
-  baseDir: "C:\\docs",
-  openedContent: "# Opened",
-  storageContent: "# Opened",
-  editingContent: "# Editing",
-};
-
-describe("DocumentDiffWorkspace", () => {
-  it("maps the relative scroll position between different pane heights", () => {
-    expect(synchronizedDiffScrollTop(
-      { scrollTop: 250, scrollHeight: 600, clientHeight: 100 },
-      { scrollTop: 0, scrollHeight: 1200, clientHeight: 200 },
-    )).toBe(500);
-    expect(synchronizedDiffScrollTop(
-      { scrollTop: 50, scrollHeight: 100, clientHeight: 100 },
-      { scrollTop: 0, scrollHeight: 1200, clientHeight: 200 },
-    )).toBe(0);
+describe("Diffの選択と編集履歴", () => {
+  it.each(["edit", "split", "preview"] as const)("%sでも外部更新で2列から3列へ切り替え、自分の内容を保持する", (mode) => {
+    const { rerender } = render(<Fixture mode={mode} />);
+    expect(document.querySelectorAll(".cm-editor")).toHaveLength(2);
+    rerender(<Fixture mode={mode} storage={"a\nS\nc"} />);
+    expect(document.querySelectorAll(".cm-editor")).toHaveLength(3);
+    expect(screen.getByText(/3-way（ストレージ/)).toBeTruthy();
+    expect(document.querySelector('[data-pane-key="local"] .cm-content')?.textContent).toBe("aLc");
+    expect(draft()).toBe("a\nL\nc");
+    expect(save().disabled).toBe(true);
+    expect(document.querySelectorAll('.cm-content[contenteditable="true"]')).toHaveLength(1);
   });
-
-  it("uses storage/saved/current code columns in edit mode", () => {
-    const threeWay = buildWorkspaceDiffPanes({ ...target, storageContent: "# Storage" }, "edit");
-    expect(threeWay.mode).toBe("three-way");
-    expect(threeWay.panes.map((pane) => [pane.label, pane.display])).toEqual([
-      ["ストレージ", "code"], ["保存済み", "code"], ["現在", "code"],
-    ]);
+  it("行の両側を採用でき、本文と判断をUndo/Redoし、明示保存まで書き込まない", () => {
+    const onSave = vi.fn();
+    render(<Fixture storage={"a\nS\nc"} onSave={onSave} />);
+    choose("ストレージ");
+    expect(draft()).toBe("a\nS\nc");
+    expect(save().disabled).toBe(false);
+    choose("自分");
+    expect(draft()).toBe("a\nL\nc");
+    fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
+    expect(draft()).toBe("a\nS\nc");
+    fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
+    expect(draft()).toBe("a\nL\nc");
+    expect(save().disabled).toBe(true);
+    fireEvent.keyDown(document.querySelector(".document-diff-workspace")!, { key: "y", ctrlKey: true });
+    expect(draft()).toBe("a\nS\nc");
+    expect(onSave).not.toHaveBeenCalled();
+    fireEvent.click(save());
+    expect(onSave).toHaveBeenCalledOnce();
   });
-
-  it("collapses unchanged storage and opened content into a two-way rendered view", () => {
-    const twoWay = buildWorkspaceDiffPanes(target, "preview");
-    expect(twoWay.mode).toBe("two-way");
-    expect(twoWay.panes.map((pane) => [pane.label, pane.display])).toEqual([
-      ["ストレージ／保存済み", "rendered"], ["現在", "rendered"],
-    ]);
+  it("直接編集を手動採用とし、その編集と判断をUndoで戻す", () => {
+    render(<Fixture storage={"a\nS\nc"} />);
+    act(() => { editor().dispatch({ changes: { from: 2, to: 3, insert: "manual" } }); });
+    expect(draft()).toBe("a\nmanual\nc");
+    expect(save().disabled).toBe(false);
+    expect(screen.getByRole("button", { name: /ストレージ側の2行目を採用.*手動編集/ })).toBeTruthy();
+    fireEvent.keyDown(editor().contentDOM, { key: "z", ctrlKey: true });
+    expect(draft()).toBe("a\nL\nc");
+    expect(save().disabled).toBe(true);
   });
-
-  it("uses the requested four-column layout in split mode", () => {
-    render(<DocumentDiffWorkspace target={target} editorMode="split" theme="dark" />);
-    expect(screen.getByText("保存済みレンダリング")).toBeTruthy();
-    expect(screen.getByText("保存済みコード")).toBeTruthy();
-    expect(screen.getByText("現在のコード")).toBeTruthy();
-    expect(screen.getByText("現在のレンダリング")).toBeTruthy();
-    expect(document.querySelectorAll(".document-diff__pane")).toHaveLength(4);
-    expect(document.querySelectorAll(".document-diff .mermaid-container, .document-diff .drawio-block")).toHaveLength(0);
+  it("再外部更新は影響行だけ判断を無効にし、採用結果と自分の原文を保持する", () => {
+    const { rerender } = render(<Fixture storage={"a\nS\nT"} />);
+    choose("自分");
+    fireEvent.click(screen.getByRole("button", { name: /ストレージ側の3行目を採用/ }));
+    expect(save().disabled).toBe(false);
+    rerender(<Fixture storage={"a\nS2\nT"} />);
+    expect(draft()).toBe("a\nL\nT");
+    expect(screen.getByText("未選択 1行")).toBeTruthy();
+    expect(document.querySelector('[data-pane-key="local"] .cm-content')?.textContent).toBe("aLc");
+    expect(screen.getByRole("button", { name: /ストレージ側の3行目を採用/ }).getAttribute("aria-pressed")).toBe("true");
+    choose("自分");
+    expect(save().disabled).toBe(false);
   });
-
-  it("adopts one storage change hunk into the editing content", async () => {
-    const onEditingChange = vi.fn();
-    render(<DocumentDiffWorkspace
-      target={{ ...target, openedContent: "a\nb\nc", storageContent: "a\nstorage\nc", editingContent: "a\nediting\nc" }}
-      editorMode="edit"
-      theme="dark"
-      onEditingChange={onEditingChange}
-    />);
-    fireEvent.click(screen.getByRole("button", { name: /行変更を採用/ }));
-    expect(onEditingChange).toHaveBeenCalledWith("a\nstorage\nc");
-    expect(await screen.findByLabelText("Markdown編集", {}, { timeout: 5_000 })).toBeTruthy();
+  it("2wayへ戻って再度3wayになった時点で自分の原文を採り直す", () => {
+    const { rerender } = render(<Fixture storage={"a\nS\nc"} />);
+    rerender(<Fixture />);
+    act(() => { editor().dispatch({ changes: { from: 2, to: 3, insert: "L2" } }); });
+    rerender(<Fixture storage={"a\nS2\nc"} />);
+    expect(document.querySelector('[data-pane-key="local"] .cm-content')?.textContent).toBe("aL2c");
   });
-
-  it("routes an adopted storage hunk to the persistence callback", () => {
-    const onAdopt = vi.fn();
-    render(<DocumentDiffWorkspace
-      target={{ ...target, openedContent: "a\nb\nc", storageContent: "a\nstorage\nc", editingContent: "a\nediting\nc" }}
-      editorMode="preview"
-      theme="dark"
-      onAdopt={onAdopt}
-    />);
-    fireEvent.click(screen.getByRole("button", { name: /行変更を採用/ }));
-    expect(onAdopt).toHaveBeenCalledWith("a\nstorage\nc");
+  it.each([{ refreshing: true }, { error: "ファイルが削除されました" }])("確認中・取得失敗でも本文を保持し採用と保存を禁止する %j", (props) => {
+    const { rerender } = render(<Fixture storage={"a\nS\nc"} />);
+    choose("自分");
+    rerender(<Fixture storage={"a\nS\nc"} {...props} />);
+    expect(save().disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: /ストレージ側の2行目を採用/ }).disabled).toBe(true);
+    expect(draft()).toBe("a\nL\nc");
   });
-
-  it("shows an explicit overwrite action only for a save conflict", () => {
-    const onOverwrite = vi.fn();
-    render(<DocumentDiffWorkspace target={{ ...target, conflict: true, storageRevision: "r2" }} editorMode="preview" theme="dark" onOverwrite={onOverwrite} />);
-    fireEvent.click(screen.getByRole("button", { name: "確認した内容で上書き保存" }));
-    expect(onOverwrite).toHaveBeenCalledOnce();
-    expect(screen.getByText(/保存競合/)).toBeTruthy();
+  it("対応行のスクロール位置を全列へ同じピクセル数で伝える", () => {
+    render(<Fixture storage={"a\nS\nc"} />);
+    const scrollers = [...document.querySelectorAll<HTMLElement>(".cm-scroller, .diff-row-actions")];
+    scrollers[0].scrollTop = 44;
+    fireEvent.scroll(scrollers[0]);
+    expect(scrollers.every((node) => node.scrollTop === 44)).toBe(true);
   });
-
-  it("synchronizes scrolling across rendered DIFF panes", () => {
-    const { container } = render(<DocumentDiffWorkspace target={target} editorMode="preview" theme="dark" />);
-    const panes = [...container.querySelectorAll<HTMLElement>(".document-diff__rendered")];
-    expect(panes).toHaveLength(2);
-    Object.defineProperties(panes[0], { scrollHeight: { value: 600 }, clientHeight: { value: 100 } });
-    Object.defineProperties(panes[1], { scrollHeight: { value: 1200 }, clientHeight: { value: 200 } });
-    panes[0].scrollTop = 250;
-
-    fireEvent.scroll(panes[0]);
-
-    expect(panes[1].scrollTop).toBe(500);
-  });
-
-  it("maps a clicked old line to the current editor and highlights both versions", async () => {
-    const { container } = render(<DocumentDiffWorkspace
-      target={{ ...target, openedContent: "# a\n\n# b", storageContent: "# a\n\n# b", editingContent: "inserted\n# a\n\n# b" }}
-      editorMode="split"
-      theme="dark"
-      onEditingChange={() => {}}
-    />);
-    const openedCodeLines = container.querySelectorAll<HTMLElement>('[data-pane-key="opened-code"] li');
-
-    fireEvent.click(openedCodeLines[2]);
-
-    await waitFor(() => expect(container.querySelector(".cm-activeLine")?.textContent).toBe("# b"), { timeout: 5_000 });
-    await waitFor(() => {
-      expect(openedCodeLines[2].classList.contains("is-current")).toBe(true);
-      const openedHeadings = container.querySelectorAll<HTMLElement>('[data-pane-key="opened-rendered"] h1');
-      const editingHeadings = container.querySelectorAll<HTMLElement>('[data-pane-key="editing-rendered"] h1');
-      expect(openedHeadings[openedHeadings.length - 1]?.classList.contains("is-editor-current-line")).toBe(true);
-      expect(editingHeadings[editingHeadings.length - 1]?.classList.contains("is-editor-current-line")).toBe(true);
-    }, { timeout: 5_000 });
-  });
-
-  it("highlights the exact table row selected by the Edit cursor", async () => {
-    const table = "| name | value |\n| --- | --- |\n| first | 1 |\n| second | 2 |";
-    const { container } = render(<DocumentDiffWorkspace
-      target={{ ...target, openedContent: table, storageContent: table, editingContent: table }}
-      editorMode="split"
-      theme="dark"
-      onEditingChange={() => {}}
-    />);
-    const openedCodeLines = container.querySelectorAll<HTMLElement>('[data-pane-key="opened-code"] li');
-
-    fireEvent.click(openedCodeLines[3]);
-
-    await waitFor(() => {
-      expect(container.querySelector('[data-pane-key="opened-rendered"] tr[data-source-line="4"]')?.classList.contains("is-editor-current-line")).toBe(true);
-      expect(container.querySelector('[data-pane-key="editing-rendered"] tr[data-source-line="4"]')?.classList.contains("is-editor-current-line")).toBe(true);
-    }, { timeout: 5_000 });
-  });
-
 });

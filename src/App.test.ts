@@ -62,7 +62,8 @@ describe("save conflict wiring", () => {
     const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
     expect(source).toContain('result.status === "conflict"');
     expect(source).toContain("storageRevision: result.latest.revision");
-    expect(source).toContain("saveTab(activeTab.id, documentDiff.storageRevision)");
+    expect(source).toContain("documentDiffSavePermission(tab, diffReviewRef.current)");
+    expect(source).toContain("expectedRevision: permission.expectedRevision");
   });
 
   it("keeps an open Diff workspace and advances its saved baseline after save", () => {
@@ -75,11 +76,11 @@ describe("save conflict wiring", () => {
     expect(source.slice(saveSuccess, saveToast)).not.toContain("setDocumentDiff(null)");
   });
 
-  it("persists Diff adoption through the reviewed storage revision", () => {
+  it("separates row adoption from saving and supplies a revision-bound review", () => {
     const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
-    expect(source).toContain("onAdopt={adoptDiffHunk}");
-    expect(source).toContain("await saveTab(tabId, reviewedRevision, content)");
-    expect(source).toContain("force: draftOverride !== undefined");
+    expect(source).toContain("onReviewChange={updateDiffReview}");
+    expect(source).not.toContain("adoptDiffHunk");
+    expect(source).toContain("force: permission.force");
   });
 });
 
