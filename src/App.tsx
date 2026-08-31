@@ -34,7 +34,7 @@ import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
 import { createMarkdown, diagnoseDocument, discardStagedAssets, documentWatchTargets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
 import { ToastState, type MarkdownLoadResult } from "./types/app";
-import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode } from "./state/tabsReducer";
+import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode, type TabsAction } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
@@ -70,6 +70,8 @@ import { markdownForPreviewRange } from "./lib/previewContext";
 import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } from "./lib/sourceNavigation";
 import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
+import { createDocumentStorageRefresh } from "./lib/documentStorageRefresh";
+import { documentDiffTarget } from "./lib/documentDiffTarget";
 import "./styles/app.css";
 import "./styles/content.css";
 import "./styles/crop.css";
@@ -242,7 +244,6 @@ export function App() {
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [mediaPreviewInitialViewState, setMediaPreviewInitialViewState] = useState<MediaPreviewViewState | null>(null);
   const [documentDiff, setDocumentDiff] = useState<DocumentDiffTarget | null>(null);
-  const [diffLoading, setDiffLoading] = useState(false);
   const [annotationTarget, setAnnotationTarget] = useState<ImageEditTarget | null>(null);
   const [annotationReturnPreview, setAnnotationReturnPreview] = useState<MediaPreviewTarget | null>(null);
   const [svgEditorTarget, setSvgEditorTarget] = useState<SvgSourceEditTarget | null>(null);
@@ -285,9 +286,20 @@ export function App() {
   }, []);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedTabs, setClosedTabs] = useState<ClosedTabState[]>([]);
-  const [tabsState, dispatch] = useReducer(tabsReducer, initialTabsState);
+  const [tabsState, reactDispatch] = useReducer(tabsReducer, initialTabsState);
   const tabsStateRef = useRef(tabsState);
   tabsStateRef.current = tabsState;
+  const dispatch = useCallback((action: TabsAction) => {
+    // 同一イベント内の通知・保存完了も最新stateに対して世代を取得する。
+    tabsStateRef.current = tabsReducer(tabsStateRef.current, action);
+    reactDispatch(action);
+  }, []);
+  const autoReloadRef = useRef(autoReload);
+  autoReloadRef.current = autoReload;
+  const refreshTabStorage = useMemo(() => createDocumentStorageRefresh({
+    getTab: (id) => tabsStateRef.current.tabs.find((tab) => tab.id === id),
+    load: loadMarkdown, dispatch, shouldReload: () => autoReloadRef.current === "on",
+  }), []);
   const resolvePastedImage = useCallback(async (image: ClipboardImageData): Promise<ResolvedClipboardImage> => {
     const embedded = { source: `data:${image.mediaType};base64,${image.base64}` };
     if (clipboardImage.storage === "base64") return embedded;
@@ -554,7 +566,11 @@ export function App() {
     inFlightLoads.current.add(loadKey);
     try {
       const document = await loadMarkdown(path);
+      const current = tabsStateRef.current.tabs.find((tab) => tab.id === id);
+      const discardedAssets = current?.generation === generation && !current.saving
+        && (current.changeSequence ?? 0) === (current.reloadSequence ?? 0) ? current.pendingAssets ?? [] : [];
       dispatch({ type: "LOADED", id, generation, document });
+      if (discardedAssets.length) void discardStagedAssets(discardedAssets.map((asset) => asset.id));
     } catch (error) {
       dispatch({ type: "FAILED", id, generation, error: String(error) });
     } finally {
@@ -595,10 +611,11 @@ export function App() {
   }, [watchableDocumentsKey]);
 
   useEffect(() => {
-    const targets: string[] = JSON.parse(watchTargetKey);
-    if (autoReload !== "off" && targets.length > 0) void syncWatchTargets(windowLabel, targets);
-    if (autoReload === "off") void removeWindowWatchTargets(windowLabel);
-  }, [watchTargetKey, autoReload, windowLabel]);
+    // OFFは通常本文の自動更新を止める。開いているDiffの最新版監視は独立して維持する。
+    const targets: string[] = autoReload === "off" ? (documentDiff ? [documentDiff.path] : []) : JSON.parse(watchTargetKey);
+    if (targets.length > 0) void syncWatchTargets(windowLabel, targets);
+    else void removeWindowWatchTargets(windowLabel);
+  }, [watchTargetKey, autoReload, windowLabel, documentDiff?.path]);
 
   useEffect(() => () => { void removeWindowWatchTargets(windowLabel); }, [windowLabel]);
 
@@ -627,7 +644,6 @@ export function App() {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
     if (!tab) return false;
     if (confirmDiscard && tab.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄して再読み込みしますか？`)) return false;
-    if (tab.pendingAssets?.length) void discardStagedAssets(tab.pendingAssets.map((asset) => asset.id));
     if (id === tabsStateRef.current.activeId && containerRef.current && markdownRef.current) {
       const anchor = captureScrollAnchor(containerRef.current, markdownRef.current);
       if (anchor) reloadAnchors.current[id] = anchor;
@@ -640,7 +656,7 @@ export function App() {
     if (activeTab?.document && !activeTab.untitled) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
 
-  const toggleDocumentDiff = useCallback(async () => {
+  const toggleDocumentDiff = useCallback(() => {
     if (documentDiff) {
       setDocumentDiff(null);
       return;
@@ -648,25 +664,9 @@ export function App() {
     const tabId = tabsStateRef.current.activeId;
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId);
     if (!tab?.document || tab.document.kind !== "markdown") return;
-    setDiffLoading(true);
-    try {
-      const storageDocument = await loadMarkdown(tab.document.path);
-      if (storageDocument.kind !== "markdown") throw new Error("Markdown文書として再読込できませんでした。");
-      const latestTab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId) ?? tab;
-      setDocumentDiff({
-        path: storageDocument.path,
-        baseDir: storageDocument.base_dir,
-        openedContent: latestTab.openedContent ?? tab.openedContent ?? tab.document.content,
-        storageContent: storageDocument.content,
-        editingContent: latestTab.draft,
-        storageRevision: storageDocument.revision,
-      });
-    } catch (error) {
-      setToast({ id: String(Date.now()), message: `差分の取得に失敗しました: ${String(error)}`, type: "error" });
-    } finally {
-      setDiffLoading(false);
-    }
-  }, [documentDiff]);
+    setDocumentDiff(documentDiffTarget(tab));
+    void refreshTabStorage(tab.id, false);
+  }, [documentDiff, refreshTabStorage]);
 
   useEffect(() => { setDocumentDiff(null); }, [activeTab?.id]);
 
@@ -727,6 +727,7 @@ export function App() {
           const latestTab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id) ?? tab;
           dispatch({ type: "SAVE_FAILED", id, error: "保存先が更新されています。差分を確認してください。" });
           dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
+          dispatch({ type: "STORAGE_CONFLICT", id, document: result.latest });
           setDocumentDiff({
             path: result.latest.path,
             baseDir: result.latest.base_dir,
@@ -753,6 +754,8 @@ export function App() {
         conflict: false,
       } : current);
       setToast({ id: String(Date.now()), message: `${document.path} を保存しました`, type: "success" });
+      // 保存完了と外部通知の順序が逆転しても、保存後の最新版を再確認する。
+      queueMicrotask(() => { void refreshTabStorage(id, false); });
     } catch (error) {
       if (identity) recentSelfSaves.current.delete(identity);
       const message = String(error);
@@ -760,7 +763,7 @@ export function App() {
       if (message.toLowerCase().includes("conflict") || message.includes("更新されています") || message.includes("HTTP 412")) dispatch({ type: "EXTERNAL_CHANGED", id, changed: true });
       setToast({ id: String(Date.now()), message: `保存に失敗しました: ${message}`, type: "error" });
     }
-  }, []);
+  }, [refreshTabStorage]);
 
   const applyFoldPreset = useCallback((preset: "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset") => {
     if (!activeTab?.document) return;
@@ -980,7 +983,7 @@ export function App() {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId);
     if (!tab?.document || tab.document.kind !== "markdown") return;
     const reviewedRevision = documentDiff && localPathIdentity(documentDiff.path) === localPathIdentity(tab.document.path)
-      ? documentDiff.storageRevision
+      ? tab.storageDocument?.revision ?? documentDiff.storageRevision
       : undefined;
     // Queue the draft update before saving so the reducer keeps the adopted
     // content as the current value after the save result is applied.
@@ -2064,21 +2067,18 @@ export function App() {
       if (Object.values(diagnosticWatchTargets).some((targets) => targets.some((target) => localPathIdentity(target) === identity))) {
         setDiagnosticsRefresh((value) => value + 1);
       }
-      const selfSaveUntil = recentSelfSaves.current.get(identity);
-      if (selfSaveUntil && selfSaveUntil >= Date.now()) return;
-      if (selfSaveUntil) recentSelfSaves.current.delete(identity);
-      const tabs = tabsState.tabs.filter((candidate) => localPathIdentity(candidate.path) === identity);
+      const tabs = tabsStateRef.current.tabs.filter((candidate) => localPathIdentity(candidate.path) === identity);
       if (!tabs.length) {
         if (changeKind !== "deleted" && changeKind !== "renamed") updateImageVersion(path);
         return;
       }
       const canReload = changeKind !== "deleted" && changeKind !== "renamed";
       tabs.forEach((tab) => {
-        if (autoReload === "on" && canReload && !tab.dirty && !tab.saving) reloadTab(tab.id, false);
-        else dispatch({ type: "EXTERNAL_CHANGED", id: tab.id, changed: true });
+        if (!canReload) dispatch({ type: "STORAGE_UNAVAILABLE", id: tab.id, error: "ファイルが削除または移動されました。" });
+        else void refreshTabStorage(tab.id);
       });
     },
-    [tabsState.tabs, autoReload, diagnosticWatchTargets, reloadTab, updateImageVersion]
+    [diagnosticWatchTargets, refreshTabStorage, updateImageVersion]
   );
 
   const handleImageChanged = useCallback(
@@ -2159,9 +2159,9 @@ export function App() {
           <button
             type="button"
             aria-pressed={documentDiff !== null}
-            disabled={!canEditActive || activeTab?.untitled || diffLoading}
+            disabled={!canEditActive || activeTab?.untitled}
             onClick={() => void toggleDocumentDiff()}
-          >{diffLoading ? "差分取得中…" : "差分"}</button>
+          >差分</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <span className="control-group__title">画面</span>
@@ -2195,7 +2195,7 @@ export function App() {
 
       <div className={`document-workspace editor-workspace-${editorMode}`}>
       {documentDiff && activeTab?.document?.kind === "markdown" ? <DocumentDiffWorkspace
-        target={{ ...documentDiff, editingContent: activeTab.draft }}
+        target={documentDiffTarget(activeTab, documentDiff.conflict)}
         editorMode={editorMode}
         theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
         onEditingChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}

@@ -5,18 +5,10 @@ import type { EditorWorkspaceMode } from "../state/tabsReducer";
 import { MarkdownPreview } from "./MarkdownPreview";
 import type { MarkdownEditorHandle } from "./MarkdownEditor";
 import "../styles/document-diff.css";
+import type { DocumentDiffTarget } from "../lib/documentDiffTarget";
+export type { DocumentDiffTarget } from "../lib/documentDiffTarget";
 
 const MarkdownEditor = lazy(() => import("./MarkdownEditor").then((module) => ({ default: module.MarkdownEditor })));
-
-export interface DocumentDiffTarget {
-  path: string;
-  baseDir: string;
-  openedContent: string;
-  storageContent: string;
-  editingContent: string;
-  storageRevision?: string;
-  conflict?: boolean;
-}
 
 interface DiffPane {
   key: string;
@@ -52,7 +44,7 @@ export function buildWorkspaceDiffPanes(target: DocumentDiffTarget, editorMode: 
   summary: string;
   panes: DiffPane[];
 } {
-  if (editorMode === "split") {
+  if (editorMode === "split" && target.openedContent === target.storageContent) {
     const changes = changedLineNumbers(target.openedContent, target.editingContent);
     return {
       mode: "four-way",
@@ -67,7 +59,7 @@ export function buildWorkspaceDiffPanes(target: DocumentDiffTarget, editorMode: 
   }
 
   const model = buildDocumentDiff(target.openedContent, target.storageContent, target.editingContent);
-  const display = editorMode === "edit" ? "code" : "rendered";
+  const display = editorMode === "preview" ? "rendered" : "code";
   if (model.mode === "two-way") {
     return {
       mode: "two-way",
@@ -271,6 +263,8 @@ export function DocumentDiffWorkspace({ target, editorMode, theme, onEditingChan
         {target.conflict && onOverwrite && <button type="button" className="document-diff-workspace__overwrite" onClick={onOverwrite}>確認した内容で上書き保存</button>}
       </span>
     </header>
+    {target.refreshing && <p role="status">ストレージ最新版を確認中…</p>}
+    {target.storageError && <p role="alert">ストレージを確認できません: {target.storageError}（編集中の内容は保持しています）</p>}
     {storageHunks.length > 0 && <div className="document-diff__hunk-actions" aria-label="ストレージ変更の採用">
       <strong>ストレージ最新版から採用</strong>
       {storageHunks.map((hunk, index) => <button
@@ -281,7 +275,7 @@ export function DocumentDiffWorkspace({ target, editorMode, theme, onEditingChan
           if (onAdopt) void onAdopt(content);
           else onEditingChange?.(content);
         }}
-        disabled={saving || (!onAdopt && !onEditingChange)}
+        disabled={saving || target.refreshing || Boolean(target.storageError) || (!onAdopt && !onEditingChange)}
       >{index + 1}: {hunk.kind === "add" ? "行追加" : hunk.kind === "delete" ? "行削除" : "行変更"}を採用</button>)}
     </div>}
     <div className={`document-diff__panes document-diff__panes--${workspace.mode}`}>

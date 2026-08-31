@@ -69,7 +69,7 @@ describe("tabsReducer", () => {
     expect(state.tabs.find((tab) => tab.id === second)).toMatchObject({ searchOpen: false, externalChanged: false });
   });
 
-  it("clears only the reloaded tab's pending change", () => {
+  it("再読込が成功するまでは変更通知を保持し、他タブにも影響しない", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;
     state = tabsReducer(state, { type: "OPEN", path: "b.md" });
@@ -79,7 +79,7 @@ describe("tabsReducer", () => {
     state = tabsReducer(state, { type: "SCROLL", id: first, scrollTop: 640 });
     state = tabsReducer(state, { type: "RELOAD", id: first });
 
-    expect(state.tabs.find((tab) => tab.id === first)).toMatchObject({ externalChanged: false, scrollTop: 640, loading: true });
+    expect(state.tabs.find((tab) => tab.id === first)).toMatchObject({ externalChanged: true, scrollTop: 640, loading: true });
     expect(state.tabs.find((tab) => tab.id === second)?.externalChanged).toBe(true);
   });
 
@@ -190,14 +190,15 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].saving).toBe(true);
   });
 
-  it("keeps the last saved content as the Diff baseline after reloads", () => {
+  it("正常に再読込した内容へDiff基準と最新版を更新する", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
     const id = state.tabs[0].id;
     state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: { ...loadedDocument("C:\\docs\\a.md"), content: "opened" } });
     state = tabsReducer(state, { type: "SAVED", id, document: { ...loadedDocument("C:\\docs\\a.md"), content: "saved" } });
     state = tabsReducer(state, { type: "RELOAD", id });
-    state = tabsReducer(state, { type: "LOADED", id, generation: 2, document: { ...loadedDocument("C:\\docs\\a.md"), content: "external" } });
-    expect(state.tabs[0].openedContent).toBe("saved");
+    state = tabsReducer(state, { type: "LOADED", id, generation: state.tabs[0].generation, document: { ...loadedDocument("C:\\docs\\a.md"), content: "external" } });
+    expect(state.tabs[0].openedContent).toBe("external");
+    expect(state.tabs[0].storageDocument?.content).toBe("external");
   });
 
   it("即時保存では保存済み基準の確定部分と未保存ドラフトを同時更新する", () => {
