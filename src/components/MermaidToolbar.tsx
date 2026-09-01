@@ -32,7 +32,7 @@ export function MermaidToolbar({
       await copyMermaid(kind, source, svg ?? "");
       const message = kind === "code"
         ? "コードをコピーしました"
-        : kind === "png" ? "ラスタ画像をコピーしました" : "ベクタ画像をコピーしました";
+        : kind === "png" ? "PNG画像をコピーしました" : kind === "bmp" ? "BMP画像をコピーしました" : "ベクタ画像をコピーしました";
       const copyAsFile = allowFileCopy ? async () => {
         try {
           await copyMermaidAsFile(kind, source, svg ?? "", fileDiagramKind);
@@ -52,7 +52,7 @@ export function MermaidToolbar({
   return <div className="mermaid-toolbar" role="toolbar" aria-label={ariaLabel}>
     <div className="mermaid-toolbar__copy" role="group" aria-label="コピー">
       <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "code")}>コードをコピー</button>
-      {svg && <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "png")}>ラスタコピー</button>}
+      {svg && <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "bmp")}>BMPコピー</button>}
       {svg && <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "svg")}>ベクタコピー</button>}
     </div>
     {onDisplayChange && <div className="mermaid-toolbar__view" role="group" aria-label="表示内容">

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { copyMermaid, normalizeSvgForClipboard, svgToPngBlob } from "./mermaidClipboard";
+import { copyMermaid, normalizeSvgForClipboard, svgToBmpBlob, svgToPngBlob } from "./mermaidClipboard";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -135,5 +135,22 @@ describe("copyMermaid", () => {
     expect(decodeURIComponent(assignedSource)).toContain("<text");
     expect(fillRect).toHaveBeenCalledWith(0, 0, 120, 60);
     expect(drawImage).toHaveBeenCalled();
+  });
+
+  it("encodes the rendered SVG as a Windows BMP", async () => {
+    const getImageData = vi.fn().mockReturnValue({ data: new Uint8ClampedArray([255, 0, 0, 255, 0, 255, 0, 255]) });
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage: vi.fn(), fillRect: vi.fn(), getImageData } as unknown as CanvasRenderingContext2D);
+    let assignedSource = "";
+    class LoadedImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(value: string) { assignedSource = value; queueMicrotask(() => this.onload?.()); }
+    }
+    vi.stubGlobal("Image", LoadedImage);
+    const blob = await svgToBmpBlob('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 1" />');
+    expect(blob.type).toBe("image/bmp");
+    expect(new Uint8Array(await blob.arrayBuffer()).slice(0, 2)).toEqual(new Uint8Array([0x42, 0x4d]));
+    expect(getImageData).toHaveBeenCalledWith(0, 0, 2, 1);
+    expect(assignedSource).toMatch(/^data:image\/svg\+xml/);
   });
 });

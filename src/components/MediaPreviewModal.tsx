@@ -21,6 +21,8 @@ export interface ImageEditContext {
 
 export interface MediaPreviewTarget {
   content: MediaPreviewContent;
+  /** Human-readable heading shown in the zoom toolbar. */
+  headingTitle?: string;
   cropTarget?: import("../hooks/useCropEditor").CropTarget | null;
   editTarget?: import("../hooks/useCropEditor").ImageEditTarget | null;
   diagramSource?: string;
@@ -64,6 +66,7 @@ function svgIntrinsicSize(svg: string): { width: number; height: number } {
 
 export function MediaPreviewModal({
   content,
+  headingTitle,
   onClose,
   onActivate,
   onMediaClick,
@@ -82,6 +85,7 @@ export function MediaPreviewModal({
   onViewStateChange,
 }: {
   content: MediaPreviewContent;
+  headingTitle?: string;
   onClose: () => void;
   onActivate?: () => void;
   onMediaClick?: () => void;
@@ -196,6 +200,7 @@ export function MediaPreviewModal({
     onClick={onClose}
   >
     <div className="media-preview__toolbar" onClick={(event) => event.stopPropagation()}>
+      {headingTitle?.trim() && <strong className="media-preview__title">{headingTitle.trim()}</strong>}
       {diagramSource && content.kind === "svg" && <MermaidToolbar source={diagramSource} svg={content.svg} display="diagram" fileDiagramKind={diagramKind ?? "mermaid"} ariaLabel={`${diagramKind === "drawio" ? "draw.io" : "Mermaid"}全画面操作`} />}
       {imageContext && onOpenImageApp && imageApps.length > 0 && <ExternalActions
         apps={imageApps}
@@ -209,14 +214,14 @@ export function MediaPreviewModal({
         setConverting(true); setConversionError(null);
         void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));
       }}>{converting ? "変換中…" : conversionContext.storage === "embedded" ? "同フォルダのファイルへ変換" : "埋め込みへ変換"}</button>}
-      {imageContext && onSaveCaption && onRenameImage && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
+      {imageContext && onSaveCaption && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
       <button type="button" className="media-preview__mode" onClick={toggleMode}>
         {mode === "fit" ? "1:1表示" : "全体表示"}
       </button>
       <button type="button" className="media-preview__close" aria-label="拡大表示を閉じる" onClick={onClose}>×</button>
     </div>
     {conversionError && <p className="media-preview__conversion-error" role="alert" onClick={(event) => event.stopPropagation()}>{conversionError}</p>}
-    {metadataOpen && imageContext && onSaveCaption && onRenameImage && <div onClick={(event) => event.stopPropagation()}>
+    {metadataOpen && imageContext && onSaveCaption && <div onClick={(event) => event.stopPropagation()}>
       <ImageMetadataEditor context={imageContext} onSaveCaption={onSaveCaption} onRename={onRenameImage} />
     </div>}
     <div

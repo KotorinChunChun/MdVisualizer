@@ -145,10 +145,19 @@ describe("MediaPreviewModal", () => {
 
     expect(screen.getByRole("toolbar", { name: "draw.io全画面操作" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "コードをコピー" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "ラスタコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "BMPコピー" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "プレビュー" })).toBeNull();
     expect(screen.queryByRole("button", { name: "コード" })).toBeNull();
     expect(document.querySelector(".media-preview__source")).toBeNull();
+  });
+
+  it("shows the source heading in the expanded preview toolbar", () => {
+    render(<MediaPreviewModal
+      content={{ kind: "image", src: "data:image/png;base64,AAAA", alt: "画像の説明" }}
+      headingTitle="手順のスクリーンショット"
+      onClose={vi.fn()}
+    />);
+    expect(screen.getByText("手順のスクリーンショット")).toBeTruthy();
   });
 });

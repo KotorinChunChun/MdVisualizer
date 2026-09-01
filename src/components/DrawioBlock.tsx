@@ -234,7 +234,7 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
         type="button"
         className="drawio-block__zoom"
         aria-label="図を拡大"
-        onClick={() => onMediaOpen({ content: { kind: "svg", svg, alt }, diagramSource: source, diagramKind: "drawio" })}
+        onClick={() => onMediaOpen({ content: { kind: "svg", svg, alt }, headingTitle: headingTitle ?? alt, diagramSource: source, diagramKind: "drawio" })}
       >{content}</button>
       : content;
   };
@@ -274,7 +274,7 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
         className="drawio-block__zoom"
         aria-label="図を拡大"
         aria-disabled={!renderedSvg}
-        onClick={() => renderedSvg && onMediaOpen({ content: { kind: "svg", svg: renderedSvg, alt: "draw.io図" }, diagramSource: source, diagramKind: "drawio" })}
+        onClick={() => renderedSvg && onMediaOpen({ content: { kind: "svg", svg: renderedSvg, alt: "draw.io図" }, headingTitle: headingTitle ?? "draw.io図", diagramSource: source, diagramKind: "drawio" })}
       >{viewerHost}</button>
       : viewerHost;
   }

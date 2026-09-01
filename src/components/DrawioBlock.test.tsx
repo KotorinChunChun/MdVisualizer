@@ -110,7 +110,7 @@ describe("DrawioBlock", () => {
 
     expect(screen.getByRole("toolbar", { name: "draw.io操作" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "コードをコピー" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "ラスタコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "BMPコピー" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "コード" }));
     expect(screen.getByText(source)).toBeTruthy();
@@ -172,6 +172,7 @@ describe("DrawioBlock", () => {
     fireEvent.click(screen.getByRole("button", { name: "図を拡大" }));
     expect(onMediaOpen).toHaveBeenCalledWith({
       content: { kind: "svg", svg: expect.stringContaining("<rect"), alt: "draw.io図" },
+      headingTitle: "draw.io図",
       diagramSource: source,
       diagramKind: "drawio",
     });

@@ -337,6 +337,15 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
   return <code className={className} {...props}>{children}</code>;
 };
 
+/** Custom code blocks already provide their own semantic wrapper. Keeping the
+ * default outer <pre> would create a nested <pre>, which browsers reparent
+ * and makes list indentation appear to escape its parent item. */
+const MarkdownPre: NonNullable<Components["pre"]> = ({ children, ...props }) => {
+  const child = React.Children.only(children);
+  if (React.isValidElement(child) && child.type !== "code") return child;
+  return <pre {...props}>{children}</pre>;
+};
+
 function calculatedMarkdownTableChildren(children: React.ReactNode, calculation: TableAggregationResult): React.ReactNode {
   let bodyRow = 0;
   return React.Children.map(children, (section) => {
@@ -564,6 +573,7 @@ const MarkdownUnorderedList: NonNullable<Components["ul"]> = ({ node: _node, chi
 const markdownComponents: Components = {
   section: MarkdownSection,
   code: MarkdownCode,
+  pre: MarkdownPre,
   table: MarkdownTable,
   a: MarkdownLink,
   img: MarkdownImage,

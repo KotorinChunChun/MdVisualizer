@@ -1,6 +1,6 @@
 import { copyMermaidFile } from "./commands";
 
-export type MermaidCopyKind = "code" | "png" | "svg";
+export type MermaidCopyKind = "code" | "png" | "bmp" | "svg";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const MAX_RASTER_DIMENSION = 8192;
@@ -252,7 +252,7 @@ function rasterDimensions(width: number, height: number): { width: number; heigh
   };
 }
 
-export async function svgToPngBlob(svg: string): Promise<Blob> {
+async function svgToRasterCanvas(svg: string): Promise<{ canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; width: number; height: number }> {
   const normalizedSvg = normalizeSvgForClipboard(svg);
   const dimensions = svgDimensions(normalizedSvg);
   const { width, height } = rasterDimensions(dimensions.width, dimensions.height);
@@ -271,9 +271,47 @@ export async function svgToPngBlob(svg: string): Promise<Blob> {
     image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(normalizedSvg)}`;
   });
   context.drawImage(image, 0, 0, width, height);
+  return { canvas, context, width, height };
+}
+
+export async function svgToPngBlob(svg: string): Promise<Blob> {
+  const { canvas } = await svgToRasterCanvas(svg);
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("PNGを生成できません")), "image/png");
   });
+}
+
+/** Encodes the rendered diagram as a Windows compatible 24-bit BMP. */
+export async function svgToBmpBlob(svg: string): Promise<Blob> {
+  const { context, width, height } = await svgToRasterCanvas(svg);
+  const pixels = context.getImageData(0, 0, width, height).data;
+  const rowStride = Math.ceil(width * 3 / 4) * 4;
+  const pixelBytes = rowStride * height;
+  const buffer = new ArrayBuffer(54 + pixelBytes);
+  const view = new DataView(buffer);
+  const putAscii = (offset: number, value: string) => [...value].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
+  putAscii(0, "BM");
+  view.setUint32(2, 54 + pixelBytes, true);
+  view.setUint32(10, 54, true);
+  view.setUint32(14, 40, true);
+  view.setInt32(18, width, true);
+  view.setInt32(22, -height, true); // top-down rows are easier to consume and preserve the canvas order
+  view.setUint16(26, 1, true);
+  view.setUint16(28, 24, true);
+  view.setUint32(34, pixelBytes, true);
+  view.setInt32(38, 2835, true);
+  view.setInt32(42, 2835, true);
+  for (let y = 0; y < height; y += 1) {
+    const rowOffset = 54 + y * rowStride;
+    for (let x = 0; x < width; x += 1) {
+      const sourceOffset = (y * width + x) * 4;
+      const targetOffset = rowOffset + x * 3;
+      view.setUint8(targetOffset, pixels[sourceOffset + 2]);
+      view.setUint8(targetOffset + 1, pixels[sourceOffset + 1]);
+      view.setUint8(targetOffset + 2, pixels[sourceOffset]);
+    }
+  }
+  return new Blob([buffer], { type: "image/bmp" });
 }
 
 async function writeBlob(type: string, blob: Blob): Promise<void> {
@@ -292,6 +330,10 @@ export async function copyMermaid(kind: MermaidCopyKind, source: string, svg: st
     await writeBlob("image/png", await svgToPngBlob(svg));
     return;
   }
+  if (kind === "bmp") {
+    await writeBlob("image/bmp", await svgToBmpBlob(svg));
+    return;
+  }
   const normalizedSvg = normalizeSvgForClipboard(svg);
   try {
     await writeBlob("image/svg+xml", new Blob([normalizedSvg], { type: "image/svg+xml" }));
@@ -307,5 +349,8 @@ export async function copyMermaidAsFile(kind: MermaidCopyKind, source: string, s
   const pngBytes = kind === "png"
     ? Array.from(new Uint8Array(await (await svgToPngBlob(svg)).arrayBuffer()))
     : [];
-  return await copyMermaidFile({ kind, diagramKind, source, svg: normalizedSvg, pngBytes });
+  const bmpBytes = kind === "bmp"
+    ? Array.from(new Uint8Array(await (await svgToBmpBlob(svg)).arrayBuffer()))
+    : [];
+  return await copyMermaidFile({ kind, diagramKind, source, svg: normalizedSvg, pngBytes: kind === "bmp" ? bmpBytes : pngBytes });
 }

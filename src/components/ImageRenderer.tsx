@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { getCacheBusterUrl } from "../lib/image";
 import { getFileName, resolveImageSrc, resolveLocalImagePath } from "../lib/path";
 import { readDocumentAsset } from "../lib/commands";
@@ -64,6 +64,8 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   const [authenticatedSrc, setAuthenticatedSrc] = useState<string | null>(null);
   const [authenticatedAsset, setAuthenticatedAsset] = useState<DocumentAssetData | null>(null);
   const [authenticatedLoading, setAuthenticatedLoading] = useState(false);
+  const stageRef = useRef<HTMLSpanElement>(null);
+  const [stageWidth, setStageWidth] = useState(0);
   const assetDocumentPath = documentSourcePath ?? markdownPath;
   const isSharePointAsset = Boolean(
     assetDocumentPath?.toLowerCase().startsWith("spmd:") &&
@@ -130,6 +132,16 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   const canInlineResize = isEditableLocalImage && !presentationMode && !headingMode;
   const hasDisplaySize = !headingMode && Boolean(size);
 
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || typeof ResizeObserver === "undefined") return;
+    const update = () => setStageWidth(stage.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [size?.width, src, headingMode]);
+
   const fullPath = isRemote ? src : resolveLocalImagePath(src, baseDir) ?? src;
 
   const version = imageVersions[fullPath] || 0;
@@ -191,13 +203,14 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       content: safeSharePointSvg ? { kind: "svg", svg: safeSharePointSvg, alt } : { kind: "image", src: displaySrc, alt },
       cropTarget,
       editTarget,
-      imageContext: cropTarget && markdownPath && sourceOffset !== undefined ? {
+      imageContext: markdownPath && sourceOffset !== undefined ? {
         markdownPath,
-        imagePath: fullPath,
+        imagePath: isEmbeddedRaster ? normalizedAssetFilename(alt, parseRasterDataUri(src)?.extension ?? "png") : fullPath,
         source: src,
         sourceOffset,
         caption: alt,
       } : undefined,
+      headingTitle: alt.trim() || undefined,
       conversionContext,
       svgEditTarget: authenticatedAsset?.canEdit && safeSharePointSvg && authenticatedAsset.path && authenticatedAsset.revision && assetDocumentPath
         ? {
@@ -233,7 +246,10 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       />}
       <span
         className="inline-image-resize__stage"
-        style={!presentationMode && !headingMode && size ? { height: `${size.height}px` } : undefined}
+        ref={stageRef}
+        style={!presentationMode && !headingMode && size ? {
+          height: `${size.height * (stageWidth > 0 && size.width > 0 ? Math.min(1, stageWidth / size.width) : 1)}px`,
+        } : undefined}
       >
         <img
           ref={imageRef}

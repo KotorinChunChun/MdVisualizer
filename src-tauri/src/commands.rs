@@ -168,6 +168,8 @@ fn mermaid_clipboard_file(request: MermaidFileCopyRequest) -> Result<(String, St
         "svg" => Ok((prefix.into(), "svg".into(), request.svg.into_bytes())),
         "png" if !request.png_bytes.is_empty() => Ok((prefix.into(), "png".into(), request.png_bytes)),
         "png" => Err("PNGデータが空です。".into()),
+        "bmp" if !request.png_bytes.is_empty() => Ok((prefix.into(), "bmp".into(), request.png_bytes)),
+        "bmp" => Err("BMPデータが空です。".into()),
         _ => Err("未対応のMermaidコピー形式です。".into()),
     }
 }
@@ -2146,6 +2148,13 @@ mod tests {
         assert_eq!(
             mermaid_clipboard_file(png).unwrap(),
             ("mermaid".into(), "png".into(), vec![137, 80, 78, 71])
+        );
+        let mut bmp = request();
+        bmp.kind = "bmp".into();
+        bmp.png_bytes = vec![0x42, 0x4d, 0, 0];
+        assert_eq!(
+            mermaid_clipboard_file(bmp).unwrap(),
+            ("mermaid".into(), "bmp".into(), vec![0x42, 0x4d, 0, 0])
         );
 
         let mut drawio = request();

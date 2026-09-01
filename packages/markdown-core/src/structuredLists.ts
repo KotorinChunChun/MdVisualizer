@@ -112,6 +112,7 @@ export function normalizeStructuredListIndentationForRendering(source: string): 
   let activeListBlock = false;
   let rootIndent = Number.POSITIVE_INFINITY;
   let compactIndentation = false;
+  let activeHasOrderedList = false;
 
   for (const line of lines) {
     if (line.inFence) continue;
@@ -125,7 +126,11 @@ export function normalizeStructuredListIndentationForRendering(source: string): 
         if (item.indentWidth === rootIndent + 2) compactIndentation = true;
         rootIndent = Math.min(rootIndent, item.indentWidth);
       }
-      if (compactIndentation && item.indent.length >= 2 && /^ +$/.test(item.indent)) {
+      activeHasOrderedList ||= item.ordered;
+      // Two-space unordered children are valid CommonMark continuation
+      // indentation. Keeping that form is also necessary for fenced blocks
+      // beneath a bullet; replacing it with a tab would detach the fence.
+      if (compactIndentation && activeHasOrderedList && item.indent.length >= 2 && /^ +$/.test(item.indent)) {
         const normalizedIndent = "\t ".repeat(Math.floor(item.indent.length / 2))
           + (item.indent.length % 2 === 0 ? "" : "\t");
         line.text = normalizedIndent + line.text.slice(item.indent.length);
@@ -139,6 +144,7 @@ export function normalizeStructuredListIndentationForRendering(source: string): 
       activeListBlock = false;
       rootIndent = Number.POSITIVE_INFINITY;
       compactIndentation = false;
+      activeHasOrderedList = false;
     }
   }
 

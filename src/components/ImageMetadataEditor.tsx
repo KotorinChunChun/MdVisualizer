@@ -9,7 +9,7 @@ export function ImageMetadataEditor({
 }: {
   context: ImageEditContext;
   onSaveCaption: (context: ImageEditContext, caption: string) => Promise<void>;
-  onRename: (context: ImageEditContext, filename: string) => Promise<void>;
+  onRename?: (context: ImageEditContext, filename: string) => Promise<void>;
 }) {
   const [caption, setCaption] = useState(context.caption);
   const [filename, setFilename] = useState(() => getFileName(context.imagePath));
@@ -34,6 +34,7 @@ export function ImageMetadataEditor({
     }
   };
   const rename = async () => {
+    if (!onRename) return;
     const trimmed = filename.trim();
     if (!trimmed || /[\\/:*?"<>|]/.test(trimmed)) {
       setError("ファイル名にはフォルダーや使用できない記号を含められません。");
@@ -57,12 +58,14 @@ export function ImageMetadataEditor({
     <button type="button" disabled={saving !== null || caption === context.caption} onClick={() => void saveCaption()}>
       {saving === "caption" ? "保存中…" : "キャプションを保存"}
     </button>
-    <label>ファイル名
-      <input value={filename} onChange={(event) => setFilename(event.target.value)} />
-    </label>
-    <button type="button" disabled={saving !== null || filename.trim() === getFileName(context.imagePath)} onClick={() => void rename()}>
-      {saving === "filename" ? "変更中…" : "名前を変更"}
-    </button>
+    {onRename && <>
+      <label>ファイル名
+        <input value={filename} onChange={(event) => setFilename(event.target.value)} />
+      </label>
+      <button type="button" disabled={saving !== null || filename.trim() === getFileName(context.imagePath)} onClick={() => void rename()}>
+        {saving === "filename" ? "変更中…" : "名前を変更"}
+      </button>
+    </>}
     {error && <p role="alert">{error}</p>}
   </section>;
 }

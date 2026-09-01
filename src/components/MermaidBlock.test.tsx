@@ -68,6 +68,7 @@ describe("MermaidBlock", () => {
         svg: '<svg viewBox="0 0 800 400"><text>diagram</text></svg>',
         alt: "Mermaid図",
       },
+      headingTitle: "Mermaid図",
       diagramSource: "flowchart LR\nA --> B",
       diagramKind: "mermaid",
     });
@@ -105,7 +106,7 @@ describe("MermaidBlock", () => {
     mocks.renderMermaid.mockResolvedValueOnce('<svg><text>diagram</text></svg>');
     render(<MermaidBlock source={"flowchart LR\nA --> B"} theme="dark" mode="on" />);
     await waitFor(() => expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy());
-    expect(screen.getByRole("button", { name: "ラスタコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "BMPコピー" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "コード" }));

@@ -43,4 +43,31 @@ describe("MarkdownPreview structured lists", () => {
     expect(root?.querySelectorAll(":scope > li:first-child > ol > li")).toHaveLength(2);
     expect(container.textContent).not.toContain("親A 1. 子A-1");
   });
+
+  it("keeps a fenced code block directly below a list item inside that item", () => {
+    const content = [
+      "- 手順",
+      "  ```ts",
+      "  const value = 1;",
+      "  ```",
+      "- 次の手順",
+    ].join("\n");
+    const { container } = render(<MarkdownPreview content={content} baseDir="" imageVersions={{}} />);
+    const firstItem = container.querySelector(".markdown-body > ul > li");
+    expect(firstItem?.querySelector("pre code")?.textContent).toContain("const value = 1;");
+    expect(container.querySelectorAll(".markdown-body > ul > li")).toHaveLength(2);
+  });
+
+  it("follows the nesting of a nested list when its child contains a fenced block", () => {
+    const content = [
+      "- 親",
+      "  - 子",
+      "    ```ts",
+      "    const nested = true;",
+      "    ```",
+    ].join("\n");
+    const { container } = render(<MarkdownPreview content={content} baseDir="" imageVersions={{}} />);
+    const child = container.querySelector(".markdown-body > ul > li > ul > li");
+    expect(child?.querySelector("pre code")?.textContent).toContain("const nested = true;");
+  });
 });
