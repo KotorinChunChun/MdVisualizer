@@ -11,16 +11,16 @@ describe("PreviewContextMenu", () => {
     Object.assign(navigator, { clipboard: { writeText } });
   });
 
-  it("copies rendered text and original Markdown independently", async () => {
+  it("copies Markdown by default and rendered text explicitly", async () => {
     const onResult = vi.fn();
     const props = { x: 10, y: 20, plainText: "表示内容", markdownText: "**表示内容**", canEdit: true, onEdit: vi.fn(), onSelectLine: vi.fn(), onSelectAll: vi.fn(), onResult, onError: vi.fn(), onDismiss: vi.fn() };
     const { rerender } = render(<PreviewContextMenu {...props} />);
     fireEvent.click(screen.getByRole("menuitem", { name: "コピー" }));
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith("表示内容"));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("**表示内容**"));
 
     rerender(<PreviewContextMenu {...props} />);
-    fireEvent.click(screen.getByRole("menuitem", { name: "Markdownでコピー" }));
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith("**表示内容**"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "プレーンテキストでコピー" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("表示内容"));
   });
 
   it("runs edit and selection actions and disables edit when unavailable", () => {

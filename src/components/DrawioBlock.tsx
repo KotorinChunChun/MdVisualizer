@@ -1,6 +1,6 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { classifyDrawioSource, prepareDrawioLoad } from "../lib/drawio";
-import { normalizeSvgForClipboard } from "../lib/mermaidClipboard";
+import { copyMermaid, normalizeSvgForClipboard } from "../lib/mermaidClipboard";
 import { sanitizeSvgXml } from "../lib/svgSafety";
 import { MermaidBlock } from "./MermaidBlock";
 import { MermaidToolbar } from "./MermaidToolbar";
@@ -46,6 +46,16 @@ export function drawioPreviewHeight(svgSource: string, availableWidth: number): 
   const viewBox = svg.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
   if (!viewBox || viewBox.length !== 4 || !viewBox.every(Number.isFinite) || viewBox[2] <= 0 || viewBox[3] <= 0) return null;
   return Math.max(1, Math.ceil(availableWidth * viewBox[3] / viewBox[2]));
+}
+
+function copyDiagramBmp(event: MouseEvent, source: string, svg: string): void {
+  event.preventDefault();
+  event.stopPropagation();
+  void copyMermaid("bmp", source, svg).then(() => {
+    window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type: "success", message: "BMP画像をコピーしました" } }));
+  }).catch((error) => {
+    window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type: "error", message: error instanceof Error ? error.message : "図をコピーできませんでした" } }));
+  });
 }
 
 export function fitDrawioSvgToContent(svg: SVGSVGElement, padding = 20): string {
@@ -235,6 +245,7 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
         className="drawio-block__zoom"
         aria-label="図を拡大"
         onClick={() => onMediaOpen({ content: { kind: "svg", svg, alt }, headingTitle: headingTitle ?? alt, diagramSource: source, diagramKind: "drawio" })}
+        onContextMenu={(event) => copyDiagramBmp(event, source, svg)}
       >{content}</button>
       : content;
   };
@@ -275,6 +286,7 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
         aria-label="図を拡大"
         aria-disabled={!renderedSvg}
         onClick={() => renderedSvg && onMediaOpen({ content: { kind: "svg", svg: renderedSvg, alt: "draw.io図" }, headingTitle: headingTitle ?? "draw.io図", diagramSource: source, diagramKind: "drawio" })}
+        onContextMenu={(event) => renderedSvg && copyDiagramBmp(event, source, renderedSvg)}
       >{viewerHost}</button>
       : viewerHost;
   }

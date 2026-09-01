@@ -51,8 +51,8 @@ export function PreviewContextMenu({ x, y, plainText, markdownText, rowTsv, canE
     style={{ left: x, top: y }}
     tabIndex={-1}
   >
-    <button type="button" role="menuitem" disabled={!plainText} onClick={() => copy(plainText, "選択内容")}>コピー</button>
-    <button type="button" role="menuitem" disabled={!markdownText} onClick={() => copy(markdownText, "Markdown")}>Markdownでコピー</button>
+    <button type="button" role="menuitem" disabled={!markdownText} onClick={() => copy(markdownText, "Markdown")}>コピー</button>
+    <button type="button" role="menuitem" disabled={!plainText} onClick={() => copy(plainText, "表示内容")}>プレーンテキストでコピー</button>
     <button type="button" role="menuitem" disabled={!canEdit} onClick={() => run(onEdit)}>編集</button>
     <div role="separator" />
     <button type="button" role="menuitem" onClick={() => run(onSelectRow ?? onSelectLine)}>行選択</button>

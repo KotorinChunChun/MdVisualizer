@@ -266,6 +266,64 @@ fn copy_file_to_clipboard(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
+fn copy_bmp_bytes_to_clipboard(bytes: &[u8]) -> Result<(), String> {
+    use std::ptr;
+    use windows_sys::Win32::Foundation::GlobalFree;
+    use windows_sys::Win32::System::DataExchange::{
+        CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
+    };
+    use windows_sys::Win32::System::Memory::{
+        GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE,
+    };
+    use windows_sys::Win32::System::Ole::CF_DIB;
+
+    // CF_DIB expects the BMP payload without BITMAPFILEHEADER (14 bytes).
+    if bytes.len() < 54 || &bytes[..2] != b"BM" {
+        return Err("BMPデータが不正です。".into());
+    }
+    let dib = &bytes[14..];
+    let memory = unsafe { GlobalAlloc(GMEM_MOVEABLE, dib.len()) };
+    if memory.is_null() {
+        return Err("クリップボード用メモリを確保できません。".into());
+    }
+    let data = unsafe { GlobalLock(memory) };
+    if data.is_null() {
+        unsafe { GlobalFree(memory) };
+        return Err("クリップボード用メモリをロックできません。".into());
+    }
+    unsafe {
+        ptr::copy_nonoverlapping(dib.as_ptr(), data.cast::<u8>(), dib.len());
+        GlobalUnlock(memory);
+        if OpenClipboard(ptr::null_mut()) == 0 {
+            GlobalFree(memory);
+            return Err("クリップボードを開けません。".into());
+        }
+        if EmptyClipboard() == 0 {
+            CloseClipboard();
+            GlobalFree(memory);
+            return Err("クリップボードを空にできません。".into());
+        }
+        if SetClipboardData(CF_DIB as u32, memory).is_null() {
+            CloseClipboard();
+            GlobalFree(memory);
+            return Err("BMPをクリップボードへ設定できません。".into());
+        }
+        CloseClipboard();
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn copy_bmp_bytes_to_clipboard(_bytes: &[u8]) -> Result<(), String> {
+    Err("BMP画像のコピーはWindowsでのみ利用できます。".into())
+}
+
+#[tauri::command]
+pub fn copy_bmp_to_clipboard(bytes: Vec<u8>) -> Result<(), String> {
+    copy_bmp_bytes_to_clipboard(&bytes)
+}
+
 #[cfg(not(target_os = "windows"))]
 fn copy_file_to_clipboard(_path: &Path) -> Result<(), String> {
     Err("ファイルとしてコピーはWindowsでのみ利用できます。".into())
@@ -2164,6 +2222,12 @@ mod tests {
             mermaid_clipboard_file(drawio).unwrap(),
             ("drawio".into(), "drawio".into(), b"<mxfile/>".to_vec())
         );
+    }
+
+    #[test]
+    fn rejects_invalid_bmp_before_touching_the_clipboard() {
+        assert!(copy_bmp_bytes_to_clipboard(&[]).is_err());
+        assert!(copy_bmp_bytes_to_clipboard(b"not-a-bmp").is_err());
     }
 
     #[test]

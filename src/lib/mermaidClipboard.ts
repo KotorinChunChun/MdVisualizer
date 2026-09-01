@@ -1,4 +1,4 @@
-import { copyMermaidFile } from "./commands";
+import { copyBmpToClipboard, copyMermaidFile } from "./commands";
 
 export type MermaidCopyKind = "code" | "png" | "bmp" | "svg";
 
@@ -331,7 +331,18 @@ export async function copyMermaid(kind: MermaidCopyKind, source: string, svg: st
     return;
   }
   if (kind === "bmp") {
-    await writeBlob("image/bmp", await svgToBmpBlob(svg));
+    const blob = await svgToBmpBlob(svg);
+    const bytes = Array.from(new Uint8Array(await blob.arrayBuffer()));
+    // WebViewのAsync Clipboardは image/bmp を受け付けてもWindowsの
+    // CF_DIBへ変換しないことがある。Tauri実行時はネイティブ経路を優先し、
+    // ブラウザーやテスト環境では標準Clipboardへフォールバックする。
+    try {
+      await copyBmpToClipboard(bytes);
+      return;
+    } catch {
+      // ブラウザー、権限不足、非Windows環境では標準Clipboardを試す。
+    }
+    await writeBlob("image/bmp", blob);
     return;
   }
   const normalizedSvg = normalizeSvgForClipboard(svg);

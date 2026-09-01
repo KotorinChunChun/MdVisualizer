@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { mermaidInputError, mermaidRenderId, renderMermaid } from "../lib/mermaidService";
+import { copyMermaid } from "../lib/mermaidClipboard";
 import { removeMermaidBlockStatus, setMermaidBlockStatus } from "../lib/mermaidStatus";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { MermaidToolbar } from "./MermaidToolbar";
@@ -154,7 +155,22 @@ export function MermaidBlock({
     {displayedContent === "code" && <pre className="mermaid-source"><code>{source}</code></pre>}
     {displayedContent === "diagram" && !state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
     {displayedContent === "diagram" && !state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
-    {displayedContent === "diagram" && state.svg && <button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: diagramAlt }, headingTitle: headingTitle ?? diagramAlt, diagramSource: mediaSource ?? source, diagramKind: "mermaid" })} dangerouslySetInnerHTML={{ __html: state.svg }} />}
+    {displayedContent === "diagram" && state.svg && <button
+      type="button"
+      className="mermaid-block"
+      aria-label="図を拡大"
+      onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: diagramAlt }, headingTitle: headingTitle ?? diagramAlt, diagramSource: mediaSource ?? source, diagramKind: "mermaid" })}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void copyMermaid("bmp", mediaSource ?? source, state.svg!).then(() => {
+          window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type: "success", message: "BMP画像をコピーしました" } }));
+        }).catch((error) => {
+          window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type: "error", message: error instanceof Error ? error.message : "図をコピーできませんでした" } }));
+        });
+      }}
+      dangerouslySetInnerHTML={{ __html: state.svg }}
+    />}
     {descriptionNode}
     {editor}
   </div>;

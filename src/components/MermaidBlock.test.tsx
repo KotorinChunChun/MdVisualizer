@@ -74,6 +74,18 @@ describe("MermaidBlock", () => {
     });
   });
 
+  it("copies the rendered diagram as BMP from the diagram context menu", async () => {
+    mocks.renderMermaid.mockResolvedValueOnce('<svg viewBox="0 0 10 10"><rect width="10" height="10" /></svg>');
+    render(<MermaidBlock source={"flowchart LR\nA --> B"} theme="dark" mode="on" />);
+    const diagram = await screen.findByRole("button", { name: "図を拡大" });
+    fireEvent.contextMenu(diagram);
+    await waitFor(() => expect(mocks.copyMermaid).toHaveBeenCalledWith(
+      "bmp",
+      "flowchart LR\nA --> B",
+      '<svg viewBox="0 0 10 10"><rect width="10" height="10" /></svg>',
+    ));
+  });
+
   it("keeps a render error compact and opens details in an isolated dialog", async () => {
     const longError = `Syntax Error in Text\n${"broken ".repeat(300)}`;
     mocks.renderMermaid.mockRejectedValueOnce(new Error(longError));

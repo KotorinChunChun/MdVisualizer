@@ -28,6 +28,9 @@ export async function openMarkdownStyle(): Promise<void> { await invoke<void>("o
 export async function copyMermaidFile(request: { kind: "code" | "png" | "bmp" | "svg"; diagramKind: "mermaid" | "drawio"; source: string; svg: string; pngBytes: number[] }): Promise<string> {
   return await invoke<string>("copy_mermaid_file", { request });
 }
+export async function copyBmpToClipboard(bytes: number[]): Promise<void> {
+  await invoke<void>("copy_bmp_to_clipboard", { bytes });
+}
 export async function copyTextFile(request: { filename: string; content: string; utf8Bom?: boolean }): Promise<string> {
   return await invoke<string>("copy_text_file", { request });
 }
