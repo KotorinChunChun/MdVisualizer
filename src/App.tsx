@@ -193,6 +193,9 @@ export function App() {
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const paneSyncOrigin = useRef<"edit" | "view" | null>(null);
   const paneSyncFrame = useRef(0);
+  // エディター追従のために設定したViewのscrollTopを、View→コード同期へ
+  // 反射させない。値を比較して消費するため、イベントの発火順に依存しない。
+  const pendingPreviewScrollTop = useRef<number | null>(null);
   const pendingEditorLine = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
@@ -1062,7 +1065,9 @@ export function App() {
     if (targetTop === null) return;
     const viewportScale = container.clientHeight > 0 ? containerBounds.height / container.clientHeight : 1;
     paneSyncOrigin.current = "edit";
+    const previousScrollTop = container.scrollTop;
     container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, 0, viewportScale);
+    if (Math.abs(container.scrollTop - previousScrollTop) > 0.5) pendingPreviewScrollTop.current = container.scrollTop;
     releasePaneSync();
   }, [releasePaneSync]);
 
@@ -1080,6 +1085,7 @@ export function App() {
     if (targetTop === null) return;
     const viewportScale = container.clientHeight > 0 ? containerBounds.height / container.clientHeight : 1;
     paneSyncOrigin.current = "edit";
+    const previousScrollTop = container.scrollTop;
     const endScrollTop = synchronizedPaneEndScrollTop(
       position,
       blocks.reduce((lastLine, block) => Math.max(lastLine, Number(block.dataset.sourceLine) || 1), 1),
@@ -1090,11 +1096,17 @@ export function App() {
     } else {
       container.scrollTop = endScrollTop;
     }
+    if (Math.abs(container.scrollTop - previousScrollTop) > 0.5) pendingPreviewScrollTop.current = container.scrollTop;
     releasePaneSync();
   }, [releasePaneSync]);
 
   const handlePreviewScroll = useCallback((element: HTMLElement) => {
     if (activeTab) dispatch({ type: "SCROLL", id: activeTab.id, scrollTop: element.scrollTop });
+    const pending = pendingPreviewScrollTop.current;
+    if (pending !== null) {
+      pendingPreviewScrollTop.current = null;
+      if (Math.abs(element.scrollTop - pending) <= 0.5) return;
+    }
     if (viewModeRef.current === "presentation") return;
     if (editorMode !== "split" || paneSyncOrigin.current === "edit") return;
     const blocks = [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])]

@@ -149,6 +149,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   const onLineEndingsNormalizedRef = useRef(onLineEndingsNormalized);
   const applyingExternal = useRef(false);
   const normalizingLists = useRef(false);
+  // Viewからの追従スクロールで発生したscrollイベントを、ユーザー操作として
+  // 上流へ返さないための短い抑制窓。
+  const suppressScrollSyncUntilRef = useRef(0);
   const [disabledToolbarActions, setDisabledToolbarActions] = useState<MarkdownEditAction[]>([]);
   onChangeRef.current = onChange;
   onSaveRef.current = onSave;
@@ -170,6 +173,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     focusLine: (line) => {
       const view = viewRef.current;
       if (!view) return;
+      suppressScrollSyncUntilRef.current = performance.now() + 200;
       const target = clampedLine(view, line);
       view.dispatch({ selection: { anchor: target.from }, effects: EditorView.scrollIntoView(target.from, { y: "center" }) });
       view.focus();
@@ -177,6 +181,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     scrollToLine: (line) => {
       const view = viewRef.current;
       if (!view) return;
+      suppressScrollSyncUntilRef.current = performance.now() + 200;
       const target = clampedLine(view, line);
       view.dispatch({ effects: EditorView.scrollIntoView(target.from, { y: "start" }) });
     },
@@ -191,7 +196,6 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   useEffect(() => {
     if (!hostRef.current) return;
     let cursorPositionFrame = 0;
-    let suppressScrollSyncUntil = 0;
     const reportCursorPosition = (view: EditorView) => {
       if (cursorPositionFrame) window.cancelAnimationFrame(cursorPositionFrame);
       cursorPositionFrame = window.requestAnimationFrame(() => {
@@ -302,7 +306,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             onActiveLineChangeRef.current?.(update.state.doc.lineAt(update.state.selection.main.head).number);
           }
           if (update.selectionSet) {
-            suppressScrollSyncUntil = performance.now() + 120;
+            suppressScrollSyncUntilRef.current = performance.now() + 120;
             reportCursorPosition(update.view);
           }
           if (!update.docChanged || applyingExternal.current) return;
@@ -331,7 +335,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       onLineEndingsNormalizedRef.current?.(documentLineEnding);
     }
     const handleEditorScroll = () => {
-      if (performance.now() < suppressScrollSyncUntil) return;
+      if (performance.now() < suppressScrollSyncUntilRef.current) return;
       const line = view.state.doc.lineAt(view.lineBlockAtHeight(view.scrollDOM.scrollTop).from).number;
       onScrollLineRef.current?.(line);
     };

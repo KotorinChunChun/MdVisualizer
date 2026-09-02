@@ -49,6 +49,17 @@ describe("MarkdownEditor", () => {
     expect(onScrollLine).toHaveBeenCalledWith(1);
   });
 
+  it("does not propagate a programmatic view-following scroll back to the View", () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const onScrollLine = vi.fn();
+    const { container } = render(<MarkdownEditor ref={ref} documentId="tab-1:1" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} onScrollLine={onScrollLine} />);
+
+    act(() => ref.current?.scrollToLine(3));
+    fireEvent.scroll(container.querySelector(".cm-scroller")!);
+
+    expect(onScrollLine).not.toHaveBeenCalled();
+  });
+
   it("applies toolbar edits to the draft callback", async () => {
     const onChange = vi.fn();
     render(<MarkdownEditor documentId="tab-1:1" value="# Test" dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
