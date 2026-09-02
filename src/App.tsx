@@ -628,12 +628,19 @@ export function App() {
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
+    let disposed = false;
     void listenForSecondaryLaunches((event) => {
       for (const path of event.payload) {
         void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
       }
-    }).then((dispose) => { unlisten = dispose; });
-    return () => { unlisten?.(); };
+    }).then((dispose) => {
+      if (disposed) dispose();
+      else unlisten = dispose;
+    });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -1105,7 +1112,7 @@ export function App() {
     const pending = pendingPreviewScrollTop.current;
     if (pending !== null) {
       pendingPreviewScrollTop.current = null;
-      if (Math.abs(element.scrollTop - pending) <= 0.5) return;
+      if (performance.now() <= pending.until && Math.abs(element.scrollTop - pending.value) <= 0.5) return;
     }
     if (viewModeRef.current === "presentation") return;
     if (editorMode !== "split" || paneSyncOrigin.current === "edit") return;

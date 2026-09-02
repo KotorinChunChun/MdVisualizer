@@ -99,6 +99,16 @@ describe("Edit and View pane coordination", () => {
     expect(source).toContain('editorMode === "split"');
   });
 
+  it("解除完了前に再登録されたファイル起動リスナーを後から解除する", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    const registrationStart = source.indexOf("void listenForSecondaryLaunches");
+    const listenerStart = source.lastIndexOf("useEffect(() => {", registrationStart);
+    const listener = source.slice(listenerStart, source.indexOf("}, []);", registrationStart));
+    expect(registrationStart).toBeGreaterThan(-1);
+    expect(listener).toContain("let disposed = false");
+    expect(listener).toContain("if (disposed) dispose();");
+  });
+
   it("maps a complete View selection to the complete Markdown source range", () => {
     const root = document.createElement("div");
     root.innerHTML = '<p data-source-line="1">first</p><p data-source-line="3">last</p>';
