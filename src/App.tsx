@@ -195,7 +195,7 @@ export function App() {
   const paneSyncFrame = useRef(0);
   // エディター追従のために設定したViewのscrollTopを、View→コード同期へ
   // 反射させない。値を比較して消費するため、イベントの発火順に依存しない。
-  const pendingPreviewScrollTop = useRef<number | null>(null);
+  const pendingPreviewScrollTop = useRef<{ value: number; until: number } | null>(null);
   const pendingEditorLine = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const inFlightLoads = useRef(new Set<string>());
@@ -1067,7 +1067,7 @@ export function App() {
     paneSyncOrigin.current = "edit";
     const previousScrollTop = container.scrollTop;
     container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, 0, viewportScale);
-    if (Math.abs(container.scrollTop - previousScrollTop) > 0.5) pendingPreviewScrollTop.current = container.scrollTop;
+    if (Math.abs(container.scrollTop - previousScrollTop) > 0.5) pendingPreviewScrollTop.current = { value: container.scrollTop, until: performance.now() + 200 };
     releasePaneSync();
   }, [releasePaneSync]);
 
@@ -1096,7 +1096,7 @@ export function App() {
     } else {
       container.scrollTop = endScrollTop;
     }
-    if (Math.abs(container.scrollTop - previousScrollTop) > 0.5) pendingPreviewScrollTop.current = container.scrollTop;
+    if (Math.abs(container.scrollTop - previousScrollTop) > 0.5) pendingPreviewScrollTop.current = { value: container.scrollTop, until: performance.now() + 200 };
     releasePaneSync();
   }, [releasePaneSync]);
 
