@@ -38,9 +38,9 @@
     "targets": "all",
     "fileAssociations": [
       {
-        "ext": ["md", "markdown", "svg", "mmd", "mermaid", "drawio"],
-        "name": "Markdown or Diagram Document",
-        "description": "Markdown, SVG, Mermaid, or draw.io document",
+        "ext": ["md", "markdown", "tsv", "svg", "mmd", "mermaid", "drawio"],
+        "name": "Markdown, TSV, or Diagram Document",
+        "description": "Markdown, TSV, SVG, Mermaid, or draw.io document",
         "role": "Viewer"
       }
     ],

@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 #[serde(rename_all = "lowercase")]
 pub enum DocumentKind {
     Markdown,
+    Tsv,
     Svg,
     Mermaid,
     Drawio,
@@ -52,6 +53,7 @@ pub fn document_kind(path: &Path) -> Option<DocumentKind> {
         .as_deref()
     {
         Some("md") | Some("markdown") => Some(DocumentKind::Markdown),
+        Some("tsv") => Some(DocumentKind::Tsv),
         Some("svg") => Some(DocumentKind::Svg),
         Some("mmd") | Some("mermaid") => Some(DocumentKind::Mermaid),
         Some("drawio") => Some(DocumentKind::Drawio),
@@ -302,6 +304,7 @@ mod tests {
     fn classifies_every_supported_document_extension_case_insensitively() {
         assert_eq!(document_kind(Path::new("readme.md")), Some(DocumentKind::Markdown));
         assert_eq!(document_kind(Path::new("README.MARKDOWN")), Some(DocumentKind::Markdown));
+        assert_eq!(document_kind(Path::new("table.TSV")), Some(DocumentKind::Tsv));
         assert_eq!(document_kind(Path::new("diagram.svg")), Some(DocumentKind::Svg));
         assert_eq!(document_kind(Path::new("flow.MMD")), Some(DocumentKind::Mermaid));
         assert_eq!(document_kind(Path::new("flow.mermaid")), Some(DocumentKind::Mermaid));

@@ -35,6 +35,17 @@ function document(kind: MarkdownLoadResult["kind"], path: string, content: strin
 }
 
 describe("StandaloneDocumentPreview", () => {
+  it("renders a TSV file in the dedicated table UI", () => {
+    render(<StandaloneDocumentPreview
+      document={{ path: "C:\\docs\\table.tsv", kind: "tsv", content: "name\tvalue\nA\t1", base_dir: "C:\\docs", image_paths: [], encoding: "UTF-8", size_bytes: 12, modified_at: "", revision: "r1", source: "local", web_url: null, etag: null }}
+      imageVersions={{}}
+      theme="light"
+      windowId="window"
+      tabId="tab"
+    />);
+    expect(screen.getByRole("region", { name: "TSV表" })).toBeTruthy();
+    expect(screen.getByText("table.tsv")).toBeTruthy();
+  });
   afterEach(cleanup);
 
   it("routes an SVG file through the existing image renderer", () => {

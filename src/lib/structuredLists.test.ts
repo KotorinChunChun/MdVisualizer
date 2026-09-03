@@ -129,4 +129,20 @@ describe("structured Markdown lists", () => {
     const change = buildStructuredListMove(source, source.indexOf("first"), 1);
     expect(apply(source, change)).toBe("1. second\r\n2. first\r\n   1. child\r\n3. third\r\nafter");
   });
+
+  it("does not leave a blank line when moving the last list item", () => {
+    const source = "- 1行目\n- 2行目\n\n";
+    expect(apply(source, buildStructuredListMove(source, source.indexOf("2行目"), -1))).toBe("- 2行目\n- 1行目\n\n");
+  });
+
+  it("pastes a cut list item as a separate sibling at the line start", () => {
+    const source = "- 1行目";
+    expect(apply(source, buildStructuredListPaste(source, 0, 0, "- 2行目"))).toBe("- 2行目\n- 1行目");
+  });
+
+  it("keeps an existing marker when Enter splits a compact list line", () => {
+    const source = "- 1行目- 2行目";
+    const position = source.indexOf("- 2行目");
+    expect(apply(source, buildStructuredListEnter(source, position, position))).toBe("- 1行目\n- 2行目");
+  });
 });

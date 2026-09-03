@@ -342,7 +342,19 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
  * and makes list indentation appear to escape its parent item. */
 const MarkdownPre: NonNullable<Components["pre"]> = ({ children, ...props }) => {
   const child = React.Children.only(children);
-  if (React.isValidElement(child) && child.type !== "code") return child;
+  if (React.isValidElement<{ node?: { properties?: { className?: unknown } }; children?: React.ReactNode }>(child) && child.type !== "code") {
+    const className = child.props.node?.properties?.className;
+    if (child.type === MarkdownCode && !className) return <CodeBlock>{child.props.children}</CodeBlock>;
+    return child;
+  }
+  // react-markdown uses the same `code` renderer for inline and fenced code.
+  // Fenced blocks without a language have no className, but they still arrive
+  // here inside `pre`; give them the same copyable card as language blocks.
+  if (React.isValidElement<{ className?: string; children?: React.ReactNode }>(child)
+    && child.type === "code"
+    && !child.props.className?.includes("language-")) {
+    return <CodeBlock>{child.props.children}</CodeBlock>;
+  }
   return <pre {...props}>{children}</pre>;
 };
 

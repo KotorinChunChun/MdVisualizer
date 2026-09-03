@@ -5,6 +5,7 @@ import { ImageRenderer } from "./ImageRenderer";
 import { MermaidBlock } from "./MermaidBlock";
 import { DrawioBlock } from "./DrawioBlock";
 import { getFileName } from "../lib/path";
+import { DelimitedTableBlock } from "./DelimitedTableBlock";
 
 interface StandaloneDocumentPreviewProps {
   document: MarkdownLoadResult;
@@ -54,6 +55,12 @@ export function StandaloneDocumentPreview({
         headingTitle={getFileName(document.path)}
         onMediaOpen={onMediaOpen}
       />
+    </div>;
+  }
+
+  if (document.kind === "tsv") {
+    return <div className="markdown-body standalone-document standalone-document--tsv" ref={contentRef}>
+      <DelimitedTableBlock language="tsv" source={document.content} headingLabel={<strong>{getFileName(document.path)}</strong>} />
     </div>;
   }
 

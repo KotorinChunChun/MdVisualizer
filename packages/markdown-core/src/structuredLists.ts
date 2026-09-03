@@ -259,6 +259,13 @@ export function buildStructuredListEnter(source: string, from: number, to: numbe
   const column = Math.max(item.prefixLength, from - line.start);
   const beforeCursor = line.text.slice(0, column);
   const afterCursor = line.text.slice(column);
+  // When Enter is pressed immediately before a marker that was joined onto
+  // the current item (for example `- first- second`), keep that marker as the
+  // next item's marker instead of generating `- - second`.
+  if (beforeCursor.trim() && /^(?:[-+*]|\d+[.)])\s+/.test(afterCursor)) {
+    const intermediate = source.slice(0, line.start) + `${beforeCursor}${ending}${afterCursor}` + source.slice(line.start + line.text.length);
+    return applyAndRenumber(source, intermediate, line.start + beforeCursor.length + ending.length);
+  }
   const marker = item.ordered ? `${Number.parseInt(item.marker, 10) + 1}${item.marker.endsWith(")") ? ")" : "."}` : item.marker;
   const task = item.task ? `[ ] ` : "";
   const insertedLine = `${item.indent}${marker} ${task}`;
@@ -329,10 +336,15 @@ export function buildStructuredListPaste(source: string, from: number, to: numbe
   const line = lines[lineIndexAt(lines, from)];
   const item = line.list;
   const pastedLines = pasted.replace(/\r\n|\r/g, "\n").split("\n");
-  if (!item || item.body.trim() !== "" || !parseMarkdownListLine(pastedLines[0])) return null;
+  if (!item || !parseMarkdownListLine(pastedLines[0])) return null;
+  const column = Math.max(0, from - line.start);
+  const atLineStart = column <= item.prefixLength;
+  if (item.body.trim() !== "" && !atLineStart) return null;
   const ending = line.ending || (source.includes("\r\n") ? "\r\n" : "\n");
   const replacement = pastedLines.map((value) => item.indent + value).join(ending);
-  const intermediate = source.slice(0, line.start) + replacement + source.slice(line.start + line.text.length);
+  const intermediate = item.body.trim() === "" || !atLineStart
+    ? source.slice(0, line.start) + replacement + source.slice(line.start + line.text.length)
+    : source.slice(0, line.start) + replacement + ending + line.text + source.slice(line.start + line.text.length);
   return applyAndRenumber(source, intermediate, line.start + replacement.length);
 }
 
@@ -349,14 +361,18 @@ function itemEnd(lines: DocumentLine[], index: number): number {
 }
 
 function splitTrailingLineEnding(block: string): [string, string] {
-  const match = /(\r\n|\r|\n)$/.exec(block);
+  const match = /((?:\r\n|\r|\n)+)$/.exec(block);
   return match ? [block.slice(0, -match[1].length), match[1]] : [block, ""];
 }
 
 function swapAdjacentBlocks(first: string, second: string): string {
-  const [firstBody, separator] = splitTrailingLineEnding(first);
-  const [secondBody, trailingEnding] = splitTrailingLineEnding(second);
-  return secondBody + separator + firstBody + trailingEnding;
+  // A block may include the blank lines following its last item.  Treat all
+  // trailing line endings as the block tail so moving the last item does not
+  // turn the separator into a blank line between the two siblings.
+  const [firstBody, firstTail] = splitTrailingLineEnding(first);
+  const [secondBody, secondTail] = splitTrailingLineEnding(second);
+  const separator = (firstTail.match(/\r\n|\r|\n/) ?? secondTail.match(/\r\n|\r|\n/) ?? ["\n"])[0];
+  return secondBody + separator + firstBody + (secondTail || firstTail);
 }
 
 export function buildStructuredListMove(source: string, position: number, direction: -1 | 1): MarkdownEditChange | null {

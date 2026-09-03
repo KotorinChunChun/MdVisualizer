@@ -191,6 +191,7 @@ export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
+  const focusNewDocumentRef = useRef(false);
   const paneSyncOrigin = useRef<"edit" | "view" | null>(null);
   const paneSyncFrame = useRef(0);
   // エディター追従のために設定したViewのscrollTopを、View→コード同期へ
@@ -335,6 +336,26 @@ export function App() {
   const activeSharePoint = isSharePointDocument(activeTab?.document ?? activeTab);
   const canEditActive = canEditMarkdownDocument(activeTab?.document);
   const editorMode: EditorWorkspaceMode = canEditActive ? activeTab?.editorMode ?? "preview" : "preview";
+
+  useEffect(() => {
+    if (!focusNewDocumentRef.current || !activeTab?.untitled || editorMode === "preview") return;
+    let frame = 0;
+    let attempts = 0;
+    const focusEditor = () => {
+      if (!focusNewDocumentRef.current) return;
+      if (tabsStateRef.current.activeId !== activeTab.id) { focusNewDocumentRef.current = false; return; }
+      if (editorRef.current) {
+        editorRef.current.focus();
+        focusNewDocumentRef.current = false;
+        return;
+      }
+      // MarkdownEditor is lazy-loaded; keep polling for roughly one second so
+      // the first focus is not lost while its chunk is being mounted.
+      if (attempts++ < 60) frame = window.requestAnimationFrame(focusEditor);
+    };
+    frame = window.requestAnimationFrame(focusEditor);
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTab?.id, activeTab?.untitled, editorMode]);
   const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
   const previewContent = useDeferredValue(activeMarkdownContent);
 
@@ -1683,6 +1704,7 @@ export function App() {
       if (annotationTarget) return;
       if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "n") {
         event.preventDefault();
+        focusNewDocumentRef.current = true;
         dispatch({ type: "NEW_MARKDOWN" });
         return;
       }
@@ -2167,6 +2189,7 @@ export function App() {
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
+          <button type="button" disabled={printing} onClick={() => { focusNewDocumentRef.current = true; dispatch({ type: "NEW_MARKDOWN" }); }}>新規MD</button>
           <button type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷/PDF</button>
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
           <button type="button" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
