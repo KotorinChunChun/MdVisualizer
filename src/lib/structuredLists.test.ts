@@ -132,7 +132,7 @@ describe("structured Markdown lists", () => {
 
   it("does not leave a blank line when moving the last list item", () => {
     const source = "- 1行目\n- 2行目\n\n";
-    expect(apply(source, buildStructuredListMove(source, source.indexOf("2行目"), -1))).toBe("- 2行目\n- 1行目\n\n");
+    expect(apply(source, buildStructuredListMove(source, source.indexOf("2行目"), -1))).toBe("- 2行目\n- 1行目\n");
   });
 
   it("pastes a cut list item as a separate sibling at the line start", () => {

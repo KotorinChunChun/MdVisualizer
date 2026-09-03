@@ -388,6 +388,7 @@ const BASE_EDITING_TEST_CASES: readonly EditingTestCase[] = [
   testCase("move-ordered-down", "リスト移動", "番号付き項目を下へ移動して再採番", "1. fi¦rst\n2. second\n3. third", "Alt+↓", "1. second\n2. first\n3. third", { type: "move-list", direction: 1 }),
   testCase("move-with-child", "リスト移動", "子項目を伴って移動", "1. fi¦rst\n   1. child\n2. second", "Alt+↓", "1. second\n2. first\n   1. child", { type: "move-list", direction: 1 }),
   testCase("move-last-with-child-up", "リスト移動", "末尾の子項目つき項目を上へ移動", "1. first\n2. sec¦ond\n   1. child", "Alt+↑", "1. second\n   1. child\n2. first", { type: "move-list", direction: -1 }),
+  testCase("move-list-across-blank-lines", "リスト移動", "空行をまたぐ箇条書き項目を上へ移動", "- 1行目\n\n\n- 2¦行目", "Alt+↑", "- 2行目\n- 1行目", { type: "move-list", direction: -1 }),
   testCase("move-crlf-final-block", "リスト移動", "CRLF文書の末尾項目と子を移動", "1. fi¦rst\r\n   1. child\r\n2. second", "Alt+↓", "1. second\r\n2. first\r\n   1. child", { type: "move-list", direction: 1 }),
   testCase("move-first-up-noop", "リスト移動", "先頭項目は上へ移動不可", "- fi¦rst\n- second", "Alt+↑", "- first\n- second", { type: "move-list", direction: -1 }),
   testCase("move-last-down-noop", "リスト移動", "末尾項目は下へ移動不可", "- first\n- sec¦ond", "Alt+↓", "- first\n- second", { type: "move-list", direction: 1 }),

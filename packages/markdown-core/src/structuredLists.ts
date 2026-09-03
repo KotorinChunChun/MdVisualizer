@@ -366,13 +366,17 @@ function splitTrailingLineEnding(block: string): [string, string] {
 }
 
 function swapAdjacentBlocks(first: string, second: string): string {
-  // A block may include the blank lines following its last item.  Treat all
-  // trailing line endings as the block tail so moving the last item does not
-  // turn the separator into a blank line between the two siblings.
+  // A block may include blank lines separating it from the next sibling.
+  // Those separators belong between list items, not inside the moved block;
+  // collapse them to one line ending while retaining a single document tail.
   const [firstBody, firstTail] = splitTrailingLineEnding(first);
   const [secondBody, secondTail] = splitTrailingLineEnding(second);
   const separator = (firstTail.match(/\r\n|\r|\n/) ?? secondTail.match(/\r\n|\r|\n/) ?? ["\n"])[0];
-  return secondBody + separator + firstBody + (secondTail || firstTail);
+  // `firstTail` is always the separator before the current sibling, so it
+  // must not create a new document-ending newline. Only the moved block's
+  // own tail (`secondTail`) is retained, collapsed to one ending.
+  const trailing = secondTail ? separator : "";
+  return secondBody + separator + firstBody + trailing;
 }
 
 export function buildStructuredListMove(source: string, position: number, direction: -1 | 1): MarkdownEditChange | null {
