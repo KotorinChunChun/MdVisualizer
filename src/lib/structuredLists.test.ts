@@ -20,6 +20,8 @@ describe("structured Markdown lists", () => {
     expect(renumberOrderedLists("8. A\n   9. A-1\n   4. A-2\n3. B\n   7. B-1"))
       .toBe("1. A\n   1. A-1\n   2. A-2\n2. B\n   1. B-1");
     expect(renumberOrderedLists("4. first\n   continuation\n9. second")).toBe("1. first\n   continuation\n2. second");
+    expect(renumberOrderedLists("1. aaa\n\n1. bbb")).toBe("1. aaa\n\n2. bbb");
+    expect(renumberOrderedLists("1. aaa\n\n無関係なテキスト\n1. bbb")).toBe("1. aaa\n\n無関係なテキスト\n1. bbb");
   });
 
   it("toggles bullets and both checkbox states without stacking markers", () => {

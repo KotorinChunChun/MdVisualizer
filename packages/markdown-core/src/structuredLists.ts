@@ -78,7 +78,10 @@ function renumberLines(lines: DocumentLine[]): void {
     if (!item) {
       const continuationIndent = indentationWidth(line.text.match(/^\s*/)?.[0] ?? "");
       const shallowestListIndent = counters.size ? Math.min(...counters.keys()) : Number.POSITIVE_INFINITY;
-      if (line.text.trim() === "" || continuationIndent <= shallowestListIndent) counters.clear();
+      // A blank line alone does not terminate an ordered list.  The next
+      // sibling should continue numbering; a following non-list line at the
+      // list's indentation still resets the counters below.
+      if (line.text.trim() !== "" && continuationIndent <= shallowestListIndent) counters.clear();
       continue;
     }
     for (const level of Array.from(counters.keys())) {

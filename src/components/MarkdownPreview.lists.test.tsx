@@ -44,6 +44,26 @@ describe("MarkdownPreview structured lists", () => {
     expect(container.textContent).not.toContain("親A 1. 子A-1");
   });
 
+  it("continues an ordered list across blank lines but resets after unrelated text", () => {
+    const continued = render(<MarkdownPreview content={"1. aaa\n\n1. bbb"} baseDir="" imageVersions={{}} />);
+    const continuedLists = continued.container.querySelectorAll(".markdown-body > ol");
+    expect(continuedLists).toHaveLength(1);
+    expect(continuedLists[0].querySelectorAll(":scope > li")).toHaveLength(2);
+    expect(continuedLists[0].textContent).toContain("bbb");
+    continued.unmount();
+
+    const separated = render(<MarkdownPreview content={"1. aaa\n\n無関係なテキスト\n\n1. bbb"} baseDir="" imageVersions={{}} />);
+    expect(separated.container.querySelectorAll(".markdown-body > ol")).toHaveLength(2);
+  });
+
+  it("keeps directly indented text after a bullet in the same list item", () => {
+    const { container } = render(<MarkdownPreview content={"- item\n  continuation\n- next"} baseDir="" imageVersions={{}} />);
+    const items = container.querySelectorAll(".markdown-body > ul > li");
+    expect(items).toHaveLength(2);
+    expect(items[0].textContent).toContain("item");
+    expect(items[0].textContent).toContain("continuation");
+  });
+
   it("keeps a fenced code block directly below a list item inside that item", () => {
     const content = [
       "- 手順",

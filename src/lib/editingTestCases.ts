@@ -447,6 +447,8 @@ const BASE_EDITING_TEST_CASES: readonly EditingTestCase[] = [
   testCase("normalize-heading", "自動正規化", "番号付き見出しを兄弟順に再採番", "# 8. One\n# 3. T¦wo", "自動再採番", "# 1. One\n# 2. Two", { type: "normalize" }),
   testCase("normalize-fence-guard", "自動正規化", "コードフェンス内の番号は変更しない", "```text\n9. it¦em\n```", "自動再採番", "```text\n9. item\n```", { type: "normalize" }),
   testCase("normalize-separated", "自動正規化", "段落で分離したリストは個別に1から開始", "5. one\n\ntext\n\n8. t¦wo", "自動再採番", "1. one\n\ntext\n\n1. two", { type: "normalize" }),
+  testCase("normalize-blank-list-continuation", "自動正規化", "空行だけの番号付きリストは連番を継続", "1. aaa\n\n1. b¦bb", "自動再採番", "1. aaa\n\n2. bbb", { type: "normalize" }),
+  testCase("normalize-unrelated-text-resets-list", "自動正規化", "無関係な本文を挟んだ番号付きリストは再び1から開始", "1. aaa\n\n無関係なテキスト\n1. b¦bb", "自動再採番", "1. aaa\n\n無関係なテキスト\n1. bbb", { type: "normalize" }),
 ];
 
 interface CursorContext {
