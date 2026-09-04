@@ -479,7 +479,11 @@ body {
 .code-block__heading { flex: 1 1 auto; min-width: 0; overflow: hidden; color: var(--text-primary); font-size: 0.9rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .code-block > pre { margin: 0; padding: 16px; overflow: auto; color: var(--code-block-color); background: var(--code-block-bg); border: 0; border-radius: 0; }
 .code-actions { display: flex; flex: 0 0 auto; gap: 0.35rem; margin-left: auto; }
-.code-copy, .code-run, .code-storage { padding: 3px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
+.code-copy, .code-run, .code-storage, .code-wrap { padding: 3px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
+.code-wrap { min-width: 2rem; padding-inline: 6px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.95rem; line-height: 1.25; }
+.code-wrap[aria-pressed="true"] { color: var(--accent-color); }
+.code-block > pre.code-block__pre--wrapped,
+.code-block > pre.code-block__pre--wrapped code { overflow-x: hidden; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
 .shortcut-key-render { display: inline-block; vertical-align: -0.3em; max-width: 100%; line-height: 0; }
 .shortcut-key-svg { display: block; overflow: visible; max-width: 100%; color: var(--text-primary); }
 .shortcut-key-svg--inline { width: auto; height: 1.65em; }

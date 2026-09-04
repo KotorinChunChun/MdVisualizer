@@ -95,6 +95,21 @@ describe("CodeBlock", () => {
     window.removeEventListener("markdown-toast", listener);
   });
 
+  it("toggles line wrapping from the code block toolbar", () => {
+    const { container } = render(<CodeBlock className="language-typescript">{"const value = someVeryLongIdentifierThatShouldWrap;"}</CodeBlock>);
+
+    const wrapButton = screen.getByRole("button", { name: "行の折り返しを有効にする" });
+    expect(wrapButton.getAttribute("aria-pressed")).toBe("false");
+    expect(container.querySelector(".code-block__pre--wrapped")).toBeNull();
+
+    fireEvent.click(wrapButton);
+
+    const unwrappedButton = screen.getByRole("button", { name: "行の折り返しを無効にする" });
+    expect(unwrappedButton.getAttribute("aria-pressed")).toBe("true");
+    expect(container.querySelector("pre.code-block__pre--wrapped")).not.toBeNull();
+    expect(container.querySelector("pre.code-block__pre--wrapped code")).not.toBeNull();
+  });
+
   it.each([
     ["embedded", "外部ファイルへ切替"],
     ["external", "埋め込みへ切替"],

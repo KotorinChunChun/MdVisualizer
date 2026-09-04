@@ -67,6 +67,7 @@ export function syntaxHighlightLanguageName(language: string | undefined): strin
 
 export function CodeBlock({ className, children, onHighlightComplete, headingTitle, documentPath, storage, onStorageConvert }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const [wrapLines, setWrapLines] = useState(false);
   const [html, setHtml] = useState("");
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [running, setRunning] = useState(false);
@@ -180,10 +181,18 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
         {executable && <button type="button" className="code-run" disabled={running} onClick={() => {
           setConfirmationOpen(true);
         }}>{running ? "実行中…" : "PowerShellを実行"}</button>}
+        <button
+          type="button"
+          className="code-wrap"
+          aria-label={wrapLines ? "行の折り返しを無効にする" : "行の折り返しを有効にする"}
+          aria-pressed={wrapLines}
+          title={wrapLines ? "行の折り返しを無効にする" : "行の折り返しを有効にする"}
+          onClick={() => setWrapLines((value) => !value)}
+        >{wrapLines ? "↩" : "↪"}</button>
         <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
       </div>
     </div>
-    <pre><code className={className} {...(html ? { dangerouslySetInnerHTML: { __html: html } } : {})}>{html ? undefined : source}</code></pre>
+    <pre className={wrapLines ? "code-block__pre--wrapped" : undefined}><code className={className} {...(html ? { dangerouslySetInnerHTML: { __html: html } } : {})}>{html ? undefined : source}</code></pre>
     {(runResult || runError) && <section className="code-run-result" aria-label="PowerShell実行結果">
       <header><strong>{runError ? "実行エラー" : runResult?.timedOut ? "タイムアウト" : `終了コード: ${runResult?.exitCode ?? "不明"}`}</strong>{runResult && <span>{runResult.durationMs}ms{runResult.truncated ? "・出力省略" : ""}</span>}</header>
       {runResult?.stdout && <pre aria-label="標準出力">{runResult.stdout}</pre>}

@@ -19,7 +19,7 @@ describe("button interaction styles", () => {
   });
 
   it("shares the code action button shape with storage conversion", () => {
-    expect(appCss).toContain(".code-copy, .code-run, .code-storage { padding: 3px 8px;");
+    expect(appCss).toContain(".code-copy, .code-run, .code-storage, .code-wrap { padding: 3px 8px;");
   });
 
   it("gives ordinary code blocks a diagram-like title bar and body", () => {
