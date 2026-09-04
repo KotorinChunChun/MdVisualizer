@@ -532,6 +532,19 @@ mod tests {
     }
 
     #[test]
+    fn deletes_asset_only_when_revision_matches() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        let asset = dir.path().join("diagram.mmd");
+        fs::write(&document, "# note").unwrap();
+        fs::write(&asset, "graph TD\nA-->B").unwrap();
+        let loaded = read_document_asset(document.to_str().unwrap(), "diagram.mmd").unwrap();
+        assert!(delete_document_asset(document.to_str().unwrap(), "diagram.mmd", Some("wrong")).is_err());
+        delete_document_asset(document.to_str().unwrap(), "diagram.mmd", loaded.revision.as_deref()).unwrap();
+        assert!(!asset.exists());
+    }
+
+    #[test]
     fn stages_drawio_text_and_commits_it_with_markdown() {
         let dir = tempdir().unwrap();
         let document = dir.path().join("note.md");
@@ -680,6 +693,17 @@ mod tests {
         assert!(manager.commit_with(&document, &[first.id, second.id], || Ok(())).is_err());
         assert!(!dir.path().join("images/first.png").exists());
     }
+}
+
+pub fn delete_document_asset(document_path: &str, source: &str, expected_revision: Option<&str>) -> AppResult<()> {
+    let asset = read_document_asset(document_path, source)?;
+    if let (Some(expected), Some(actual)) = (expected_revision, asset.revision.as_deref()) {
+        if expected != actual {
+            return Err(AppError::Conflict("Asset changed before deletion.".into()));
+        }
+    }
+    let path = asset.path.ok_or_else(|| AppError::FileNotFound(source.into()))?;
+    fs::remove_file(&path).map_err(|error| AppError::IoError(format!("delete asset: {error}")))
 }
 
 fn rollback_committed_assets(committed: &[(PathBuf, Option<Vec<u8>>)]) {

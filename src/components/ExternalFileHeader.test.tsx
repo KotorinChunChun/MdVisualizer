@@ -30,6 +30,15 @@ describe("ExternalFileHeader", () => {
     expect(onError).toHaveBeenCalledWith(expect.stringContaining("使用できない文字"));
   });
 
+  it("テキストボックスの外をクリックすると名称変更を確定する", async () => {
+    const onRename = vi.fn().mockResolvedValue(true);
+    render(<ExternalFileHeader source="old.mmd" path="C:\\docs\\old.mmd" onRename={onRename} />);
+    fireEvent.click(screen.getByRole("button", { name: "old.mmd" }));
+    fireEvent.change(screen.getByLabelText("外部ファイル名（拡張子を除く）"), { target: { value: "renamed" } });
+    fireEvent.pointerDown(document.body);
+    await waitFor(() => expect(onRename).toHaveBeenCalledWith("renamed.mmd"));
+  });
+
   it("ファイル操作は常設せず、ファイル名の右クリックメニューへ表示する", () => {
     render(<ExternalFileHeader source="old.png" path="C:\\docs\\old.png" onRename={vi.fn()} />);
     expect(screen.queryByRole("menu")).toBeNull();

@@ -95,7 +95,13 @@ body {
 .responsive-toolbar__menu > div,
 .responsive-toolbar__menu .mermaid-toolbar,
 .responsive-toolbar__menu .mermaid-toolbar__copy,
-.responsive-toolbar__menu .mermaid-toolbar__view { display: flex; width: 100%; flex-direction: column; align-items: stretch; gap: 4px; }
+.responsive-toolbar__menu .mermaid-toolbar__view,
+.responsive-toolbar__menu .mermaid-toolbar__edit { display: flex; width: 100%; flex-direction: column; align-items: stretch; gap: 4px; }
+.responsive-toolbar__menu-separator { height: 1px; margin: 4px 0; background: var(--border-color); }
+.responsive-toolbar__menu [data-group="copy"] + [data-group="view"],
+.responsive-toolbar__menu [data-group="view"] + [data-group="edit"],
+.responsive-toolbar__menu .mermaid-toolbar__copy + .mermaid-toolbar__view,
+.responsive-toolbar__menu .mermaid-toolbar__view + .mermaid-toolbar__edit { border-top: 1px solid var(--border-color); padding-top: 6px; }
 .responsive-toolbar__menu button { width: 100%; min-width: max-content; margin: 0; border-radius: 6px; text-align: left; white-space: nowrap; }
 .responsive-toolbar__menu .mermaid-toolbar__view button:first-child,
 .responsive-toolbar__menu .mermaid-toolbar__view button:last-child { margin: 0; border-radius: 6px; }

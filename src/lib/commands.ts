@@ -84,6 +84,9 @@ export async function discardStagedAssets(ids: string[]): Promise<void> { await 
 export async function readDocumentAsset(documentPath: string, source: string): Promise<import("../types/app").DocumentAssetData> {
   return await invoke("read_document_asset", { documentPath, source });
 }
+export async function deleteDocumentAsset(request: { documentPath: string; source: string; expectedRevision?: string }): Promise<void> {
+  await invoke<void>("delete_document_asset", { request });
+}
 export async function saveSharePointAsset(request: import("../types/app").SharePointAssetSaveRequest): Promise<import("../types/app").SharePointAssetSaveResult> {
   return await invoke("save_sharepoint_asset", { request });
 }
@@ -151,6 +154,7 @@ export async function renameImageAndReferences(request: {
   markdownPath: string;
   imagePath: string;
   newFilename: string;
+  overwrite?: boolean;
 }): Promise<RenameImageReferencesResult> {
   return await invoke<RenameImageReferencesResult>("rename_image_and_references", { request });
 }

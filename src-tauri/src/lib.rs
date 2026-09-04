@@ -282,6 +282,7 @@ pub fn run() {
             stage_clipboard_image,
             discard_staged_assets,
             read_document_asset,
+            delete_document_asset,
             save_sharepoint_asset,
             diagnose_document,
             document_watch_targets,

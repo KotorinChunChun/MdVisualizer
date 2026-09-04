@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { openContainingFolder } from "../lib/commands";
 import { compactExternalFilename, externalFilename, splitExternalFilename, validateExternalFilename } from "../lib/externalFile";
@@ -18,7 +18,17 @@ export function ExternalFileHeader({ source, path, kind, status, onRename, onErr
   const [showPath, setShowPath] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ left: number; top: number } | null>(null);
   const [busy, setBusy] = useState(false);
+  const editorRef = useRef<HTMLSpanElement>(null);
   useEffect(() => { if (!editing) setDraft(stem); }, [editing, stem]);
+  useEffect(() => {
+    if (!editing) return;
+    const commitOutside = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || !editorRef.current?.contains(target)) void commit();
+    };
+    document.addEventListener("pointerdown", commitOutside, true);
+    return () => document.removeEventListener("pointerdown", commitOutside, true);
+  }, [editing, draft, stem, extension, onRename, busy]);
   useEffect(() => {
     if (!menuPosition) return;
     const dismiss = () => setMenuPosition(null);
@@ -48,7 +58,7 @@ export function ExternalFileHeader({ source, path, kind, status, onRename, onErr
     }
   };
 
-  const filenameNode = editing ? <span className="external-file-header__editor">
+  const filenameNode = editing ? <span ref={editorRef} className="external-file-header__editor">
     <input
       aria-label="外部ファイル名（拡張子を除く）"
       value={draft}

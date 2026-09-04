@@ -1,6 +1,6 @@
 use crate::app_state::{AppState, DebugWindowState};
 use crate::asset_staging::{
-    read_document_asset as do_read_document_asset, DocumentAssetData, StagedAssetResult,
+    delete_document_asset as do_delete_document_asset, read_document_asset as do_read_document_asset, DocumentAssetData, StagedAssetResult,
 };
 use crate::document_edit::{
     create_markdown as do_create_markdown, save_markdown_with_assets as do_save_markdown,
@@ -13,7 +13,7 @@ use crate::image_ops::{
     CropImageResult, SaveRenderedImageRequest,
 };
 use crate::image_references::{
-    rename_image_and_references as do_rename_image_and_references,
+    rename_image_and_references_with_options as do_rename_image_and_references,
     update_image_caption as do_update_image_caption, RenameImageResult,
 };
 use crate::markdown::{
@@ -605,6 +605,20 @@ fn heading_base_id(value: &str) -> String {
     }
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteDocumentAssetRequest {
+    pub document_path: String,
+    pub source: String,
+    pub expected_revision: Option<String>,
+}
+
+#[tauri::command]
+pub fn delete_document_asset(request: DeleteDocumentAssetRequest) -> Result<(), String> {
+    do_delete_document_asset(&request.document_path, &request.source, request.expected_revision.as_deref())
+        .map_err(|error| error.to_string())
+}
+
 fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>) -> String {
     let base = heading_base_id(value);
     let count = counts
@@ -1065,6 +1079,8 @@ pub struct RenameImageReferencesRequest {
     markdown_path: String,
     image_path: String,
     new_filename: String,
+    #[serde(default)]
+    overwrite: bool,
 }
 
 #[tauri::command]
@@ -1075,6 +1091,7 @@ pub fn rename_image_and_references(
         Path::new(&request.markdown_path),
         Path::new(&request.image_path),
         &request.new_filename,
+        request.overwrite,
     )
     .map_err(|error| error.to_string())
 }

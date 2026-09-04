@@ -293,7 +293,8 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
 
   return <div className="drawio-block" data-drawio-block={blockId}>
     <ResponsiveToolbar collapseAll className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
-      { id: "copy-view-edit", priority: 100, node: <MermaidToolbar
+      ...(onSave ? [{ id: "edit", group: "edit", priority: 80, node: <button className="diagram-action-button" type="button" onClick={() => setEditing(true)}>編集</button> }] : []),
+      { id: "copy-view", group: "copy", priority: 100, node: <MermaidToolbar
         source={source}
         svg={renderedSvg}
         display={display}
@@ -301,9 +302,8 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
         previewDisabled={false}
         ariaLabel="draw.io操作"
         fileDiagramKind="drawio"
-        onEdit={onSave ? () => setEditing(true) : undefined}
       /> },
-      ...(storage && onStorageConvert ? [{ id: "storage", priority: 10, node: <button
+      ...(storage && onStorageConvert ? [{ id: "storage", group: "storage", priority: 10, node: <button
         className="diagram-action-button"
         type="button"
         disabled={convertingStorage}

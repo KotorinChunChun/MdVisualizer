@@ -1,4 +1,4 @@
-import { type CSSProperties, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, type CSSProperties, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export interface ResponsiveToolbarItem {
@@ -7,6 +7,7 @@ export interface ResponsiveToolbarItem {
   priority?: number;
   fixed?: boolean;
   measurementWidth?: number;
+  group?: "edit" | "copy" | "view" | "storage" | string;
 }
 
 export function responsiveOverflowIds(
@@ -145,7 +146,14 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items, ite
         style={menuPosition}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        {items.filter((item) => overflow.has(item.id)).map((item) => <div role="none" key={item.id}>{item.node}</div>)}
+        {items.filter((item) => overflow.has(item.id)).map((item, index, overflowItems) => {
+          const previous = overflowItems[index - 1];
+          const separated = index > 0 && item.group && previous?.group && item.group !== previous.group;
+          return <Fragment key={item.id}>
+            {separated && <div className="responsive-toolbar__menu-separator" role="separator" />}
+            <div role="none" data-group={item.group}>{item.node}</div>
+          </Fragment>;
+        })}
       </div>, document.body)}
     </div>}
   </div>;
