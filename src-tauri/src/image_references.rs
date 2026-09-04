@@ -146,7 +146,12 @@ pub fn rename_image_and_references_with_options(
         Some(fs::read(&new_image_path).map_err(|error| AppError::IoError(format!("read existing image: {error}")))?)
     } else { None };
     if overwrite && new_image_path.exists() {
-        fs::remove_file(&new_image_path).map_err(|error| AppError::IoError(format!("remove existing image: {error}")))?;
+        if let Err(error) = fs::remove_file(&new_image_path)
+            .map_err(|error| AppError::IoError(format!("remove existing image: {error}")))
+        {
+            let rollback_error = rollback_documents(&written);
+            return Err(with_rollback_context(error, rollback_error));
+        }
     }
     if let Err(error) = fs::rename(&old_image_path, &new_image_path)
         .map_err(|error| AppError::IoError(format!("rename image: {error}")))
