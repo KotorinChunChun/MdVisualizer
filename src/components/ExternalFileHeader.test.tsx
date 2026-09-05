@@ -10,7 +10,7 @@ describe("ExternalFileHeader", () => {
   it("長い名前を省略表示し、クリックから名称変更する", async () => {
     const onRename = vi.fn().mockResolvedValue(true);
     render(<ExternalFileHeader source="images/1234567890abcdefghij.png" path="C:\\docs\\images\\1234567890abcdefghij.png" onRename={onRename} />);
-    fireEvent.click(screen.getByRole("button", { name: "1234567890.....j.png" }));
+    fireEvent.click(screen.getByRole("button", { name: "1234567890abcdefghij.png" }));
     const input = screen.getByLabelText("外部ファイル名（拡張子を除く）") as HTMLInputElement;
     expect(input.value).toBe("1234567890abcdefghij");
     expect(screen.getByText(".png")).not.toBeNull();

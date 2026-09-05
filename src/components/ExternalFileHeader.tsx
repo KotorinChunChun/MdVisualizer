@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { openContainingFolder } from "../lib/commands";
-import { compactExternalFilename, externalFilename, splitExternalFilename, validateExternalFilename } from "../lib/externalFile";
+import { externalFilename, splitExternalFilename, validateExternalFilename } from "../lib/externalFile";
 
 export function ExternalFileHeader({ source, path, kind, status, onRename, onError }: {
   source: string;
@@ -84,7 +84,7 @@ export function ExternalFileHeader({ source, path, kind, status, onRename, onErr
       event.stopPropagation();
       setMenuPosition({ left: event.clientX, top: event.clientY });
     }}
-  >{compactExternalFilename(filename)}</button> : <span className="external-file-header__filename" title={filename}>{compactExternalFilename(filename)}</span>;
+  >{filename}</button> : <span className="external-file-header__filename" title={filename}>{filename}</span>;
 
   return <span className="external-file-header">
     {kind && <strong className="external-file-header__kind">{kind}</strong>}
