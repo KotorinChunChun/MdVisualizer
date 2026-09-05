@@ -69,6 +69,15 @@ describe("tabsReducer", () => {
     expect(state.tabs.find((tab) => tab.id === second)).toMatchObject({ searchOpen: false, externalChanged: false });
   });
 
+  it("marks a document as deleted until storage is successfully reloaded", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "STORAGE_UNAVAILABLE", id, error: "ファイルが削除または移動されました。", deleted: true });
+    expect(state.tabs[0]).toMatchObject({ deleted: true, externalChanged: true });
+    state = tabsReducer(state, { type: "LOADED", id, generation: state.tabs[0].generation, document: loadedDocument("C:\\docs\\a.md") });
+    expect(state.tabs[0].deleted).toBe(false);
+  });
+
   it("再読込が成功するまでは変更通知を保持し、他タブにも影響しない", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;

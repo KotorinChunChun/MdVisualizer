@@ -2181,7 +2181,7 @@ export function App() {
       }
       const canReload = changeKind !== "deleted" && changeKind !== "renamed";
       tabs.forEach((tab) => {
-        if (!canReload) dispatch({ type: "STORAGE_UNAVAILABLE", id: tab.id, error: "ファイルが削除または移動されました。" });
+        if (!canReload) dispatch({ type: "STORAGE_UNAVAILABLE", id: tab.id, error: "ファイルが削除または移動されました。", deleted: true });
         else void refreshTabStorage(tab.id);
       });
     },
