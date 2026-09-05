@@ -3,6 +3,7 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [switch]$SkipBuild,
+    [switch]$SkipDeploy,
     [string]$AppCatalogUrl = 'https://excelchunchun.sharepoint.com/sites/test-team-site',
     [ValidateSet('sitecollection', 'tenant')]
     [string]$AppCatalogScope = 'sitecollection'
@@ -47,13 +48,18 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw 'App Catalogへのアップロードに失敗しました。m365 loginをSharePoint委任AllSites.FullControlへ管理者同意済みのアプリで再認証したか確認してください。'
     }
-    & $nodeExe $npmCli exec -- m365 spo app deploy `
-        --name (Split-Path -Leaf $packagePath) `
-        --appCatalogScope $AppCatalogScope `
-        --appCatalogUrl $AppCatalogUrl `
-        --skipFeatureDeployment `
-        --output json
-    if ($LASTEXITCODE -ne 0) { throw 'App Catalogでの全サイト自動展開に失敗しました。' }
+    if (-not $SkipDeploy) {
+        & $nodeExe $npmCli exec -- m365 spo app deploy `
+            --name (Split-Path -Leaf $packagePath) `
+            --appCatalogScope $AppCatalogScope `
+            --appCatalogUrl $AppCatalogUrl `
+            --skipFeatureDeployment `
+            --output json
+        if ($LASTEXITCODE -ne 0) { throw 'App Catalogでの全サイト自動展開に失敗しました。' }
+    }
+    else {
+        Write-Host 'App Catalogへのアップロードのみ完了しました。全サイト自動展開は実行していません。'
+    }
 }
 finally {
     Pop-Location
