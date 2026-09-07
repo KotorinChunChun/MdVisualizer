@@ -5,6 +5,7 @@ export function PrintMetadata({ path, startedAt, settings }: {
   startedAt: Date | null;
   settings: PrintStyleSettings;
 }) {
+  if (!settings.showTitle && !settings.showFilename && !(settings.showDate && startedAt)) return null;
   return <div className="print-metadata" aria-hidden="true">
     {settings.showTitle && <strong>{path.split(/[\\/]/).pop() ?? path}</strong>}
     {settings.showFilename && <span>元ファイル: {path}</span>}

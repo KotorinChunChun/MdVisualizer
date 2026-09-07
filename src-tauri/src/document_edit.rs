@@ -28,6 +28,41 @@ pub struct CreateMarkdownRequest {
     pub content: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RenameDocumentRequest {
+    pub source_path: String,
+    pub target_path: String,
+    #[serde(default)]
+    pub overwrite: bool,
+}
+
+/// Renames an opened local document and returns its newly canonicalized metadata.
+pub fn rename_document(request: RenameDocumentRequest) -> AppResult<MarkdownLoadResult> {
+    let source = PathBuf::from(&request.source_path);
+    let target = PathBuf::from(&request.target_path);
+    if !source.is_absolute() || !target.is_absolute() {
+        return Err(AppError::IoError("ファイル名変更には絶対パスが必要です。".into()));
+    }
+    if document_kind(&source).is_none() || document_kind(&target).is_none() {
+        return Err(AppError::UnsupportedDocument(request.target_path));
+    }
+    if !source.exists() {
+        return Err(AppError::FileNotFound(request.source_path));
+    }
+    if source == target {
+        return load_markdown(&source.to_string_lossy());
+    }
+    if target.exists() {
+        if !request.overwrite {
+            return Err(AppError::Conflict(format!("ファイルがすでに存在します: {}", target.display())));
+        }
+        fs::remove_file(&target).map_err(|error| AppError::IoError(format!("既存ファイルを削除できません: {error}")))?;
+    }
+    fs::rename(&source, &target).map_err(|error| AppError::IoError(format!("ファイル名を変更できません: {error}")))?;
+    load_markdown(&target.to_string_lossy())
+}
+
 struct OriginalDocument {
     text: String,
     encoding: &'static Encoding,
@@ -237,6 +272,43 @@ mod tests {
 
         assert!(matches!(result, Err(AppError::UnsupportedDocument(_))));
         assert!(!path.exists());
+    }
+
+    #[test]
+    fn renames_a_supported_document_and_returns_new_metadata() {
+        let dir = tempdir().unwrap();
+        let source = dir.path().join("before.md");
+        let target = dir.path().join("after.md");
+        fs::write(&source, "# 内容\n").unwrap();
+
+        let loaded = rename_document(RenameDocumentRequest {
+            source_path: source.to_string_lossy().into_owned(),
+            target_path: target.to_string_lossy().into_owned(),
+            overwrite: false,
+        }).unwrap();
+
+        assert!(!source.exists());
+        assert_eq!(loaded.path, target.canonicalize().unwrap().to_string_lossy());
+        assert_eq!(loaded.content, "# 内容\n");
+    }
+
+    #[test]
+    fn refuses_existing_target_without_explicit_overwrite() {
+        let dir = tempdir().unwrap();
+        let source = dir.path().join("before.md");
+        let target = dir.path().join("after.md");
+        fs::write(&source, "source").unwrap();
+        fs::write(&target, "target").unwrap();
+
+        let result = rename_document(RenameDocumentRequest {
+            source_path: source.to_string_lossy().into_owned(),
+            target_path: target.to_string_lossy().into_owned(),
+            overwrite: false,
+        });
+
+        assert!(matches!(result, Err(AppError::Conflict(_))));
+        assert!(source.exists());
+        assert_eq!(fs::read_to_string(&target).unwrap(), "target");
     }
 
     fn request(path: &Path, content: &str) -> SaveMarkdownRequest {

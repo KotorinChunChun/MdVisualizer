@@ -19,14 +19,14 @@ $npmCli = Join-Path $nodeRoot 'node_modules\npm\bin\npm-cli.js'
 $spfxRoot = Join-Path $PSScriptRoot 'spfx'
 
 if (!$SkipBuild) {
-    & (Join-Path $PSScriptRoot 'build-spfx.ps1') -SkipUpload
+    & (Join-Path $PSScriptRoot 'scripts\build-release-MarkdownViewer-spfx.ps1')
     if ($LASTEXITCODE -ne 0) { throw "SPFx buildが終了コード $LASTEXITCODE で失敗しました。" }
 }
 if (!(Test-Path -LiteralPath $packagePath -PathType Leaf)) {
     throw "アップロードするsppkgがありません: $packagePath"
 }
 if (!(Test-Path -LiteralPath $nodeExe -PathType Leaf) -or !(Test-Path -LiteralPath $npmCli -PathType Leaf)) {
-    throw '固定Node.js環境がありません。先にbuild-spfx.ps1 -SkipUploadを実行してください。'
+    throw '固定Node.js環境がありません。先にscripts/build-release-MarkdownViewer-spfx.ps1を実行してください。'
 }
 
 $arguments = @(

@@ -3,6 +3,8 @@
 作成日: 2026-08-30
 状態: PROPOSED
 
+本書は今後の導入計画を含む。内部PDFテストは2026-08-31に実装済みだが、汎用Browser E2E、coverage、axe等の導入完了を意味しない。実施状況は対象版の`dev/vX.Y.Z-task.md`を正とする。
+
 ## 1. 目的
 
 「人手でしか確認できない仕様」を、描画品質とOS固有ダイアログの最終確認まで減らす。保存安全性、競合、同期、AI変更、セキュリティは失敗系を含めて自動判定し、手動確認をデータ損失防止の最後の補助に限定する。
@@ -18,10 +20,11 @@
 | Browser E2E | AppShell、保存、Diff、レスポンシブ、AI fake | Playwright＋ブラウザーハーネス | PRごと |
 | Desktop E2E | 実WebView、Mermaid/draw.io、ファイル、印刷前状態 | 既存CDP smoke（専用runner） | 専用runner/beta前 |
 | UI受入 | OS印刷、資格情報、MSIX、外部アプリ | 専用runnerまたは手動手順 | beta前 |
-
-当該PCではDesktop E2EとUI受入を実施しない。必要な実画面確認は別PCまたは専用runnerで行う。
+| 内部PDF | 通常／プレゼン／選択表の印刷内容・復元 | `npm.cmd run test:print-pdf`（headless Edge＋PDF.js） | 印刷変更時 |
 | Security | XSS、SVG、path、redirect、secret、CLI | corpus test、dependency audit | PR/nightly |
 | Performance | 起動、検索、描画、DB、同期、AI stream | benchmark script、Playwright trace | nightly/beta前 |
+
+当該PCではDesktop E2EとUI受入を実施しない。内部PDFテストはGUIやOSプリンターを使わずに実行する。手順とCubePDFを使う手動受入との境界は[内部PDFによる印刷受入](03-internal-pdf.md)を参照する。
 
 ## 3. ツール選定
 

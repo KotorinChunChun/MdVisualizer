@@ -6,7 +6,7 @@
     "node": ">=22.14.0 <23.0.0"
   },
   "scripts": {
-    "build": "heft test --clean --production && heft package-solution --production",
+    "build": "heft build --clean --production && heft package-solution --production",
     "clean": "heft clean",
     "start": "heft start --clean",
     "test": "heft test --clean --production"

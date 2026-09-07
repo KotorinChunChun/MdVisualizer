@@ -190,6 +190,17 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].document?.content).toBe("# Test");
   });
 
+  it("updates the tab and storage identity after a file rename", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
+    const id = state.activeId!;
+    const renamed = { ...loadedDocument("C:\\docs\\renamed.md"), content: "# Test", revision: "renamed-revision" };
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+    state = tabsReducer(state, { type: "RENAMED", id, document: renamed });
+    expect(state.tabs[0]).toMatchObject({ path: "C:\\docs\\renamed.md", openedContent: "# Test", dirty: false, deleted: false });
+    expect(state.tabs[0].document?.revision).toBe("renamed-revision");
+    expect(state.tabs[0].storageDocument?.path).toBe("C:\\docs\\renamed.md");
+  });
+
   it("allows an adopted clean draft to enter the saving state", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const id = state.activeId!;

@@ -275,6 +275,7 @@ pub fn run() {
             open_in_new_window,
             load_markdown,
             create_markdown,
+            rename_document,
             save_markdown,
             save_table_csv,
             stage_document_asset,

@@ -32,7 +32,7 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { createMarkdown, deleteDocumentAsset, diagnoseDocument, discardStagedAssets, documentWatchTargets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
+import { createMarkdown, deleteDocumentAsset, diagnoseDocument, discardStagedAssets, documentWatchTargets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameDocument, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
 import { ToastState, type MarkdownLoadResult } from "./types/app";
 import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode, type TabsAction } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
@@ -47,7 +47,7 @@ import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
-import { resolveImageSrc, resolveLocalImagePath } from "./lib/path";
+import { getFileName, resolveImageSrc, resolveLocalImagePath } from "./lib/path";
 import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, type AuxiliaryNavigationStamp } from "./lib/shortcuts";
 import type { ViewMode } from "./lib/viewMode";
 import type { TableStorageConversionContext } from "./lib/tableStorage";
@@ -1402,6 +1402,7 @@ export function App() {
     setMediaPreview((current) => current?.imageContext ? {
       ...current,
       content: { ...current.content, alt: caption },
+      headingTitle: caption.trim() || undefined,
       imageContext: { ...current.imageContext, caption },
     } : current);
     setToast({ id: String(Date.now()), message: "キャプションを保存しました", type: "success" });
@@ -1457,6 +1458,35 @@ export function App() {
       type: "success",
     });
     return true;
+  }, []);
+
+  const renameTab = useCallback(async (id: string) => {
+    const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
+    if (!tab?.document || tab.untitled || tab.dirty || tab.saving || tab.deleted || isSharePointDocument(tab.document)) {
+      throw new Error("未保存の編集がある、または名前を変更できないタブです。");
+    }
+    const currentName = getFileName(tab.path);
+    const requestedName = window.prompt("新しいファイル名を入力してください", currentName)?.trim();
+    if (!requestedName || requestedName === currentName) return;
+    if (/[\\/]/.test(requestedName) || requestedName === "." || requestedName === "..") {
+      throw new Error("ファイル名にフォルダー区切りを含めることはできません。");
+    }
+    const separatorIndex = Math.max(tab.path.lastIndexOf("\\"), tab.path.lastIndexOf("/"));
+    const targetPath = separatorIndex >= 0 ? `${tab.path.slice(0, separatorIndex + 1)}${requestedName}` : requestedName;
+    if (tabsStateRef.current.tabs.some((candidate) => candidate.id !== id && documentSourceIdentity(candidate.path) === documentSourceIdentity(targetPath))) {
+      throw new Error("同じファイルを別のタブですでに開いています。");
+    }
+    let overwrite = false;
+    try {
+      const existing = await loadMarkdown(targetPath);
+      if (existing.content !== tab.document.content && !window.confirm(`ファイルがすでに存在します: ${targetPath}\n\n上書きして名前を変更しますか？`)) return;
+      overwrite = true;
+    } catch {
+      // 対象が存在しない場合は通常の名前変更を続行する。
+    }
+    const document = await renameDocument({ sourcePath: tab.path, targetPath, overwrite });
+    dispatch({ type: "RENAMED", id, document });
+    setToast({ id: crypto.randomUUID(), message: `${currentName} を ${getFileName(document.path)} に変更しました`, type: "success" });
   }, []);
 
   const renamePreviewImage = useCallback(async (context: ImageEditContext, filename: string) => {
@@ -2411,7 +2441,7 @@ export function App() {
             document={activeTab.document}
             imageVersions={imageVersions}
             contentRef={markdownRef}
-            theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+            theme={printing ? "light" : theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             windowId={windowLabel}
             tabId={activeTab.id}
             onMediaOpen={openMediaPreview}
@@ -2423,7 +2453,7 @@ export function App() {
            baseDir={activeTab.document.base_dir}
             sourcePath={activeTab.path}
             imageVersions={imageVersions}
-            theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+            theme={printing ? "light" : theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             onError={handlePreviewError}
             mermaidMode="on"
             windowId={windowLabel}
@@ -2449,7 +2479,7 @@ export function App() {
             baseDir={activeTab.document.base_dir}
             imageVersions={imageVersions}
             contentRef={markdownRef}
-            theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
+            theme={printing ? "light" : theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
             onError={handlePreviewError}
             foldState={foldStates[activeTab.path]}
             onFoldChange={handleFoldChange}
@@ -2579,6 +2609,7 @@ export function App() {
       />
       {mediaPreview && <MediaPreviewModal
         content={mediaPreview.content}
+        headingTitle={mediaPreview.headingTitle}
         diagramSource={mediaPreview.diagramSource}
         diagramKind={mediaPreview.diagramKind}
         imageContext={mediaPreview.imageContext}
@@ -2641,7 +2672,7 @@ export function App() {
         if (!tab) return null;
         const index = tabsState.tabs.indexOf(tab);
         const close = (id: string) => { closeTab(id); setContextTab(null); };
-        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onNewWindow={tab.untitled ? undefined : () => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
+        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onRename={() => renameTab(tab.id)} onNewWindow={tab.untitled ? undefined : () => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
       })()}
       {previewContext && <PreviewContextMenu
         x={previewContext.x}

@@ -1,5 +1,49 @@
 # MarkdownViewer 作業ルール
 
+## 正本と基本方針
+
+- 本ファイルを、プロジェクト固有の必須ルール、フォルダー配置、資料目録の正本とする。
+- PowerShellスクリプトとPowerShellコマンドは`pwsh`で実行する。
+- ドキュメントとコミットログは日本語で記録する。
+- 既存のユーザー変更、版別要求、正式資料を保持し、テンプレートで全面置換しない。
+- 実装、テスト、成果物生成、署名、インストール、外部公開は別々の許可として扱う。リリース省略指示に該当する場合だけ、本ファイルの「リリース省略指示」を適用する。
+
+## フォルダーの役割
+
+| 配置 | 役割 |
+|---|---|
+| `README.md` | 利用者向けの概要、導入、主要機能への入口 |
+| `docs/` | 利用者および第三者開発者向けの公開可能な仕様、設計、ビルド、検証手順 |
+| `dev/` | 開発者本人の版別要求、実装計画・報告、判断、ロードマップ |
+| `dev/history/` | 完成済み版の歴史的資料。後続の完了記録と併せて読む |
+| `dev/private/` | 秘密情報・個人情報を含む非公開資料。Git、公開、通常検索の対象外 |
+| `dev/temp/` | プロジェクト外の一時制作物。Git、公開、資料目録、通常検索の対象外 |
+| `dev/scripts/` | 開発記録に密接な補助スクリプトと性能測定 |
+| `scripts/` | `package.json`、MSIX、SPFx、既存運用から参照される再現可能な運用スクリプト。既存参照との互換性を保つための配置例外 |
+| `packages/markdown-core/` | デスクトップ版とSPFx版で共有するMarkdown処理 |
+| `spfx/` | SharePoint Framework版のソース、設定、固有テスト |
+| `packaging/` | MSIX、App Installer、配布設定。秘密鍵や認証情報は置かない |
+| `samples/` | 製品表示と回帰確認に使用する追跡可能なサンプル |
+| `tests/` | 製品横断の試験、fixtures、期待結果 |
+| `release/` | 再生成可能な配布成果物。Git対象外 |
+
+`scripts/`は既存のnpm入口、MSIXモジュール相対参照、SPFx入口から利用されているため維持する。新しい製品操作用PowerShell入口は、既存配置との整合を確認したうえで`動詞-モード-MarkdownViewer-機能名[-検証データ].ps1`とし、`build`、`run`、`test`、`publish`の意味を混在させない。ビルドモードに依存しない初期化、検証、署名、ステージング等の補助スクリプトは、処理を正確に表す名称を使用できる。
+
+## 資料を読む条件
+
+| 作業・目的 | 読む資料 |
+|---|---|
+| 概要・利用方法 | [README.md](README.md)と、必要な[検証資料](docs/testing/)または[UI資料](docs/ui/) |
+| ビルド・改造 | [開発者ガイド](docs/DEVELOPERS_GUIDE.md)、[ビルド・検証コマンド](docs/BUILD_COMMANDS.md) |
+| 要求の実装 | 対象の`dev/vX.Y.Z-req.md`と対応する`imp.md`・`task.md` |
+| API・内部仕様 | [設計資料](docs/design/)の該当資料と対象ソース |
+| 品質・受入 | [品質運用](docs/operations/01-quality-operations.md)、[検証資料](docs/testing/)の該当資料 |
+| 将来機能の検討 | `dev/roadmap/`または現行の版別roadmap・提案資料 |
+| 配布・公開 | [リリース手順](dev/RELEASE_RULE.md)、[MSIX手順](packaging/msix/README.md)、対象の公開skill |
+| 過去の判断・結果 | [版別履歴](dev/history/)の必要な版と後続の完了記録 |
+
+資料は目的に必要なものだけを読み、`dev/private/`と`dev/temp/`はユーザーが対象ファイルを明示した場合だけ読む。
+
 ## プロジェクトskillの使い分け
 
 - 機能追加、不具合修正、リファクタリングを実装する場合は`.agents/skills/develop-markdownviewer/SKILL.md`を読む。
