@@ -35,7 +35,7 @@ npm.cmd run build:spfx:local
 ```
 
 - `npm.cmd run build`は共有core、TypeScript型検査、Vite production buildを含む。
-- `build:spfx:local`は`-SkipUpload`経路を使う。SPFx uploadを検証コマンドの一部にしない。
+- `build:spfx:local`は`build-release-MarkdownViewer-spfx.ps1`を使う。SPFx uploadを検証コマンドの一部にしない。
 - `npm.cmd run tauri build`は重いdesktop成果物生成である。要求や受入条件に含まれる場合だけ追加し、MSIX生成とは分ける。
 - GUIを行わない当該PCでは`npm.cmd run debug:smoke`を実行しない。状態API、WebView、PDF、画面captureが必要な項目は専用runnerへ残す。
 

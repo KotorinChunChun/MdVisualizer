@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ショートカットキービジュアライザー</title>
+<style>
+  :root{
+    --bg:#161616;
+    --panel:#232323;
+    --panel2:#2b2b2b;
+    --border:#434343;
+    --text:#f2f2f2;
+    --muted:#aaaaaa;
+    --accent:#5ca2ff;
+    --chip:#353535;
+    --chipHover:#414141;
+    --keyUi:#2d2d2d;
+    --keyUiBorder:#515151;
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI",system-ui,sans-serif;
+  }
+
+  .app{
+    max-width:1460px;
+    margin:0 auto;
+    padding:24px;
+  }
+
+  h1{margin:0 0 8px;font-size:24px;text-align:center}
+  .lead{
+    margin:0 auto 18px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.7;
+    text-align:center;
+    max-width:1000px;
+  }
+
+  .pane-stack{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    align-items:center;
+  }
+
+  .pane{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+  }
+
+  .pane-header{
+    padding:14px 16px;
+    border-bottom:1px solid var(--border);
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  .pane-subtitle{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:400;
+  }
+
+  .pane-body{
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .content-wide{
+    width:100%;
+    max-width:1320px;
+  }
+
+  .field{margin-bottom:14px;width:100%}
+  .field label{
+    display:block;
+    margin-bottom:6px;
+    font-size:13px;
+  }
+  .field small{
+    display:block;
+    margin-top:6px;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.6;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid #505050;
+    border-radius:8px;
+    background:var(--panel2);
+    color:#fff;
+    font:inherit;
+    outline:none;
+  }
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  select:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px rgba(92,162,255,.15);
+  }
+
+  input[type="color"]{
+    width:100%;
+    height:40px;
+    padding:0;
+    border:1px solid #505050;
+    border-radius:8px;
+    background:var(--panel2);
+  }
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+  .check{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:10px 0;
+    font-size:13px;
+  }
+
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+  }
+
+  button{
+    padding:9px 12px;
+    border:1px solid #505050;
+    border-radius:8px;
+    background:#323232;
+    color:#fff;
+    font:inherit;
+    cursor:pointer;
+  }
+  button:hover{background:#3b3b3b}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:#2a5f9e;border-color:#5d89c4}
+  button.small{padding:6px 9px;font-size:12px}
+  button.ghost{background:transparent}
+
+  .collapsible{
+    overflow:hidden;
+    max-height:1600px;
+    opacity:1;
+    transition:max-height .24s ease, opacity .2s ease, margin .24s ease;
+    width:100%;
+  }
+  .collapsible.collapsed{
+    max-height:0;
+    opacity:0;
+    margin:0 !important;
+    pointer-events:none;
+  }
+
+  .preset-summary{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#202020;
+    margin-bottom:12px;
+  }
+  .preset-summary strong{font-size:13px}
+  .preset-summary span{color:var(--muted);font-size:12px}
+
+  .preset-note{
+    margin:0 0 10px;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.6;
+  }
+
+  .preset-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px;
+    width:100%;
+  }
+
+  .preset-card{
+    border:1px solid #505050;
+    border-radius:12px;
+    background:#272727;
+    padding:10px;
+    cursor:pointer;
+    transition:.15s ease;
+    text-align:left;
+  }
+  .preset-card:hover{
+    transform:translateY(-1px);
+    border-color:#6a6a6a;
+    background:#2d2d2d;
+  }
+  .preset-card.active{
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px rgba(92,162,255,.16);
+    background:#2d3540;
+  }
+  .preset-title{font-size:13px;font-weight:600;margin-bottom:3px}
+  .preset-desc{font-size:11px;color:var(--muted);margin-bottom:8px}
+  .preset-preview{
+    border-radius:10px;
+    overflow:hidden;
+    background:#1a1a1a;
+    min-height:72px;
+    display:grid;
+    place-items:center;
+  }
+  .preset-preview svg{width:100%;height:auto;display:block}
+
+  .design-settings{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+    width:100%;
+    margin-top:12px;
+  }
+
+  .settings-group{
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#202020;
+    padding:12px;
+  }
+  .settings-group-title{
+    font-size:13px;
+    font-weight:600;
+    margin:0 0 12px;
+  }
+
+  .builder-wrap{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#202020;
+    padding:12px;
+  }
+
+  .inline-controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:end;
+    justify-content:center;
+    width:100%;
+    margin-bottom:12px;
+  }
+
+  .inline-controls .field{
+    margin-bottom:0;
+    min-width:220px;
+    max-width:320px;
+  }
+
+  .builder-toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+    margin-bottom:12px;
+  }
+
+  .op-btn{
+    background:var(--chip);
+    border-color:#575757;
+    padding:7px 10px;
+    font-size:13px;
+  }
+  .op-btn:hover{background:var(--chipHover)}
+
+  .builder-section-title{
+    margin:12px 0 8px;
+    font-size:12px;
+    color:#cfd6de;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    text-align:center;
+  }
+
+  .keyboard-panel{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#1b1b1b;
+    padding:12px;
+    margin-top:8px;
+  }
+
+  .keyboard-scroll{
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding-bottom:6px;
+    display:flex;
+    justify-content:center;
+  }
+
+  .kbd-ui{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    width:max-content;
+    margin:0 auto;
+  }
+
+  .kbd-row{
+    display:flex;
+    flex-wrap:nowrap;
+    gap:6px;
+    justify-content:flex-start;
+  }
+
+  .kbd-btn{
+    min-width:36px;
+    height:36px;
+    padding:0 8px;
+    border-radius:8px;
+    border:1px solid var(--keyUiBorder);
+    background:var(--keyUi);
+    color:#fff;
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .kbd-btn:hover{background:#3a3a3a}
+
+  .mouse-palette{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+    width:100%;
+  }
+
+  .result-grid{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+
+  .result-panel{
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#202020;
+    overflow:hidden;
+  }
+
+  .result-panel-header{
+    padding:10px 12px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-weight:600;
+    font-size:13px;
+    flex-wrap:wrap;
+  }
+
+  .result-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+
+  .shortcut-preview{
+    min-height:110px;
+    max-height:140px;
+    display:grid;
+    place-items:center;
+    overflow:auto;
+    padding:10px 14px;
+    background:
+      linear-gradient(45deg,#292929 25%,transparent 25%),
+      linear-gradient(-45deg,#292929 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#292929 75%),
+      linear-gradient(-45deg,transparent 75%,#292929 75%);
+    background-size:20px 20px;
+    background-position:0 0,0 10px,10px -10px,-10px 0;
+  }
+
+  .map-preview{
+    min-height:320px;
+    display:grid;
+    place-items:center;
+    overflow:auto;
+    padding:16px;
+    background:
+      linear-gradient(45deg,#292929 25%,transparent 25%),
+      linear-gradient(-45deg,#292929 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#292929 75%),
+      linear-gradient(-45deg,transparent 75%,#292929 75%);
+    background-size:20px 20px;
+    background-position:0 0,0 10px,10px -10px,-10px 0;
+  }
+
+  #previewHost svg,#mapPreviewHost svg{
+    display:block;
+    max-width:100%;
+    height:auto;
+  }
+
+  .status{
+    min-height:20px;
+    margin-top:10px;
+    color:#9ed1ff;
+    font-size:12px;
+    text-align:center;
+  }
+
+  .subtle{
+    color:var(--muted);
+    font-size:12px;
+    text-align:center;
+    line-height:1.6;
+  }
+
+  @media(max-width:1000px){
+    .preset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .design-settings{grid-template-columns:1fr}
+  }
+
+  @media(max-width:680px){
+    .app{padding:14px}
+    .grid2,.grid3,.grid4{grid-template-columns:1fr}
+    .preset-grid{grid-template-columns:1fr}
+    .pane-header,.result-panel-header,.preset-summary{flex-direction:column;align-items:flex-start}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>ショートカットキービジュアライザー</h1>
+  <p class="lead">
+    ①プリセットまたは詳細設定でデザインを決める → ②キーを入力する → ③結果を確認する、の3ペイン構成です。<br>
+    キーボードは普段は折りたたみ、必要なときだけ表示します。キーボードレイアウトは一般的な3種類から選べます。
+  </p>
+
+  <div class="pane-stack">
+
+    <!-- Design -->
+    <section class="pane">
+      <div class="pane-header">
+        <span>1. デザインを決める</span>
+        <span class="pane-subtitle">プリセット中心 / 詳細設定は必要時のみ</span>
+      </div>
+      <div class="pane-body">
+        <div class="content-wide">
+          <div class="preset-summary">
+            <div>
+              <strong>選択中: <span id="selectedPresetName">クラシック</span></strong><br>
+              <span id="selectedPresetDesc">元の立体キー風</span>
+            </div>
+            <div class="result-actions">
+              <button type="button" class="small" id="togglePresetBtn">プリセットを表示</button>
+              <button type="button" class="small" id="toggleDetailBtn">詳細設定を表示</button>
+            </div>
+          </div>
+
+          <div id="presetSelector" class="collapsible collapsed">
+            <p class="preset-note">
+              すべての見本は <b>Ctrl+C</b> を実際に描画しています。プリセットを選ぶと設定を一括適用し、
+              プリセット一覧と詳細設定は自動で折りたたまれます。
+            </p>
+            <div id="presetGrid" class="preset-grid"></div>
+          </div>
+
+          <div id="detailSettings" class="collapsible collapsed">
+            <div class="design-settings">
+              <div class="settings-group">
+                <div class="settings-group-title">キーの形・文字</div>
+
+                <div class="field">
+                  <label for="fontFamily">キー文字フォント</label>
+                  <select id="fontFamily">
+                    <option value="Cascadia Mono, Consolas, monospace">Cascadia Mono / Consolas</option>
+                    <option value="Segoe UI, system-ui, sans-serif">Segoe UI</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="Meiryo, sans-serif">Meiryo</option>
+                    <option value="Yu Gothic UI, sans-serif">Yu Gothic UI</option>
+                  </select>
+                </div>
+
+                <div class="grid3">
+                  <div class="field">
+                    <label for="fontSize">文字サイズ</label>
+                    <input id="fontSize" type="number" min="10" max="64" value="22">
+                  </div>
+                  <div class="field">
+                    <label for="keyHeight">キー高さ</label>
+                    <input id="keyHeight" type="number" min="24" max="120" value="48">
+                  </div>
+                  <div class="field">
+                    <label for="keyPaddingX">左右余白</label>
+                    <input id="keyPaddingX" type="number" min="4" max="80" value="16">
+                  </div>
+                </div>
+
+                <div class="grid3">
+                  <div class="field">
+                    <label for="radius">角丸</label>
+                    <input id="radius" type="number" min="0" max="40" value="10">
+                  </div>
+                  <div class="field">
+                    <label for="keyGap">キー間隔</label>
+                    <input id="keyGap" type="number" min="0" max="40" value="10">
+                  </div>
+                  <div class="field">
+                    <label for="groupPadding">グループ余白</label>
+                    <input id="groupPadding" type="number" min="0" max="40" value="10">
+                  </div>
+                </div>
+
+                <div class="grid2">
+                  <div class="field">
+                    <label for="textColor">キー文字色</label>
+                    <input id="textColor" type="color" value="#30343a">
+                  </div>
+                  <div class="field">
+                    <label for="separatorColor">区切り文字色</label>
+                    <input id="separatorColor" type="color" value="#d7d7d7">
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-title">配色・カウンター</div>
+
+                <div class="grid4">
+                  <div class="field">
+                    <label for="keyTopColor">上面色</label>
+                    <input id="keyTopColor" type="color" value="#ffffff">
+                  </div>
+                  <div class="field">
+                    <label for="keyBottomColor">下面色</label>
+                    <input id="keyBottomColor" type="color" value="#dce2e7">
+                  </div>
+                  <div class="field">
+                    <label for="keyBorderColor">枠線色</label>
+                    <input id="keyBorderColor" type="color" value="#bcc4cc">
+                  </div>
+                  <div class="field">
+                    <label for="keyEdgeColor">側面色</label>
+                    <input id="keyEdgeColor" type="color" value="#a9b2ba">
+                  </div>
+                </div>
+
+                <div class="grid2">
+                  <div class="field">
+                    <label for="groupBgColor">グループ背景色</label>
+                    <input id="groupBgColor" type="color" value="#314867">
+                  </div>
+                  <div class="field">
+                    <label for="canvasColor">全体背景色</label>
+                    <input id="canvasColor" type="color" value="#242424">
+                  </div>
+                </div>
+
+                <div class="grid3">
+                  <div class="field">
+                    <label for="counterFontSize">カウンター文字サイズ</label>
+                    <input id="counterFontSize" type="number" min="10" max="48" value="19">
+                  </div>
+                  <div class="field">
+                    <label for="counterTextColor">カウンター文字色</label>
+                    <input id="counterTextColor" type="color" value="#ffffff">
+                  </div>
+                  <div class="field">
+                    <label for="counterBgColor">カウンター背景色</label>
+                    <input id="counterBgColor" type="color" value="#ff4f7a">
+                  </div>
+                </div>
+
+                <div class="check">
+                  <input id="showGroupBg" type="checkbox" checked>
+                  <label for="showGroupBg">同時押しグループの背景色を表示</label>
+                </div>
+
+                <div class="check">
+                  <input id="transparentBg" type="checkbox">
+                  <label for="transparentBg">全体背景を透明にする</label>
+                </div>
+
+                <div class="toolbar">
+                  <button id="resetDesignBtn" type="button">デザインを初期値に戻す</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Input -->
+    <section class="pane">
+      <div class="pane-header">
+        <span>2. キーを入力する</span>
+        <span class="pane-subtitle">テキスト入力 / キーボード・マウスクリック入力</span>
+      </div>
+      <div class="pane-body">
+        <div class="content-wide">
+          <div class="field">
+            <label for="sequenceInput">ショートカット入力</label>
+            <input id="sequenceInput" type="text" value="Ctrl+C x7">
+            <small>「+」= 同時押し / 「,」「→」「->」= 連続押し / 「x7」= カウンター。</small>
+          </div>
+
+          <div class="builder-wrap">
+            <div class="inline-controls">
+              <div class="field">
+                <label for="builderLayoutSelect">入力用キーボードレイアウト</label>
+                <select id="builderLayoutSelect">
+                  <option value="jis109full">JIS 109 フルキーボード</option>
+                  <option value="us104full">US 104 フルキーボード</option>
+                  <option value="jistkl">JIS テンキーレス</option>
+                </select>
+              </div>
+              <div class="field" style="max-width:220px;min-width:180px">
+                <label>&nbsp;</label>
+                <button type="button" id="toggleKeyboardBtn">キーボードを表示</button>
+              </div>
+            </div>
+
+            <div class="builder-toolbar">
+              <button type="button" class="op-btn" data-op="+">＋ 同時押し</button>
+              <button type="button" class="op-btn" data-op=",">, 連続押し</button>
+              <button type="button" class="op-btn" data-op="→">→ 連続押し</button>
+              <button type="button" class="op-btn" data-op=" x2">x2</button>
+              <button type="button" class="op-btn" data-op=" x3">x3</button>
+              <button type="button" class="op-btn" data-op=" x5">x5</button>
+              <button type="button" class="op-btn" data-op=" x7">x7</button>
+              <button type="button" class="op-btn" id="builderUndo">元に戻す</button>
+              <button type="button" class="op-btn" id="builderBackspace">1文字削除</button>
+              <button type="button" class="op-btn" id="builderClear">クリア</button>
+            </div>
+
+            <div id="keyboardSection" class="keyboard-panel collapsible collapsed">
+              <div class="builder-section-title">Keyboard</div>
+              <div class="keyboard-scroll">
+                <div id="keyboardBuilder" class="kbd-ui"></div>
+              </div>
+            </div>
+
+            <div class="builder-section-title">Mouse</div>
+            <div id="mouseBuilder" class="mouse-palette"></div>
+
+            <p class="subtle">
+              キーボードは実レイアウトに近い形で中央配置しています。必要なときだけ展開して使用してください。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Result -->
+    <section class="pane">
+      <div class="pane-header">
+        <span>3. 結果</span>
+        <span class="pane-subtitle">ショートカット図 / 押下位置グラフィック</span>
+      </div>
+      <div class="pane-body">
+        <div class="content-wide">
+          <div class="result-grid">
+            <div class="result-panel">
+              <div class="result-panel-header">
+                <span>ショートカットのビジュアライズ</span>
+                <div class="result-actions">
+                  <button id="copyPngBtn" type="button" class="primary small">PNGとしてコピー</button>
+                  <button id="copySvgBtn" type="button" class="small">SVGとしてコピー</button>
+                </div>
+              </div>
+              <div class="shortcut-preview">
+                <div id="previewHost"></div>
+              </div>
+            </div>
+
+            <div class="result-panel">
+              <div class="result-panel-header">
+                <span>押下位置グラフィック（キーボード / マウス）</span>
+                <div class="result-actions">
+                  <div class="field" style="min-width:230px;max-width:280px;margin:0">
+                    <label for="mapLayoutSelect" style="font-size:12px;margin-bottom:4px">表示用キーボードレイアウト</label>
+                    <select id="mapLayoutSelect">
+                      <option value="jis109full">JIS 109 フルキーボード</option>
+                      <option value="us104full">US 104 フルキーボード</option>
+                      <option value="jistkl">JIS テンキーレス</option>
+                    </select>
+                  </div>
+                  <button id="copyMapPngBtn" type="button" class="primary small">PNGとしてコピー</button>
+                  <button id="copyMapSvgBtn" type="button" class="small">SVGとしてコピー</button>
+                </div>
+              </div>
+              <div class="map-preview">
+                <div id="mapPreviewHost"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="status" class="status"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(() => {
+  const defaults = {
+    sequenceInput:"Ctrl+C x7",
+    fontFamily:"Cascadia Mono, Consolas, monospace",
+    fontSize:"22",
+    keyHeight:"48",
+    keyPaddingX:"16",
+    radius:"10",
+    keyGap:"10",
+    groupPadding:"10",
+    textColor:"#30343a",
+    separatorColor:"#d7d7d7",
+    keyTopColor:"#ffffff",
+    keyBottomColor:"#dce2e7",
+    keyBorderColor:"#bcc4cc",
+    keyEdgeColor:"#a9b2ba",
+    groupBgColor:"#314867",
+    canvasColor:"#242424",
+    counterFontSize:"19",
+    counterTextColor:"#ffffff",
+    counterBgColor:"#ff4f7a",
+    showGroupBg:true,
+    transparentBg:false,
+    builderLayoutSelect:"jis109full",
+    mapLayoutSelect:"jis109full"
+  };
+
+  const styleIds = [
+    "fontFamily","fontSize","keyHeight","keyPaddingX","radius","keyGap","groupPadding",
+    "textColor","separatorColor","keyTopColor","keyBottomColor","keyBorderColor","keyEdgeColor",
+    "groupBgColor","canvasColor","counterFontSize","counterTextColor","counterBgColor",
+    "showGroupBg","transparentBg"
+  ];
+
+  const presets = [
+    {id:"classic",name:"クラシック",desc:"元の立体キー風",styles:{
+      fontFamily:"Cascadia Mono, Consolas, monospace",fontSize:"22",keyHeight:"48",keyPaddingX:"16",radius:"10",
+      keyGap:"10",groupPadding:"10",textColor:"#30343a",separatorColor:"#d7d7d7",keyTopColor:"#ffffff",
+      keyBottomColor:"#dce2e7",keyBorderColor:"#bcc4cc",keyEdgeColor:"#a9b2ba",groupBgColor:"#314867",
+      canvasColor:"#242424",counterFontSize:"19",counterTextColor:"#ffffff",counterBgColor:"#ff4f7a",
+      showGroupBg:true,transparentBg:false
+    }},
+    {id:"soft",name:"ソフトブルー",desc:"明るくやさしい",styles:{
+      fontFamily:"Segoe UI, system-ui, sans-serif",fontSize:"22",keyHeight:"50",keyPaddingX:"18",radius:"14",
+      keyGap:"10",groupPadding:"12",textColor:"#38507a",separatorColor:"#b9d4ff",keyTopColor:"#ffffff",
+      keyBottomColor:"#e8f1ff",keyBorderColor:"#bfd1f0",keyEdgeColor:"#a7bddd",groupBgColor:"#456b9c",
+      canvasColor:"#213249",counterFontSize:"18",counterTextColor:"#ffffff",counterBgColor:"#ff6f91",
+      showGroupBg:true,transparentBg:false
+    }},
+    {id:"graphite",name:"グラファイト",desc:"落ち着いた濃色",styles:{
+      fontFamily:"Segoe UI, system-ui, sans-serif",fontSize:"21",keyHeight:"48",keyPaddingX:"16",radius:"9",
+      keyGap:"10",groupPadding:"10",textColor:"#1e2328",separatorColor:"#d4d4d4",keyTopColor:"#f8f8f8",
+      keyBottomColor:"#d6d9dd",keyBorderColor:"#aab1b8",keyEdgeColor:"#818990",groupBgColor:"#3a3f46",
+      canvasColor:"#1f1f20",counterFontSize:"18",counterTextColor:"#ffffff",counterBgColor:"#f05e70",
+      showGroupBg:true,transparentBg:false
+    }},
+    {id:"retro",name:"レトロ端末",desc:"緑が映える",styles:{
+      fontFamily:"Cascadia Mono, Consolas, monospace",fontSize:"22",keyHeight:"46",keyPaddingX:"16",radius:"7",
+      keyGap:"10",groupPadding:"10",textColor:"#173523",separatorColor:"#7ed99a",keyTopColor:"#d9f5df",
+      keyBottomColor:"#a7dfb1",keyBorderColor:"#6ab57a",keyEdgeColor:"#4b8d59",groupBgColor:"#203c27",
+      canvasColor:"#101c13",counterFontSize:"18",counterTextColor:"#ffffff",counterBgColor:"#ff6b6b",
+      showGroupBg:true,transparentBg:false
+    }},
+    {id:"pastel",name:"パステル",desc:"丸くポップ",styles:{
+      fontFamily:"Yu Gothic UI, sans-serif",fontSize:"22",keyHeight:"50",keyPaddingX:"18",radius:"16",
+      keyGap:"10",groupPadding:"12",textColor:"#5c4d67",separatorColor:"#f7ddff",keyTopColor:"#fff8ff",
+      keyBottomColor:"#f1dff5",keyBorderColor:"#ddc5e6",keyEdgeColor:"#c6a9d2",groupBgColor:"#6b4e78",
+      canvasColor:"#2d2333",counterFontSize:"18",counterTextColor:"#ffffff",counterBgColor:"#ff5f8d",
+      showGroupBg:true,transparentBg:false
+    }},
+    {id:"minimal",name:"ミニマル",desc:"背景を控えめに",styles:{
+      fontFamily:"Segoe UI, system-ui, sans-serif",fontSize:"21",keyHeight:"46",keyPaddingX:"15",radius:"8",
+      keyGap:"10",groupPadding:"8",textColor:"#3a3a3a",separatorColor:"#bdbdbd",keyTopColor:"#ffffff",
+      keyBottomColor:"#ececec",keyBorderColor:"#d0d0d0",keyEdgeColor:"#b5b5b5",groupBgColor:"#303030",
+      canvasColor:"#232323",counterFontSize:"18",counterTextColor:"#ffffff",counterBgColor:"#ff5578",
+      showGroupBg:false,transparentBg:false
+    }}
+  ];
+
+  const layouts = {
+    jis109full: {
+      name:"JIS 109 フルキーボード",
+      rows: [
+        [
+          {label:"Esc",input:"Esc",id:"esc",u:1.25},
+          {sp:0.4},
+          {label:"F1",input:"F1",id:"f1",u:1},{label:"F2",input:"F2",id:"f2",u:1},{label:"F3",input:"F3",id:"f3",u:1},{label:"F4",input:"F4",id:"f4",u:1},
+          {sp:0.25},
+          {label:"F5",input:"F5",id:"f5",u:1},{label:"F6",input:"F6",id:"f6",u:1},{label:"F7",input:"F7",id:"f7",u:1},{label:"F8",input:"F8",id:"f8",u:1},
+          {sp:0.25},
+          {label:"F9",input:"F9",id:"f9",u:1},{label:"F10",input:"F10",id:"f10",u:1},{label:"F11",input:"F11",id:"f11",u:1},{label:"F12",input:"F12",id:"f12",u:1},
+          {sp:0.45},
+          {label:"PrtSc",input:"PrintScreen",id:"printscreen",u:1.15},{label:"ScrLk",input:"ScrollLock",id:"scrolllock",u:1.15},{label:"Pause",input:"Pause",id:"pause",u:1.15}
+        ],
+        [
+          {label:"半/全",input:"ZenkakuHankaku",id:"zenkakuhankaku",u:1.25},
+          {label:"1",input:"1",id:"1",u:1},{label:"2",input:"2",id:"2",u:1},{label:"3",input:"3",id:"3",u:1},{label:"4",input:"4",id:"4",u:1},
+          {label:"5",input:"5",id:"5",u:1},{label:"6",input:"6",id:"6",u:1},{label:"7",input:"7",id:"7",u:1},{label:"8",input:"8",id:"8",u:1},
+          {label:"9",input:"9",id:"9",u:1},{label:"0",input:"0",id:"0",u:1},{label:"-",input:"Minus",id:"minus",u:1},{label:"^",input:"Caret",id:"caret",u:1},
+          {label:"¥",input:"Yen",id:"yen",u:1},{label:"Backspace",input:"Backspace",id:"backspace",u:2.1},
+          {sp:0.45},
+          {label:"Ins",input:"Insert",id:"insert",u:1.1},{label:"Home",input:"Home",id:"home",u:1.1},{label:"PgUp",input:"PageUp",id:"pageup",u:1.1},
+          {sp:0.45},
+          {label:"Num",input:"NumLock",id:"numlock",u:1.1},{label:"/",input:"NumpadDivide",id:"numpaddivide",u:1.1},{label:"*",input:"NumpadMultiply",id:"numpadmultiply",u:1.1},{label:"-",input:"NumpadSubtract",id:"numpadsubtract",u:1.1}
+        ],
+        [
+          {label:"Tab",input:"Tab",id:"tab",u:1.6},
+          {label:"Q",input:"Q",id:"q",u:1},{label:"W",input:"W",id:"w",u:1},{label:"E",input:"E",id:"e",u:1},{label:"R",input:"R",id:"r",u:1},
+          {label:"T",input:"T",id:"t",u:1},{label:"Y",input:"Y",id:"y",u:1},{label:"U",input:"U",id:"u",u:1},{label:"I",input:"I",id:"i",u:1},
+          {label:"O",input:"O",id:"o",u:1},{label:"P",input:"P",id:"p",u:1},{label:"@",input:"At",id:"at",u:1},{label:"[",input:"BracketLeft",id:"bracketleft",u:1},
+          {sp:1.95},
+          {label:"Del",input:"Delete",id:"delete",u:1.1},{label:"End",input:"End",id:"end",u:1.1},{label:"PgDn",input:"PageDown",id:"pagedown",u:1.1},
+          {sp:0.45},
+          {label:"7",input:"Numpad7",id:"numpad7",u:1.1},{label:"8",input:"Numpad8",id:"numpad8",u:1.1},{label:"9",input:"Numpad9",id:"numpad9",u:1.1},
+          {label:"+",input:"NumpadAdd",id:"numpadadd",u:1.1}
+        ],
+        [
+          {label:"Caps",input:"CapsLock",id:"capslock",u:1.9},
+          {label:"A",input:"A",id:"a",u:1},{label:"S",input:"S",id:"s",u:1},{label:"D",input:"D",id:"d",u:1},{label:"F",input:"F",id:"f",u:1},
+          {label:"G",input:"G",id:"g",u:1},{label:"H",input:"H",id:"h",u:1},{label:"J",input:"J",id:"j",u:1},{label:"K",input:"K",id:"k",u:1},
+          {label:"L",input:"L",id:"l",u:1},{label:";",input:"Semicolon",id:"semicolon",u:1},{label:":",input:"Colon",id:"colon",u:1},
+          {label:"]",input:"BracketRight",id:"bracketright",u:1},{label:"Enter",input:"Enter",id:"enter",u:2.3},
+          {sp:4.0},
+          {label:"4",input:"Numpad4",id:"numpad4",u:1.1},{label:"5",input:"Numpad5",id:"numpad5",u:1.1},{label:"6",input:"Numpad6",id:"numpad6",u:1.1}
+        ],
+        [
+          {label:"Shift",input:"Shift",id:"shift",u:2.35},
+          {label:"Z",input:"Z",id:"z",u:1},{label:"X",input:"X",id:"x",u:1},{label:"C",input:"C",id:"c",u:1},{label:"V",input:"V",id:"v",u:1},
+          {label:"B",input:"B",id:"b",u:1},{label:"N",input:"N",id:"n",u:1},{label:"M",input:"M",id:"m",u:1},{label:",",input:"Comma",id:"comma",u:1},
+          {label:".",input:"Period",id:"period",u:1},{label:"/",input:"Slash",id:"slash",u:1},{label:"\\",input:"Backslash",id:"backslash",u:1},
+          {label:"Shift",input:"Shift",id:"shift",u:2.75},
+          {sp:1.2},
+          {label:"↑",input:"Up",id:"up",u:1.1},
+          {sp:1.55},
+          {label:"1",input:"Numpad1",id:"numpad1",u:1.1},{label:"2",input:"Numpad2",id:"numpad2",u:1.1},{label:"3",input:"Numpad3",id:"numpad3",u:1.1},
+          {label:"Enter",input:"NumpadEnter",id:"numpadenter",u:1.1}
+        ],
+        [
+          {label:"Ctrl",input:"Ctrl",id:"ctrl",u:1.4},{label:"Win",input:"Win",id:"win",u:1.3},{label:"Alt",input:"Alt",id:"alt",u:1.3},
+          {label:"無変換",input:"Muhenkan",id:"muhenkan",u:1.35},
+          {label:"Space",input:"Space",id:"space",u:5.2},
+          {label:"変換",input:"Henkan",id:"henkan",u:1.35},
+          {label:"かな",input:"Kana",id:"kana",u:1.35},
+          {label:"Alt",input:"Alt",id:"alt",u:1.3},{label:"Win",input:"Win",id:"win",u:1.3},
+          {label:"Menu",input:"Menu",id:"menu",u:1.3},{label:"Ctrl",input:"Ctrl",id:"ctrl",u:1.4},
+          {sp:0.45},
+          {label:"←",input:"Left",id:"left",u:1.1},{label:"↓",input:"Down",id:"down",u:1.1},{label:"→",input:"Right",id:"right",u:1.1},
+          {sp:0.45},
+          {label:"0",input:"Numpad0",id:"numpad0",u:2.3},{label:".",input:"NumpadDecimal",id:"numpaddecimal",u:1.1}
+        ]
+      ]
+    },
+
+    us104full: {
+      name:"US 104 フルキーボード",
+      rows: [
+        [
+          {label:"Esc",input:"Esc",id:"esc",u:1.25},{sp:0.4},
+          {label:"F1",input:"F1",id:"f1",u:1},{label:"F2",input:"F2",id:"f2",u:1},{label:"F3",input:"F3",id:"f3",u:1},{label:"F4",input:"F4",id:"f4",u:1},
+          {sp:0.25},
+          {label:"F5",input:"F5",id:"f5",u:1},{label:"F6",input:"F6",id:"f6",u:1},{label:"F7",input:"F7",id:"f7",u:1},{label:"F8",input:"F8",id:"f8",u:1},
+          {sp:0.25},
+          {label:"F9",input:"F9",id:"f9",u:1},{label:"F10",input:"F10",id:"f10",u:1},{label:"F11",input:"F11",id:"f11",u:1},{label:"F12",input:"F12",id:"f12",u:1},
+          {sp:0.45},
+          {label:"PrtSc",input:"PrintScreen",id:"printscreen",u:1.15},{label:"ScrLk",input:"ScrollLock",id:"scrolllock",u:1.15},{label:"Pause",input:"Pause",id:"pause",u:1.15}
+        ],
+        [
+          {label:"`",input:"Backquote",id:"backquote",u:1.1},
+          {label:"1",input:"1",id:"1",u:1},{label:"2",input:"2",id:"2",u:1},{label:"3",input:"3",id:"3",u:1},{label:"4",input:"4",id:"4",u:1},
+          {label:"5",input:"5",id:"5",u:1},{label:"6",input:"6",id:"6",u:1},{label:"7",input:"7",id:"7",u:1},{label:"8",input:"8",id:"8",u:1},
+          {label:"9",input:"9",id:"9",u:1},{label:"0",input:"0",id:"0",u:1},{label:"-",input:"Minus",id:"minus",u:1},
+          {label:"=",input:"Equal",id:"equal",u:1},{label:"Backspace",input:"Backspace",id:"backspace",u:2.4},
+          {sp:0.45},
+          {label:"Ins",input:"Insert",id:"insert",u:1.1},{label:"Home",input:"Home",id:"home",u:1.1},{label:"PgUp",input:"PageUp",id:"pageup",u:1.1},
+          {sp:0.45},
+          {label:"Num",input:"NumLock",id:"numlock",u:1.1},{label:"/",input:"NumpadDivide",id:"numpaddivide",u:1.1},{label:"*",input:"NumpadMultiply",id:"numpadmultiply",u:1.1},{label:"-",input:"NumpadSubtract",id:"numpadsubtract",u:1.1}
+        ],
+        [
+          {label:"Tab",input:"Tab",id:"tab",u:1.6},
+          {label:"Q",input:"Q",id:"q",u:1},{label:"W",input:"W",id:"w",u:1},{label:"E",input:"E",id:"e",u:1},{label:"R",input:"R",id:"r",u:1},
+          {label:"T",input:"T",id:"t",u:1},{label:"Y",input:"Y",id:"y",u:1},{label:"U",input:"U",id:"u",u:1},{label:"I",input:"I",id:"i",u:1},
+          {label:"O",input:"O",id:"o",u:1},{label:"P",input:"P",id:"p",u:1},{label:"[",input:"BracketLeft",id:"bracketleft",u:1},
+          {label:"]",input:"BracketRight",id:"bracketright",u:1},{label:"\\",input:"Backslash",id:"backslash",u:1.5},
+          {sp:0.45},
+          {label:"Del",input:"Delete",id:"delete",u:1.1},{label:"End",input:"End",id:"end",u:1.1},{label:"PgDn",input:"PageDown",id:"pagedown",u:1.1},
+          {sp:0.45},
+          {label:"7",input:"Numpad7",id:"numpad7",u:1.1},{label:"8",input:"Numpad8",id:"numpad8",u:1.1},{label:"9",input:"Numpad9",id:"numpad9",u:1.1},
+          {label:"+",input:"NumpadAdd",id:"numpadadd",u:1.1}
+        ],
+        [
+          {label:"Caps",input:"CapsLock",id:"capslock",u:1.95},
+          {label:"A",input:"A",id:"a",u:1},{label:"S",input:"S",id:"s",u:1},{label:"D",input:"D",id:"d",u:1},{label:"F",input:"F",id:"f",u:1},
+          {label:"G",input:"G",id:"g",u:1},{label:"H",input:"H",id:"h",u:1},{label:"J",input:"J",id:"j",u:1},{label:"K",input:"K",id:"k",u:1},
+          {label:"L",input:"L",id:"l",u:1},{label:";",input:"Semicolon",id:"semicolon",u:1},{label:"'",input:"Quote",id:"quote",u:1},
+          {label:"Enter",input:"Enter",id:"enter",u:2.5},
+          {sp:4.0},
+          {label:"4",input:"Numpad4",id:"numpad4",u:1.1},{label:"5",input:"Numpad5",id:"numpad5",u:1.1},{label:"6",input:"Numpad6",id:"numpad6",u:1.1}
+        ],
+        [
+          {label:"Shift",input:"Shift",id:"shift",u:2.55},
+          {label:"Z",input:"Z",id:"z",u:1},{label:"X",input:"X",id:"x",u:1},{label:"C",input:"C",id:"c",u:1},{label:"V",input:"V",id:"v",u:1},
+          {label:"B",input:"B",id:"b",u:1},{label:"N",input:"N",id:"n",u:1},{label:"M",input:"M",id:"m",u:1},{label:",",input:"Comma",id:"comma",u:1},
+          {label:".",input:"Period",id:"period",u:1},{label:"/",input:"Slash",id:"slash",u:1},
+          {label:"Shift",input:"Shift",id:"shift",u:3.0},
+          {sp:1.2},
+          {label:"↑",input:"Up",id:"up",u:1.1},
+          {sp:1.55},
+          {label:"1",input:"Numpad1",id:"numpad1",u:1.1},{label:"2",input:"Numpad2",id:"numpad2",u:1.1},{label:"3",input:"Numpad3",id:"numpad3",u:1.1},
+          {label:"Enter",input:"NumpadEnter",id:"numpadenter",u:1.1}
+        ],
+        [
+          {label:"Ctrl",input:"Ctrl",id:"ctrl",u:1.4},{label:"Win",input:"Win",id:"win",u:1.3},{label:"Alt",input:"Alt",id:"alt",u:1.3},
+          {label:"Space",input:"Space",id:"space",u:6.3},
+          {label:"Alt",input:"Alt",id:"alt",u:1.3},{label:"Win",input:"Win",id:"win",u:1.3},
+          {label:"Menu",input:"Menu",id:"menu",u:1.3},{label:"Ctrl",input:"Ctrl",id:"ctrl",u:1.4},
+          {sp:0.45},
+          {label:"←",input:"Left",id:"left",u:1.1},{label:"↓",input:"Down",id:"down",u:1.1},{label:"→",input:"Right",id:"right",u:1.1},
+          {sp:0.45},
+          {label:"0",input:"Numpad0",id:"numpad0",u:2.3},{label:".",input:"NumpadDecimal",id:"numpaddecimal",u:1.1}
+        ]
+      ]
+    },
+
+    jistkl: {
+      name:"JIS テンキーレス",
+      rows: [
+        [
+          {label:"Esc",input:"Esc",id:"esc",u:1.25},
+          {sp:0.4},
+          {label:"F1",input:"F1",id:"f1",u:1},{label:"F2",input:"F2",id:"f2",u:1},{label:"F3",input:"F3",id:"f3",u:1},{label:"F4",input:"F4",id:"f4",u:1},
+          {sp:0.25},
+          {label:"F5",input:"F5",id:"f5",u:1},{label:"F6",input:"F6",id:"f6",u:1},{label:"F7",input:"F7",id:"f7",u:1},{label:"F8",input:"F8",id:"f8",u:1},
+          {sp:0.25},
+          {label:"F9",input:"F9",id:"f9",u:1},{label:"F10",input:"F10",id:"f10",u:1},{label:"F11",input:"F11",id:"f11",u:1},{label:"F12",input:"F12",id:"f12",u:1},
+          {sp:0.45},
+          {label:"PrtSc",input:"PrintScreen",id:"printscreen",u:1.15},{label:"ScrLk",input:"ScrollLock",id:"scrolllock",u:1.15},{label:"Pause",input:"Pause",id:"pause",u:1.15}
+        ],
+        [
+          {label:"半/全",input:"ZenkakuHankaku",id:"zenkakuhankaku",u:1.25},
+          {label:"1",input:"1",id:"1",u:1},{label:"2",input:"2",id:"2",u:1},{label:"3",input:"3",id:"3",u:1},{label:"4",input:"4",id:"4",u:1},
+          {label:"5",input:"5",id:"5",u:1},{label:"6",input:"6",id:"6",u:1},{label:"7",input:"7",id:"7",u:1},{label:"8",input:"8",id:"8",u:1},
+          {label:"9",input:"9",id:"9",u:1},{label:"0",input:"0",id:"0",u:1},{label:"-",input:"Minus",id:"minus",u:1},{label:"^",input:"Caret",id:"caret",u:1},
+          {label:"¥",input:"Yen",id:"yen",u:1},{label:"Backspace",input:"Backspace",id:"backspace",u:2.1},
+          {sp:0.45},
+          {label:"Ins",input:"Insert",id:"insert",u:1.1},{label:"Home",input:"Home",id:"home",u:1.1},{label:"PgUp",input:"PageUp",id:"pageup",u:1.1}
+        ],
+        [
+          {label:"Tab",input:"Tab",id:"tab",u:1.6},
+          {label:"Q",input:"Q",id:"q",u:1},{label:"W",input:"W",id:"w",u:1},{label:"E",input:"E",id:"e",u:1},{label:"R",input:"R",id:"r",u:1},
+          {label:"T",input:"T",id:"t",u:1},{label:"Y",input:"Y",id:"y",u:1},{label:"U",input:"U",id:"u",u:1},{label:"I",input:"I",id:"i",u:1},
+          {label:"O",input:"O",id:"o",u:1},{label:"P",input:"P",id:"p",u:1},{label:"@",input:"At",id:"at",u:1},{label:"[",input:"BracketLeft",id:"bracketleft",u:1},
+          {sp:1.95},
+          {label:"Del",input:"Delete",id:"delete",u:1.1},{label:"End",input:"End",id:"end",u:1.1},{label:"PgDn",input:"PageDown",id:"pagedown",u:1.1}
+        ],
+        [
+          {label:"Caps",input:"CapsLock",id:"capslock",u:1.9},
+          {label:"A",input:"A",id:"a",u:1},{label:"S",input:"S",id:"s",u:1},{label:"D",input:"D",id:"d",u:1},{label:"F",input:"F",id:"f",u:1},
+          {label:"G",input:"G",id:"g",u:1},{label:"H",input:"H",id:"h",u:1},{label:"J",input:"J",id:"j",u:1},{label:"K",input:"K",id:"k",u:1},
+          {label:"L",input:"L",id:"l",u:1},{label:";",input:"Semicolon",id:"semicolon",u:1},{label:":",input:"Colon",id:"colon",u:1},
+          {label:"]",input:"BracketRight",id:"bracketright",u:1},{label:"Enter",input:"Enter",id:"enter",u:2.3}
+        ],
+        [
+          {label:"Shift",input:"Shift",id:"shift",u:2.35},
+          {label:"Z",input:"Z",id:"z",u:1},{label:"X",input:"X",id:"x",u:1},{label:"C",input:"C",id:"c",u:1},{label:"V",input:"V",id:"v",u:1},
+          {label:"B",input:"B",id:"b",u:1},{label:"N",input:"N",id:"n",u:1},{label:"M",input:"M",id:"m",u:1},{label:",",input:"Comma",id:"comma",u:1},
+          {label:".",input:"Period",id:"period",u:1},{label:"/",input:"Slash",id:"slash",u:1},{label:"\\",input:"Backslash",id:"backslash",u:1},
+          {label:"Shift",input:"Shift",id:"shift",u:2.75},
+          {sp:1.2},{label:"↑",input:"Up",id:"up",u:1.1}
+        ],
+        [
+          {label:"Ctrl",input:"Ctrl",id:"ctrl",u:1.4},{label:"Win",input:"Win",id:"win",u:1.3},{label:"Alt",input:"Alt",id:"alt",u:1.3},
+          {label:"無変換",input:"Muhenkan",id:"muhenkan",u:1.35},{label:"Space",input:"Space",id:"space",u:5.2},
+          {label:"変換",input:"Henkan",id:"henkan",u:1.35},{label:"かな",input:"Kana",id:"kana",u:1.35},
+          {label:"Alt",input:"Alt",id:"alt",u:1.3},{label:"Win",input:"Win",id:"win",u:1.3},{label:"Menu",input:"Menu",id:"menu",u:1.3},{label:"Ctrl",input:"Ctrl",id:"ctrl",u:1.4},
+          {sp:0.45},{label:"←",input:"Left",id:"left",u:1.1},{label:"↓",input:"Down",id:"down",u:1.1},{label:"→",input:"Right",id:"right",u:1.1}
+        ]
+      ]
+    }
+  };
+
+  const mousePalette = [
+    {label:"LeftClick",token:"LeftClick"},
+    {label:"RightClick",token:"RightClick"},
+    {label:"MiddleClick",token:"MiddleClick"},
+    {label:"BackClick",token:"BackClick"},
+    {label:"ForwardClick",token:"ForwardClick"},
+    {label:"WheelUp",token:"WheelUp"},
+    {label:"WheelDown",token:"WheelDown"},
+    {label:"WheelLeft",token:"WheelLeft"},
+    {label:"WheelRight",token:"WheelRight"}
+  ];
+
+  const displayMap = {
+    backquote:"`", minus:"-", equal:"=", bracketleft:"[", bracketright:"]",
+    backslash:"\\", semicolon:";", quote:"'", comma:",", period:".", slash:"/",
+    printscreen:"PrtSc", insert:"Ins", delete:"Del", pageup:"PgUp", pagedown:"PgDn",
+    capslock:"Caps", space:"Space", left:"←", right:"→", up:"↑", down:"↓",
+    numpaddecimal:".", numpaddivide:"/", numpadmultiply:"*", numpadsubtract:"-",
+    numpadadd:"+", numpadenter:"Enter", muhenkan:"無変換", henkan:"変換", kana:"かな",
+    zenkakuhankaku:"半/全", yen:"¥", caret:"^", at:"@", colon:":"
+  };
+
+  let activePresetId = "classic";
+  let builderHistory = [];
+  let builderProgrammaticChange = false;
+  let presetCollapsed = true;
+  let detailCollapsed = true;
+  let keyboardCollapsed = true;
+
+  const $ = id => document.getElementById(id);
+
+  function numValue(v, fallback){
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function esc(value){
+    return String(value)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&apos;");
+  }
+
+  function normalizeKeyId(label){
+    const src = String(label || "").trim().toLowerCase();
+    const alias = {
+      control:"ctrl", ctl:"ctrl", ctrl:"ctrl", "^":"ctrl",
+      shift:"shift", alt:"alt", option:"alt",
+      win:"win", windows:"win", meta:"win", cmd:"win", command:"win",
+      esc:"esc", escape:"esc", enter:"enter", return:"enter",
+      caps:"capslock", capslock:"capslock", backspace:"backspace",
+      tab:"tab", space:"space", spacebar:"space",
+      left:"left", arrowleft:"left", "←":"left",
+      right:"right", arrowright:"right", "→":"right",
+      up:"up", arrowup:"up", "↑":"up",
+      down:"down", arrowdown:"down", "↓":"down",
+      ins:"insert", insert:"insert", del:"delete", delete:"delete",
+      pgup:"pageup", pageup:"pageup", pgdn:"pagedown", pagedown:"pagedown",
+      home:"home", end:"end",
+      backquote:"backquote", minus:"minus", equal:"equal",
+      bracketleft:"bracketleft", bracketright:"bracketright",
+      backslash:"backslash", semicolon:"semicolon", quote:"quote",
+      comma:"comma", period:"period", slash:"slash",
+      caret:"caret", at:"at", colon:"colon", yen:"yen",
+      muhenkan:"muhenkan", henkan:"henkan", kana:"kana",
+      zenkakuhankaku:"zenkakuhankaku",
+      numlock:"numlock", scrolllock:"scrolllock", pause:"pause",
+      printscreen:"printscreen",
+      numpad0:"numpad0", numpad1:"numpad1", numpad2:"numpad2", numpad3:"numpad3", numpad4:"numpad4",
+      numpad5:"numpad5", numpad6:"numpad6", numpad7:"numpad7", numpad8:"numpad8", numpad9:"numpad9",
+      numpaddecimal:"numpaddecimal", numpaddivide:"numpaddivide", numpadmultiply:"numpadmultiply",
+      numpadsubtract:"numpadsubtract", numpadadd:"numpadadd", numpadenter:"numpadenter"
+    };
+    if(alias[src]) return alias[src];
+    if(/^f\d{1,2}$/.test(src)) return src;
+    if(src.length === 1) return src;
+    return src;
+  }
+
+  function keyDisplayLabel(source){
+    const id = normalizeKeyId(source);
+    return displayMap[id] ?? source;
+  }
+
+  function normalizeSpecialToken(token){
+    const source = String(token || "").trim();
+    const t = source.toLowerCase().replace(/\s+/g,"");
+
+    const aliases = {
+      left:["leftclick","left-click","leftmouse","mouseleft","左クリック","左","lclick"],
+      right:["rightclick","right-click","rightmouse","mouseright","右クリック","右","rclick"],
+      middle:["middleclick","middle-click","middlemouse","mousemiddle","中クリック","中","mclick"],
+      back:["backclick","back-click","mouseback","戻るクリック","戻る","x1click"],
+      forward:["forwardclick","forward-click","mouseforward","進むクリック","進む","x2click"],
+      wheelup:["wheelup","wheel-up","scrollup","ホイール上","ホイールアップ","上ホイール"],
+      wheeldown:["wheeldown","wheel-down","scrolldown","ホイール下","ホイールダウン","下ホイール"],
+      wheelleft:["wheelleft","wheel-left","scrollleft","ホイール左","左ホイール"],
+      wheelright:["wheelright","wheel-right","scrollright","ホイール右","右ホイール"]
+    };
+
+    for(const [kind, list] of Object.entries(aliases)){
+      if(list.includes(t)) return {kind:"mouse", action:kind, raw:source};
+    }
+
+    const keyId = normalizeKeyId(source || "Key");
+    return {kind:"key", label:keyDisplayLabel(source || "Key"), keyId};
+  }
+
+  function parseInput(text){
+    let src = String(text || "").trim();
+    if(!src) src = "Key";
+
+    src = src
+      .replace(/\s*->\s*/g, "→")
+      .replace(/\s*⇒\s*/g, "→")
+      .replace(/\s*→\s*/g, "→")
+      .replace(/\s*,\s*/g, ",")
+      .trim();
+
+    const chunks = src.split(/([,→])/).filter(Boolean);
+    const groups = [];
+    const separators = [];
+
+    for(const chunk of chunks){
+      if(chunk === "," || chunk === "→"){
+        separators.push(chunk);
+      }else{
+        let part = chunk.trim();
+        let counter = null;
+        const m = part.match(/(?:^|\s)x(\d+)\s*$/);
+        if(m){
+          counter = Number(m[1]);
+          part = part.replace(/(?:^|\s)x(\d+)\s*$/, "").trim();
+        }
+        const tokens = (part || "Key")
+          .split("+")
+          .map(v => v.trim())
+          .filter(Boolean)
+          .map(normalizeSpecialToken);
+        groups.push({tokens, counter});
+      }
+    }
+
+    while(separators.length > Math.max(0, groups.length - 1)) separators.pop();
+    while(separators.length < Math.max(0, groups.length - 1)) separators.push("→");
+
+    return {groups, separators};
+  }
+
+  function readSettings(){
+    return {
+      fontFamily:$("fontFamily").value,
+      fontSize:numValue($("fontSize").value,22),
+      keyHeight:numValue($("keyHeight").value,48),
+      keyPaddingX:numValue($("keyPaddingX").value,16),
+      radius:numValue($("radius").value,10),
+      keyGap:numValue($("keyGap").value,10),
+      groupPadding:numValue($("groupPadding").value,10),
+      textColor:$("textColor").value,
+      separatorColor:$("separatorColor").value,
+      keyTopColor:$("keyTopColor").value,
+      keyBottomColor:$("keyBottomColor").value,
+      keyBorderColor:$("keyBorderColor").value,
+      keyEdgeColor:$("keyEdgeColor").value,
+      groupBgColor:$("groupBgColor").value,
+      canvasColor:$("canvasColor").value,
+      counterFontSize:numValue($("counterFontSize").value,19),
+      counterTextColor:$("counterTextColor").value,
+      counterBgColor:$("counterBgColor").value,
+      showGroupBg:$("showGroupBg").checked,
+      transparentBg:$("transparentBg").checked
+    };
+  }
+
+  function getMeasureContext(fontSize, fontFamily){
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    return ctx;
+  }
+
+  function measure(ctx, text){ return Math.ceil(ctx.measureText(String(text)).width); }
+
+  function buildCounterSvg(value, settings, x, y){
+    const text = `×${value}`;
+    const ctx = getMeasureContext(settings.counterFontSize, 'Segoe UI, Arial, sans-serif');
+    const padX = 10;
+    const h = Math.max(26, settings.counterFontSize + 12);
+    const w = Math.max(36, measure(ctx, text) + padX * 2);
+    const baseline = y + h * 0.68;
+    return {
+      width:w,
+      svg:`<g>
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h/2}" fill="${settings.counterBgColor}"/>
+        <text x="${x+w/2}" y="${baseline}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+          font-size="${settings.counterFontSize}" fill="${settings.counterTextColor}">${esc(text)}</text>
+      </g>`
+    };
+  }
+
+  function buildKeyTokenContent(token, settings, x, y, width){
+    const baseline = y + settings.keyHeight * 0.62;
+    return `<g>
+      <rect x="${x}" y="${y + settings.keyDepth}" width="${width}" height="${settings.keyHeight}" rx="${settings.radius}" fill="${settings.keyEdgeColor}"/>
+      <rect x="${x}" y="${y}" width="${width}" height="${settings.keyHeight}" rx="${settings.radius}" fill="url(#keyGradient)" stroke="${settings.keyBorderColor}" stroke-width="1"/>
+      <rect x="${x+3}" y="${y+2}" width="${Math.max(0,width-6)}" height="${Math.max(9,settings.keyHeight*0.38)}"
+        rx="${Math.max(2,settings.radius-3)}" fill="url(#highlight)" opacity="0.75"/>
+      <text x="${x+width/2}" y="${baseline}" text-anchor="middle"
+        font-family="${esc(settings.fontFamily)}" font-size="${settings.fontSize}" fill="${settings.textColor}">${esc(token.label)}</text>
+    </g>`;
+  }
+
+  function mouseGlyphSvg(action, x, y, width, settings){
+    const keyHeight = settings.keyHeight;
+    const bodyW = Math.min(width - 18, 26);
+    const bodyH = Math.min(keyHeight - 12, 30);
+    const bodyX = x + (width - bodyW) / 2;
+    const bodyY = y + (keyHeight - bodyH) / 2 + 1;
+    const splitY = bodyY + 11;
+    const wheelX = bodyX + bodyW / 2 - 2;
+    const wheelY = bodyY + 7;
+    const bright = "#8df6ff";
+    const fill = settings.groupBgColor;
+
+    const leftPatch = active => active ? `<path d="M ${bodyX+3} ${bodyY+3} H ${bodyX + bodyW/2 - 2} V ${splitY-3} H ${bodyX+3} Z" fill="${fill}" opacity="0.96"/>` : "";
+    const rightPatch = active => active ? `<path d="M ${bodyX + bodyW/2 + 2} ${bodyY+3} H ${bodyX + bodyW - 3} V ${splitY-3} H ${bodyX + bodyW/2 + 2} Z" fill="${fill}" opacity="0.96"/>` : "";
+    const backBtns = action === "back" ? `
+      <circle cx="${bodyX-4}" cy="${bodyY+11}" r="2.1" fill="${fill}"/>
+      <circle cx="${bodyX-4}" cy="${bodyY+19}" r="1.7" fill="#596068"/>` :
+      action === "forward" ? `
+      <circle cx="${bodyX-4}" cy="${bodyY+11}" r="1.7" fill="#596068"/>
+      <circle cx="${bodyX-4}" cy="${bodyY+19}" r="2.1" fill="${fill}"/>` :
+      `<circle cx="${bodyX-4}" cy="${bodyY+11}" r="1.4" fill="#596068"/><circle cx="${bodyX-4}" cy="${bodyY+19}" r="1.4" fill="#596068"/>`;
+
+    let wheel = `<rect x="${wheelX}" y="${wheelY}" width="4" height="8" rx="2" fill="none" stroke="${settings.textColor}" stroke-width="1"/>`;
+    if(action === "middle" || action === "wheelup" || action === "wheeldown" || action === "wheelleft" || action === "wheelright"){
+      wheel = `<rect x="${wheelX}" y="${wheelY}" width="4" height="8" rx="2" fill="${fill}" stroke="${bright}" stroke-width="0.6"/>`;
+    }
+
+    const upArrow = action === "wheelup" ? `<path d="M ${bodyX + bodyW/2} ${bodyY+2} L ${bodyX + bodyW/2 - 4} ${bodyY+7} H ${bodyX + bodyW/2 + 4} Z" fill="${bright}"/>` : "";
+    const downArrow = action === "wheeldown" ? `<path d="M ${bodyX + bodyW/2} ${bodyY+bodyH-2} L ${bodyX + bodyW/2 - 4} ${bodyY+bodyH-7} H ${bodyX + bodyW/2 + 4} Z" fill="${bright}"/>` : "";
+    const leftArrow = action === "wheelleft" ? `<path d="M ${wheelX-6} ${wheelY+4} L ${wheelX-1} ${wheelY} V ${wheelY+8} Z" fill="${bright}"/>` : "";
+    const rightArrow = action === "wheelright" ? `<path d="M ${wheelX+10} ${wheelY+4} L ${wheelX+5} ${wheelY} V ${wheelY+8} Z" fill="${bright}"/>` : "";
+
+    return `<g>
+      <rect x="${x}" y="${y + settings.keyDepth}" width="${width}" height="${settings.keyHeight}" rx="${settings.radius}" fill="${settings.keyEdgeColor}"/>
+      <rect x="${x}" y="${y}" width="${width}" height="${settings.keyHeight}" rx="${settings.radius}" fill="url(#keyGradient)" stroke="${settings.keyBorderColor}" stroke-width="1"/>
+      <rect x="${x+3}" y="${y+2}" width="${Math.max(0,width-6)}" height="${Math.max(9,settings.keyHeight*0.38)}"
+        rx="${Math.max(2,settings.radius-3)}" fill="url(#highlight)" opacity="0.75"/>
+      <g>
+        <rect x="${bodyX}" y="${bodyY}" width="${bodyW}" height="${bodyH}" rx="${bodyW/2.3}" fill="none" stroke="${settings.textColor}" stroke-width="1.5"/>
+        <line x1="${bodyX + bodyW/2}" y1="${bodyY+1.5}" x2="${bodyX + bodyW/2}" y2="${splitY}" stroke="${settings.textColor}" stroke-width="1.2"/>
+        <line x1="${bodyX+2}" y1="${splitY}" x2="${bodyX+bodyW-2}" y2="${splitY}" stroke="${settings.textColor}" stroke-width="1"/>
+        ${leftPatch(action === "left")}
+        ${rightPatch(action === "right")}
+        ${backBtns}
+        ${wheel}
+        ${upArrow}${downArrow}${leftArrow}${rightArrow}
+      </g>
+    </g>`;
+  }
+
+  function buildSvgForInput(inputText, settings){
+    const parsed = parseInput(inputText);
+    settings = {...settings, keyDepth:Math.max(3, Math.round(settings.keyHeight * 0.10))};
+    const outerPadding = 18;
+    const groupGap = 16;
+    const ctx = getMeasureContext(settings.fontSize, settings.fontFamily);
+    const sepCtx = getMeasureContext(settings.fontSize + 2, 'Segoe UI, Arial, sans-serif');
+
+    const groups = [];
+    let cursorX = outerPadding;
+    let maxH = 0;
+
+    parsed.groups.forEach((group, gi) => {
+      const items = [];
+      let contentW = 0;
+
+      group.tokens.forEach((token, i) => {
+        if(i > 0){
+          const plusW = Math.max(18, measure(sepCtx, "+") + 4);
+          items.push({type:"plus", width:plusW});
+          contentW += plusW + settings.keyGap;
+        }
+
+        const width = token.kind === "key"
+          ? Math.max(54, measure(ctx, token.label || " ") + settings.keyPaddingX * 2)
+          : Math.max(58, settings.keyHeight + 10);
+
+        items.push({type:"token", token, width});
+        contentW += width;
+        if(i < group.tokens.length - 1) contentW += settings.keyGap;
+      });
+
+      let counterInfo = null;
+      if(group.counter){
+        const counter = buildCounterSvg(group.counter, settings, 0, 0);
+        counterInfo = {width:counter.width, value:group.counter};
+        contentW += 12 + counter.width;
+      }
+
+      const groupW = contentW + settings.groupPadding * 2;
+      const groupH = settings.keyHeight + settings.keyDepth + settings.groupPadding * 2;
+
+      let x = cursorX + settings.groupPadding;
+      const laidOut = [];
+      items.forEach((item, idx) => {
+        laidOut.push({...item, x});
+        x += item.width;
+        if(idx < items.length - 1) x += settings.keyGap;
+      });
+      if(counterInfo){
+        x += 12;
+        laidOut.push({type:"counter", x, value:counterInfo.value, width:counterInfo.width});
+      }
+
+      groups.push({x:cursorX, y:outerPadding, width:groupW, height:groupH, items:laidOut});
+      maxH = Math.max(maxH, groupH);
+      cursorX += groupW;
+
+      if(gi < parsed.separators.length){
+        const label = parsed.separators[gi];
+        const sepW = Math.max(20, measure(sepCtx, label) + 10);
+        cursorX += groupGap + sepW + groupGap;
+      }
+    });
+
+    const width = Math.ceil(cursorX + outerPadding);
+    const height = Math.ceil(maxH + outerPadding * 2 + 4);
+    const keyY = outerPadding + settings.groupPadding;
+
+    let body = "";
+    groups.forEach((group, gi) => {
+      if(settings.showGroupBg){
+        body += `<rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}"
+          rx="${Math.max(6, settings.radius + 6)}" fill="${settings.groupBgColor}" opacity="0.92"/>`;
+      }
+
+      group.items.forEach(item => {
+        if(item.type === "plus"){
+          body += `<text x="${item.x + item.width/2}" y="${keyY + settings.keyHeight*0.62}" text-anchor="middle"
+            font-family="Segoe UI, Arial, sans-serif" font-size="${settings.fontSize + 2}" fill="${settings.separatorColor}">+</text>`;
+          return;
+        }
+        if(item.type === "counter"){
+          const counterY = keyY + Math.max(0, (settings.keyHeight - Math.max(26, settings.counterFontSize + 12)) / 2);
+          body += buildCounterSvg(item.value, settings, item.x, counterY).svg;
+          return;
+        }
+        body += item.token.kind === "key"
+          ? buildKeyTokenContent(item.token, settings, item.x, keyY, item.width)
+          : mouseGlyphSvg(item.token.action, item.x, keyY, item.width, settings);
+      });
+
+      if(gi < parsed.separators.length){
+        const next = groups[gi + 1];
+        const cx = (group.x + group.width + next.x) / 2;
+        const cy = group.y + group.height / 2 + settings.fontSize * 0.35 - 2;
+        body += `<text x="${cx}" y="${cy}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+          font-size="${settings.fontSize + 4}" fill="${settings.separatorColor}">${esc(parsed.separators[gi])}</text>`;
+      }
+    });
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <defs>
+        <linearGradient id="keyGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${settings.keyTopColor}"/>
+          <stop offset="60%" stop-color="${settings.keyTopColor}"/>
+          <stop offset="100%" stop-color="${settings.keyBottomColor}"/>
+        </linearGradient>
+        <linearGradient id="highlight" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${settings.transparentBg ? "" : `<rect width="100%" height="100%" rx="12" fill="${settings.canvasColor}"/>`}
+      ${body}
+    </svg>`;
+  }
+
+  function collectHighlights(parsed){
+    const keySet = new Set();
+    const mouseSet = new Set();
+    parsed.groups.forEach(group => {
+      group.tokens.forEach(token => {
+        if(token.kind === "mouse") mouseSet.add(token.action);
+        if(token.kind === "key") keySet.add(token.keyId || normalizeKeyId(token.label));
+      });
+    });
+    return {keySet, mouseSet};
+  }
+
+  function buildMapSvgForInput(inputText, layoutKey){
+    const parsed = parseInput(inputText);
+    const {keySet, mouseSet} = collectHighlights(parsed);
+    const layout = layouts[layoutKey] || layouts.jis109full;
+
+    const unit = 32;
+    const gap = 5;
+    const rowGap = 7;
+    const padding = 22;
+    const keyboardTitleH = 20;
+    const keyRadius = 7;
+    const brightFill = "#1bcaff";
+    const glow = "#8df6ff";
+    const bgKey = "#2a2a2a";
+    const bg = "#1f1f1f";
+
+    let kbWidth = 0;
+    layout.rows.forEach(row => {
+      let rowW = 0;
+      row.forEach(item => {
+        const u = item.sp ?? item.u ?? 1;
+        rowW += unit * u;
+        rowW += gap;
+      });
+      kbWidth = Math.max(kbWidth, Math.max(0, rowW - gap));
+    });
+
+    const keyboardHeight = keyboardTitleH + layout.rows.length * unit + (layout.rows.length - 1) * rowGap;
+    const mouseWidth = 210;
+    const width = Math.ceil(padding * 2 + kbWidth + 34 + mouseWidth);
+    const height = Math.ceil(padding * 2 + Math.max(keyboardHeight, 270));
+    const keyboardX = padding;
+    const keyboardY = padding;
+    const mouseX = padding + kbWidth + 34;
+    const mouseY = padding + 32;
+
+    let body = `<text x="${keyboardX}" y="${keyboardY - 6}" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#d8d8d8">Keyboard</text>
+                <text x="${mouseX}" y="${keyboardY - 6}" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#d8d8d8">Mouse</text>`;
+
+    let y = keyboardY + keyboardTitleH;
+    layout.rows.forEach(row => {
+      let x = keyboardX;
+      row.forEach(item => {
+        const w = unit * (item.sp ?? item.u ?? 1);
+        if(item.sp){
+          x += w + gap;
+          return;
+        }
+        const h = unit;
+        const active = keySet.has(item.id);
+        body += `<g>
+          ${active ? `<rect x="${x-2}" y="${y-2}" width="${w+4}" height="${h+4}" rx="${keyRadius+2}" fill="${glow}" opacity="0.28"/>` : ""}
+          <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${keyRadius}"
+            fill="${active ? brightFill : bgKey}" stroke="${active ? glow : "#585858"}" stroke-width="${active ? 1.5 : 1}"/>
+          <text x="${x + w/2}" y="${y + h*0.60}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+            font-size="11" fill="${active ? "#ffffff" : "#d8d8d8"}">${esc(item.label)}</text>
+        </g>`;
+        x += w + gap;
+      });
+      y += unit + rowGap;
+    });
+
+    const mx = mouseX + 58;
+    const my = mouseY + 24;
+    const bw = 78;
+    const bh = 116;
+    const splitY = my + 43;
+    const cx = mx + bw/2;
+    const cy = my + bh/2;
+    const leftActive = mouseSet.has("left");
+    const rightActive = mouseSet.has("right");
+    const middleActive = mouseSet.has("middle");
+    const backActive = mouseSet.has("back");
+    const forwardActive = mouseSet.has("forward");
+    const wheelUp = mouseSet.has("wheelup");
+    const wheelDown = mouseSet.has("wheeldown");
+    const wheelLeft = mouseSet.has("wheelleft");
+    const wheelRight = mouseSet.has("wheelright");
+
+    const leftShape = leftActive
+      ? `<path d="M ${mx+8} ${my+8} H ${cx-4} V ${splitY-6} H ${mx+8} Z" fill="${brightFill}" opacity="0.96"/>`
+      : "";
+    const rightShape = rightActive
+      ? `<path d="M ${cx+4} ${my+8} H ${mx+bw-8} V ${splitY-6} H ${cx+4} Z" fill="${brightFill}" opacity="0.96"/>`
+      : "";
+
+    const wheelFill = (middleActive || wheelUp || wheelDown || wheelLeft || wheelRight)
+      ? `<rect x="${cx-5}" y="${my+18}" width="10" height="18" rx="4" fill="${brightFill}" stroke="${glow}" stroke-width="1"/>`
+      : `<rect x="${cx-5}" y="${my+18}" width="10" height="18" rx="4" fill="none" stroke="#d9d9d9" stroke-width="1.2"/>`;
+
+    const sideButtonX = mx - 12;
+    const sideTopY = my + 39;
+    const sideBottomY = my + 58;
+    const backDraw = backActive
+      ? `<circle cx="${sideButtonX}" cy="${sideTopY}" r="7" fill="${brightFill}"/><circle cx="${sideButtonX}" cy="${sideTopY}" r="10" fill="${glow}" opacity="0.22"/>`
+      : `<circle cx="${sideButtonX}" cy="${sideTopY}" r="5" fill="#797979"/>`;
+    const fwdDraw = forwardActive
+      ? `<circle cx="${sideButtonX}" cy="${sideBottomY}" r="7" fill="${brightFill}"/><circle cx="${sideButtonX}" cy="${sideBottomY}" r="10" fill="${glow}" opacity="0.22"/>`
+      : `<circle cx="${sideButtonX}" cy="${sideBottomY}" r="5" fill="#797979"/>`;
+
+    const upArrow = wheelUp ? `<path d="M ${cx} ${my+8} L ${cx-5} ${my+14} H ${cx+5} Z" fill="${glow}"/>` : "";
+    const downArrow = wheelDown ? `<path d="M ${cx} ${my+43} L ${cx-5} ${my+37} H ${cx+5} Z" fill="${glow}"/>` : "";
+    const leftArrow = wheelLeft ? `<path d="M ${cx-15} ${my+27} L ${cx-9} ${my+22} V ${my+32} Z" fill="${glow}"/>` : "";
+    const rightArrow = wheelRight ? `<path d="M ${cx+15} ${my+27} L ${cx+9} ${my+22} V ${my+32} Z" fill="${glow}"/>` : "";
+
+    body += `<g>
+      <rect x="${mx}" y="${my}" width="${bw}" height="${bh}" rx="${bw/2.1}" fill="#262626" stroke="#5b5b5b" stroke-width="1.5"/>
+      ${leftShape}
+      ${rightShape}
+      <line x1="${cx}" y1="${my+4}" x2="${cx}" y2="${splitY}" stroke="#d9d9d9" stroke-width="1.3"/>
+      <line x1="${mx+8}" y1="${splitY}" x2="${mx+bw-8}" y2="${splitY}" stroke="#d9d9d9" stroke-width="1.1"/>
+      ${wheelFill}
+      ${backDraw}
+      ${fwdDraw}
+      ${upArrow}${downArrow}${leftArrow}${rightArrow}
+    </g>`;
+
+    if(!leftActive && !rightActive && !middleActive && !backActive && !forwardActive && !wheelUp && !wheelDown && !wheelLeft && !wheelRight){
+      body += `<text x="${mouseX}" y="${my + bh + 38}" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#9f9f9f">入力にマウス操作が含まれていません</text>`;
+    }
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <rect width="100%" height="100%" rx="12" fill="${bg}"/>
+      ${body}
+    </svg>`;
+  }
+
+  function currentBuilderLayout(){ return $("builderLayoutSelect").value; }
+  function currentMapLayout(){ return $("mapLayoutSelect").value; }
+
+  function renderShortcut(){
+    $("previewHost").innerHTML = buildSvgForInput($("sequenceInput").value, readSettings());
+  }
+
+  function renderMap(){
+    $("mapPreviewHost").innerHTML = buildMapSvgForInput($("sequenceInput").value, currentMapLayout());
+  }
+
+  function renderAll(){
+    renderShortcut();
+    renderMap();
+    $("status").textContent = "";
+  }
+
+  function setCollapsed(el, collapsed){
+    el.classList.toggle("collapsed", collapsed);
+  }
+
+  function updatePresetToggleText(){
+    $("togglePresetBtn").textContent = presetCollapsed ? "プリセットを表示" : "プリセットを隠す";
+  }
+
+  function updateDetailToggleText(){
+    $("toggleDetailBtn").textContent = detailCollapsed ? "詳細設定を表示" : "詳細設定を隠す";
+  }
+
+  function updateKeyboardToggleText(){
+    $("toggleKeyboardBtn").textContent = keyboardCollapsed ? "キーボードを表示" : "キーボードを隠す";
+  }
+
+  function setPresetCollapsed(v){
+    presetCollapsed = v;
+    setCollapsed($("presetSelector"), v);
+    updatePresetToggleText();
+  }
+
+  function setDetailCollapsed(v){
+    detailCollapsed = v;
+    setCollapsed($("detailSettings"), v);
+    updateDetailToggleText();
+  }
+
+  function setKeyboardCollapsed(v){
+    keyboardCollapsed = v;
+    setCollapsed($("keyboardSection"), v);
+    updateKeyboardToggleText();
+  }
+
+  function renderPresetGrid(){
+    const grid = $("presetGrid");
+    grid.innerHTML = "";
+    presets.forEach(preset => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "preset-card" + (preset.id === activePresetId ? " active" : "");
+      btn.innerHTML = `
+        <div class="preset-title">${preset.name}</div>
+        <div class="preset-desc">${preset.desc}</div>
+        <div class="preset-preview">${buildSvgForInput("Ctrl+C", {...readSettings(), ...preset.styles})}</div>
+      `;
+      btn.addEventListener("click", () => applyPreset(preset.id));
+      grid.appendChild(btn);
+    });
+  }
+
+  function applyPreset(presetId){
+    const preset = presets.find(p => p.id === presetId);
+    if(!preset) return;
+    activePresetId = presetId;
+    styleIds.forEach(id => {
+      const el = $(id);
+      const value = preset.styles[id];
+      if(el.type === "checkbox") el.checked = !!value;
+      else el.value = value;
+    });
+    $("selectedPresetName").textContent = preset.name;
+    $("selectedPresetDesc").textContent = preset.desc;
+    renderPresetGrid();
+    setPresetCollapsed(true);
+    setDetailCollapsed(true);
+    renderAll();
+  }
+
+  function setCustomDesign(){
+    activePresetId = null;
+    $("selectedPresetName").textContent = "カスタム";
+    $("selectedPresetDesc").textContent = "詳細設定を手動変更しています";
+    renderPresetGrid();
+  }
+
+  function resetDesign(){
+    const classic = presets.find(p => p.id === "classic");
+    activePresetId = "classic";
+    styleIds.forEach(id => {
+      const el = $(id);
+      const value = classic.styles[id];
+      if(el.type === "checkbox") el.checked = !!value;
+      else el.value = value;
+    });
+    $("selectedPresetName").textContent = classic.name;
+    $("selectedPresetDesc").textContent = classic.desc;
+    renderPresetGrid();
+    setDetailCollapsed(true);
+    renderAll();
+  }
+
+  function renderKeyboardBuilder(){
+    const layout = layouts[currentBuilderLayout()];
+    const host = $("keyboardBuilder");
+    host.innerHTML = "";
+    layout.rows.forEach(row => {
+      const rowEl = document.createElement("div");
+      rowEl.className = "kbd-row";
+      row.forEach(item => {
+        if(item.sp){
+          const spacer = document.createElement("div");
+          spacer.style.width = `${item.sp * 36}px`;
+          spacer.style.flex = `0 0 ${item.sp * 36}px`;
+          rowEl.appendChild(spacer);
+          return;
+        }
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "kbd-btn";
+        btn.textContent = item.label;
+        btn.style.width = `${item.u * 36}px`;
+        btn.style.flex = `0 0 ${item.u * 36}px`;
+        btn.addEventListener("click", () => insertToken(item.input));
+        rowEl.appendChild(btn);
+      });
+      host.appendChild(rowEl);
+    });
+  }
+
+  function renderMouseBuilder(){
+    const host = $("mouseBuilder");
+    host.innerHTML = "";
+    mousePalette.forEach(item => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "kbd-btn";
+      btn.style.minWidth = "92px";
+      btn.textContent = item.label;
+      btn.addEventListener("click", () => insertToken(item.token));
+      host.appendChild(btn);
+    });
+  }
+
+  function pushBuilderHistory(){
+    builderHistory.push($("sequenceInput").value);
+    if(builderHistory.length > 100) builderHistory.shift();
+    $("builderUndo").disabled = builderHistory.length === 0;
+  }
+
+  function commitBuilderValue(value){
+    pushBuilderHistory();
+    builderProgrammaticChange = true;
+    $("sequenceInput").value = value;
+    builderProgrammaticChange = false;
+    renderAll();
+    $("sequenceInput").focus();
+  }
+
+  function insertToken(token){
+    const value = $("sequenceInput").value.trim();
+    let next = "";
+    if(!value) next = token;
+    else if(/[+,→]$/.test(value) || /,$/.test(value)) next = value + token;
+    else next = value + "+" + token;
+    commitBuilderValue(next);
+  }
+
+  function insertOperator(op){
+    let value = $("sequenceInput").value;
+    if(op.startsWith(" x")){
+      value = value.replace(/\s+x\d+\s*$/, "");
+      commitBuilderValue(value.trimEnd() + op);
+      return;
+    }
+    value = value.trim();
+    if(!value) return;
+    if(op === "+") commitBuilderValue(value.endsWith("+") ? value : value + "+");
+    else if(op === ",") commitBuilderValue(value.replace(/[+,→]\s*$/, "") + ", ");
+    else if(op === "→") commitBuilderValue(value.replace(/[+,→]\s*$/, "") + " → ");
+  }
+
+  async function copySvgFromString(svg, successMessage){
+    try{
+      await navigator.clipboard.writeText(svg);
+      $("status").textContent = successMessage;
+    }catch{
+      const ta = document.createElement("textarea");
+      ta.value = svg;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      $("status").textContent = ok ? successMessage : "コピーに失敗しました。";
+    }
+  }
+
+  async function copyPngFromString(svg, successMessage){
+    const blob = new Blob([svg], {type:"image/svg+xml;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    try{
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = url;
+      });
+      const scale = 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+
+      const pngBlob = await new Promise((resolve, reject) => {
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error("PNG conversion failed")), "image/png");
+      });
+
+      if(!navigator.clipboard?.write || typeof ClipboardItem === "undefined"){
+        throw new Error("Clipboard API unsupported");
+      }
+      await navigator.clipboard.write([new ClipboardItem({"image/png":pngBlob})]);
+      $("status").textContent = successMessage;
+    }catch(err){
+      console.error(err);
+      $("status").textContent = "PNGコピーに失敗しました。file:// で開いている場合はブラウザ制限により失敗することがあります。";
+    }finally{
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  // events
+  $("togglePresetBtn").addEventListener("click", () => setPresetCollapsed(!presetCollapsed));
+  $("toggleDetailBtn").addEventListener("click", () => setDetailCollapsed(!detailCollapsed));
+  $("toggleKeyboardBtn").addEventListener("click", () => setKeyboardCollapsed(!keyboardCollapsed));
+
+  $("resetDesignBtn").addEventListener("click", resetDesign);
+
+  $("builderLayoutSelect").addEventListener("change", renderKeyboardBuilder);
+  $("mapLayoutSelect").addEventListener("change", renderMap);
+
+  $("sequenceInput").addEventListener("input", () => {
+    if(!builderProgrammaticChange){
+      builderHistory = [];
+      $("builderUndo").disabled = true;
+    }
+    renderAll();
+  });
+
+  styleIds.forEach(id => {
+    $(id).addEventListener("input", () => {
+      if(detailCollapsed) setDetailCollapsed(false);
+      setCustomDesign();
+      renderAll();
+    });
+    $(id).addEventListener("change", () => {
+      if(detailCollapsed) setDetailCollapsed(false);
+      setCustomDesign();
+      renderAll();
+    });
+  });
+
+  document.querySelectorAll("[data-op]").forEach(btn => {
+    btn.addEventListener("click", () => insertOperator(btn.dataset.op));
+  });
+
+  $("builderUndo").addEventListener("click", () => {
+    if(!builderHistory.length) return;
+    builderProgrammaticChange = true;
+    $("sequenceInput").value = builderHistory.pop();
+    builderProgrammaticChange = false;
+    $("builderUndo").disabled = builderHistory.length === 0;
+    renderAll();
+  });
+
+  $("builderBackspace").addEventListener("click", () => {
+    const value = $("sequenceInput").value;
+    if(!value) return;
+    commitBuilderValue(value.slice(0, -1));
+  });
+
+  $("builderClear").addEventListener("click", () => {
+    if(!$("sequenceInput").value) return;
+    commitBuilderValue("");
+  });
+
+  $("copySvgBtn").addEventListener("click", () => copySvgFromString(buildSvgForInput($("sequenceInput").value, readSettings()), "ショートカットSVGをクリップボードにコピーしました。"));
+  $("copyPngBtn").addEventListener("click", () => copyPngFromString(buildSvgForInput($("sequenceInput").value, readSettings()), "ショートカットPNGをクリップボードにコピーしました。"));
+  $("copyMapSvgBtn").addEventListener("click", () => copySvgFromString(buildMapSvgForInput($("sequenceInput").value, currentMapLayout()), "押下位置グラフィックSVGをクリップボードにコピーしました。"));
+  $("copyMapPngBtn").addEventListener("click", () => copyPngFromString(buildMapSvgForInput($("sequenceInput").value, currentMapLayout()), "押下位置グラフィックPNGをクリップボードにコピーしました。"));
+
+  // init
+  Object.entries(defaults).forEach(([key, value]) => {
+    const el = $(key);
+    if(!el) return;
+    if(el.type === "checkbox") el.checked = value;
+    else el.value = value;
+  });
+
+  renderPresetGrid();
+  renderKeyboardBuilder();
+  renderMouseBuilder();
+  setPresetCollapsed(true);
+  setDetailCollapsed(true);
+  setKeyboardCollapsed(true);
+  $("builderUndo").disabled = true;
+  renderAll();
+})();
+</script>
+</body>
+</html>

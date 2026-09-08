@@ -2,6 +2,10 @@
 
 Windows向けのMarkdownビューア／エディターです。複数の文書をタブで開き、ローカルMarkdownの編集・安全な保存に加えて、画像、Mermaid、draw.io、コード、対話型CSV／TSV表を表示できます。
 
+デスクトップ版では、任意導入のCodex CLIを利用した[文章の相談・書き換え](docs/ui/codex.md)も利用できます。既定は無効で、差分を採用した場合だけ編集中の本文へ反映します。SPFxには含みません。
+
+デスクトップ版に加えて、同じMarkdown処理を共有するSharePoint Framework版を本リポジトリからビルドできます。自分でビルド・改造する場合は[開発者ガイド](docs/DEVELOPERS_GUIDE.md)と[ビルド・検証コマンド](docs/BUILD_COMMANDS.md)を参照してください。
+
 ## beta版ダウンロード
 
 [MarkdownViewer v0.0.7-beta ダウンロード](https://excel-chunchun.sakura.ne.jp/download/MakdownViewer.html)から、
@@ -72,7 +76,7 @@ spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/R
 Windows SDKが導入済みのx64 Windows環境では、次のコマンドで署名済みMSIXを生成できます。
 
 ```powershell
-npm.cmd run build:msix
+npm.cmd run package:msix
 ```
 
 成果物は`release\msix`へ出力されます。既定では自己署名の開発用証明書を使用するため、証明書の内容を
@@ -82,8 +86,64 @@ npm.cmd run build:msix
 pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 ```
 
-本番配布では信頼されたコード署名PFXとタイムスタンプURLを指定してください。詳しい生成・署名・導入手順と
-制約は`packaging/msix/README.md`に記載しています。対象はWindows 10 2004以降のx64環境で、WebView2 Runtimeが必要です。
+#### 開発PCの共通署名
+
+この署名証明書はMarkdownViewer専用ではなく、開発PCで作成するStore外MSIX全体に使う
+`KotorinChunChun`共通署名です。Publisherは`CN=KotorinChunChun`、秘密鍵は各PCの
+`CurrentUser\My`に保持し、共通設定`%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json`の
+拇印で証明書を選択します。PFXをリポジトリや各アプリへコピーしません。
+
+新しい開発PCへ引き継ぐ場合は、移植元でバンドルを作成し、PFXのパスワードとは別経路で管理します。
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File C:\develop\default\dev\templates\export-msix-signing-bundle.ps1
+```
+
+移植先PCでは、バンドルフォルダーで次を実行します。PFXのパスワードと、証明書登録の確認として
+`YES`を入力すると、現在のWindowsユーザーの`CurrentUser\My`と共通設定が初期化されます。
+同時に、PFXを除く共通テンプレート一式が`C:\develop\default\dev\templates`へ自動コピーされます。
+既存ファイルが異なる場合は上書きせず停止します。配置先を変更する場合は、次のように指定します。
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\import-msix-signing-bundle.ps1 `
+  -TemplateDirectory C:\develop\default\dev\templates
+```
+
+移植後のMarkdownViewerの署名は、リポジトリルートで次を実行します。テスト、Releaseビルド、MSIX署名、
+beta用App Installer生成まで行います。
+
+```powershell
+pwsh -NoProfile -File .\scripts\publish-release-MarkdownViewer-all.ps1 `
+  -Mode Build -Channel beta -ReleaseIntentConfirmed
+```
+
+署名処理は`signing.json`の拇印で`CurrentUser\My`の証明書を選び、SHA-256でMSIXへ署名します。
+証明書の表示名や自動選択は使用しません。別のアプリでも、Manifest Publisherを
+`CN=KotorinChunChun`に合わせ、同じ共通署名設定を参照します。詳細は
+[KotorinChunChun共通MSIX署名](packaging/msix/MSIX_SIGNING.md)を参照してください。
+
+移植後にAIへMSIX作成を依頼する場合は、次の条件を伝えてください。
+
+```text
+このPCでは、Store外MSIXの署名にKotorinChunChun共通署名証明書を使用してください。
+PublisherはCN=KotorinChunChun、証明書はCurrentUser\Myの秘密鍵付き証明書を使い、
+%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.jsonの拇印を参照してください。
+個別PFXの使用やコピー、証明書の自動発行は行わず、既存の署名用ビルドスクリプトを使用してください。
+TrustedPeopleへの登録、インストール、公開は別途明示した場合だけ行ってください。
+```
+
+配布・インストール時はPFXではなく、MSIXと秘密鍵を含まない`.cer`を使用します。自己署名証明書を
+信頼するのは検証端末だけにし、必要な場合は次を実行します。
+
+```powershell
+pwsh -NoProfile -File .\scripts\install-msix.ps1 `
+  -MsixPath .\release\msix\MarkdownViewer_<バージョン>_x64.msix `
+  -CertificatePath .\release\msix\MarkdownViewer.cer `
+  -TrustDevelopmentCertificate
+```
+
+詳しい生成・署名・導入手順と制約は[MSIX packaging README](packaging/msix/README.md)に記載しています。
+対象はWindows 10 2004以降のx64環境で、WebView2 Runtimeが必要です。
 
 ## 主な機能
 
@@ -189,6 +249,10 @@ npm run build
 cargo test --manifest-path .\src-tauri\Cargo.toml
 npm run tauri build
 ```
+
+### プリンターを使わない印刷テスト
+
+`npm.cmd run test:print-pdf`で、画面を表示せずに通常文書・プレゼン・選択表をPDFへ出力し、内容とページ構成を検査できます。OSプリンターや保存ダイアログは不要です。設定、成果物、CubePDFを使う手動受入との区別は[内部PDFによる印刷受入](docs/testing/03-internal-pdf.md)を参照してください。
 
 ### 性能測定
 

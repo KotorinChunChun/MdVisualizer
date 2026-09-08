@@ -1,20 +1,22 @@
 # MSIX packaging
 
 Windows SDKの`MakeAppx.exe`と`SignTool.exe`を使い、x64版のMarkdownViewerをMSIXへまとめる。
+署名にはMarkdownViewer専用ではない`KotorinChunChun`共通証明書を使用する。
 
 ## 自己署名版を作る
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-MarkdownViewer.ps1 -Mode Build -Channel beta -ReleaseIntentConfirmed
+pwsh -NoProfile -File .\scripts\publish-release-MarkdownViewer-all.ps1 -Mode Build -Channel beta -ReleaseIntentConfirmed
 ```
 
 `release\msix`へ署名済み`.msix`と公開鍵`MarkdownViewer.cer`を出力する。公開鍵のファイル名は
 バージョンにかかわらず固定し、同じ証明書を使用している間は既存ファイルを再利用する。
-署名はPC共通設定 `%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json` の拇印で指定した
+署名はKotorinChunChun共通設定 `%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json` の拇印で指定した
 `CurrentUser\My` の証明書を使用する。秘密鍵はWindows管理下に保持し、アプリごとには作らない。
 共通設定なし・鍵欠落・期限切れでは停止し、証明書を自動発行しない。
 
-共通設定の初期登録と他アプリへの導入は[PC共通MSIX署名](MSIX_SIGNING.md)を参照する。
+共通設定の初期登録、新しい開発PCへの移植、他アプリへの導入は
+[KotorinChunChun共通MSIX署名](MSIX_SIGNING.md)を参照する。
 下位スクリプトの`-CertificateThumbprint`は共通設定と同じ値だけを許可する。別証明書への切替には使用しない。
 
 ```powershell
@@ -36,12 +38,52 @@ pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 証明書ストアの秘密鍵は将来の更新署名に必要である。秘密鍵を削除せず、必要に応じてアクセス制限された
 場所へPFXバックアップを作成する。PFXやパスワードをリポジトリとWeb公開領域へ保存しない。
 
+## 新しい開発PCへ移植する
+
+この証明書はMarkdownViewerの所有物ではなく、同じ開発PC上の複数アプリで使う
+KotorinChunChun共通署名である。移植元で次を実行してバンドルを作成する。PFXのパスワードは別経路で伝える。
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File C:\develop\default\dev\templates\export-msix-signing-bundle.ps1
+```
+
+移植先では、バンドル内の`import-msix-signing-bundle.ps1`を実行し、PFXのパスワードと確認入力
+`YES`を入力する。PFXの検証後、現在のWindowsユーザーの`CurrentUser\My`へ秘密鍵付き証明書を登録し、
+`%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json`を初期化する。同時にPFXを除く共通テンプレート一式を
+`C:\develop\default\dev\templates`へ自動同期する。異なる既存ファイルは上書きせず停止し、別の配置先を使う場合は
+`-TemplateDirectory`で指定する。移植スクリプトは`TrustedPeople`などの信頼ストアやインストール済みアプリを変更しない。
+
+移植後、MarkdownViewerではリポジトリルートから次を実行する。
+
+```powershell
+pwsh -NoProfile -File .\scripts\publish-release-MarkdownViewer-all.ps1 `
+  -Mode Build -Channel beta -ReleaseIntentConfirmed
+```
+
+この処理は共通設定のPublisherと拇印を検証し、`CurrentUser\My`の秘密鍵を使ってSHA-256でMSIXへ署名する。
+新しいアプリでも、Manifest Publisherを`CN=KotorinChunChun`に合わせ、アプリ固有のPFXを作らずに
+同じ共通設定を参照する。手動で証明書を選択したり、PFXをコマンドラインへ渡したりしない。
+
+## 検証端末へ導入する
+
+配布するのは署名済み`.msix`と秘密鍵を含まない`.cer`だけである。自己署名証明書を信頼する検証端末では、
+内容とMSIX署名者の拇印が一致することを確認したうえで、次を実行する。
+
+```powershell
+pwsh -NoProfile -File .\scripts\install-msix.ps1 `
+  -MsixPath .\release\msix\MarkdownViewer_<バージョン>_x64.msix `
+  -CertificatePath .\release\msix\MarkdownViewer.cer `
+  -TrustDevelopmentCertificate
+```
+
+PFXとパスワードは検証端末や一般利用者へ配布しない。
+
 ## beta App Installerを作る
 
 MSIX生成後、beta更新チャネルの`.appinstaller`を生成する。
 
 ```powershell
-pwsh -NoProfile -File .\scripts\build-appinstaller.ps1 `
+pwsh -NoProfile -File .\scripts\package-MarkdownViewer-appinstaller.ps1 `
   -MsixPath .\release\msix\MarkdownViewer_0.0.9.0_x64.msix `
   -ChannelBaseUri "https://excel-chunchun.sakura.ne.jp/download/beta/"
 ```

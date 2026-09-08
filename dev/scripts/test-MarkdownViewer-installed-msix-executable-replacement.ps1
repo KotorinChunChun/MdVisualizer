@@ -4,7 +4,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$scriptPath = Join-Path $PSScriptRoot 'release-MarkdownViewer.ps1'
+$scriptPath = Join-Path $PSScriptRoot 'replace-MarkdownViewer-installed-msix-executable.ps1'
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) "MarkdownViewer-release-script-$PID"
 $sourcePath = Join-Path $testRoot 'build\markdown-viewer.exe'
 

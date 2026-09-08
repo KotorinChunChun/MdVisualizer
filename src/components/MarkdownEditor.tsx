@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { basicSetup } from "codemirror";
-import { indentWithTab } from "@codemirror/commands";
+import { indentWithTab, isolateHistory } from "@codemirror/commands";
+import { canApplyProposal, type EditorSnapshot } from "../features/codex/model";
 import { foldAll, foldEffect, foldService, unfoldAll } from "@codemirror/language";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { EditorState, Prec, StateEffect, StateField } from "@codemirror/state";
@@ -49,6 +50,8 @@ interface MarkdownEditorProps {
 }
 
 export interface MarkdownEditorHandle {
+  snapshot: () => EditorSnapshot | null;
+  applyProposal: (base: EditorSnapshot, replacement: string) => boolean;
   focus: () => void;
   focusLine: (line: number) => void;
   scrollToLine: (line: number) => void;
@@ -137,6 +140,7 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
 export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, diffChangedLines, onScrollLine, onActiveLineChange, onCursorPositionChange }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const viewDocumentIdRef = useRef<string | null>(null);
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
   const onScrollLineRef = useRef(onScrollLine);
@@ -169,6 +173,24 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
 
   const clampedLine = (view: EditorView, line: number) => view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, Math.round(line))));
   useImperativeHandle(ref, () => ({
+    snapshot: () => {
+      const view = viewRef.current;
+      if (!view || viewDocumentIdRef.current !== documentId) return null;
+      const { from, to } = view.state.selection.main;
+      return { documentId, content: view.state.sliceDoc(), from, to };
+    },
+    applyProposal: (base, replacement) => {
+      const view = viewRef.current;
+      if (!view || viewDocumentIdRef.current !== documentId || saving || !canApplyProposal({ documentId, content: view.state.sliceDoc(), from: 0, to: 0 }, base)) return false;
+      // AIの採用を独立したUndo単位にし、通常のリスト自動整形は重ねない。
+      normalizingLists.current = true;
+      try {
+        view.dispatch({ changes: { from: base.from, to: base.to, insert: replacement.replace(/\r\n?|\n/g, "\n") },
+          annotations: isolateHistory.of("full"), userEvent: "input.ai" });
+      } finally { normalizingLists.current = false; }
+      view.focus();
+      return true;
+    },
     focus: () => viewRef.current?.focus(),
     focusLine: (line) => {
       const view = viewRef.current;
@@ -191,7 +213,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       return view.state.doc.lineAt(view.lineBlockAtHeight(view.scrollDOM.scrollTop).from).number;
     },
     contains: (element) => Boolean(element && hostRef.current?.contains(element)),
-  }), []);
+  }), [documentId, saving]);
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -329,6 +351,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     });
     const view = new EditorView({ state, parent: hostRef.current });
     viewRef.current = view;
+    viewDocumentIdRef.current = documentId;
     updateToolbarContext(view);
     if (normalizedDocumentValue !== value) {
       onChangeRef.current(normalizedDocumentValue);

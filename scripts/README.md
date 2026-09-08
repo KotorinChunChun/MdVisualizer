@@ -15,8 +15,12 @@
 
 ## 公開用スクリプト
 
-`publish-MarkdownViewer.ps1`はMSIX／App Installerのガード付き公開エントリポイントである。既定の`Plan`は読み取り専用で、ビルドや公開には確認スイッチが必要となる。SPFxの`sppkg`はルートの`build-spfx.ps1`と`upload-sppkg.ps1`が担当する。
+`publish-release-MarkdownViewer-all.ps1`はMSIX／App Installerのガード付き公開エントリポイントである。既定の`Plan`は読み取り専用で、ビルドや公開には確認スイッチが必要となる。旧`publish-MarkdownViewer.ps1`は互換転送だけを行う。
+
+`build-release-MarkdownViewer-spfx.ps1`はSPFx packageをローカル生成し、外部変更を行わない。`publish-release-MarkdownViewer-spfx.ps1`は`-PublishConfirmed`を必須とし、既定ではApp Catalogへの上書きアップロードまでを行う。全サイト展開は`-Deploy`を明示した場合だけ行う。ルートの`build-spfx.ps1`はローカルビルド専用の互換入口である。
 
 ## 補助スクリプト
 
 `build-*`、`stage-*`、`verify-*`、`install-*`、`Invoke-*`、`*-smoke.mjs`は、起動用エントリポイントから呼び出す補助、成果物生成、検証、またはテスト実装であり、通常のアプリ起動用ではない。
+
+ローカル配布物生成は`package-MarkdownViewer-msix.ps1`と`package-MarkdownViewer-appinstaller.ps1`を正規名とする。旧`build-msix.ps1`と`build-appinstaller.ps1`は互換転送だけを行い、外部公開は行わない。

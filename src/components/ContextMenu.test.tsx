@@ -58,4 +58,22 @@ describe("ContextMenu", () => {
     expect((screen.getByRole("menuitem", { name: "VS Code で開く" }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("menuitem", { name: "別ウィンドウで開く" }) as HTMLButtonElement).disabled).toBe(true);
   });
+
+  it("places file rename at the top and invokes it", async () => {
+    const onRename = vi.fn().mockResolvedValue(undefined);
+    const onResult = vi.fn();
+    render(<ContextMenu tab={tab} x={0} y={0} onDismiss={() => {}} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onRename={onRename} onNewWindow={() => {}} onResult={onResult} onError={() => {}} />);
+    const items = screen.getAllByRole("menuitem");
+    expect(items[0]).toHaveTextContent("ファイル名を変更");
+    fireEvent.click(items[0]);
+    await vi.waitFor(() => expect(onRename).toHaveBeenCalledOnce());
+    expect(onResult).toHaveBeenCalledWith("ファイル名を変更しました");
+  });
+
+  it("disables rename while the tab has unsaved changes", () => {
+    const onRename = vi.fn();
+    render(<ContextMenu tab={{ ...tab, dirty: true }} x={0} y={0} onDismiss={() => {}} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onRename={onRename} onResult={() => {}} onError={() => {}} />);
+    expect((screen.getByRole("menuitem", { name: "ファイル名を変更" }) as HTMLButtonElement).disabled).toBe(true);
+  });
 });
+import "@testing-library/jest-dom/vitest";

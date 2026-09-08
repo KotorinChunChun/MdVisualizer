@@ -12,6 +12,11 @@ $expectedScripts = @(
     "run-release-MarkdownViewer-all.ps1",
     "run-exe-MarkdownViewer-all.ps1",
     "run-exe-MarkdownViewer-all-sample.ps1",
+    "build-release-MarkdownViewer-spfx.ps1",
+    "package-MarkdownViewer-msix.ps1",
+    "package-MarkdownViewer-appinstaller.ps1",
+    "publish-release-MarkdownViewer-all.ps1",
+    "publish-release-MarkdownViewer-spfx.ps1",
     "publish-MarkdownViewer.ps1"
 )
 $obsoleteScripts = @(
@@ -37,6 +42,17 @@ $launchers = @(Get-ChildItem -LiteralPath $PSScriptRoot -File -Filter "run-*.ps1
 foreach ($launcher in $launchers) {
     if ($launcher.Name -notmatch $launcherNamePattern) {
         throw "起動用スクリプト名が規則外です: $($launcher.Name)"
+    }
+}
+
+$productEntryPattern = '^(build|run|test|publish)-(debug|release|exe)-MarkdownViewer-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)?\.ps1$'
+foreach ($scriptName in @(
+    'build-release-MarkdownViewer-spfx.ps1',
+    'publish-release-MarkdownViewer-all.ps1',
+    'publish-release-MarkdownViewer-spfx.ps1'
+)) {
+    if ($scriptName -notmatch $productEntryPattern) {
+        throw "製品操作用スクリプト名が規則外です: $scriptName"
     }
 }
 

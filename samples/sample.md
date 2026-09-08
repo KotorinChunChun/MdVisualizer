@@ -12,6 +12,7 @@
 | [Markdown記法総合](all-markdown.md) | 見出し、文字装飾、リスト、表、コード、画像など |
 | [画像大量表示](image-gallery.md) | 多数のPNG／SVG、連続画像、表・リスト内の画像 |
 | [Mermaidギャラリー](mermaid-gallery.md) | Flowchart、Sequence、Class、エラー表示 |
+| [コピー・描画回帰テスト](copy-rendering-regression.md) | Markdown既定コピー、リスト内コード、画像見出し、図のBMPコピー |
 | [ローカルMarkdownリンク](local-links.md) | 相対リンク、URLエンコード、外部リンク |
 | [リンク先ドキュメント](linked-document.md) | ローカルリンクの遷移先とアンカー |
 | [階層型プレゼン](presentation-hierarchy.md) | 見出し階層、パンくず、画像ポップアップ |
@@ -57,10 +58,37 @@
 
 ### テスト用コードブロック
 
-```typescript
-// MarkdownViewer テストコード
-function greet(name: string): string {
-  return `Hello, ${name}! MarkdownViewer is running.`;
-}
-console.log(greet("Developer"));
+![asdasd.ts](asdasd.ts)
+
+
+
+```drawio
+<mxGraphModel dx="1414" dy="828" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="lBdvVe5lLbxE-EFqNVUi-3" edge="1" parent="1" source="lBdvVe5lLbxE-EFqNVUi-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="lBdvVe5lLbxE-EFqNVUi-2" value="">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="lBdvVe5lLbxE-EFqNVUi-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="" vertex="1">
+          <mxGeometry height="60" width="120" x="350" y="400" as="geometry"/>
+        </mxCell>
+        <mxCell id="lBdvVe5lLbxE-EFqNVUi-2" parent="1" style="whiteSpace=wrap;html=1;rounded=1;fillColor=#f8cecc;strokeColor=#b85450;" value="aaaaaaaa" vertex="1">
+          <mxGeometry height="60" width="120" x="550" y="400" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
 ```
+
+
+![draw.io](sample-2.drawio)
+
+
+
+![Mermaid](diagram.mmd)
+
+
+![draw.io](diagram.drawio)
+
+
+

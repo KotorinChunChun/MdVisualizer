@@ -2,7 +2,10 @@
 # .gitignore (MarkdownViewer)
 # ============================================================================
 
-release/
+/release/
+/dev/private/
+/dev/temp/
+/.pnpm-store/
 
 # ビルド成果物・中間生成物
 target/
@@ -17,6 +20,7 @@ spfx/lib-commonjs/
 spfx/jest-output/
 spfx/temp/
 spfx/sharepoint/
+spfx/release/
 *.exe
 *.dll
 *.so

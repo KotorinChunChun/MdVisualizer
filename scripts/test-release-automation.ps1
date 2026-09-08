@@ -5,7 +5,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$orchestratorPath = Join-Path $PSScriptRoot "publish-MarkdownViewer.ps1"
+$orchestratorPath = Join-Path $PSScriptRoot "publish-release-MarkdownViewer-all.ps1"
 $releaseDirectory = Join-Path $projectRoot "release\msix"
 $websiteDownloadDirectory = "C:\develop\excel-chunchun\www\download"
 

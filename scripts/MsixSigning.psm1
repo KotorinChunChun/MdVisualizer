@@ -13,7 +13,7 @@ function Read-MsixSigningProfile {
     [CmdletBinding()]
     param([string]$Path = (Get-MsixSigningProfilePath))
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        throw 'PC共通のMSIX署名設定がありません。既存証明書を確認してinitialize-msix-signing.ps1で登録してください。自動発行はしません。'
+        throw "PC共通のMSIX署名設定がありません: $Path。既存証明書を確認してinitialize-msix-signing.ps1で登録してください。自動発行はしません。"
     }
     try { $profile = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop }
     catch { throw 'PC共通のMSIX署名設定をJSONとして読み込めません。' }
@@ -50,7 +50,7 @@ function Assert-MsixSigningCertificate {
         throw '共通証明書が有効期間外、または期限まで7日以下です。更新・信頼移行を確認してください。'
     }
     $usages = @($Certificate.Extensions | Where-Object { $_ -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension] } |
-        ForEach-Object { $_.EnhancedKeyUsages } | ForEach-Object Value)
+        ForEach-Object { $_.EnhancedKeyUsages } | ForEach-Object { $_.Value })
     if ('1.3.6.1.5.5.7.3.3' -notin $usages) { throw '共通証明書にCode Signing用途がありません。' }
     foreach ($extension in $Certificate.Extensions) {
         if ($extension -is [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension] -and

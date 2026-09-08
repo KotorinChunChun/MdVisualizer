@@ -71,6 +71,9 @@ export async function saveTableCsv(path: string, content: string): Promise<strin
 export async function createMarkdown(request: CreateMarkdownRequest): Promise<MarkdownLoadResult> {
   return await invoke<MarkdownLoadResult>("create_markdown", { request });
 }
+export async function renameDocument(request: { sourcePath: string; targetPath: string; overwrite?: boolean }): Promise<MarkdownLoadResult> {
+  return await invoke<MarkdownLoadResult>("rename_document", { request });
+}
 export async function stageDocumentAsset(request: { documentPath: string; preferredFilename: string; preferredSource?: string; base64?: string; text?: string }): Promise<import("../types/app").StagedDocumentAsset> {
   return await invoke("stage_document_asset", { request });
 }

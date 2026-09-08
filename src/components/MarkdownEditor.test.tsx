@@ -11,6 +11,31 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("MarkdownEditor", () => {
+  it("AIの選択範囲採用はCRLFを保持し、一度のUndoで戻せる", async () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const onChange = vi.fn();
+    const { container } = render(<MarkdownEditor ref={ref} documentId="ai:1" value={"前\r\n旧文\r\n後"} dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+    const original = ref.current!.snapshot()!;
+    expect(original.content).toBe("前\n旧文\n後");
+    act(() => { expect(ref.current!.applyProposal({ ...original, from: 2, to: 4 }, "新文")).toBe(true); });
+    expect(onChange).toHaveBeenLastCalledWith("前\r\n新文\r\n後");
+    fireEvent.keyDown(container.querySelector<HTMLElement>(".cm-content")!, { key: "z", ctrlKey: true });
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("前\r\n旧文\r\n後"));
+  });
+  it("AIの採用は本文変更・文書切替・保存中には拒否する", () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const onChange = vi.fn();
+    const props = { ref, documentId: "ai:1", value: "原文", dirty: false, saving: false, onChange, onSave: () => {} };
+    const { rerender } = render(<MarkdownEditor {...props} />);
+    const base = { ...ref.current!.snapshot()!, from: 0, to: 2 };
+    rerender(<MarkdownEditor {...props} value="変更済み" />);
+    expect(ref.current!.applyProposal(base, "提案")).toBe(false);
+    rerender(<MarkdownEditor {...props} documentId="ai:2" />);
+    expect(ref.current!.applyProposal(base, "提案")).toBe(false);
+    rerender(<MarkdownEditor {...props} saving />);
+    expect(ref.current!.applyProposal(base, "提案")).toBe(false);
+    expect(onChange).not.toHaveBeenCalled();
+  });
   it("highlights and refreshes changed lines when embedded in Diff", async () => {
     const { container, rerender } = render(<MarkdownEditor documentId="diff:1" value={"one\ntwo\nthree"} dirty saving={false} onChange={() => {}} onSave={() => {}} diffChangedLines={new Set([2])} />);
 

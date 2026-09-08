@@ -5,7 +5,7 @@ import { isSharePointDocument, sharePointLibraryViewUrl } from "../lib/sharePoin
 import { stripWindowsExtendedPathPrefix } from "../lib/path";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
-export function ContextMenu({ tab, x, y, onClose, onCloseOthers, onCloseRight, onNewWindow, onResult, onError, onDismiss }: { tab: TabState; x: number; y: number; onClose: () => void; onCloseOthers: () => void; onCloseRight: () => void; onNewWindow?: () => void | Promise<void>; onResult: (message: string) => void; onError: (message: string) => void; onDismiss: () => void }) {
+export function ContextMenu({ tab, x, y, onClose, onCloseOthers, onCloseRight, onRename, onNewWindow, onResult, onError, onDismiss }: { tab: TabState; x: number; y: number; onClose: () => void; onCloseOthers: () => void; onCloseRight: () => void; onRename?: () => void | Promise<void>; onNewWindow?: () => void | Promise<void>; onResult: (message: string) => void; onError: (message: string) => void; onDismiss: () => void }) {
   const menuRef = useFocusTrap<HTMLDivElement>(true, onDismiss);
   useEffect(() => {
     const dismissOnBlur = () => onDismiss();
@@ -23,7 +23,9 @@ export function ContextMenu({ tab, x, y, onClose, onCloseOthers, onCloseRight, o
   const sharePoint = isSharePointDocument(tab.document ?? tab);
   const sharePointUrl = sharePoint ? sharePointLibraryViewUrl(tab.path) : null;
   const untitled = Boolean(tab.untitled);
+  const renameDisabled = untitled || sharePoint || Boolean(tab.dirty || tab.saving || tab.deleted || !onRename);
   return <div ref={menuRef} className="context-menu" role="menu" aria-label="タブ操作" style={{ left: x, top: y }} tabIndex={-1} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onDismiss(); }}>
+    <button type="button" role="menuitem" disabled={renameDisabled} title={tab.dirty || tab.saving ? "未保存の編集を保存してから名前を変更できます" : undefined} onClick={() => onRename && run("ファイル名を変更しました", onRename)}>ファイル名を変更</button>
     <button type="button" role="menuitem" onClick={() => copy(tab.path.split(/[\\/]/).pop() ?? tab.path, "ファイル名")}>ファイル名をコピー</button>
     <button type="button" role="menuitem" onClick={() => copy(sharePoint ? tab.path : stripWindowsExtendedPathPrefix(tab.path), sharePoint ? "spmd URI" : "フルパス")}>{sharePoint ? "spmd URIをコピー" : "フルパスをコピー"}</button>
     {sharePoint ? <button type="button" role="menuitem" onClick={() => sharePointUrl && run("SharePointをブラウザーで開きました", () => openExternalUrl(sharePointUrl))} disabled={!sharePointUrl}>SharePointで開く</button> : <>

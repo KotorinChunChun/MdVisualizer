@@ -4,7 +4,8 @@ use crate::asset_staging::{
 };
 use crate::document_edit::{
     create_markdown as do_create_markdown, save_markdown_with_assets as do_save_markdown,
-    CreateMarkdownRequest, SaveMarkdownRequest,
+    rename_document as do_rename_document, CreateMarkdownRequest, RenameDocumentRequest,
+    SaveMarkdownRequest,
 };
 use crate::errors::AppError;
 use crate::file_lock::{atomic_write, with_lock};
@@ -414,6 +415,11 @@ pub async fn save_markdown(
         }
         Err(error) => Err(error.to_string()),
     }
+}
+
+#[tauri::command]
+pub fn rename_document(request: RenameDocumentRequest) -> Result<MarkdownLoadResult, String> {
+    do_rename_document(request).map_err(|error| error.to_string())
 }
 
 #[derive(Debug, Serialize)]

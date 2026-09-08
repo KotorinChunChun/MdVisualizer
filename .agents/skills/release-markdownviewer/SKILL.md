@@ -17,7 +17,7 @@ description: MarkdownViewerのproduction検証、SPFx sppkg、ポータブルZIP
 ## 事前確認
 
 1. ルート`AGENTS.md`、対象版の`req／imp／task`、Git状態、既存リリース報告を読む。
-2. `scripts/README.md`、`package.json`、`build-spfx.ps1`、`upload-sppkg.ps1`、`packaging/release-config.json`、`scripts/publish-MarkdownViewer.ps1`を確認する。
+2. `scripts/README.md`、`package.json`、`scripts/build-release-MarkdownViewer-spfx.ps1`、`scripts/publish-release-MarkdownViewer-spfx.ps1`、`upload-sppkg.ps1`、`packaging/release-config.json`、`scripts/publish-release-MarkdownViewer-all.ps1`を確認する。
 3. アプリ、SPFx、Websiteの各リポジトリにあるユーザー差分を分離し、対象パスだけをコミットする。
 4. 版、beta公開先、App Catalog scope、MSIX identity、署名証明書、ポータブルZIP生成経路を解決する。
 5. [references/release-matrix.md](references/release-matrix.md)を読み、成果物ごとの生成・公開・検証経路を確定する。

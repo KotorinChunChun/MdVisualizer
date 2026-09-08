@@ -74,6 +74,7 @@ export type TabsAction =
   | { type: "DRAFT_CHANGED"; id: string; content: string }
   | { type: "SAVE_STARTED"; id: string; force?: boolean }
   | { type: "SAVED"; id: string; document: MarkdownLoadResult; committedAssetIds?: string[] }
+  | { type: "RENAMED"; id: string; document: MarkdownLoadResult }
   | { type: "IMMEDIATE_SAVED"; id: string; document: MarkdownLoadResult; draft: string; openedContent: string; committedAssetIds?: string[] }
   | { type: "SAVE_FAILED"; id: string; error: string }
   | { type: "SAVE_CANCELLED"; id: string }
@@ -268,6 +269,17 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
           pendingAssets,
         };
       });
+    case "RENAMED":
+      return updateTab(state, action.id, (tab) => ({
+        ...tab,
+        path: action.document.path,
+        document: action.document,
+        storageDocument: action.document,
+        openedContent: action.document.content,
+        storageError: null,
+        externalChanged: false,
+        deleted: false,
+      }));
     case "IMMEDIATE_SAVED":
       return updateTab(state, action.id, (tab) => {
         const pendingAssets = (tab.pendingAssets ?? []).filter((asset) => !(action.committedAssetIds ?? []).includes(asset.id));
