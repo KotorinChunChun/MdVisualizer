@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.14",
   "author": "KotorinChunChun",
+  "license": "MIT",
   "repository": "https://github.com/KotorinChunChun/MarkdownViewer",
   "type": "module",
   "workspaces": [

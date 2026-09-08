@@ -2,6 +2,8 @@
 
 Windows向けのMarkdownビューア／エディターです。複数の文書をタブで開き、ローカルMarkdownの編集・安全な保存に加えて、画像、Mermaid、draw.io、コード、対話型CSV／TSV表を表示できます。
 
+デスクトップ版では、任意導入のCodex CLIを利用した[文章の相談・書き換え](docs/ui/codex.md)も利用できます。既定は無効で、差分を採用した場合だけ編集中の本文へ反映します。SPFxには含みません。
+
 デスクトップ版に加えて、同じMarkdown処理を共有するSharePoint Framework版を本リポジトリからビルドできます。自分でビルド・改造する場合は[開発者ガイド](docs/DEVELOPERS_GUIDE.md)と[ビルド・検証コマンド](docs/BUILD_COMMANDS.md)を参照してください。
 
 ## beta版ダウンロード

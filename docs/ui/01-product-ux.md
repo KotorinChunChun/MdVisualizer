@@ -1,5 +1,7 @@
 # MarkdownViewer GUI/UX提案
 
+> 2026-09-08追記: v0.0.15ではWindowsデスクトップ専用の任意Codex CLI連携を先行実装した。現行仕様は[Codex利用ガイド](codex.md)を参照。本書のv0.0.16表記は汎用AI支援の将来設計であり、全機能の実装済みを意味しない。
+
 作成日: 2026-08-30
 状態: PROPOSED
 対象: Windowsデスクトップ、SPFx desktop/mobile

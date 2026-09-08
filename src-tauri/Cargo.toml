@@ -3,6 +3,7 @@ name = "markdown-viewer"
 version = "0.0.14"
 description = "Fast Markdown Viewer Desktop App"
 authors = ["KotorinChunChun"]
+license = "MIT"
 edition = "2021"
 
 [lib]
@@ -37,4 +38,4 @@ windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Securit
 url = "2"
 percent-encoding = "2"
 reqwest = { version = "0.13", features = ["json", "form"] }
-tokio = { version = "1", features = ["sync", "time"] }
+tokio = { version = "1", features = ["sync", "time", "process", "io-util", "macros", "rt"] }

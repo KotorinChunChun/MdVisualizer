@@ -22,6 +22,7 @@ import { SvgSourceEditor, type SvgSourceEditTarget } from "./components/SvgSourc
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
+import { CodexPanel } from "./features/codex/CodexPanel";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
 import { DocumentDiffWorkspace, type DocumentDiffTarget, type DiffSaveReview } from "./components/DocumentDiffWorkspace";
 import type { MarkdownEditorHandle } from "./components/MarkdownEditor";
@@ -191,6 +192,8 @@ export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
+  const [codexOpen, setCodexOpen] = useState(false);
+  const codexButtonRef = useRef<HTMLButtonElement>(null);
   const focusNewDocumentRef = useRef(false);
   const paneSyncOrigin = useRef<"edit" | "view" | null>(null);
   const paneSyncFrame = useRef(0);
@@ -2329,8 +2332,13 @@ export function App() {
           }}
         />
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読込</button>}
+        <button ref={codexButtonRef} className="codex-toolbar-action" type="button" disabled={printing} aria-expanded={codexOpen} onClick={() => {
+          if (!codexOpen && canEditActive && editorMode === "preview") changeEditorMode("split");
+          setCodexOpen(!codexOpen);
+        }}>Codex</button>
       </div>}
 
+      <div className="ai-document-layout">
       <div className={`document-workspace editor-workspace-${editorMode}`}>
       {documentDiff && activeTab?.document?.kind === "markdown" && documentSourceIdentity(documentDiff.path) === documentSourceIdentity(activeTab.path) ? <DocumentDiffWorkspace
         key={activeTab.id}
@@ -2521,6 +2529,25 @@ export function App() {
         )}
       </main>}
       </>}
+      </div>
+      {codexOpen && <CodexPanel
+        key={`${activeTab?.id ?? "none"}:${activeTab?.generation ?? 0}`}
+        open={codexOpen}
+        onClose={() => { setCodexOpen(false); codexButtonRef.current?.focus(); }}
+        documentName={activeTab?.path.split(/[\\/]/).pop() ?? ""}
+        documentText={activeTab?.draft ?? ""}
+        available={Boolean(canEditActive && editorMode !== "preview" && !activeTab?.saving)}
+        getSnapshot={() => documentDiff && activeTab ? { documentId: activeTab.id, content: activeTab.draft, from: 0, to: activeTab.draft.length } : editorRef.current?.snapshot() ?? null}
+        applyProposal={(base, replacement) => {
+          if (!canEditActive || activeTab?.saving) return false;
+          if (documentDiff && activeTab) {
+            if (base.documentId !== activeTab.id || base.content !== activeTab.draft || base.from < 0 || base.to > base.content.length) return false;
+            dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content: `${base.content.slice(0, base.from)}${replacement.replace(/\r\n?|\n/g, "\n")}${base.content.slice(base.to)}` });
+            return true;
+          }
+          return Boolean(editorRef.current?.applyProposal(base, replacement));
+        }}
+      />}
       </div>
 
       {cropTarget && (

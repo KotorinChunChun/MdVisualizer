@@ -1,0 +1,189 @@
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { loadSettings, saveSettings } from "../../lib/commands";
+import { cancelCodex, generateCodex, listCodexLogs, setCodexLogLimit } from "./api";
+import { canApplyProposal, DEFAULT_CODEX_OPTIONS, normalizeCodexOptions, requestBytes, type ChatMessage, type CodexLogData, type EditorSnapshot } from "./model";
+import { CodexLogViewer } from "./CodexLogViewer";
+import { buildProposalDiff } from "./proposalDiff";
+import "./codex.css";
+
+export function CodexPanel({ open: visible, onClose, documentName, documentText, available, getSnapshot, applyProposal }: {
+  open: boolean; onClose: () => void; documentName: string; documentText: string; available: boolean;
+  getSnapshot: () => EditorSnapshot | null;
+  applyProposal: (base: EditorSnapshot, replacement: string) => boolean;
+}) {
+  const [options, setOptions] = useState(DEFAULT_CODEX_OPTIONS);
+  const [savedOptions, setSavedOptions] = useState(DEFAULT_CODEX_OPTIONS);
+  const [ready, setReady] = useState(false);
+  const [savingOptions, setSavingOptions] = useState(false);
+  const [instruction, setInstruction] = useState("");
+  const [history, setHistory] = useState<ChatMessage[]>([]);
+  const [selection, setSelection] = useState<EditorSnapshot | null>(null);
+  const [proposal, setProposal] = useState<{ base: EditorSnapshot; replacement: string } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [logs, setLogs] = useState<CodexLogData>({ entries: [], limit: 20 });
+  const [width, setWidth] = useState(420);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const active = useRef<string | null>(null);
+  const cancelled = useRef(false);
+  const mounted = useRef(false);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const log = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    mounted.current = true;
+    let disposed = false;
+    void loadSettings().then((settings) => {
+      if (disposed) return;
+      const value = normalizeCodexOptions(settings.codex);
+      setOptions(value); setSavedOptions(value); setReady(true);
+    }).catch(() => { if (!disposed) setError("設定を読み込めません。パネルを開き直してください。"); });
+    void refreshLogs();
+    return () => { disposed = true; mounted.current = false; if (active.current) void cancelCodex(active.current).catch(() => {}); };
+  }, []);
+  useEffect(() => { if (visible && savedOptions.enabled) input.current?.focus(); }, [visible, savedOptions.enabled]);
+  useEffect(() => { if (log.current) log.current.scrollTop = log.current.scrollHeight; }, [history, busy]);
+  useEffect(() => { if (!status) return; const timer = window.setTimeout(() => setStatus(""), 4000); return () => window.clearTimeout(timer); }, [status]);
+  const diff = useMemo(() => proposal ? buildProposalDiff(proposal.base.content.slice(proposal.base.from, proposal.base.to), proposal.replacement) : [], [proposal]);
+  const settingsDirty = JSON.stringify(options) !== JSON.stringify(savedOptions);
+
+  async function refreshLogs() {
+    try { setLogs(await listCodexLogs()); }
+    catch { if (mounted.current) setError("Codex通信ログを読み込めません。"); }
+  }
+  async function showLogs() {
+    await refreshLogs();
+    if (mounted.current) setLogsOpen(true);
+  }
+  async function changeLogLimit(limit: number) {
+    try { setLogs(await setCodexLogLimit(limit)); }
+    catch { if (mounted.current) setError("Codex通信ログの最大件数を保存できません。"); }
+  }
+
+  async function persistOptions() {
+    setSavingOptions(true); setError("");
+    try {
+      const value = normalizeCodexOptions(options);
+      if (!/^[a-zA-Z0-9._-]{1,100}$/.test(value.model)) throw new Error("モデル名を確認してください。");
+      await saveSettings({ codex: value });
+      if (!mounted.current) return;
+      setOptions(value); setSavedOptions(value); setStatus(value.enabled ? "Codex連携を有効にしました。" : "Codex連携を無効にしました。");
+      if (!value.enabled) { setHistory([]); setProposal(null); setPreviewOpen(false); setSelection(null); }
+    } catch (cause) { if (mounted.current) setError(String(cause)); }
+    finally { if (mounted.current) setSavingOptions(false); }
+  }
+  function captureSelection() {
+    const snapshot = getSnapshot();
+    if (!snapshot || snapshot.from === snapshot.to) { setError("エディタで対象の文章を選択してから取り込んでください。"); return; }
+    setSelection(snapshot); setProposal(null); setPreviewOpen(false); setError("");
+  }
+  async function stop() {
+    cancelled.current = true;
+    setProposal(null); setPreviewOpen(false); setStatus("停止中…");
+    if (active.current) {
+      try { await cancelCodex(active.current); }
+      catch { if (mounted.current) setError("停止要求を送れませんでした。応答は採用せず、タイムアウトを待ちます。"); }
+    }
+  }
+  async function send() {
+    if (active.current || !savedOptions.enabled || settingsDirty || !available || !instruction.trim()) return;
+    const current = getSnapshot();
+    if (!current) { setError("編集画面を開いてから送信してください。"); return; }
+    if (selection && !canApplyProposal(current, selection)) { setError("選択後に本文が変わりました。選択範囲を取り込み直してください。"); return; }
+    const base = selection ?? { ...current, from: 0, to: current.content.length };
+    const text = base.content.slice(base.from, base.to);
+    if (history.length > 40 || requestBytes(instruction, text, history) > 120000) { setError("送信量が上限を超えています。選択範囲を縮めるか会話をクリアしてください。"); return; }
+    const id = crypto.randomUUID();
+    active.current = id; cancelled.current = false;
+    setBusy(true); setError(""); setProposal(null); setPreviewOpen(false); setStatus("Codexが回答を生成しています…");
+    const user: ChatMessage = { role: "user", text: instruction.trim() };
+    try {
+      const reply = await generateCodex({ id, instruction: user.text, text, history });
+      if (!mounted.current || cancelled.current) return;
+      // 変更案も会話に含めることで「もう少し短く」などの継続指示を可能にする。
+      setHistory((old) => [...old, user, { role: "assistant", text: reply.answer + (reply.replacement !== null ? `\n\n変更案:\n${reply.replacement}` : "") }]);
+      setInstruction("");
+      if (reply.replacement !== null) { setProposal({ base, replacement: reply.replacement.replace(/\r\n?|\n/g, "\n") }); setPreviewOpen(true); }
+      void refreshLogs();
+      setStatus(reply.replacement === null ? "回答を受信しました。" : "変更案を受信しました。差分を確認して採用できます。");
+    } catch (cause) { if (mounted.current && !cancelled.current) setError(String(cause)); }
+    finally {
+      active.current = null;
+      if (mounted.current) { setBusy(false); if (cancelled.current) setStatus("停止しました。変更案は破棄しました。"); }
+    }
+  }
+  function adopt() {
+    if (!proposal || !available || busy) return;
+    if (!applyProposal(proposal.base, proposal.replacement)) { setError("生成後に本文や文書が変わりました。最新の本文で生成し直してください。"); return; }
+    setProposal(null); setPreviewOpen(false); setSelection(null); setError(""); setStatus("ドラフトに反映しました。Ctrl+Zで戻せます。保存は通常の保存操作で行ってください。");
+  }
+  const capturedText = selection?.content.slice(selection.from, selection.to);
+  const sendBytes = requestBytes(instruction, capturedText ?? documentText.replace(/\r\n?/g, "\n"), history);
+  function beginResize(event: ReactPointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const resize = (move: PointerEvent) => setWidth(Math.max(300, Math.min(760, window.innerWidth - move.clientX)));
+    const finish = () => { window.removeEventListener("pointermove", resize); window.removeEventListener("pointerup", finish); };
+    window.addEventListener("pointermove", resize); window.addEventListener("pointerup", finish, { once: true });
+  }
+  return <aside hidden={!visible} className="codex-panel" style={{ "--codex-panel-width": `${width}px` } as React.CSSProperties} aria-label="Codex文章アシスタント" onKeyDown={(event) => {
+    if (event.key === "Escape") { event.stopPropagation(); if (busy) void stop(); onClose(); }
+  }}>
+    <div className="codex-panel__resize" role="separator" aria-label="Codexパネルの幅を変更" aria-orientation="vertical" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width} tabIndex={0} onPointerDown={beginResize} onKeyDown={(event) => {
+      if (event.key === "ArrowLeft") { event.preventDefault(); setWidth((value) => Math.min(760, value + 20)); }
+      if (event.key === "ArrowRight") { event.preventDefault(); setWidth((value) => Math.max(300, value - 20)); }
+    }} />
+    <header><strong>Codex</strong><div><button type="button" onClick={() => void showLogs()}>ログ（{logs.entries.length}）</button><button type="button" onClick={() => { if (busy) void stop(); onClose(); }} aria-label="Codexパネルを閉じる">×</button></div></header>
+    <div className="codex-panel__body">
+      <details open={!savedOptions.enabled}>
+        <summary>連携設定（任意）</summary>
+        <p>利用する場合だけCodex CLIを導入し、外部ターミナルで <code>codex login</code> を実行してください。CLI 0.153.4で検証済みです。</p>
+        <fieldset disabled={!ready || busy || savingOptions}>
+          <label><input type="checkbox" checked={options.enabled} onChange={(e) => setOptions({ ...options, enabled: e.target.checked })} />Codex連携を有効にする</label>
+          <p>Codex CLIは自動検出します。PATHを優先し、公式Windowsインストーラーのユーザー領域も確認します。</p>
+          <label>モデル<input value={options.model} onChange={(e) => setOptions({ ...options, model: e.target.value })} /></label>
+          <button type="button" disabled={!settingsDirty} onClick={() => void persistOptions()}>連携設定を保存</button>
+        </fieldset>
+      </details>
+      {savedOptions.enabled && <>
+        <section className="codex-panel__scope"><strong>取り込み範囲と送信設定</strong><p>対象: {documentName || "文書なし"}<br />モデル: {savedOptions.model}<br />送信先: Codex（OpenAI）</p></section>
+        {!available && <p>ローカルMarkdownの編集画面で利用できます。保存中・差分画面では採用できません。</p>}
+        <div className="codex-panel__actions">
+          <button type="button" disabled={busy || !available} onClick={captureSelection}>選択範囲を取り込む</button>
+          <button type="button" disabled={busy || !selection} onClick={() => { setSelection(null); setProposal(null); setPreviewOpen(false); }}>全文を対象にする</button>
+          <button type="button" disabled={busy} onClick={() => { setHistory([]); setProposal(null); setPreviewOpen(false); setError(""); setStatus("会話をクリアしました。"); }}>会話をクリア</button>
+        </div>
+        <p>{selection ? `選択範囲 ${capturedText?.length ?? 0}文字` : "送信時の編集中の全文"}と、このパネルの会話を送信します。会話はパネルを閉じるか文書を切り替えると消えます。</p>
+        <p>本文・指示・会話: {sendBytes.toLocaleString()} / 120,000 bytes</p>
+        {selection && <details><summary>送信する選択範囲</summary><pre>{capturedText}</pre></details>}
+        <div ref={log} className="codex-panel__chat" role="log" aria-label="Codexとの会話">
+          {history.map((message, index) => <section key={index} className={`codex-message codex-message--${message.role}`}><strong>{message.role === "user" ? "あなた" : "Codex"}</strong><pre>{message.text}</pre></section>)}
+          {busy && <p>回答を待っています…</p>}
+        </div>
+        <label>指示<textarea ref={input} value={instruction} rows={4} disabled={busy} placeholder="例: この説明を短くしてください" onChange={(e) => setInstruction(e.target.value)} onKeyDown={(e) => {
+          if (e.nativeEvent.isComposing) return;
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); void send(); }
+        }} /></label>
+        <div className="codex-panel__actions">
+          <button type="button" disabled={busy || !available || !instruction.trim() || settingsDirty || sendBytes > 120000 || history.length > 40} onClick={() => void send()}>送信（Ctrl+Enter）</button>
+          <button type="button" disabled={!busy} onClick={() => void stop()}>停止</button>
+        </div>
+        {proposal && <section className="codex-proposal" aria-label="AI変更案">
+          <h3>変更案を受信しました</h3><button type="button" onClick={() => setPreviewOpen(true)}>大きな画面でプレビュー</button>
+        </section>}
+      </>}
+      {settingsDirty && <p>変更した設定を保存してから送信してください。</p>}
+      {(sendBytes > 120000 || history.length > 40) && <p>送信量が上限を超えています。選択範囲を縮めるか会話をクリアしてください。</p>}
+      {error && <p role="alert">{error}</p>}
+      <p role="status">{status}</p>
+    </div>
+    {proposal && previewOpen && <div className="codex-proposal-preview" role="dialog" aria-modal="true" aria-label="Codex変更案のプレビュー" onKeyDown={(event) => {
+      if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setPreviewOpen(false); }
+    }}>
+      <header><div><strong>変更案のプレビュー</strong><p>− 現在の対象 / ＋ 提案内容 / ↵ 末尾改行</p></div><button type="button" onClick={() => setPreviewOpen(false)} aria-label="変更案プレビューを閉じる">×</button></header>
+      <pre className="codex-diff">{diff.map((line, index) => <span key={index} className={`codex-diff--${line.kind}`}>{line.text}{"\n"}</span>)}</pre>
+      <footer><button type="button" disabled={busy || !available} onClick={adopt}>採用</button><button type="button" onClick={() => { setProposal(null); setPreviewOpen(false); }}>却下</button></footer>
+    </div>}
+    {logsOpen && <CodexLogViewer data={logs} onClose={() => setLogsOpen(false)} onLimitChange={changeLogLimit} />}
+  </aside>;
+}

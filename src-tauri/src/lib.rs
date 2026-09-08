@@ -1,6 +1,7 @@
 pub mod app_state;
 pub mod asset_staging;
 pub mod backup;
+pub mod codex;
 pub mod commands;
 mod credential_store;
 pub mod document_edit;
@@ -60,14 +61,19 @@ fn path_deduplication_key(path: &Path) -> String {
     value
 }
 
-fn document_launch_arguments(arguments: impl IntoIterator<Item = String>, cwd: &Path) -> Vec<String> {
+fn document_launch_arguments(
+    arguments: impl IntoIterator<Item = String>,
+    cwd: &Path,
+) -> Vec<String> {
     let mut seen = HashSet::new();
     arguments
         .into_iter()
         .filter(|argument| !argument.starts_with('-'))
         .filter_map(|argument| {
             if is_spmd_uri(&argument) {
-                parse_spmd_uri(&argument).ok().map(|parsed| parsed.canonical_uri)
+                parse_spmd_uri(&argument)
+                    .ok()
+                    .map(|parsed| parsed.canonical_uri)
             } else {
                 normalize_document_path(&argument, cwd)
                     .map(|path| path.to_string_lossy().into_owned())
@@ -107,10 +113,7 @@ fn debug_query_response_path(arguments: &[String], cwd: &Path) -> Option<PathBuf
         cwd.join(candidate)
     });
     let temp = lexical_normalize(std::env::temp_dir());
-    if candidate
-        .parent()
-        .map(path_deduplication_key)
-        .as_deref()
+    if candidate.parent().map(path_deduplication_key).as_deref()
         != Some(path_deduplication_key(&temp).as_str())
     {
         return None;
@@ -125,7 +128,10 @@ fn debug_query_response_path(arguments: &[String], cwd: &Path) -> Option<PathBuf
 }
 
 #[cfg(debug_assertions)]
-fn write_debug_application_state(app: &tauri::AppHandle, response_path: &Path) -> Result<(), String> {
+fn write_debug_application_state(
+    app: &tauri::AppHandle,
+    response_path: &Path,
+) -> Result<(), String> {
     use std::io::Write;
 
     let state = app.state::<AppState>();
@@ -203,6 +209,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
+        .manage(codex::CodexRuns::default())
         .on_window_event(|window, event| {
             let state = window.state::<AppState>();
             match event {
@@ -223,6 +230,9 @@ pub fn run() {
                     }
                 }
                 tauri::WindowEvent::Destroyed => {
+                    window
+                        .state::<codex::CodexRuns>()
+                        .close_window(window.label());
                     if let Ok(mut windows) = state.debug_windows.lock() {
                         windows.remove(window.label());
                     }
@@ -260,6 +270,10 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            codex::codex_generate,
+            codex::codex_cancel,
+            codex::codex_list_logs,
+            codex::codex_set_log_limit,
             load_settings,
             load_settings_status,
             save_settings,
@@ -364,7 +378,10 @@ mod tests {
     fn accepts_and_deduplicates_valid_spmd_launches() {
         let source = "spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/README.md";
         assert_eq!(
-            document_launch_arguments([source.into(), source.to_ascii_uppercase()], Path::new("C:/")),
+            document_launch_arguments(
+                [source.into(), source.to_ascii_uppercase()],
+                Path::new("C:/")
+            ),
             vec![source]
         );
         assert!(document_launch_arguments(
@@ -394,13 +411,21 @@ mod tests {
         let allowed = std::env::temp_dir().join("markdownviewer-debug-state-test.json");
         assert_eq!(
             debug_query_response_path(
-                &["MarkdownViewer.exe".into(), "--debug-query-state".into(), allowed.to_string_lossy().into_owned()],
+                &[
+                    "MarkdownViewer.exe".into(),
+                    "--debug-query-state".into(),
+                    allowed.to_string_lossy().into_owned()
+                ],
                 Path::new("C:/workspace")
             ),
             Some(allowed)
         );
         assert!(debug_query_response_path(
-            &["MarkdownViewer.exe".into(), "--debug-query-state".into(), "C:/workspace/state.json".into()],
+            &[
+                "MarkdownViewer.exe".into(),
+                "--debug-query-state".into(),
+                "C:/workspace/state.json".into()
+            ],
             Path::new("C:/workspace")
         )
         .is_none());

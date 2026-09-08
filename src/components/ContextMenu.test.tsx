@@ -76,3 +76,4 @@ describe("ContextMenu", () => {
     expect((screen.getByRole("menuitem", { name: "ファイル名を変更" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
+import "@testing-library/jest-dom/vitest";
