@@ -25,6 +25,10 @@
 
 `dev/scripts/replace-MarkdownViewer-installed-msix-executable.ps1`は、開発PCで登録済みMSIX内のexeだけを差し替える特殊なデバッグ補助です。署名整合性を壊すため通常のbuild、run、publishには含めません。旧`release-MarkdownViewer.ps1`は互換転送だけを行い、安全契約は`test-MarkdownViewer-installed-msix-executable-replacement.ps1`で検証します。
 
+## 点検報告
+
+- [GitHub公開前データ点検（2026-09-08）](publication-audit-2026-09-08.md)
+
 ## 関連する公開資料
 
 - 開発構成と実装境界: `docs/DEVELOPERS_GUIDE.md`
