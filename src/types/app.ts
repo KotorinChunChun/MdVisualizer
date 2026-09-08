@@ -1,6 +1,6 @@
 export interface MarkdownLoadResult {
   path: string;
-  kind: "markdown" | "svg" | "mermaid";
+  kind: "markdown" | "tsv" | "svg" | "mermaid" | "drawio";
   content: string;
   base_dir: string;
   image_paths: string[];
@@ -18,6 +18,15 @@ export interface SaveMarkdownRequest {
   content: string;
   expectedRevision: string;
   stagedAssetIds?: string[];
+}
+
+export type MarkdownSaveResult =
+  | { status: "saved"; document: MarkdownLoadResult }
+  | { status: "conflict"; latest: MarkdownLoadResult };
+
+export interface CreateMarkdownRequest {
+  path: string;
+  content: string;
 }
 
 export interface StagedDocumentAsset { id: string; filename: string; mediaType?: string; base64?: string; text?: string; previewSource?: string }
@@ -75,4 +84,6 @@ export interface ToastState {
   restorePath?: string;
   actionLabel?: string;
   onAction?: () => void | Promise<void>;
+  actions?: Array<{ label: string; onAction: () => void | Promise<void> }>;
+  onMessageClick?: () => void | Promise<void>;
 }

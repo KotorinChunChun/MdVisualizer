@@ -36,3 +36,4 @@
 .markdown-editor__toolbar-spacer { flex: 1 1 auto; }
 .markdown-editor__surface { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .markdown-editor__surface > .cm-editor { height: 100%; }
+.markdown-editor--compact .markdown-editor__toolbar { display: none; }

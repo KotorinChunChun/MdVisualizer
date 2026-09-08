@@ -70,6 +70,44 @@ export const DEFAULT_PRESENTATION_LINE_THRESHOLD = 10;
 export const DEFAULT_IMAGE_A4_TARGET_WIDTH = 3508;
 export const DEFAULT_IMAGE_EQUAL_PADDING = 32;
 
+export type EmbeddedPathStyle = "heading" | "bold-code" | "fence-title" | "fence-colon";
+export const DEFAULT_EMBEDDED_PATH_STYLE: EmbeddedPathStyle = "fence-title";
+
+export function normalizeEmbeddedPathStyle(value: unknown): EmbeddedPathStyle {
+  return value === "heading" || value === "bold-code" || value === "fence-colon" ? value : "fence-title";
+}
+
+export type ClipboardImageStorage = "base64" | "png";
+export type ClipboardImagePngLocation = "absolute" | "document" | "images";
+
+export interface ClipboardImageSettings {
+  storage: ClipboardImageStorage;
+  pngLocation: ClipboardImagePngLocation;
+  absoluteDirectory: string;
+}
+
+export const DEFAULT_CLIPBOARD_IMAGE_SETTINGS: ClipboardImageSettings = {
+  storage: "base64",
+  pngLocation: "images",
+  absoluteDirectory: "",
+};
+
+export function normalizeClipboardImageSettings(value: unknown): ClipboardImageSettings {
+  if (!value || typeof value !== "object") return { ...DEFAULT_CLIPBOARD_IMAGE_SETTINGS };
+  const candidate = value as Partial<ClipboardImageSettings>;
+  return {
+    storage: candidate.storage === "png" ? "png" : "base64",
+    pngLocation: candidate.pngLocation === "absolute" || candidate.pngLocation === "document"
+      ? candidate.pngLocation
+      : "images",
+    absoluteDirectory: typeof candidate.absoluteDirectory === "string" ? candidate.absoluteDirectory.trim() : "",
+  };
+}
+
+export function isAbsoluteDirectory(value: string): boolean {
+  return /^(?:[a-zA-Z]:[\\/]|\/)/.test(value.trim());
+}
+
 export function normalizePresentationLineThreshold(value: unknown): number {
   return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 100
     ? value

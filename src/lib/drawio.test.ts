@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DRAWIO_ORIGIN, classifyDrawioSource, extractDrawioFenceData, parseTrustedDrawioMessage, prepareDrawioLoad, svgToDrawioXml } from "./drawio";
+import { disableDrawioPageView, DRAWIO_ORIGIN, classifyDrawioSource, extractDrawioFenceData, parseTrustedDrawioMessage, prepareDrawioLoad, svgToDrawioXml } from "./drawio";
 
 describe("draw.io source handling", () => {
   it("recognises every supported source representation", () => {
@@ -14,6 +14,14 @@ describe("draw.io source handling", () => {
     expect(prepareDrawioLoad("flowchart LR\nA-->B")).toMatchObject({ descriptor: { format: "mermaid", wrap: false } });
     expect(prepareDrawioLoad("abc+/=")).toMatchObject({ kind: "compressed", xml: expect.stringContaining("<mxfile") });
     expect(() => prepareDrawioLoad("<html/>" )).toThrow(/mxGraphModel/);
+  });
+
+  it("turns Page View off in direct and wrapped draw.io models", () => {
+    expect(disableDrawioPageView('<mxGraphModel page="1"><root/></mxGraphModel>')).toContain('page="0"');
+    expect(disableDrawioPageView("<mxfile><diagram><mxGraphModel><root/></mxGraphModel></diagram></mxfile>"))
+      .toContain('<mxGraphModel page="0">');
+    expect(disableDrawioPageView('<mxfile><diagram>compressed-data</diagram></mxfile>'))
+      .toBe('<mxfile><diagram>compressed-data</diagram></mxfile>');
   });
 
   it("converts SVG rectangles and polygons into separate editable cells", () => {

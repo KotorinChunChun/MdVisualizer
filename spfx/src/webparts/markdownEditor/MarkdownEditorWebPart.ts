@@ -174,6 +174,7 @@ export default class MarkdownEditorWebPart extends BaseClientSideWebPart<IMarkdo
       this._snapshot = snapshot;
       this._dirty = false;
       this.properties.serverRelativeFileUrl = path;
+      this._editor?.setDocumentPath(path);
       this._editor?.setValue(snapshot.content);
       const selected = this._files.find(file => file.serverRelativeUrl === path);
       status.textContent = `${selected?.name || path} を読み込みました（${snapshot.format.encoding}${snapshot.format.bom ? '・BOMあり' : ''}）。`;

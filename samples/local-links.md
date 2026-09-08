@@ -4,6 +4,7 @@
 
 - [同じフォルダーの文書](linked-document.md)
 - [総合サンプルへ戻る](./all-markdown.md)
+- [Markdown Editor機能テスト](drawio_markdown_sample.md)
 - [URLエンコードされた文書](linked-document.md?from=local-link#destination)
 
 外部リンクは従来どおりOSへ渡します。

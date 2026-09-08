@@ -19,6 +19,9 @@ describe("theme content palette", () => {
       const block = ruleBody(themesCss, `:root[data-theme="${theme}"]`);
       expect(block).toContain("--inline-code-bg:");
       expect(block).toContain("--inline-code-color:");
+      expect(block).toContain("--inline-code-text-color:");
+      expect(block).toContain("--inline-color-code-text:");
+      expect(block).toContain("--inline-code-swatch-border:");
       expect(block).toContain("--table-header-bg:");
       expect(block).toContain("--table-header-color:");
     },
@@ -28,12 +31,18 @@ describe("theme content palette", () => {
     const printBlock = appCss.slice(appCss.indexOf("@media print"));
     expect(printBlock).toContain("--inline-code-bg:");
     expect(printBlock).toContain("--inline-code-color:");
+    expect(printBlock).toContain("--inline-code-text-color:");
+    expect(printBlock).toContain("--inline-color-code-text:");
+    expect(printBlock).toContain("--inline-code-swatch-border:");
     expect(printBlock).toContain("--table-header-bg:");
     expect(printBlock).toContain("--table-header-color:");
   });
 
   it("uses paired foreground variables on rendered content", () => {
     expect(ruleBody(appCss, ".markdown-body code")).toContain("color: var(--inline-code-color)");
+    expect(ruleBody(appCss, ".markdown-body code.markdown-inline-code")).toContain("color: var(--inline-code-text-color");
+    expect(ruleBody(appCss, ".markdown-body code.markdown-inline-code--color")).toContain("color: var(--inline-color-code-text");
+    expect(ruleBody(appCss, ".markdown-inline-code__color-swatch")).toContain("var(--inline-code-swatch-border");
     expect(ruleBody(appCss, ".markdown-body th")).toContain("color: var(--table-header-color)");
   });
 });

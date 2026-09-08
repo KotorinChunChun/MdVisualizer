@@ -79,7 +79,6 @@ pub struct RunPowerShellRequest {
     pub(super) document_path: String,
     pub(super) language: String,
     pub(super) source: String,
-    pub(super) working_directory: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -96,6 +95,28 @@ pub struct PowerShellRunResult {
 pub(super) struct ValidatedPowerShellRequest {
     pub(super) working_directory: PathBuf,
     pub(super) source: String,
+}
+
+#[cfg(target_os = "windows")]
+pub(super) fn normalize_powershell_path(path: &Path) -> PathBuf {
+    let value = path.to_string_lossy();
+    if let Some(unc) = value.strip_prefix(r"\\?\UNC\") {
+        return PathBuf::from(format!(r"\\{unc}"));
+    }
+    if let Some(local) = value.strip_prefix(r"\\?\") {
+        return PathBuf::from(local);
+    }
+    path.to_path_buf()
+}
+
+#[cfg(not(target_os = "windows"))]
+pub(super) fn normalize_powershell_path(path: &Path) -> PathBuf {
+    path.to_path_buf()
+}
+
+fn powershell_set_location(directory: &Path) -> String {
+    let literal = directory.to_string_lossy().replace('\'', "''");
+    format!("Set-Location -LiteralPath '{literal}'; ")
 }
 
 pub(super) fn validate_powershell_request(
@@ -129,18 +150,11 @@ pub(super) fn validate_powershell_request(
     if !is_markdown {
         return Err("PowerShell code can only be executed from a Markdown document.".into());
     }
-    let default_working_directory = document_path
-        .parent()
-        .ok_or_else(|| "The Markdown document has no containing directory.".to_string())?
-        .to_path_buf();
-    let working_directory = match request
-        .working_directory
-        .filter(|directory| !directory.trim().is_empty())
-    {
-        Some(directory) => std::fs::canonicalize(&directory)
-            .map_err(|error| format!("Could not resolve working directory: {error}"))?,
-        None => default_working_directory,
-    };
+    let working_directory = normalize_powershell_path(
+        document_path
+            .parent()
+            .ok_or_else(|| "The Markdown document has no containing directory.".to_string())?,
+    );
     if !working_directory.is_dir() {
         return Err("The working directory is not a directory.".into());
     }
@@ -173,7 +187,9 @@ pub(super) fn run_powershell_process(
 ) -> Result<PowerShellRunResult, String> {
     let started = Instant::now();
     let utf8_preamble = "$OutputEncoding = [System.Text.UTF8Encoding]::new($false); [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); $PSStyle.OutputRendering = 'PlainText'; ";
-    let encoded_source = utf8_preamble.to_owned() + &request.source;
+    let encoded_source = utf8_preamble.to_owned()
+        + &powershell_set_location(&request.working_directory)
+        + &request.source;
     let encoded_command = base64::engine::general_purpose::STANDARD.encode(
         encoded_source
             .encode_utf16()

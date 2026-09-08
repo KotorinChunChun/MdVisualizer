@@ -5,11 +5,11 @@ import { PresentationImageModal } from "./PresentationImageModal";
 describe("PresentationImageModal", () => {
   afterEach(cleanup);
 
-  it("zooms smoothly with ctrl-wheel and closes with Escape", () => {
+  it("zooms smoothly with the unmodified wheel and closes with Escape", () => {
     const onClose = vi.fn();
     render(<PresentationImageModal target={{ src: "test.png", alt: "test", cropTarget: null }} onClose={onClose} onEdit={() => {}} />);
 
-    fireEvent.wheel(screen.getByRole("img"), { ctrlKey: true, deltaY: -100, clientX: 100, clientY: 80 });
+    fireEvent.wheel(screen.getByRole("img"), { deltaY: -100, clientX: 100, clientY: 80 });
     expect(screen.getByText(/122%/)).toBeTruthy();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).toHaveBeenCalledOnce();

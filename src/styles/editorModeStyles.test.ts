@@ -31,4 +31,11 @@ describe("editor mode segmented control", () => {
     expect(headerSource).toContain("再読込");
     expect(headerSource).not.toContain("再読み込み");
   });
+
+  it("highlights the View block corresponding to the active Edit line", () => {
+    expect(appCss).toContain(".markdown-body [data-source-line].is-editor-current-line");
+    expect(appCss).toContain("#fde68a");
+  });
+
+  // Diffの書式・行位置はtest:diff-layoutで実ブラウザーのcomputed styleと座標を検証する。
 });

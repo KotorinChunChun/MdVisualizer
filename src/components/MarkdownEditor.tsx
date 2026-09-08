@@ -1,12 +1,31 @@
-import { useEffect, useMemo, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { basicSetup } from "codemirror";
 import { indentWithTab } from "@codemirror/commands";
 import { foldAll, foldEffect, foldService, unfoldAll } from "@codemirror/language";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { EditorState } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
-import { buildMarkdownEdit, type MarkdownEditAction } from "../lib/markdownEditing";
+import { EditorState, Prec, StateEffect, StateField } from "@codemirror/state";
+import { Decoration, type DecorationSet, EditorView, keymap } from "@codemirror/view";
+import {
+  buildContextualMarkdownEdit,
+  buildOrderedListNormalization,
+  buildStructuredListEnter,
+  buildStructuredListSoftEnter,
+  buildStructuredListIndent,
+  buildStructuredListMove,
+  buildStructuredListPaste,
+  buildStructuredListToggle,
+  detectLineEnding,
+  normalizeLineEndings,
+  isMarkdownToolbarActionDisabled,
+  type MarkdownEditAction,
+  type MarkdownEditChange,
+  type MarkdownLineEnding,
+  type StructuredListKind,
+} from "../lib/markdownEditing";
 import { findBase64FoldRange } from "../lib/base64Folding";
+import { clipboardImageFile, clipboardImageMarkdown, readClipboardImage, type ClipboardImageData, type ResolvedClipboardImage } from "../lib/clipboardImage";
+import type { StagedDocumentAsset } from "../types/app";
+import type { EditorCursorPosition } from "../lib/paneSync";
 import "../styles/markdown-editor.css";
 
 interface MarkdownEditorProps {
@@ -16,6 +35,25 @@ interface MarkdownEditorProps {
   saving: boolean;
   onChange: (value: string) => void;
   onSave: () => void;
+  onResolvePastedImage?: (image: ClipboardImageData) => Promise<ResolvedClipboardImage>;
+  onStagedAssetAdded?: (content: string, asset: StagedDocumentAsset) => void;
+  onStagedAssetAbandoned?: (asset: StagedDocumentAsset) => void;
+  onPasteImageError?: (error: unknown) => void;
+  onLineEndingsNormalized?: (lineEnding: MarkdownLineEnding) => void;
+  compact?: boolean;
+  /** One-based lines to highlight when this editor is embedded in Diff. */
+  diffChangedLines?: ReadonlySet<number>;
+  onScrollLine?: (line: number) => void;
+  onActiveLineChange?: (line: number) => void;
+  onCursorPositionChange?: (position: EditorCursorPosition) => void;
+}
+
+export interface MarkdownEditorHandle {
+  focus: () => void;
+  focusLine: (line: number) => void;
+  scrollToLine: (line: number) => void;
+  topLine: () => number;
+  contains: (element: Element | null) => boolean;
 }
 
 const TOOLBAR_ACTIONS: Array<{ action: MarkdownEditAction; label: string; title: string }> = [
@@ -52,6 +90,22 @@ const base64FoldService = foldService.of((state, lineStart) => {
   return findBase64FoldRange(line.text, line.from);
 });
 
+const setDiffChangedLines = StateEffect.define<ReadonlySet<number>>();
+const diffChangedLinesField = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(value, transaction) {
+    let next = value.map(transaction.changes);
+    for (const effect of transaction.effects) {
+      if (!effect.is(setDiffChangedLines)) continue;
+      next = Decoration.set([...effect.value]
+        .filter((line) => Number.isInteger(line) && line >= 1 && line <= transaction.state.doc.lines)
+        .map((line) => Decoration.line({ class: "cm-diff-changed-line" }).range(transaction.state.doc.line(line).from)), true);
+    }
+    return next;
+  },
+  provide: (field) => EditorView.decorations.from(field),
+});
+
 function foldBase64Data(view: EditorView) {
   const effects = [];
   for (let number = 1; number <= view.state.doc.lines; number += 1) {
@@ -62,72 +116,278 @@ function foldBase64Data(view: EditorView) {
   if (effects.length) view.dispatch({ effects });
 }
 
-export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave }: MarkdownEditorProps) {
+function dispatchEdit(view: EditorView, change: MarkdownEditChange | null, userEvent: string): boolean {
+  if (!change) return false;
+  view.dispatch({
+    changes: { from: change.from, to: change.to, insert: change.insert },
+    selection: { anchor: change.anchor, head: change.head },
+    scrollIntoView: true,
+    userEvent,
+  });
+  return true;
+}
+
+function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
+  if (action === "unordered-list") return "unordered";
+  if (action === "ordered-list") return "ordered";
+  if (action === "task-list") return "task-unchecked";
+  return null;
+}
+
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, diffChangedLines, onScrollLine, onActiveLineChange, onCursorPositionChange }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
+  const onScrollLineRef = useRef(onScrollLine);
+  const onActiveLineChangeRef = useRef(onActiveLineChange);
+  const onCursorPositionChangeRef = useRef(onCursorPositionChange);
+  const onResolvePastedImageRef = useRef(onResolvePastedImage);
+  const onStagedAssetAddedRef = useRef(onStagedAssetAdded);
+  const onStagedAssetAbandonedRef = useRef(onStagedAssetAbandoned);
+  const onPasteImageErrorRef = useRef(onPasteImageError);
+  const onLineEndingsNormalizedRef = useRef(onLineEndingsNormalized);
   const applyingExternal = useRef(false);
+  const normalizingLists = useRef(false);
+  // Viewからの追従スクロールで発生したscrollイベントを、ユーザー操作として
+  // 上流へ返さないための短い抑制窓。
+  const suppressScrollSyncUntilRef = useRef(0);
+  const [disabledToolbarActions, setDisabledToolbarActions] = useState<MarkdownEditAction[]>([]);
   onChangeRef.current = onChange;
   onSaveRef.current = onSave;
-  const lineSeparator = useMemo(() => value.includes("\r\n") ? "\r\n" : value.includes("\r") ? "\r" : "\n", [documentId]);
+  onScrollLineRef.current = onScrollLine;
+  onActiveLineChangeRef.current = onActiveLineChange;
+  onCursorPositionChangeRef.current = onCursorPositionChange;
+  onResolvePastedImageRef.current = onResolvePastedImage;
+  onStagedAssetAddedRef.current = onStagedAssetAdded;
+  onStagedAssetAbandonedRef.current = onStagedAssetAbandoned;
+  onPasteImageErrorRef.current = onPasteImageError;
+  onLineEndingsNormalizedRef.current = onLineEndingsNormalized;
+  const documentLineEnding = useMemo(() => detectLineEnding(value), [documentId]);
+  const normalizedDocumentValue = normalizeLineEndings(value, documentLineEnding);
+  const editorValue = normalizeLineEndings(normalizedDocumentValue, "\n");
+
+  const clampedLine = (view: EditorView, line: number) => view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, Math.round(line))));
+  useImperativeHandle(ref, () => ({
+    focus: () => viewRef.current?.focus(),
+    focusLine: (line) => {
+      const view = viewRef.current;
+      if (!view) return;
+      suppressScrollSyncUntilRef.current = performance.now() + 200;
+      const target = clampedLine(view, line);
+      view.dispatch({ selection: { anchor: target.from }, effects: EditorView.scrollIntoView(target.from, { y: "center" }) });
+      view.focus();
+    },
+    scrollToLine: (line) => {
+      const view = viewRef.current;
+      if (!view) return;
+      suppressScrollSyncUntilRef.current = performance.now() + 200;
+      const target = clampedLine(view, line);
+      view.dispatch({ effects: EditorView.scrollIntoView(target.from, { y: "start" }) });
+    },
+    topLine: () => {
+      const view = viewRef.current;
+      if (!view) return 1;
+      return view.state.doc.lineAt(view.lineBlockAtHeight(view.scrollDOM.scrollTop).from).number;
+    },
+    contains: (element) => Boolean(element && hostRef.current?.contains(element)),
+  }), []);
 
   useEffect(() => {
     if (!hostRef.current) return;
+    let cursorPositionFrame = 0;
+    const reportCursorPosition = (view: EditorView) => {
+      if (cursorPositionFrame) window.cancelAnimationFrame(cursorPositionFrame);
+      cursorPositionFrame = window.requestAnimationFrame(() => {
+        cursorPositionFrame = 0;
+        const head = view.state.selection.main.head;
+        const coordinates = view.coordsAtPos(head);
+        const scrollBounds = view.scrollDOM.getBoundingClientRect();
+        onCursorPositionChangeRef.current?.({
+          line: view.state.doc.lineAt(head).number,
+          screenY: coordinates?.top
+            ?? scrollBounds.top + view.lineBlockAt(head).top - view.scrollDOM.scrollTop,
+          remainingScroll: Math.max(0, view.scrollDOM.scrollHeight - view.scrollDOM.clientHeight - view.scrollDOM.scrollTop),
+          viewportHeight: view.scrollDOM.clientHeight,
+        });
+      });
+    };
+    const updateToolbarContext = (view: EditorView) => {
+      const source = view.state.sliceDoc();
+      const cursor = view.state.selection.main.head;
+      const next = TOOLBAR_ACTIONS
+        .filter(({ action }) => isMarkdownToolbarActionDisabled(source, cursor, action))
+        .map(({ action }) => action);
+      setDisabledToolbarActions((current) => current.length === next.length && current.every((action, index) => action === next[index]) ? current : next);
+    };
     const state = EditorState.create({
-      doc: value,
+      doc: editorValue,
       extensions: [
         basicSetup,
         markdown({ base: markdownLanguage }),
-        EditorState.lineSeparator.of(lineSeparator),
+        // CodeMirror内では改行をLFへ統一し、外部との入出力時だけ文書の
+        // 推測済み改行形式へ変換する。これによりCRLF文書でも位置は1文字単位になる。
+        EditorState.lineSeparator.of("\n"),
         EditorView.lineWrapping,
         base64FoldService,
+        diffChangedLinesField,
         editorTheme,
         EditorView.contentAttributes.of({ "aria-label": "Markdownを編集", spellcheck: "true" }),
-        keymap.of([
+        Prec.high(keymap.of([
+          { key: "Ctrl-.", run: (view) => dispatchEdit(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, "unordered"), "input.list.toggle") },
+          { key: "Ctrl-1", run: (view) => dispatchEdit(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, "ordered"), "input.list.toggle") },
+          { key: "Ctrl-[", run: (view) => dispatchEdit(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, "task-unchecked"), "input.list.toggle") },
+          { key: "Ctrl-]", run: (view) => dispatchEdit(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, "task-checked"), "input.list.toggle") },
+          { key: "Shift-Enter", run: (view) => dispatchEdit(view, buildStructuredListSoftEnter(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to), "input.list.soft-enter") },
+          { key: "Enter", run: (view) => dispatchEdit(view, buildStructuredListEnter(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to), "input.list.enter") },
+          { key: "Tab", run: (view) => dispatchEdit(view, buildStructuredListIndent(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to), "input.list.indent") },
+          { key: "Shift-Tab", run: (view) => dispatchEdit(view, buildStructuredListIndent(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, true), "input.list.outdent") },
+          { key: "Alt-ArrowUp", run: (view) => dispatchEdit(view, buildStructuredListMove(view.state.sliceDoc(), view.state.selection.main.head, -1), "input.list.move") },
+          { key: "Alt-ArrowDown", run: (view) => dispatchEdit(view, buildStructuredListMove(view.state.sliceDoc(), view.state.selection.main.head, 1), "input.list.move") },
           indentWithTab,
           { key: "Mod-s", run: () => { onSaveRef.current(); return true; } },
-        ]),
+        ])),
+        EditorView.domEventHandlers({
+          paste: (event, view) => {
+            const imageFile = clipboardImageFile(event.clipboardData);
+            const resolveImage = onResolvePastedImageRef.current;
+            if (imageFile && resolveImage) {
+              event.preventDefault();
+              const selection = view.state.selection.main;
+              const originalDocument = view.state.sliceDoc();
+              let stagedAsset: StagedDocumentAsset | undefined;
+              void readClipboardImage(imageFile)
+                .then(resolveImage)
+                .then((resolved) => {
+                  stagedAsset = resolved.asset;
+                  const current = viewRef.current;
+                  if (!current || current !== view || current.state.sliceDoc() !== originalDocument) {
+                    throw new Error("画像の読込中に文書が変更されたため、貼り付けを中止しました。");
+                  }
+                  const markdown = clipboardImageMarkdown(resolved.source);
+                  dispatchEdit(current, {
+                    from: selection.from,
+                    to: selection.to,
+                    insert: markdown,
+                    anchor: selection.from + markdown.length,
+                    head: selection.from + markdown.length,
+                  }, "input.image.paste");
+                  if (resolved.asset) onStagedAssetAddedRef.current?.(
+                    normalizeLineEndings(current.state.sliceDoc(), documentLineEnding),
+                    resolved.asset,
+                  );
+                  if (resolved.source.toLowerCase().startsWith("data:")) foldBase64Data(current);
+                })
+                .catch((error) => {
+                  if (stagedAsset) onStagedAssetAbandonedRef.current?.(stagedAsset);
+                  onPasteImageErrorRef.current?.(error);
+                });
+              return true;
+            }
+            const text = event.clipboardData?.getData("text/plain");
+            if (!text) return false;
+            const selection = view.state.selection.main;
+            const normalizedText = normalizeLineEndings(text, "\n");
+            const structured = buildStructuredListPaste(view.state.sliceDoc(), selection.from, selection.to, normalizedText);
+            const handled = dispatchEdit(view, structured ?? {
+              from: selection.from,
+              to: selection.to,
+              insert: normalizedText,
+              anchor: selection.from + normalizedText.length,
+              head: selection.from + normalizedText.length,
+            }, structured ? "input.list.paste" : "input.paste");
+            if (handled) event.preventDefault();
+            return handled;
+          },
+        }),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged && !applyingExternal.current) onChangeRef.current(update.state.sliceDoc());
+          if (update.selectionSet || update.docChanged) updateToolbarContext(update.view);
+          if (update.selectionSet || update.docChanged) {
+            onActiveLineChangeRef.current?.(update.state.doc.lineAt(update.state.selection.main.head).number);
+          }
+          if (update.selectionSet) {
+            suppressScrollSyncUntilRef.current = performance.now() + 120;
+            reportCursorPosition(update.view);
+          }
+          if (!update.docChanged || applyingExternal.current) return;
+          const editorContent = update.state.sliceDoc();
+          const value = normalizeLineEndings(editorContent, documentLineEnding);
+          onChangeRef.current(value);
+          if (normalizingLists.current) return;
+          const selection = update.state.selection.main;
+          const correction = buildOrderedListNormalization(editorContent, selection.anchor, selection.head);
+          if (!correction) return;
+          queueMicrotask(() => {
+            const current = viewRef.current;
+            if (!current || current.state.sliceDoc() !== editorContent) return;
+            normalizingLists.current = true;
+            dispatchEdit(current, correction, "input.list.renumber");
+            normalizingLists.current = false;
+          });
         }),
       ],
     });
     const view = new EditorView({ state, parent: hostRef.current });
     viewRef.current = view;
+    updateToolbarContext(view);
+    if (normalizedDocumentValue !== value) {
+      onChangeRef.current(normalizedDocumentValue);
+      onLineEndingsNormalizedRef.current?.(documentLineEnding);
+    }
+    const handleEditorScroll = () => {
+      if (performance.now() < suppressScrollSyncUntilRef.current) return;
+      const line = view.state.doc.lineAt(view.lineBlockAtHeight(view.scrollDOM.scrollTop).from).number;
+      onScrollLineRef.current?.(line);
+    };
+    view.scrollDOM.addEventListener("scroll", handleEditorScroll, { passive: true });
+    onActiveLineChangeRef.current?.(view.state.doc.lineAt(view.state.selection.main.head).number);
     foldBase64Data(view);
+    view.dispatch({ effects: setDiffChangedLines.of(diffChangedLines ?? new Set()) });
     return () => {
+      if (cursorPositionFrame) window.cancelAnimationFrame(cursorPositionFrame);
+      view.scrollDOM.removeEventListener("scroll", handleEditorScroll);
       view.destroy();
       if (viewRef.current === view) viewRef.current = null;
     };
-  }, [documentId, lineSeparator]);
+  }, [documentId, documentLineEnding]);
+
+  const diffChangedLinesKey = [...(diffChangedLines ?? [])].sort((a, b) => a - b).join(",");
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({ effects: setDiffChangedLines.of(diffChangedLines ?? new Set()) });
+  }, [diffChangedLinesKey]);
 
   useEffect(() => {
     const view = viewRef.current;
-    if (!view || view.state.sliceDoc() === value) return;
+    const normalizedDocument = normalizeLineEndings(value, documentLineEnding);
+    const nextEditorValue = normalizeLineEndings(normalizedDocument, "\n");
+    if (!view || view.state.sliceDoc() === nextEditorValue) return;
     applyingExternal.current = true;
-    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } });
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: nextEditorValue } });
     foldBase64Data(view);
     applyingExternal.current = false;
-  }, [value]);
+    if (normalizedDocument !== value) {
+      onChangeRef.current(normalizedDocument);
+      onLineEndingsNormalizedRef.current?.(documentLineEnding);
+    }
+  }, [value, documentLineEnding]);
 
   const apply = (action: MarkdownEditAction) => {
     const view = viewRef.current;
     if (!view) return;
     const selection = view.state.selection.main;
-    const change = buildMarkdownEdit(view.state.sliceDoc(), selection.from, selection.to, action);
-    view.dispatch({
-      changes: { from: change.from, to: change.to, insert: change.insert },
-      selection: { anchor: change.anchor, head: change.head },
-      scrollIntoView: true,
-      userEvent: "input.toolbar",
-    });
+    const kind = listToggleKind(action);
+    const change = kind
+      ? buildStructuredListToggle(view.state.sliceDoc(), selection.from, selection.to, kind)
+      : buildContextualMarkdownEdit(view.state.sliceDoc(), selection.from, selection.to, action, selection.head);
+    dispatchEdit(view, change, "input.toolbar");
     view.focus();
   };
 
-  return <section className="markdown-editor" aria-label="Markdown編集">
+  return <section className={`markdown-editor${compact ? " markdown-editor--compact" : ""}`} aria-label="Markdown編集">
     <div className="markdown-editor__toolbar" role="toolbar" aria-label="Markdown書式">
-      {TOOLBAR_ACTIONS.map((item) => <button key={item.action} type="button" title={item.title} aria-label={item.title} onClick={() => apply(item.action)}>{item.label}</button>)}
+      {TOOLBAR_ACTIONS.map((item) => <button key={item.action} type="button" title={item.title} aria-label={item.title} disabled={disabledToolbarActions.includes(item.action)} onClick={() => apply(item.action)}>{item.label}</button>)}
       <span className="markdown-editor__toolbar-spacer" />
       <button type="button" title="すべて折りたたむ" onClick={() => { const view = viewRef.current; if (view) foldAll(view); }}>折りたたむ</button>
       <button type="button" title="すべて展開" onClick={() => { const view = viewRef.current; if (view) unfoldAll(view); }}>展開</button>
@@ -135,4 +395,4 @@ export function MarkdownEditor({ documentId, value, dirty, saving, onChange, onS
     </div>
     <div className="markdown-editor__surface" ref={hostRef} />
   </section>;
-}
+});

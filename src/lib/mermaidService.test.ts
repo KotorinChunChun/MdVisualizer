@@ -26,7 +26,7 @@ describe("Mermaid renderer security boundary", () => {
 
     await expect(renderMermaid(payload, "safe-id", "dark")).resolves.toBe("<svg><text>safe</text></svg>");
 
-    expect(mermaidMock.initialize).toHaveBeenCalledWith({ startOnLoad: false, securityLevel: "strict" });
+    expect(mermaidMock.initialize).toHaveBeenCalledWith({ startOnLoad: false, securityLevel: "strict", suppressErrorRendering: true });
     const renderedInput = mermaidMock.render.mock.calls[0]?.[1] as string;
     expect(renderedInput).toContain("theme: dark");
     for (const unsafeValue of ["securityLevel", "startOnLoad", "dompurifyConfig", "htmlLabels", "onerror", "script", "%%{"]) {

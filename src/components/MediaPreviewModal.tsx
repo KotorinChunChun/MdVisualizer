@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { MermaidToolbar } from "./MermaidToolbar";
 import { ImageMetadataEditor } from "./ImageMetadataEditor";
 import { ExternalActions } from "./ExternalActions";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { ExternalAppConfig } from "../types/settings";
 import type { AssetConversionContext } from "../lib/assetConversion";
 
@@ -20,13 +21,24 @@ export interface ImageEditContext {
 
 export interface MediaPreviewTarget {
   content: MediaPreviewContent;
+  /** Human-readable heading shown in the zoom toolbar. */
+  headingTitle?: string;
   cropTarget?: import("../hooks/useCropEditor").CropTarget | null;
   editTarget?: import("../hooks/useCropEditor").ImageEditTarget | null;
-  mermaidSource?: string;
+  diagramSource?: string;
+  diagramKind?: "mermaid" | "drawio";
   imageContext?: ImageEditContext;
   conversionContext?: AssetConversionContext;
   svgEditTarget?: import("../hooks/useCropEditor").SharePointAssetEditContext & { svg: string; filename: string };
   editDisabledReason?: string;
+}
+
+export interface MediaPreviewViewState {
+  mode: "fit" | "actual";
+  scale: number;
+  display: "diagram" | "code";
+  scrollLeft: number;
+  scrollTop: number;
 }
 
 interface ZoomAnchor {
@@ -54,11 +66,14 @@ function svgIntrinsicSize(svg: string): { width: number; height: number } {
 
 export function MediaPreviewModal({
   content,
+  headingTitle,
   onClose,
   onActivate,
+  onMediaClick,
   editDisabledReason,
   onCrop,
-  mermaidSource,
+  diagramSource,
+  diagramKind,
   imageContext,
   onSaveCaption,
   onRenameImage,
@@ -66,13 +81,18 @@ export function MediaPreviewModal({
   onOpenImageApp,
   conversionContext,
   onConvertAsset,
+  initialViewState,
+  onViewStateChange,
 }: {
   content: MediaPreviewContent;
+  headingTitle?: string;
   onClose: () => void;
   onActivate?: () => void;
+  onMediaClick?: () => void;
   editDisabledReason?: string;
   onCrop?: () => void;
-  mermaidSource?: string;
+  diagramSource?: string;
+  diagramKind?: "mermaid" | "drawio";
   imageContext?: ImageEditContext;
   onSaveCaption?: (context: ImageEditContext, caption: string) => Promise<void>;
   onRenameImage?: (context: ImageEditContext, filename: string) => Promise<void>;
@@ -80,21 +100,25 @@ export function MediaPreviewModal({
   onOpenImageApp?: (app: ExternalAppConfig, context: ImageEditContext) => void;
   conversionContext?: AssetConversionContext;
   onConvertAsset?: (context: AssetConversionContext) => Promise<void>;
+  initialViewState?: MediaPreviewViewState | null;
+  onViewStateChange?: (state: MediaPreviewViewState) => void;
 }) {
+  const modalRef = useFocusTrap<HTMLDivElement>(true, onClose);
   const svgSize = useMemo(
     () => content.kind === "svg" ? svgIntrinsicSize(content.svg) : null,
     [content],
   );
-  const [mode, setMode] = useState<"fit" | "actual">("fit");
-  const [scale, setScale] = useState(1);
+  const [mode, setMode] = useState<"fit" | "actual">(initialViewState?.mode ?? "fit");
+  const [scale, setScale] = useState(initialViewState?.scale ?? 1);
   const [imageSize, setImageSize] = useState({ width: 1000, height: 600 });
-  const [display, setDisplay] = useState<"diagram" | "code">("diagram");
+  const [display] = useState<"diagram" | "code">("diagram");
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [converting, setConverting] = useState(false);
   const [conversionError, setConversionError] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
-  const scaleRef = useRef(1);
+  const scaleRef = useRef(initialViewState?.scale ?? 1);
+  const initialViewApplied = useRef(false);
   const zoomAnchorRef = useRef<ZoomAnchor | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [panning, setPanning] = useState(false);
@@ -105,12 +129,10 @@ export function MediaPreviewModal({
   const effectiveScale = (mode === "fit" ? fitScale : 1) * scale;
   const mediaWidth = intrinsic.width * effectiveScale;
   const mediaHeight = intrinsic.height * effectiveScale;
-  const panInset = {
-    x: Math.max(viewportSize.width, 96),
-    y: Math.max(viewportSize.height, 96),
-  };
-  const stageWidth = mediaWidth + panInset.x * 2;
-  const stageHeight = mediaHeight + panInset.y * 2;
+  const stageWidth = Math.max(viewportSize.width, mediaWidth);
+  const stageHeight = Math.max(viewportSize.height, mediaHeight);
+  const mediaLeft = Math.max(0, (stageWidth - mediaWidth) / 2);
+  const mediaTop = Math.max(0, (stageHeight - mediaHeight) / 2);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -130,31 +152,37 @@ export function MediaPreviewModal({
     const viewport = viewportRef.current;
     if (!viewport || display === "code" || viewportSize.width <= 0 || viewportSize.height <= 0) return;
     const frame = window.requestAnimationFrame(() => {
-      viewport.scrollLeft = Math.max(0, (stageWidth - viewport.clientWidth) / 2);
-      viewport.scrollTop = Math.max(0, (stageHeight - viewport.clientHeight) / 2);
+      if (initialViewState && !initialViewApplied.current) {
+        viewport.scrollLeft = Math.max(0, initialViewState.scrollLeft);
+        viewport.scrollTop = Math.max(0, initialViewState.scrollTop);
+        initialViewApplied.current = true;
+      } else {
+        viewport.scrollLeft = Math.max(0, (stageWidth - viewport.clientWidth) / 2);
+        viewport.scrollTop = Math.max(0, (stageHeight - viewport.clientHeight) / 2);
+      }
     });
     return () => window.cancelAnimationFrame(frame);
   }, [content.kind, content.kind === "image" ? content.src : content.svg, display, mode, intrinsic.width, intrinsic.height, viewportSize.height, viewportSize.width]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    onViewStateChange?.({
+      mode,
+      scale,
+      display,
+      scrollLeft: viewport?.scrollLeft ?? initialViewState?.scrollLeft ?? 0,
+      scrollTop: viewport?.scrollTop ?? initialViewState?.scrollTop ?? 0,
+    });
+  }, [display, mode, onViewStateChange, scale]);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     const anchor = zoomAnchorRef.current;
     if (!viewport || !anchor || display === "code") return;
-    viewport.scrollLeft = panInset.x + anchor.mediaX * effectiveScale - anchor.viewportX;
-    viewport.scrollTop = panInset.y + anchor.mediaY * effectiveScale - anchor.viewportY;
+    viewport.scrollLeft = Math.max(0, mediaLeft + anchor.mediaX * effectiveScale - anchor.viewportX);
+    viewport.scrollTop = Math.max(0, mediaTop + anchor.mediaY * effectiveScale - anchor.viewportY);
     zoomAnchorRef.current = null;
-  }, [display, effectiveScale, panInset.x, panInset.y]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [display, effectiveScale, mediaLeft, mediaTop]);
 
   const toggleMode = () => {
     setMode((current) => current === "fit" ? "actual" : "fit");
@@ -163,14 +191,17 @@ export function MediaPreviewModal({
   };
 
   return createPortal(<div
+    ref={modalRef}
     className="media-preview"
     role="dialog"
     aria-modal="true"
     aria-label={`${content.alt || "メディア"}の拡大表示`}
+    tabIndex={-1}
     onClick={onClose}
   >
     <div className="media-preview__toolbar" onClick={(event) => event.stopPropagation()}>
-      {mermaidSource && content.kind === "svg" && <MermaidToolbar source={mermaidSource} svg={content.svg} display={display} onDisplayChange={setDisplay} />}
+      {headingTitle?.trim() && <strong className="media-preview__title">{headingTitle.trim()}</strong>}
+      {diagramSource && content.kind === "svg" && <MermaidToolbar source={diagramSource} svg={content.svg} display="diagram" fileDiagramKind={diagramKind ?? "mermaid"} ariaLabel={`${diagramKind === "drawio" ? "draw.io" : "Mermaid"}全画面操作`} />}
       {imageContext && onOpenImageApp && imageApps.length > 0 && <ExternalActions
         apps={imageApps}
         title=""
@@ -183,22 +214,22 @@ export function MediaPreviewModal({
         setConverting(true); setConversionError(null);
         void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));
       }}>{converting ? "変換中…" : conversionContext.storage === "embedded" ? "同フォルダのファイルへ変換" : "埋め込みへ変換"}</button>}
-      {imageContext && onSaveCaption && onRenameImage && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
+      {imageContext && onSaveCaption && <button type="button" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}
       <button type="button" className="media-preview__mode" onClick={toggleMode}>
         {mode === "fit" ? "1:1表示" : "全体表示"}
       </button>
       <button type="button" className="media-preview__close" aria-label="拡大表示を閉じる" onClick={onClose}>×</button>
     </div>
     {conversionError && <p className="media-preview__conversion-error" role="alert" onClick={(event) => event.stopPropagation()}>{conversionError}</p>}
-    {metadataOpen && imageContext && onSaveCaption && onRenameImage && <div onClick={(event) => event.stopPropagation()}>
+    {metadataOpen && imageContext && onSaveCaption && <div onClick={(event) => event.stopPropagation()}>
       <ImageMetadataEditor context={imageContext} onSaveCaption={onSaveCaption} onRename={onRenameImage} />
     </div>}
     <div
       className={`media-preview__viewport${display === "code" ? " is-code" : ""}`}
       ref={viewportRef}
+      onScroll={(event) => onViewStateChange?.({ mode, scale, display, scrollLeft: event.currentTarget.scrollLeft, scrollTop: event.currentTarget.scrollTop })}
       onClick={(event) => event.stopPropagation()}
       onWheel={(event) => {
-        if (!event.ctrlKey) return;
         event.preventDefault(); event.stopPropagation();
         const viewport = event.currentTarget;
         const rect = viewport.getBoundingClientRect();
@@ -209,8 +240,8 @@ export function MediaPreviewModal({
         zoomAnchorRef.current = {
           viewportX,
           viewportY,
-          mediaX: (viewport.scrollLeft + viewportX - panInset.x) / currentEffectiveScale,
-          mediaY: (viewport.scrollTop + viewportY - panInset.y) / currentEffectiveScale,
+          mediaX: (viewport.scrollLeft + viewportX - mediaLeft) / currentEffectiveScale,
+          mediaY: (viewport.scrollTop + viewportY - mediaTop) / currentEffectiveScale,
         };
         const deltaPixels = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? Math.max(1, viewport.clientHeight) : 1);
         const nextScale = Math.min(8, Math.max(0.1, currentScale * Math.exp(-deltaPixels * 0.002)));
@@ -240,20 +271,18 @@ export function MediaPreviewModal({
       onPointerCancel={() => { panRef.current = null; setPanning(false); }}
       onAuxClick={(event) => { if (event.button === 1) event.preventDefault(); }}
     >
-      {display === "code" && mermaidSource
-        ? <pre className="mermaid-source media-preview__source"><code>{mermaidSource}</code></pre>
-        : <div className="media-preview__stage" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
+      <div className="media-preview__stage" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
           <div
             className={`media-preview__transform is-${mode}`}
             style={{
               width: `${mediaWidth}px`,
               height: `${mediaHeight}px`,
-              left: `${panInset.x}px`,
-              top: `${panInset.y}px`,
+              left: `${mediaLeft}px`,
+              top: `${mediaTop}px`,
             }}
             onClick={(event) => {
               event.stopPropagation();
-              onActivate?.();
+              onMediaClick?.();
             }}
           >
             {content.kind === "image"
@@ -269,7 +298,7 @@ export function MediaPreviewModal({
               />
               : <div className="media-preview__svg" dangerouslySetInnerHTML={{ __html: content.svg }} />}
           </div>
-        </div>}
+        </div>
     </div>
     <output className="media-preview__scale">
       {mode === "fit" ? "全体表示" : "1:1"} · {Math.round(effectiveScale * 100)}%{panning ? " · パン中" : ""}

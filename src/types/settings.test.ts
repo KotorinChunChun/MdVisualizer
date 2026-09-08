@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, validateExternalApp } from "./settings";
+import { DEFAULT_EMBEDDED_PATH_STYLE, DEFAULT_EXTERNAL_APPS, DEFAULT_IMAGE_A4_TARGET_WIDTH, DEFAULT_IMAGE_EQUAL_PADDING, DEFAULT_PRESENTATION_LINE_THRESHOLD, normalizeEmbeddedPathStyle, normalizeExternalApps, normalizeImageA4TargetWidth, normalizeImageEqualPadding, normalizePresentationLineThreshold, validateExternalApp } from "./settings";
 
 describe("external app settings", () => {
   it("provides document defaults and a direct Paint image action", () => {
@@ -62,6 +62,14 @@ describe("external app settings", () => {
     expect(normalizeImageEqualPadding(0)).toBe(0);
     expect(normalizeImageEqualPadding(48)).toBe(48);
     expect(normalizeImageEqualPadding(-1)).toBe(DEFAULT_IMAGE_EQUAL_PADDING);
+  });
+
+  it("外部パスの4つの表現だけを受け入れる", () => {
+    expect(normalizeEmbeddedPathStyle("heading")).toBe("heading");
+    expect(normalizeEmbeddedPathStyle("bold-code")).toBe("bold-code");
+    expect(normalizeEmbeddedPathStyle("fence-title")).toBe("fence-title");
+    expect(normalizeEmbeddedPathStyle("fence-colon")).toBe("fence-colon");
+    expect(normalizeEmbeddedPathStyle("unknown")).toBe(DEFAULT_EMBEDDED_PATH_STYLE);
   });
 
 });

@@ -1,8 +1,25 @@
-import { buildMarkdownEdit, type MarkdownEditAction } from '@markdown-viewer/markdown-core';
+import {
+  buildShortcutKeySvg,
+  isShortcutKeySource,
+  isPlantUmlFenceLanguage,
+  plantUmlToMermaid,
+  resolveExpandedExportReference,
+  buildMarkdownEdit,
+  buildOrderedListNormalization,
+  buildStructuredListEnter,
+  buildStructuredListSoftEnter,
+  buildStructuredListIndent,
+  buildStructuredListMove,
+  buildStructuredListPaste,
+  buildStructuredListToggle,
+  type MarkdownEditAction,
+  type MarkdownEditChange,
+  type StructuredListKind
+} from '@markdown-viewer/markdown-core';
 import { basicSetup } from 'codemirror';
 import { indentWithTab } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Prec } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import hljs from 'highlight.js/lib/core';
 import bash from 'highlight.js/lib/languages/bash';
@@ -58,6 +75,7 @@ export class MarkdownEditorController {
   private _drawioSources: string[] = [];
   private _editingDrawioIndex = -1;
   private _applying = false;
+  private _normalizingLists = false;
 
   public constructor(private readonly _options: IMarkdownEditorControllerOptions) {
     _options.root.innerHTML = '';
@@ -92,12 +110,45 @@ export class MarkdownEditorController {
         markdown({ base: markdownLanguage }),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ 'aria-label': 'Markdownを編集', spellcheck: 'true' }),
-        keymap.of([indentWithTab, { key: 'Mod-s', run: () => { _options.onSave(); return true; } }]),
+        Prec.high(keymap.of([
+          { key: 'Ctrl-.', run: view => this._dispatch(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, 'unordered'), 'input.list.toggle') },
+          { key: 'Ctrl-1', run: view => this._dispatch(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, 'ordered'), 'input.list.toggle') },
+          { key: 'Ctrl-[', run: view => this._dispatch(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, 'task-unchecked'), 'input.list.toggle') },
+          { key: 'Ctrl-]', run: view => this._dispatch(view, buildStructuredListToggle(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, 'task-checked'), 'input.list.toggle') },
+          { key: 'Shift-Enter', run: view => this._dispatch(view, buildStructuredListSoftEnter(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to), 'input.list.soft-enter') },
+          { key: 'Enter', run: view => this._dispatch(view, buildStructuredListEnter(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to), 'input.list.enter') },
+          { key: 'Tab', run: view => this._dispatch(view, buildStructuredListIndent(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to), 'input.list.indent') },
+          { key: 'Shift-Tab', run: view => this._dispatch(view, buildStructuredListIndent(view.state.sliceDoc(), view.state.selection.main.from, view.state.selection.main.to, true), 'input.list.outdent') },
+          { key: 'Alt-ArrowUp', run: view => this._dispatch(view, buildStructuredListMove(view.state.sliceDoc(), view.state.selection.main.head, -1), 'input.list.move') },
+          { key: 'Alt-ArrowDown', run: view => this._dispatch(view, buildStructuredListMove(view.state.sliceDoc(), view.state.selection.main.head, 1), 'input.list.move') },
+          indentWithTab,
+          { key: 'Mod-s', run: () => { _options.onSave(); return true; } }
+        ])),
+        EditorView.domEventHandlers({
+          paste: (event, view) => {
+            const text = event.clipboardData?.getData('text/plain');
+            if (!text) return false;
+            const selection = view.state.selection.main;
+            const handled = this._dispatch(view, buildStructuredListPaste(view.state.sliceDoc(), selection.from, selection.to, text), 'input.list.paste');
+            if (handled) event.preventDefault();
+            return handled;
+          }
+        }),
         EditorView.updateListener.of(update => {
           if (!this._applying && update.docChanged) {
             const value = update.state.sliceDoc();
             _options.onChanged(value);
             this._render(value);
+            if (!this._normalizingLists) {
+              const selection = update.state.selection.main;
+              const correction = buildOrderedListNormalization(value, selection.anchor, selection.head);
+              if (correction) queueMicrotask(() => {
+                if (this.value !== value) return;
+                this._normalizingLists = true;
+                this._dispatch(this._editor, correction, 'input.list.renumber');
+                this._normalizingLists = false;
+              });
+            }
           }
         })
       ]
@@ -128,33 +179,58 @@ export class MarkdownEditorController {
 
   private _apply(action: MarkdownEditAction): void {
     const selection = this._editor.state.selection.main;
-    const change = buildMarkdownEdit(this.value, selection.from, selection.to, action);
-    this._editor.dispatch({
+    const kind = this._listToggleKind(action);
+    const change = kind
+      ? buildStructuredListToggle(this.value, selection.from, selection.to, kind)
+      : buildMarkdownEdit(this.value, selection.from, selection.to, action);
+    this._dispatch(this._editor, change, 'input.toolbar');
+    this._editor.focus();
+  }
+
+  private _dispatch(view: EditorView, change: MarkdownEditChange | null, userEvent: string): boolean {
+    if (!change) return false;
+    view.dispatch({
       changes: { from: change.from, to: change.to, insert: change.insert },
       selection: { anchor: change.anchor, head: change.head },
       scrollIntoView: true,
-      userEvent: 'input.toolbar'
+      userEvent
     });
-    this._editor.focus();
+    return true;
+  }
+
+  private _listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
+    if (action === 'unordered-list') return 'unordered';
+    if (action === 'ordered-list') return 'ordered';
+    if (action === 'task-list') return 'task-unchecked';
+    return null;
   }
 
   private _render(value: string): void {
     const sequence = ++this._renderSequence;
     this._preview.innerHTML = this._renderer.render(value);
+    this._rewriteRelativeNotionReferences();
+    this._renderShortcutKeys();
     this._drawioSources = [];
     this._preview.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(link => {
       if (/^https?:/i.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
     });
     this._preview.querySelectorAll<HTMLElement>('pre > code').forEach(code => {
-      if (code.classList.contains('language-mermaid')) {
-        const source = code.textContent || '';
+      const language = Array.from(code.classList).find(value => value.startsWith('language-'))?.slice('language-'.length);
+      const plantUml = isPlantUmlFenceLanguage(language);
+      if (code.classList.contains('language-mermaid') || plantUml) {
+        const originalSource = code.textContent || '';
         const host = document.createElement('div');
-        host.className = 'spfxMarkdownMermaid';
+        host.className = plantUml ? 'spfxMarkdownPlantUml' : 'spfxMarkdownMermaid';
         code.parentElement?.replaceWith(host);
-        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
-        void mermaid.render(`spfx-markdown-${sequence}-${Math.random().toString(36).slice(2)}`, source)
-          .then(result => { if (sequence === this._renderSequence) host.innerHTML = result.svg; })
-          .catch(error => { host.textContent = `Mermaidを描画できません: ${String(error)}`; });
+        try {
+          const source = plantUml ? plantUmlToMermaid(originalSource).mermaid : originalSource;
+          mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
+          void mermaid.render(`spfx-markdown-${sequence}-${Math.random().toString(36).slice(2)}`, source)
+            .then(result => { if (sequence === this._renderSequence) host.innerHTML = result.svg; })
+            .catch(error => { host.textContent = `${plantUml ? 'PlantUML' : 'Mermaid'}を描画できません: ${String(error)}`; });
+        } catch (error) {
+          host.textContent = `PlantUMLを描画できません: ${String(error)}`;
+        }
       } else if (code.classList.contains('language-drawio')) {
         const source = code.textContent || '';
         const index = this._drawioSources.push(source.replace(/\n$/, '')) - 1;
@@ -174,6 +250,41 @@ export class MarkdownEditorController {
         code.parentElement?.replaceWith(card);
       } else {
         hljs.highlightElement(code);
+      }
+    });
+  }
+
+  private _documentPath = '';
+
+  public setDocumentPath(path: string): void {
+    this._documentPath = path;
+  }
+
+  private _rewriteRelativeNotionReferences(): void {
+    if (!this._documentPath) return;
+    this._preview.querySelectorAll<HTMLElement>('a[href],img[src]').forEach(element => {
+      const attribute = element.tagName === 'IMG' ? 'src' : 'href';
+      const reference = element.getAttribute(attribute) || '';
+      const resolved = resolveExpandedExportReference(reference, this._documentPath, window.location.origin);
+      if (resolved) element.setAttribute(attribute, resolved);
+    });
+  }
+
+  private _renderShortcutKeys(): void {
+    const codeNodes = Array.from(this._preview.querySelectorAll<HTMLElement>('code'));
+    codeNodes.forEach(code => {
+      const isBlock = code.parentElement?.tagName === 'PRE';
+      const source = code.textContent || '';
+      if (isBlock && code.classList.contains('language-key')) {
+        const host = document.createElement('div');
+        host.className = 'spfxMarkdownShortcutKeyBlock';
+        host.innerHTML = buildShortcutKeySvg(source, { variant: 'block' });
+        code.parentElement?.replaceWith(host);
+      } else if (!isBlock && isShortcutKeySource(source)) {
+        const host = document.createElement('span');
+        host.className = 'spfxMarkdownShortcutKeyInline';
+        host.innerHTML = buildShortcutKeySvg(source, { variant: 'inline' });
+        code.replaceWith(host);
       }
     });
   }

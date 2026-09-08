@@ -9,12 +9,24 @@ export interface TabState {
   id: string;
   kind?: "document" | "settings";
   path: string;
+  /** True until a Ctrl+N document is assigned a filesystem path. */
+  untitled?: boolean;
   document: MarkdownLoadResult | null;
+  /** 最後に正常に読込／保存した比較基準。未保存編集中の外部更新では変更しない。 */
+  openedContent?: string;
+  storageDocument?: MarkdownLoadResult;
+  storageError?: string | null;
+  storageRequest?: number;
+  storageRefreshing?: boolean;
+  changeSequence?: number;
+  reloadSequence?: number;
   error: string | null;
   loading: boolean;
   scrollTop: number;
   generation: number;
   externalChanged?: boolean;
+  /** True when the backing document was deleted or moved from storage. */
+  deleted?: boolean;
   draft: string;
   dirty: boolean;
   saving: boolean;
@@ -42,6 +54,7 @@ export interface ClosedTabState {
 
 export type TabsAction =
   | { type: "OPEN"; path: string }
+  | { type: "NEW_MARKDOWN" }
   | { type: "OPEN_SETTINGS" }
   | { type: "RESTORE"; tab: ClosedTabState }
   | { type: "ACTIVATE"; id: string }
@@ -53,13 +66,21 @@ export type TabsAction =
   | { type: "SEARCH"; id: string; search: TabState["search"] }
   | { type: "SEARCH_VISIBILITY"; id: string; open: boolean }
   | { type: "EXTERNAL_CHANGED"; id: string; changed: boolean }
+  | { type: "STORAGE_REQUESTED"; id: string; request: number }
+  | { type: "STORAGE_LOADED"; id: string; request: number; generation: number; changeSequence: number; reloadIfClean: boolean; document: MarkdownLoadResult }
+  | { type: "STORAGE_FAILED"; id: string; request: number; generation: number; error: string }
+  | { type: "STORAGE_UNAVAILABLE"; id: string; error: string; deleted?: boolean }
+  | { type: "STORAGE_CONFLICT"; id: string; document: MarkdownLoadResult }
   | { type: "DRAFT_CHANGED"; id: string; content: string }
-  | { type: "SAVE_STARTED"; id: string }
+  | { type: "SAVE_STARTED"; id: string; force?: boolean }
   | { type: "SAVED"; id: string; document: MarkdownLoadResult; committedAssetIds?: string[] }
+  | { type: "IMMEDIATE_SAVED"; id: string; document: MarkdownLoadResult; draft: string; openedContent: string; committedAssetIds?: string[] }
   | { type: "SAVE_FAILED"; id: string; error: string }
+  | { type: "SAVE_CANCELLED"; id: string }
   | { type: "EDITOR_MODE"; id: string; mode: EditorWorkspaceMode }
   | { type: "STAGED_ASSET_ADDED"; id: string; content: string; asset: StagedDocumentAsset }
   | { type: "STAGED_ASSET_REMOVED"; id: string; content: string; stagingId: string }
+  | { type: "STAGED_ASSET_UPDATED"; id: string; stagingId: string; text: string }
   | { type: "IMAGE_DISPLAY_SIZE"; id: string; source: string; size: ImageSize }
   | { type: "MOVE"; id: string; toIndex: number };
 
@@ -69,6 +90,50 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
   switch (action.type) {
     case "OPEN": {
       return openTab(state, { path: action.path, scrollTop: 0, searchOpen: false, imageDisplaySizes: {}, search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 } });
+    }
+    case "NEW_MARKDOWN": {
+      const id = `tab-${state.nextId}`;
+      const path = `無題-${state.nextId}.md`;
+      const document: MarkdownLoadResult = {
+        path,
+        kind: "markdown",
+        content: "",
+        base_dir: "",
+        image_paths: [],
+        encoding: "UTF-8",
+        size_bytes: 0,
+        modified_at: "",
+        revision: "",
+        source: "local",
+        web_url: null,
+        etag: null,
+      };
+      return {
+        tabs: [...state.tabs, {
+          id,
+          kind: "document",
+          path,
+          untitled: true,
+          document,
+          openedContent: "",
+          error: null,
+          loading: false,
+          scrollTop: 0,
+          generation: 1,
+          externalChanged: false,
+          draft: "",
+          dirty: true,
+          saving: false,
+          saveError: null,
+          editorMode: "edit",
+          pendingAssets: [],
+          searchOpen: false,
+          imageDisplaySizes: {},
+          search: { query: "", regex: false, caseSensitive: false, activeIndex: -1 },
+        }],
+        activeId: id,
+        nextId: state.nextId + 1,
+      };
     }
     case "OPEN_SETTINGS": {
       const existing = state.tabs.find((tab) => tab.kind === "settings");
@@ -104,7 +169,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "ACTIVATE":
       return state.tabs.some((tab) => tab.id === action.id) ? { ...state, activeId: action.id } : state;
     case "RELOAD":
-      return updateTab(state, action.id, (tab) => ({ ...tab, loading: true, externalChanged: false, generation: tab.generation + 1 }));
+      return updateTab(state, action.id, (tab) => tab.untitled ? tab : ({ ...tab, loading: true, reloadSequence: tab.changeSequence ?? 0, storageRequest: undefined, storageRefreshing: false, generation: tab.generation + 1 }));
     case "CLOSE": {
       const index = state.tabs.findIndex((tab) => tab.id === action.id);
       if (index < 0) return state;
@@ -130,19 +195,13 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
             activeId: state.activeId === action.id ? duplicate.id : state.activeId,
           };
         }
-        return updateTab(state, action.id, (tab) => ({
-        ...tab,
-        path: action.document.path,
-        document: action.document,
-        draft: action.document.content,
-        dirty: false,
-        saving: false,
-        saveError: null,
-        pendingAssets: [],
-        externalChanged: false,
-        loading: false,
-        error: null,
-        }));
+        return updateTab(state, action.id, (tab) => {
+          // 読込開始後の入力・Undo・添付編集や保存と競合した場合は最新版だけを受け取る。
+          if (tab.document && (tab.saving || (tab.changeSequence ?? 0) !== (tab.reloadSequence ?? 0))) {
+            return { ...withStorage(tab, action.document), loading: false };
+          }
+          return acceptLoadedDocument(tab, action.document);
+        });
       }
     case "FAILED":
       return updateTab(state, action.id, (tab) => tab.generation === action.generation ? { ...tab, loading: false, error: action.error } : tab);
@@ -154,43 +213,106 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       return updateTab(state, action.id, (tab) => ({ ...tab, searchOpen: action.open }));
     case "EXTERNAL_CHANGED":
       return updateTab(state, action.id, (tab) => ({ ...tab, externalChanged: action.changed }));
+    case "STORAGE_REQUESTED":
+      return updateTab(state, action.id, (tab) => ({ ...tab, storageRequest: action.request, storageRefreshing: true, storageError: null }));
+    case "STORAGE_LOADED":
+      return updateTab(state, action.id, (tab) => {
+        if (tab.generation !== action.generation || tab.storageRequest !== action.request) return tab;
+        if (action.reloadIfClean && !tab.dirty && !tab.saving && !tab.loading
+          && (tab.changeSequence ?? 0) === action.changeSequence) return acceptLoadedDocument(tab, action.document);
+        return withStorage(tab, action.document);
+      });
+    case "STORAGE_FAILED":
+      return updateTab(state, action.id, (tab) => tab.generation === action.generation && tab.storageRequest === action.request
+        ? { ...tab, storageRefreshing: false, storageError: action.error, externalChanged: true, deleted: false } : tab);
+    case "STORAGE_UNAVAILABLE":
+      return updateTab(state, action.id, (tab) => ({ ...tab, storageRequest: undefined, storageRefreshing: false, storageError: action.error, externalChanged: true, deleted: action.deleted ?? false }));
+    case "STORAGE_CONFLICT":
+      return updateTab(state, action.id, (tab) => ({ ...withStorage(tab, action.document), storageRequest: undefined }));
     case "DRAFT_CHANGED":
       return updateTab(state, action.id, (tab) => {
         if (!tab.document || tab.draft === action.content) return tab;
         return {
           ...tab,
           draft: action.content,
-          dirty: action.content !== tab.document.content,
+          dirty: action.content !== tab.document.content || Boolean(tab.pendingAssets?.length),
           saveError: null,
         };
       });
     case "SAVE_STARTED":
-      return updateTab(state, action.id, (tab) => tab.document && tab.dirty
-        ? { ...tab, saving: true, saveError: null }
+      return updateTab(state, action.id, (tab) => tab.document && (tab.dirty || action.force)
+        ? { ...tab, saving: true, saveError: null, storageRequest: undefined, storageRefreshing: false }
         : tab);
     case "SAVED":
       return updateTab(state, action.id, (tab) => {
         const draft = tab.draft === action.document.content ? action.document.content : tab.draft;
+        const pendingAssets = (tab.pendingAssets ?? []).filter((asset) => !(action.committedAssetIds ?? []).includes(asset.id));
         return {
           ...tab,
           path: action.document.path,
+          untitled: false,
           document: action.document,
+          openedContent: action.document.content,
+          storageDocument: action.document,
+          storageError: null,
+          deleted: false,
+          storageRequest: undefined,
+          storageRefreshing: false,
+          generation: tab.generation + 1,
+          loading: false,
           draft,
-          dirty: draft !== action.document.content,
+          dirty: draft !== action.document.content || pendingAssets.length > 0,
           saving: false,
           saveError: null,
           externalChanged: false,
-          pendingAssets: (tab.pendingAssets ?? []).filter((asset) => !(action.committedAssetIds ?? []).includes(asset.id)),
+          pendingAssets,
+        };
+      });
+    case "IMMEDIATE_SAVED":
+      return updateTab(state, action.id, (tab) => {
+        const pendingAssets = (tab.pendingAssets ?? []).filter((asset) => !(action.committedAssetIds ?? []).includes(asset.id));
+        return {
+          ...tab,
+          path: action.document.path,
+          untitled: false,
+          document: action.document,
+          openedContent: action.openedContent,
+          storageDocument: action.document,
+          storageError: null,
+          deleted: false,
+          storageRequest: undefined,
+          storageRefreshing: false,
+          generation: tab.generation + 1,
+          loading: false,
+          draft: action.draft,
+          dirty: action.draft !== action.document.content || pendingAssets.length > 0,
+          saving: false,
+          saveError: null,
+          externalChanged: false,
+          pendingAssets,
         };
       });
     case "SAVE_FAILED":
       return updateTab(state, action.id, (tab) => ({ ...tab, saving: false, saveError: action.error }));
+    case "SAVE_CANCELLED":
+      return updateTab(state, action.id, (tab) => ({ ...tab, saving: false, saveError: null }));
     case "EDITOR_MODE":
       return updateTab(state, action.id, (tab) => tab.editorMode === action.mode ? tab : { ...tab, editorMode: action.mode });
     case "STAGED_ASSET_ADDED":
-      return updateTab(state, action.id, (tab) => !tab.document ? tab : ({ ...tab, draft: action.content, dirty: action.content !== tab.document.content, pendingAssets: [...(tab.pendingAssets ?? []), action.asset], saveError: null }));
+      return updateTab(state, action.id, (tab) => !tab.document ? tab : ({ ...tab, draft: action.content, dirty: true, pendingAssets: [...(tab.pendingAssets ?? []), action.asset], saveError: null }));
     case "STAGED_ASSET_REMOVED":
-      return updateTab(state, action.id, (tab) => !tab.document ? tab : ({ ...tab, draft: action.content, dirty: action.content !== tab.document.content, pendingAssets: (tab.pendingAssets ?? []).filter((asset) => asset.id !== action.stagingId), saveError: null }));
+      return updateTab(state, action.id, (tab) => {
+        if (!tab.document) return tab;
+        const pendingAssets = (tab.pendingAssets ?? []).filter((asset) => asset.id !== action.stagingId);
+        return { ...tab, draft: action.content, dirty: action.content !== tab.document.content || pendingAssets.length > 0, pendingAssets, saveError: null };
+      });
+    case "STAGED_ASSET_UPDATED":
+      return updateTab(state, action.id, (tab) => !tab.document ? tab : ({
+        ...tab,
+        pendingAssets: (tab.pendingAssets ?? []).map((asset) => asset.id === action.stagingId ? { ...asset, text: action.text } : asset),
+        dirty: (tab.pendingAssets ?? []).some((asset) => asset.id === action.stagingId) || tab.dirty,
+        saveError: null,
+      }));
     case "IMAGE_DISPLAY_SIZE":
       return updateTab(state, action.id, (tab) => {
         const current = tab.imageDisplaySizes[action.source];
@@ -217,8 +339,22 @@ function updateTab(state: TabsState, id: string, update: (tab: TabState) => TabS
   const nextTab = update(state.tabs[index]);
   if (nextTab === state.tabs[index]) return state;
   const tabs = [...state.tabs];
-  tabs[index] = nextTab;
+  const previous = state.tabs[index];
+  tabs[index] = nextTab.draft !== previous.draft || nextTab.pendingAssets !== previous.pendingAssets
+    ? { ...nextTab, changeSequence: (previous.changeSequence ?? 0) + 1 } : nextTab;
   return { ...state, tabs };
+}
+
+function withStorage(tab: TabState, document: MarkdownLoadResult): TabState {
+  return { ...tab, storageDocument: document, storageError: null, storageRefreshing: false,
+    externalChanged: document.revision !== tab.document?.revision, deleted: false };
+}
+
+function acceptLoadedDocument(tab: TabState, document: MarkdownLoadResult): TabState {
+  return { ...tab, path: document.path, document, storageDocument: document, openedContent: document.content,
+    draft: document.content, dirty: false, saving: false, saveError: null, pendingAssets: [],
+    storageError: null, storageRefreshing: false, storageRequest: undefined,
+    externalChanged: false, deleted: false, loading: false, error: null };
 }
 
 function openTab(state: TabsState, tab: ClosedTabState): TabsState {

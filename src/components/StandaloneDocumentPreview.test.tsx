@@ -7,8 +7,14 @@ vi.mock("./ImageRenderer", () => ({
 }));
 
 vi.mock("./MermaidBlock", () => ({
-  MermaidBlock: ({ source, mode, diagramCount }: { source: string; mode: string; diagramCount: number }) => (
-    <div data-testid="mermaid-preview" data-mode={mode} data-count={diagramCount}>{source}</div>
+  MermaidBlock: ({ source, mode, diagramCount, headingTitle }: { source: string; mode: string; diagramCount: number; headingTitle?: string }) => (
+    <div data-testid="mermaid-preview" data-mode={mode} data-count={diagramCount} data-title={headingTitle}>{source}</div>
+  ),
+}));
+
+vi.mock("./DrawioBlock", () => ({
+  DrawioBlock: ({ source, headingTitle, onSave }: { source: string; headingTitle?: string; onSave?: (source: string) => void }) => (
+    <button type="button" data-testid="drawio-preview" data-title={headingTitle} onClick={() => onSave?.("<mxfile><diagram name=\"saved\"/></mxfile>")}>{source}</button>
   ),
 }));
 
@@ -29,6 +35,17 @@ function document(kind: MarkdownLoadResult["kind"], path: string, content: strin
 }
 
 describe("StandaloneDocumentPreview", () => {
+  it("renders a TSV file in the dedicated table UI", () => {
+    render(<StandaloneDocumentPreview
+      document={{ path: "C:\\docs\\table.tsv", kind: "tsv", content: "name\tvalue\nA\t1", base_dir: "C:\\docs", image_paths: [], encoding: "UTF-8", size_bytes: 12, modified_at: "", revision: "r1", source: "local", web_url: null, etag: null }}
+      imageVersions={{}}
+      theme="light"
+      windowId="window"
+      tabId="tab"
+    />);
+    expect(screen.getByRole("region", { name: "TSV表" })).toBeTruthy();
+    expect(screen.getByText("table.tsv")).toBeTruthy();
+  });
   afterEach(cleanup);
 
   it("routes an SVG file through the existing image renderer", () => {
@@ -56,5 +73,23 @@ describe("StandaloneDocumentPreview", () => {
     expect(screen.getByTestId("mermaid-preview").textContent).toContain("A --> B");
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-mode")).toBe("on");
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-count")).toBe("1");
+    expect(screen.getByTestId("mermaid-preview").dataset.title).toBe("flow.mmd");
+  });
+
+  it("routes a draw.io file through the existing draw.io renderer and save callback", () => {
+    const onDrawioSave = vi.fn();
+    render(<StandaloneDocumentPreview
+      document={document("drawio", "C:\\docs\\system.drawio", "<mxfile><diagram/></mxfile>")}
+      imageVersions={{}}
+      theme="dark"
+      windowId="main"
+      tabId="tab-3"
+      onDrawioSave={onDrawioSave}
+    />);
+
+    screen.getByTestId("drawio-preview").click();
+    expect(screen.getByTestId("drawio-preview").textContent).toContain("mxfile");
+    expect(screen.getByTestId("drawio-preview").dataset.title).toBe("system.drawio");
+    expect(onDrawioSave).toHaveBeenCalledWith("<mxfile><diagram name=\"saved\"/></mxfile>");
   });
 });

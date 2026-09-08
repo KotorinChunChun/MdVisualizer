@@ -26,6 +26,9 @@ spfx/sharepoint/
 .env
 .env.local
 secrets.json
+*.pfx
+*.p12
+*.key
 
 # OS・エディタ固有のキャッシュファイル
 .DS_Store

@@ -5,14 +5,14 @@ import { MarkdownPreview } from "./MarkdownPreview";
 describe("MarkdownPreview delimited tables", () => {
   afterEach(cleanup);
 
-  it("renders every table with SearchPanes off and identifies the edited fence occurrence", () => {
+  it("renders every table with the slicer off and identifies the edited fence occurrence", () => {
     const first = "```csv\nname,value\nfirst,1\n```";
     const second = "```csv\nname,value\nsecond,2\n```";
     const content = `${first}\n\n${second}`;
     const onCodeFenceBodyChange = vi.fn().mockReturnValue(true);
     render(<MarkdownPreview content={content} baseDir="C:\\docs" imageVersions={{}} onCodeFenceBodyChange={onCodeFenceBodyChange} />);
 
-    const paneButtons = screen.getAllByRole("button", { name: "SearchPanes" });
+    const paneButtons = screen.getAllByRole("button", { name: "スライサー" });
     expect(paneButtons).toHaveLength(2);
     expect(paneButtons.map((button) => button.getAttribute("aria-pressed"))).toEqual(["false", "false"]);
 

@@ -1,4 +1,4 @@
-//! Encoding-preserving, conflict-safe Markdown document saves.
+//! Encoding-preserving, conflict-safe Markdown and draw.io document saves.
 
 use crate::errors::{AppError, AppResult};
 use crate::file_lock::{atomic_write, with_lock};
@@ -11,7 +11,7 @@ use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SaveMarkdownRequest {
     pub path: String,
@@ -19,6 +19,13 @@ pub struct SaveMarkdownRequest {
     pub expected_revision: String,
     #[serde(default)]
     pub staged_asset_ids: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateMarkdownRequest {
+    pub path: String,
+    pub content: String,
 }
 
 struct OriginalDocument {
@@ -29,7 +36,7 @@ struct OriginalDocument {
 
 pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
-    if document_kind(&requested) != Some(DocumentKind::Markdown) {
+    if !matches!(document_kind(&requested), Some(DocumentKind::Markdown | DocumentKind::Drawio)) {
         return Err(AppError::UnsupportedDocument(request.path));
     }
     if !requested.exists() {
@@ -42,13 +49,35 @@ pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResu
     Ok(loaded)
 }
 
+pub fn create_markdown(request: CreateMarkdownRequest) -> AppResult<MarkdownLoadResult> {
+    let requested = PathBuf::from(&request.path);
+    if document_kind(&requested) != Some(DocumentKind::Markdown) {
+        return Err(AppError::UnsupportedDocument(request.path));
+    }
+    if !requested.is_absolute() {
+        return Err(AppError::IoError(
+            "A new Markdown document requires an absolute save path.".into(),
+        ));
+    }
+    with_lock(&requested, || {
+        atomic_write(&requested, request.content.as_bytes())?;
+        load_markdown(&requested.to_string_lossy())
+    })
+}
+
 pub fn save_markdown_with_assets(
     request: SaveMarkdownRequest,
     staging: &crate::asset_staging::AssetStagingManager,
 ) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
-    if document_kind(&requested) != Some(DocumentKind::Markdown) {
+    let kind = document_kind(&requested);
+    if !matches!(kind, Some(DocumentKind::Markdown | DocumentKind::Drawio)) {
         return Err(AppError::UnsupportedDocument(request.path));
+    }
+    if kind == Some(DocumentKind::Drawio) && !request.staged_asset_ids.is_empty() {
+        return Err(AppError::PermissionDenied(
+            "draw.io documents cannot commit Markdown assets.".into(),
+        ));
     }
     if !requested.exists() {
         return Err(AppError::FileNotFound(request.path));
@@ -57,9 +86,11 @@ pub fn save_markdown_with_assets(
         AppError::IoError(format!("canonicalize {}: {error}", requested.display()))
     })?;
     with_lock(&path, || {
-        staging.commit_with(&path, &request.staged_asset_ids, || {
+        if kind == Some(DocumentKind::Markdown) {
+            staging.commit_with(&path, &request.staged_asset_ids, || save_locked(&path, &request))
+        } else {
             save_locked(&path, &request)
-        })
+        }
     })
 }
 
@@ -179,6 +210,35 @@ mod tests {
     use super::*;
     use tempfile::tempdir;
 
+    #[test]
+    fn creates_a_new_utf8_markdown_document_and_returns_its_revision() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("new.md");
+        let loaded = create_markdown(CreateMarkdownRequest {
+            path: path.to_string_lossy().into_owned(),
+            content: "# 新規\n本文".into(),
+        })
+        .unwrap();
+
+        assert_eq!(fs::read_to_string(&path).unwrap(), "# 新規\n本文");
+        assert_eq!(loaded.content, "# 新規\n本文");
+        assert!(!loaded.revision.is_empty());
+        assert_eq!(loaded.encoding, "UTF-8");
+    }
+
+    #[test]
+    fn rejects_a_non_markdown_create_target_without_writing() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("new.txt");
+        let result = create_markdown(CreateMarkdownRequest {
+            path: path.to_string_lossy().into_owned(),
+            content: "text".into(),
+        });
+
+        assert!(matches!(result, Err(AppError::UnsupportedDocument(_))));
+        assert!(!path.exists());
+    }
+
     fn request(path: &Path, content: &str) -> SaveMarkdownRequest {
         let bytes = fs::read(path).unwrap();
         SaveMarkdownRequest {
@@ -201,6 +261,20 @@ mod tests {
         assert_eq!(fs::read_to_string(&path).unwrap(), "# new\n");
         assert_ne!(result.revision, original_revision);
         assert_eq!(result.content, "# new\n");
+    }
+
+    #[test]
+    fn saves_a_drawio_document_with_revision_protection() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("system.drawio");
+        fs::write(&path, "<mxfile><diagram name=\"old\"/></mxfile>").unwrap();
+        let original_revision = content_revision(&fs::read(&path).unwrap());
+
+        let result = save_markdown(request(&path, "<mxfile><diagram name=\"new\"/></mxfile>")).unwrap();
+
+        assert_eq!(result.kind, DocumentKind::Drawio);
+        assert!(result.content.contains("name=\"new\""));
+        assert_ne!(result.revision, original_revision);
     }
 
     #[test]

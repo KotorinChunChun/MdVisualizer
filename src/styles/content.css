@@ -8,8 +8,31 @@
 }
 
 .table-scroll {
+  position: relative;
   overflow-x: visible;
   max-width: 100%;
+}
+
+.markdown-table-card .markdown-table-edit {
+  position: sticky;
+  z-index: 2;
+  top: 6px;
+  left: calc(100% - 38px);
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin-bottom: -30px;
+  padding: 0;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--btn-bg);
+  cursor: pointer;
+}
+
+.markdown-table-card .markdown-table-edit:hover {
+  border-color: var(--accent-color);
+  background: var(--hover-bg);
 }
 
 .table-scroll table {

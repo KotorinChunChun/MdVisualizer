@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderSearchResultMatch, SearchResults } from "./SearchResults";
 
@@ -17,6 +17,15 @@ describe("SearchResults", () => {
     const { container } = render(<SearchResults results={[result, { ...result, index: 1, line: 4 }]} activeIndex={0} truncated={false} onSelect={onSelect} onActivate={vi.fn()} />);
     fireEvent.keyDown(container.querySelector("[role='listbox']")!, { key: "ArrowDown" });
     expect(onSelect).toHaveBeenCalledWith(1);
+  });
+
+  it("moves DOM focus together with the selected result", async () => {
+    const onSelect = vi.fn();
+    const { container } = render(<SearchResults results={[result, { ...result, index: 1, line: 4 }]} activeIndex={0} truncated={false} onSelect={onSelect} onActivate={vi.fn()} />);
+    const buttons = container.querySelectorAll<HTMLButtonElement>("[role='option']");
+    buttons[0].focus();
+    fireEvent.keyDown(buttons[0], { key: "ArrowDown" });
+    await waitFor(() => expect(document.activeElement).toBe(buttons[1]));
   });
 
   it("uses the result column and captured match without interpreting HTML", () => {

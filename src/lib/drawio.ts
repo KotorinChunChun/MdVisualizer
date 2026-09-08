@@ -1,5 +1,5 @@
 export const DRAWIO_ORIGIN = "https://embed.diagrams.net";
-export const DRAWIO_EDITOR_URL = `${DRAWIO_ORIGIN}/?embed=1&proto=json&spin=1&libraries=1&noSaveBtn=1`;
+export const DRAWIO_EDITOR_URL = `${DRAWIO_ORIGIN}/?embed=1&proto=json&spin=1&libraries=1&noSaveBtn=1&pv=0`;
 
 export type DrawioSourceKind = "empty" | "svg" | "mermaid" | "xml" | "compressed";
 export type DrawioLoadPayload =
@@ -105,6 +105,16 @@ export function prepareDrawioLoad(source: string): DrawioLoadPayload {
   return { kind, xml: text, warnings: [] };
 }
 
+/** Page View is an mxGraphModel setting, even when the model is wrapped by mxfile. */
+export function disableDrawioPageView(xml: string): string {
+  return xml.replace(/<mxGraphModel\b([^>]*)>/g, (model, attributes: string) => {
+    if (/\bpage\s*=/.test(attributes)) {
+      return model.replace(/\bpage\s*=\s*(?:"[^"]*"|'[^']*')/, 'page="0"');
+    }
+    return `<mxGraphModel${attributes} page="0">`;
+  });
+}
+
 export function extractDrawioFenceData(xml: string): string {
   const text = xml.trim();
   if (!text.startsWith("<")) return text;
@@ -118,7 +128,7 @@ export function extractDrawioFenceData(xml: string): string {
   return element ? new XMLSerializer().serializeToString(element) : (diagram.textContent ?? "").trim();
 }
 
-export interface DrawioMessage { event?: string; xml?: string; exit?: boolean; modified?: boolean }
+export interface DrawioMessage { event?: string; xml?: string; exit?: boolean; modified?: boolean; pageVisible?: boolean }
 
 export function parseTrustedDrawioMessage(event: Pick<MessageEvent, "origin" | "source" | "data">, expectedSource: MessageEventSource | null): DrawioMessage | null {
   if (event.origin !== DRAWIO_ORIGIN || !expectedSource || event.source !== expectedSource) return null;

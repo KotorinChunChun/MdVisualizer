@@ -26,7 +26,9 @@ function escapeRegex(value: string) {
 }
 
 function removeOwnedMarks(root: HTMLElement) {
-  root.querySelectorAll("mark[data-markdown-search]").forEach((mark) => {
+  const marks = root.querySelectorAll("mark[data-markdown-search]");
+  if (marks.length === 0) return;
+  marks.forEach((mark) => {
     mark.replaceWith(document.createTextNode(mark.textContent ?? ""));
   });
   root.normalize();
@@ -43,6 +45,8 @@ export function useSearch(
   useEffect(() => { onMatchedFoldIdsRef.current = onMatchedFoldIds; }, [onMatchedFoldIds]);
   const [query, setQuery] = useState("");
   const [regex, setRegex] = useState(false);
+  const [executedQuery, setExecutedQuery] = useState("");
+  const searchGeneration = useRef(0);
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [resultCount, setResultCount] = useState(0);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -51,8 +55,16 @@ export function useSearch(
   const nativeRangesRef = useRef<Range[]>([]);
   const nativeHighlightsRef = useRef<Map<string, unknown> | undefined>(undefined);
   const nativeHighlightNamesRef = useRef<{ all: string; active: string } | null>(null);
-  const pattern = useMemo(() => query ? (regex ? query : escapeRegex(query)) : "", [query, regex]);
-  const sourceResults = useMemo(() => findSearchResults(content, query, { regex, caseSensitive, contextLines }), [content, query, regex, caseSensitive, contextLines]);
+  const pattern = useMemo(() => executedQuery ? (regex ? executedQuery : escapeRegex(executedQuery)) : "", [executedQuery, regex]);
+  const sourceResults = useMemo(() => findSearchResults(content, executedQuery, { regex, caseSensitive, contextLines }), [content, executedQuery, regex, caseSensitive, contextLines]);
+
+  useEffect(() => {
+    const generation = ++searchGeneration.current;
+    const timer = window.setTimeout(() => {
+      if (generation === searchGeneration.current) setExecutedQuery(query);
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [content, query, refreshKey]);
 
   useEffect(() => {
     const root = rootRef.current;

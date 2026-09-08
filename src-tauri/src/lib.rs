@@ -14,12 +14,17 @@ pub mod sharepoint;
 pub mod watcher;
 
 use app_state::AppState;
+#[cfg(debug_assertions)]
+use app_state::DebugApplicationState;
 use commands::*;
 use markdown::is_supported_document;
 use sharepoint::{is_spmd_uri, parse_spmd_uri};
 use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 use tauri::{Emitter, EventTarget, Manager};
+
+#[cfg(debug_assertions)]
+const DEBUG_QUERY_STATE_ARGUMENT: &str = "--debug-query-state";
 
 fn lexical_normalize(path: PathBuf) -> PathBuf {
     let mut normalized = PathBuf::new();
@@ -89,6 +94,70 @@ fn launch_owner_label(labels: impl IntoIterator<Item = String>) -> Option<String
         .or_else(|| labels.into_iter().next())
 }
 
+#[cfg(debug_assertions)]
+fn debug_query_response_path(arguments: &[String], cwd: &Path) -> Option<PathBuf> {
+    let value = arguments
+        .windows(2)
+        .find(|pair| pair[0] == DEBUG_QUERY_STATE_ARGUMENT)?
+        .get(1)?;
+    let candidate = PathBuf::from(value);
+    let candidate = lexical_normalize(if candidate.is_absolute() {
+        candidate
+    } else {
+        cwd.join(candidate)
+    });
+    let temp = lexical_normalize(std::env::temp_dir());
+    if candidate
+        .parent()
+        .map(path_deduplication_key)
+        .as_deref()
+        != Some(path_deduplication_key(&temp).as_str())
+    {
+        return None;
+    }
+    let filename = candidate.file_name()?.to_str()?;
+    if !filename.starts_with("markdownviewer-debug-state-")
+        || candidate.extension().and_then(|value| value.to_str()) != Some("json")
+    {
+        return None;
+    }
+    Some(candidate)
+}
+
+#[cfg(debug_assertions)]
+fn write_debug_application_state(app: &tauri::AppHandle, response_path: &Path) -> Result<(), String> {
+    use std::io::Write;
+
+    let state = app.state::<AppState>();
+    let mut windows = state
+        .debug_windows
+        .lock()
+        .map_err(|_| "Debug window state is unavailable.".to_string())?
+        .values()
+        .cloned()
+        .collect::<Vec<_>>();
+    windows.sort_by(|left, right| left.label.cmp(&right.label));
+    let snapshot = DebugApplicationState {
+        process_id: std::process::id(),
+        generated_at: chrono::Utc::now().to_rfc3339(),
+        windows,
+    };
+    let parent = response_path
+        .parent()
+        .ok_or_else(|| "Debug response directory is unavailable.".to_string())?;
+    let mut output = tempfile::NamedTempFile::new_in(parent).map_err(|error| error.to_string())?;
+    serde_json::to_writer_pretty(output.as_file_mut(), &snapshot)
+        .map_err(|error| error.to_string())?;
+    output
+        .as_file_mut()
+        .write_all(b"\n")
+        .map_err(|error| error.to_string())?;
+    output
+        .persist_noclobber(response_path)
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let args: Vec<String> = std::env::args().collect();
@@ -104,6 +173,11 @@ pub fn run() {
         // delivered to the existing app instead of becoming an overlapping
         // second process.
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+            #[cfg(debug_assertions)]
+            if let Some(response_path) = debug_query_response_path(&args, Path::new(&cwd)) {
+                let _ = write_debug_application_state(app, &response_path);
+                return;
+            }
             let files = document_launch_arguments(args, Path::new(&cwd));
             if !files.is_empty() {
                 let labels = app.webview_windows().into_keys();
@@ -127,6 +201,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(state)
         .on_window_event(|window, event| {
             let state = window.state::<AppState>();
@@ -148,6 +223,9 @@ pub fn run() {
                     }
                 }
                 tauri::WindowEvent::Destroyed => {
+                    if let Ok(mut windows) = state.debug_windows.lock() {
+                        windows.remove(window.label());
+                    }
                     let geometry = state
                         .window_geometries
                         .lock()
@@ -173,6 +251,11 @@ pub fn run() {
                         geometries.insert(window.label().to_string(), geometry);
                     };
                 }
+                // The main window is created hidden so the default size never
+                // flashes before the persisted geometry has been restored.
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
             }
             Ok(())
         })
@@ -180,18 +263,29 @@ pub fn run() {
             load_settings,
             load_settings_status,
             save_settings,
+            load_markdown_style,
+            save_markdown_style,
+            open_markdown_style,
             copy_mermaid_file,
+            copy_bmp_to_clipboard,
+            copy_text_file,
             update_external_app_settings,
             save_fold_state,
             get_initial_files,
             open_in_new_window,
             load_markdown,
+            create_markdown,
             save_markdown,
+            save_table_csv,
             stage_document_asset,
+            update_staged_text_asset,
+            stage_clipboard_image,
             discard_staged_assets,
             read_document_asset,
+            delete_document_asset,
             save_sharepoint_asset,
             diagnose_document,
+            document_watch_targets,
             start_watch,
             stop_watch,
             sync_watch_targets,
@@ -207,7 +301,8 @@ pub fn run() {
             open_in_editor,
             open_external_app,
             run_powershell,
-            open_external_url
+            open_external_url,
+            report_debug_window_state
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -230,6 +325,7 @@ mod tests {
                     "C:/docs/diagram.svg".into(),
                     "C:/docs/flow.mmd".into(),
                     "C:/docs/sequence.MERMAID".into(),
+                    "C:/docs/system.drawio".into(),
                     "C:/docs/image.png".into(),
                 ],
                 Path::new("C:/")
@@ -240,6 +336,7 @@ mod tests {
                 "C:\\docs\\diagram.svg",
                 "C:\\docs\\flow.mmd",
                 "C:\\docs\\sequence.MERMAID",
+                "C:\\docs\\system.drawio",
             ],
         );
     }
@@ -286,5 +383,25 @@ mod tests {
             launch_owner_label(["viewer-2".into(), "viewer-1".into()]),
             Some("viewer-1".into()),
         );
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn limits_debug_state_responses_to_unique_json_files_in_the_temp_directory() {
+        use super::debug_query_response_path;
+
+        let allowed = std::env::temp_dir().join("markdownviewer-debug-state-test.json");
+        assert_eq!(
+            debug_query_response_path(
+                &["MarkdownViewer.exe".into(), "--debug-query-state".into(), allowed.to_string_lossy().into_owned()],
+                Path::new("C:/workspace")
+            ),
+            Some(allowed)
+        );
+        assert!(debug_query_response_path(
+            &["MarkdownViewer.exe".into(), "--debug-query-state".into(), "C:/workspace/state.json".into()],
+            Path::new("C:/workspace")
+        )
+        .is_none());
     }
 }

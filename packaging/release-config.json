@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
+  "entryScript": "scripts\\publish-MarkdownViewer.ps1",
   "application": {
     "displayName": "MarkdownViewer",
     "artifactBaseName": "MarkdownViewer",
     "identityName": "com.markdownviewer.viewer",
     "publisher": "CN=KotorinChunChun",
     "architecture": "x64",
-    "certificateFriendlyName": "MarkdownViewer Self-Signed Code Signing",
+    "certificateFriendlyName": "PC共通証明書（signing.jsonの拇印で固定）",
     "certificateFileName": "MarkdownViewer.cer"
   },
   "build": {

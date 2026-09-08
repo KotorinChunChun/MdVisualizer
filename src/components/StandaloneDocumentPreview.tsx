@@ -3,7 +3,9 @@ import type { MarkdownLoadResult } from "../types/app";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { ImageRenderer } from "./ImageRenderer";
 import { MermaidBlock } from "./MermaidBlock";
+import { DrawioBlock } from "./DrawioBlock";
 import { getFileName } from "../lib/path";
+import { DelimitedTableBlock } from "./DelimitedTableBlock";
 
 interface StandaloneDocumentPreviewProps {
   document: MarkdownLoadResult;
@@ -13,6 +15,7 @@ interface StandaloneDocumentPreviewProps {
   windowId: string;
   tabId: string;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
+  onDrawioSave?: (source: string) => boolean | void | Promise<boolean | void>;
 }
 
 /** Displays direct SVG and Mermaid files through the same safe preview paths used by Markdown embeds. */
@@ -24,6 +27,7 @@ export function StandaloneDocumentPreview({
   windowId,
   tabId,
   onMediaOpen,
+  onDrawioSave,
 }: StandaloneDocumentPreviewProps) {
   if (document.kind === "svg") {
     return <div className="markdown-body standalone-document standalone-document--svg" ref={contentRef}>
@@ -48,6 +52,26 @@ export function StandaloneDocumentPreview({
         blockId="standalone-document"
         diagramIndex={0}
         diagramCount={1}
+        headingTitle={getFileName(document.path)}
+        onMediaOpen={onMediaOpen}
+      />
+    </div>;
+  }
+
+  if (document.kind === "tsv") {
+    return <div className="markdown-body standalone-document standalone-document--tsv" ref={contentRef}>
+      <DelimitedTableBlock language="tsv" source={document.content} headingLabel={<strong>{getFileName(document.path)}</strong>} />
+    </div>;
+  }
+
+  if (document.kind === "drawio") {
+    return <div className="markdown-body standalone-document standalone-document--drawio" ref={contentRef}>
+      <DrawioBlock
+        source={document.content}
+        theme={theme}
+        blockId="standalone-document"
+        headingTitle={getFileName(document.path)}
+        onSave={onDrawioSave}
         onMediaOpen={onMediaOpen}
       />
     </div>;

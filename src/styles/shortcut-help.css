@@ -3,6 +3,8 @@
 .shortcut-help__window header { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: .8rem 1rem; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); }
 .shortcut-help__window h2 { font-size: 1.15rem; }
 .shortcut-help__window header button { width: 2rem; height: 2rem; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: .5rem; font-size: 1.25rem; cursor: pointer; }
+.shortcut-help__window button:focus-visible,
+.shortcut-help__window a:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 .shortcut-help__window dl { padding: .5rem 1rem 1rem; }
 .shortcut-help__window dl > div { display: grid; grid-template-columns: minmax(11rem, 15rem) 1fr; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent); }
 .shortcut-help__window dt, .shortcut-help__window dd { margin: 0; }

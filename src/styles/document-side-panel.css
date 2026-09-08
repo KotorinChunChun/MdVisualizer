@@ -71,6 +71,7 @@
   border-radius: 0.45rem;
   cursor: pointer;
 }
+.document-side-panel:focus-visible { outline: 2px solid var(--accent-color); outline-offset: -2px; }
 
 .document-side-panel__content { min-height: 0; }
 .document-side-panel__empty { padding: 0.9rem; color: var(--text-secondary); }

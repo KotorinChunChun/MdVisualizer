@@ -9,7 +9,7 @@ type HastNode = {
 
 const BLOCK_TAGS = new Set([
   "h1", "h2", "h3", "h4", "h5", "h6",
-  "p", "li", "pre", "table", "blockquote", "img", "hr",
+  "p", "li", "pre", "table", "tr", "blockquote", "img", "hr",
 ]);
 
 function textContent(node: HastNode): string {
@@ -34,9 +34,10 @@ function assignBlockAnchors(
   node: HastNode,
   foldId: string,
   occurrences: Map<string, number>,
+  lineOffset = 0,
 ) {
   if (node.type !== "element") {
-    node.children?.forEach((child) => assignBlockAnchors(child, foldId, occurrences));
+    node.children?.forEach((child) => assignBlockAnchors(child, foldId, occurrences, lineOffset));
     return;
   }
 
@@ -52,16 +53,16 @@ function assignBlockAnchors(
       ...node.properties,
       "data-block-id": `${nodeFoldId}:${tagName}:${fingerprint}:${occurrence}`,
       "data-block-fold-id": nodeFoldId,
-      "data-source-line": node.position?.start?.line ?? undefined,
+      "data-source-line": node.position?.start?.line === undefined ? undefined : node.position.start.line + lineOffset,
     };
   }
 
-  node.children?.forEach((child) => assignBlockAnchors(child, nodeFoldId, occurrences));
+  node.children?.forEach((child) => assignBlockAnchors(child, nodeFoldId, occurrences, lineOffset));
 }
 
 /** Adds deterministic anchors used to restore the same visible text after reload. */
-export function rehypeBlockAnchors() {
-  return (tree: HastNode) => assignBlockAnchors(tree, "root", new Map());
+export function rehypeBlockAnchors(options: { lineOffset?: number } = {}) {
+  return (tree: HastNode) => assignBlockAnchors(tree, "root", new Map(), options.lineOffset ?? 0);
 }
 
 export const __test__ = { assignBlockAnchors };

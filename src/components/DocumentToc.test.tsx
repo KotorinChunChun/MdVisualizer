@@ -5,7 +5,10 @@ import { DocumentToc } from "./DocumentToc";
 const markdown = "# 親見出し\n\n本文\n\n## 子見出し\n\n### 孫見出し\n\n## もう一つの子";
 
 describe("DocumentToc", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    Reflect.deleteProperty(document, "elementFromPoint");
+  });
 
   it("renders the complete nested heading tree", () => {
     const { container } = render(<DocumentToc markdown={markdown} isOpen activeHeadingId="子見出し" onOpenChange={vi.fn()} onJump={vi.fn()} />);
@@ -48,5 +51,35 @@ describe("DocumentToc", () => {
     expect(container.querySelector(".document-toc--embedded")).toBeTruthy();
     expect(screen.getByRole("navigation", { name: "文書全体の目次" })).toBeTruthy();
     expect(screen.queryByRole("complementary", { name: "文書全体の目次" })).toBeNull();
+  });
+
+  it("moves a heading by keyboard only among siblings", () => {
+    const onMove = vi.fn(() => true);
+    render(<DocumentToc markdown={markdown} isOpen embedded onOpenChange={vi.fn()} onJump={vi.fn()} onMove={onMove} />);
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "子見出し" }), { key: "ArrowDown", altKey: true });
+    expect(onMove).toHaveBeenCalledWith("子見出し", "もう一つの子", "after");
+    expect(screen.getByText("子見出しを移動しました。")).toBeTruthy();
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "孫見出し" }), { key: "ArrowDown", altKey: true });
+    expect(onMove).toHaveBeenCalledOnce();
+  });
+
+  it("moves a complete heading block with pointer dragging without HTML5 drag and drop", () => {
+    const onMove = vi.fn(() => true);
+    const onJump = vi.fn();
+    const { container } = render(<DocumentToc markdown={markdown} isOpen embedded onOpenChange={vi.fn()} onJump={onJump} onMove={onMove} />);
+    const source = screen.getByRole("button", { name: "子見出し" });
+    const target = screen.getByRole("button", { name: "もう一つの子" });
+    Object.defineProperty(target, "getBoundingClientRect", { value: () => ({ top: 0, height: 20 }) });
+    Object.defineProperty(document, "elementFromPoint", { configurable: true, value: vi.fn(() => target) });
+
+    fireEvent.pointerDown(source, { pointerId: 1, button: 0, isPrimary: true, clientX: 4, clientY: 4 });
+    fireEvent.pointerMove(source, { pointerId: 1, clientX: 4, clientY: 18 });
+    expect(container.querySelector("li.is-drop-after")).toBeTruthy();
+    fireEvent.pointerUp(source, { pointerId: 1, clientX: 4, clientY: 18 });
+    expect(onMove).toHaveBeenCalledWith("子見出し", "もう一つの子", "after");
+    fireEvent.click(source);
+    expect(onJump).not.toHaveBeenCalled();
   });
 });

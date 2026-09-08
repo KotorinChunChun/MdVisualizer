@@ -68,14 +68,58 @@ describe("MermaidBlock", () => {
         svg: '<svg viewBox="0 0 800 400"><text>diagram</text></svg>',
         alt: "Mermaid図",
       },
-      mermaidSource: "flowchart LR\nA --> B",
+      headingTitle: "Mermaid図",
+      diagramSource: "flowchart LR\nA --> B",
+      diagramKind: "mermaid",
     });
+  });
+
+  it("copies the rendered diagram as BMP from the diagram context menu", async () => {
+    mocks.renderMermaid.mockResolvedValueOnce('<svg viewBox="0 0 10 10"><rect width="10" height="10" /></svg>');
+    render(<MermaidBlock source={"flowchart LR\nA --> B"} theme="dark" mode="on" />);
+    const diagram = await screen.findByRole("button", { name: "図を拡大" });
+    fireEvent.contextMenu(diagram);
+    await waitFor(() => expect(mocks.copyMermaid).toHaveBeenCalledWith(
+      "bmp",
+      "flowchart LR\nA --> B",
+      '<svg viewBox="0 0 10 10"><rect width="10" height="10" /></svg>',
+    ));
+  });
+
+  it("keeps a render error compact and opens details in an isolated dialog", async () => {
+    const longError = `Syntax Error in Text\n${"broken ".repeat(300)}`;
+    mocks.renderMermaid.mockRejectedValueOnce(new Error(longError));
+    const { container } = render(<MermaidBlock source="flowchart LR\nA - broken" theme="dark" mode="on" />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
+    expect(container.querySelector(".mermaid-error pre")).toBeNull();
+    expect(screen.queryByText(longError)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "エラー詳細" }));
+    expect(screen.getByRole("dialog", { name: "Mermaidエラー詳細" }).textContent).toContain("Syntax Error in Text");
+    fireEvent.click(screen.getByRole("button", { name: "エラー詳細を閉じる" }));
+    expect(screen.queryByRole("dialog", { name: "Mermaidエラー詳細" })).toBeNull();
+  });
+
+  it("opens the Mermaid GUI editor placeholder from the header pencil", async () => {
+    mocks.renderMermaid.mockResolvedValueOnce("<svg><text>diagram</text></svg>");
+    render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" headingTitle="処理フロー" editable />);
+
+    const header = screen.getByRole("toolbar", { name: "Mermaidブロック操作" });
+    expect(header.textContent).toContain("Mermaid — 処理フロー");
+    expect(screen.getByRole("button", { name: "Mermaid GUI編集" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集" }));
+    expect(screen.getByRole("dialog", { name: "Mermaid GUI編集" })).toBeTruthy();
+    expect(screen.getByText("Mermaid専用GUI編集ツールを準備中です。")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集を閉じる" }));
+    expect(screen.queryByRole("dialog", { name: "Mermaid GUI編集" })).toBeNull();
   });
 
   it("switches a rendered block between diagram and source", async () => {
     mocks.renderMermaid.mockResolvedValueOnce('<svg><text>diagram</text></svg>');
     render(<MermaidBlock source={"flowchart LR\nA --> B"} theme="dark" mode="on" />);
     await waitFor(() => expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy());
+    expect(screen.getByRole("button", { name: "BMPコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "コード" }));
     expect(screen.getByText(/flowchart LR/)).toBeTruthy();

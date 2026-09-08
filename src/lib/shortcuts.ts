@@ -4,6 +4,7 @@ export interface ShortcutDefinition {
 }
 
 export const SHORTCUTS: ShortcutDefinition[] = [
+  { keys: "Ctrl + N", description: "新しい未保存Markdownを作成" },
   { keys: "Ctrl + S", description: "編集中のローカルMarkdownを保存" },
   { keys: "Ctrl + F", description: "文書内を検索" },
   { keys: "Ctrl + P", description: "印刷／PDF" },
@@ -13,7 +14,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   { keys: "Ctrl + 0", description: "表示倍率を100%に戻す" },
   { keys: "Ctrl + W", description: "現在のタブを閉じる" },
   { keys: "Ctrl + Tab", description: "次のタブへ移動" },
-  { keys: "Ctrl + Shift + Tab", description: "前のタブへ移動" },
+  { keys: "Ctrl + Shift + Tab", description: "EVペインではEdit／Viewフォーカス切替、それ以外は前のタブへ移動" },
   { keys: "Ctrl + Shift + T", description: "最後に閉じたタブを復元" },
   { keys: "Alt + ← / マウス戻る", description: "前の表示状態へ戻る" },
   { keys: "Alt + → / マウス進む", description: "次の表示状態へ進む" },

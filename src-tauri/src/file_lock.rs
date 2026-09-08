@@ -1,8 +1,12 @@
 use crate::errors::{AppError, AppResult};
 use fs4::FileExt;
+use sha2::{Digest, Sha256};
 use std::fs::{self, OpenOptions};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
+
+const APP_IDENTIFIER: &str = "com.markdownviewer.viewer";
+const LOCK_DIRECTORY_NAME: &str = "locks";
 
 pub fn with_lock<T>(path: &Path, work: impl FnOnce() -> AppResult<T>) -> AppResult<T> {
     with_lock_timeout(path, Duration::from_secs(2), work)
@@ -18,7 +22,8 @@ pub fn with_lock_timeout<T>(
     work: impl FnOnce() -> AppResult<T>,
 ) -> AppResult<T> {
     ensure_parent_directory(path)?;
-    let lock_path = path.with_extension("lock");
+    let lock_path = lock_path(path)?;
+    ensure_parent_directory(&lock_path)?;
     let lock = OpenOptions::new()
         .create(true)
         .read(true)
@@ -36,6 +41,59 @@ pub fn with_lock_timeout<T>(
     let result = work();
     FileExt::unlock(&lock).map_err(|e| AppError::IoError(format!("release lock: {e}")))?;
     result
+}
+
+fn lock_path(path: &Path) -> AppResult<PathBuf> {
+    let lock_directory = lock_directory(path)?;
+    let normalized = normalized_target_path(path)?;
+    let identity = normalized.to_string_lossy().replace('\\', "/");
+    #[cfg(target_os = "windows")]
+    let identity = identity.to_lowercase();
+    let digest = Sha256::digest(identity.as_bytes());
+    let filename = digest
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    Ok(lock_directory.join(format!("{filename}.lock")))
+}
+
+fn normalized_target_path(path: &Path) -> AppResult<PathBuf> {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map_err(|error| AppError::IoError(format!("resolve lock target: {error}")))?
+            .join(path)
+    };
+    if let Ok(canonical) = fs::canonicalize(&absolute) {
+        return Ok(canonical);
+    }
+    match (absolute.parent(), absolute.file_name()) {
+        (Some(parent), Some(filename)) => Ok(fs::canonicalize(parent)
+            .unwrap_or_else(|_| parent.to_path_buf())
+            .join(filename)),
+        _ => Ok(absolute),
+    }
+}
+
+fn application_lock_directory(base: &Path) -> PathBuf {
+    base.join(APP_IDENTIFIER).join(LOCK_DIRECTORY_NAME)
+}
+
+#[cfg(not(test))]
+fn lock_directory(_target: &Path) -> AppResult<PathBuf> {
+    dirs::data_dir()
+        .map(|base| application_lock_directory(&base))
+        .ok_or_else(|| AppError::IoError("resolve application data directory".into()))
+}
+
+#[cfg(test)]
+fn lock_directory(target: &Path) -> AppResult<PathBuf> {
+    let parent = target
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .ok_or_else(|| AppError::IoError("resolve test lock directory".into()))?;
+    Ok(parent.join(".markdownviewer-test-locks"))
 }
 
 pub fn atomic_write(path: &Path, content: &[u8]) -> AppResult<()> {
@@ -116,11 +174,30 @@ mod tests {
     }
 
     #[test]
-    fn creates_missing_parent_before_opening_lock() {
+    fn creates_missing_parent_without_adjacent_lock_file() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("first-launch").join("settings.json");
         with_lock(&path, || Ok(())).unwrap();
-        assert!(path.parent().unwrap().join("settings.lock").exists());
+        assert!(path.parent().unwrap().exists());
+        assert!(!path.parent().unwrap().join("settings.lock").exists());
+        assert!(lock_path(&path).unwrap().exists());
+    }
+
+    #[test]
+    fn application_lock_directory_is_scoped_to_the_app_identifier() {
+        let base = Path::new("application-data");
+        assert_eq!(
+            application_lock_directory(base),
+            base.join("com.markdownviewer.viewer").join("locks")
+        );
+    }
+
+    #[test]
+    fn different_extensions_get_different_lock_files() {
+        let dir = tempdir().unwrap();
+        let markdown = dir.path().join("document.md");
+        let image = dir.path().join("document.png");
+        assert_ne!(lock_path(&markdown).unwrap(), lock_path(&image).unwrap());
     }
 
     #[test]

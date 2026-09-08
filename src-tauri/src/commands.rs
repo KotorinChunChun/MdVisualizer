@@ -1,15 +1,19 @@
-use crate::app_state::AppState;
+use crate::app_state::{AppState, DebugWindowState};
 use crate::asset_staging::{
-    read_document_asset as do_read_document_asset, DocumentAssetData, StagedAssetResult,
+    delete_document_asset as do_delete_document_asset, read_document_asset as do_read_document_asset, DocumentAssetData, StagedAssetResult,
 };
-use crate::document_edit::{save_markdown_with_assets as do_save_markdown, SaveMarkdownRequest};
+use crate::document_edit::{
+    create_markdown as do_create_markdown, save_markdown_with_assets as do_save_markdown,
+    CreateMarkdownRequest, SaveMarkdownRequest,
+};
 use crate::errors::AppError;
+use crate::file_lock::{atomic_write, with_lock};
 use crate::image_ops::{
     crop_image as do_crop_image, save_rendered_image as do_save_rendered_image, CropImageRequest,
     CropImageResult, SaveRenderedImageRequest,
 };
 use crate::image_references::{
-    rename_image_and_references as do_rename_image_and_references,
+    rename_image_and_references_with_options as do_rename_image_and_references,
     update_image_caption as do_update_image_caption, RenameImageResult,
 };
 use crate::markdown::{
@@ -22,7 +26,7 @@ use crate::sharepoint::{
 use crate::watcher::FileWatcher;
 use serde::Deserialize;
 use serde::Serialize;
-use std::io::Write;
+use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -37,15 +41,16 @@ pub use external::{
     PowerShellRunResult, RunPowerShellRequest,
 };
 pub use window_settings::{
-    get_initial_files, load_settings, load_settings_status, open_in_new_window,
-    restore_saved_window_geometry, save_fold_state, save_settings, save_window_geometry,
-    update_external_app_settings, window_geometry,
+    get_initial_files, load_markdown_style, load_settings, load_settings_status,
+    open_in_new_window, open_markdown_style, restore_saved_window_geometry, save_fold_state,
+    save_markdown_style, save_settings, save_window_geometry, update_external_app_settings,
+    window_geometry,
 };
 
 #[cfg(test)]
 use external::{
-    expand_external_app_value, is_allowed_external_url, run_powershell_process,
-    validate_powershell_request, ValidatedPowerShellRequest,
+    expand_external_app_value, is_allowed_external_url, normalize_powershell_path,
+    run_powershell_process, validate_powershell_request, ValidatedPowerShellRequest,
 };
 #[cfg(test)]
 use std::time::Duration;
@@ -58,26 +63,118 @@ use crate::app_state::WindowGeometry;
 
 static CLIPBOARD_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
+fn save_table_csv_file(path: &Path, content: &str) -> Result<PathBuf, String> {
+    if !path.is_absolute() {
+        return Err("CSVの保存先は絶対パスで指定してください。".to_string());
+    }
+    if !path.extension().is_some_and(|extension| extension.eq_ignore_ascii_case("csv")) {
+        return Err("CSVの保存先には.csvファイルを指定してください。".to_string());
+    }
+    if !path.parent().is_some_and(Path::is_dir) {
+        return Err("CSVの保存先フォルダーが存在しません。".to_string());
+    }
+    with_lock(path, || atomic_write(path, content.as_bytes())).map_err(|error| error.to_string())?;
+    Ok(path.to_path_buf())
+}
+
+#[tauri::command]
+pub fn save_table_csv(path: String, content: String) -> Result<String, String> {
+    save_table_csv_file(Path::new(&path), &content).map(|saved| saved.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub fn report_debug_window_state(
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    mut snapshot: DebugWindowState,
+) -> Result<(), String> {
+    #[cfg(debug_assertions)]
+    {
+        snapshot.label = window.label().to_string();
+        state
+            .debug_windows
+            .lock()
+            .map_err(|_| "Debug window state is unavailable.".to_string())?
+            .insert(snapshot.label.clone(), snapshot);
+        Ok(())
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let _ = (window, state, &mut snapshot);
+        Err("Debug state API is disabled in release builds.".to_string())
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MermaidFileCopyRequest {
     pub kind: String,
+    pub diagram_kind: String,
     pub source: String,
     pub svg: String,
     pub png_bytes: Vec<u8>,
 }
 
-fn mermaid_clipboard_file(request: MermaidFileCopyRequest) -> Result<(String, Vec<u8>), String> {
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TextFileCopyRequest {
+    pub filename: String,
+    pub content: String,
+    #[serde(default)]
+    pub utf8_bom: bool,
+}
+
+fn text_clipboard_file(request: TextFileCopyRequest) -> Result<(String, String, Vec<u8>), String> {
+    let filename = request.filename.trim();
+    if filename.is_empty()
+        || filename.contains(['/', '\\', ':', '*', '?', '"', '<', '>', '|'])
+        || filename == "."
+        || filename == ".."
+    {
+        return Err("ファイル名に使用できない文字が含まれています。".into());
+    }
+    let path = Path::new(filename);
+    let extension = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .filter(|value| !value.is_empty() && value.len() <= 16 && value.chars().all(|character| character.is_ascii_alphanumeric()))
+        .ok_or_else(|| "コピーするファイルの拡張子が不正です。".to_string())?
+        .to_ascii_lowercase();
+    let prefix = path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("file")
+        .chars()
+        .filter(|character| character.is_alphanumeric() || matches!(character, '-' | '_'))
+        .take(48)
+        .collect::<String>();
+    let prefix = if prefix.is_empty() { "file".to_string() } else { prefix };
+    let mut bytes = Vec::with_capacity(request.content.len() + if request.utf8_bom { 3 } else { 0 });
+    if request.utf8_bom {
+        bytes.extend_from_slice(&[0xef, 0xbb, 0xbf]);
+    }
+    bytes.extend_from_slice(request.content.as_bytes());
+    Ok((prefix, extension, bytes))
+}
+
+fn mermaid_clipboard_file(request: MermaidFileCopyRequest) -> Result<(String, String, Vec<u8>), String> {
+    let (prefix, code_extension) = match request.diagram_kind.as_str() {
+        "mermaid" => ("mermaid", "mmd"),
+        "drawio" => ("drawio", "drawio"),
+        _ => return Err("未対応の図表ファイル種別です。".into()),
+    };
     match request.kind.as_str() {
-        "code" => Ok(("mmd".into(), request.source.into_bytes())),
-        "svg" => Ok(("svg".into(), request.svg.into_bytes())),
-        "png" if !request.png_bytes.is_empty() => Ok(("png".into(), request.png_bytes)),
+        "code" => Ok((prefix.into(), code_extension.into(), request.source.into_bytes())),
+        "svg" => Ok((prefix.into(), "svg".into(), request.svg.into_bytes())),
+        "png" if !request.png_bytes.is_empty() => Ok((prefix.into(), "png".into(), request.png_bytes)),
         "png" => Err("PNGデータが空です。".into()),
+        "bmp" if !request.png_bytes.is_empty() => Ok((prefix.into(), "bmp".into(), request.png_bytes)),
+        "bmp" => Err("BMPデータが空です。".into()),
         _ => Err("未対応のMermaidコピー形式です。".into()),
     }
 }
 
-fn write_mermaid_clipboard_file(extension: &str, bytes: &[u8]) -> Result<PathBuf, String> {
+fn write_mermaid_clipboard_file(prefix: &str, extension: &str, bytes: &[u8]) -> Result<PathBuf, String> {
     let directory = std::env::temp_dir()
         .join("markdown-viewer")
         .join("clipboard");
@@ -89,7 +186,7 @@ fn write_mermaid_clipboard_file(extension: &str, bytes: &[u8]) -> Result<PathBuf
         .as_nanos();
     for _ in 0..16 {
         let sequence = CLIPBOARD_FILE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-        let path = directory.join(format!("mermaid-{timestamp}-{sequence}.{extension}"));
+        let path = directory.join(format!("{prefix}-{timestamp}-{sequence}.{extension}"));
         match std::fs::OpenOptions::new()
             .create_new(true)
             .write(true)
@@ -169,6 +266,64 @@ fn copy_file_to_clipboard(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
+fn copy_bmp_bytes_to_clipboard(bytes: &[u8]) -> Result<(), String> {
+    use std::ptr;
+    use windows_sys::Win32::Foundation::GlobalFree;
+    use windows_sys::Win32::System::DataExchange::{
+        CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
+    };
+    use windows_sys::Win32::System::Memory::{
+        GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE,
+    };
+    use windows_sys::Win32::System::Ole::CF_DIB;
+
+    // CF_DIB expects the BMP payload without BITMAPFILEHEADER (14 bytes).
+    if bytes.len() < 54 || &bytes[..2] != b"BM" {
+        return Err("BMPデータが不正です。".into());
+    }
+    let dib = &bytes[14..];
+    let memory = unsafe { GlobalAlloc(GMEM_MOVEABLE, dib.len()) };
+    if memory.is_null() {
+        return Err("クリップボード用メモリを確保できません。".into());
+    }
+    let data = unsafe { GlobalLock(memory) };
+    if data.is_null() {
+        unsafe { GlobalFree(memory) };
+        return Err("クリップボード用メモリをロックできません。".into());
+    }
+    unsafe {
+        ptr::copy_nonoverlapping(dib.as_ptr(), data.cast::<u8>(), dib.len());
+        GlobalUnlock(memory);
+        if OpenClipboard(ptr::null_mut()) == 0 {
+            GlobalFree(memory);
+            return Err("クリップボードを開けません。".into());
+        }
+        if EmptyClipboard() == 0 {
+            CloseClipboard();
+            GlobalFree(memory);
+            return Err("クリップボードを空にできません。".into());
+        }
+        if SetClipboardData(CF_DIB as u32, memory).is_null() {
+            CloseClipboard();
+            GlobalFree(memory);
+            return Err("BMPをクリップボードへ設定できません。".into());
+        }
+        CloseClipboard();
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn copy_bmp_bytes_to_clipboard(_bytes: &[u8]) -> Result<(), String> {
+    Err("BMP画像のコピーはWindowsでのみ利用できます。".into())
+}
+
+#[tauri::command]
+pub fn copy_bmp_to_clipboard(bytes: Vec<u8>) -> Result<(), String> {
+    copy_bmp_bytes_to_clipboard(&bytes)
+}
+
 #[cfg(not(target_os = "windows"))]
 fn copy_file_to_clipboard(_path: &Path) -> Result<(), String> {
     Err("ファイルとしてコピーはWindowsでのみ利用できます。".into())
@@ -176,8 +331,19 @@ fn copy_file_to_clipboard(_path: &Path) -> Result<(), String> {
 
 #[tauri::command]
 pub fn copy_mermaid_file(request: MermaidFileCopyRequest) -> Result<String, String> {
-    let (extension, bytes) = mermaid_clipboard_file(request)?;
-    let path = write_mermaid_clipboard_file(&extension, &bytes)?;
+    let (prefix, extension, bytes) = mermaid_clipboard_file(request)?;
+    let path = write_mermaid_clipboard_file(&prefix, &extension, &bytes)?;
+    if let Err(error) = copy_file_to_clipboard(&path) {
+        let _ = std::fs::remove_file(&path);
+        return Err(error);
+    }
+    Ok(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub fn copy_text_file(request: TextFileCopyRequest) -> Result<String, String> {
+    let (prefix, extension, bytes) = text_clipboard_file(request)?;
+    let path = write_mermaid_clipboard_file(&prefix, &extension, &bytes)?;
     if let Err(error) = copy_file_to_clipboard(&path) {
         let _ = std::fs::remove_file(&path);
         return Err(error);
@@ -212,21 +378,54 @@ pub async fn save_markdown(
     window: WebviewWindow,
     state: State<'_, AppState>,
     request: SaveMarkdownRequest,
-) -> Result<MarkdownLoadResult, String> {
+) -> Result<MarkdownSaveResult, String> {
     if !is_spmd_uri(&request.path) {
-        return do_save_markdown(request, &state.asset_staging)
-            .map_err(|error| error.to_string());
+        return match do_save_markdown(request.clone(), &state.asset_staging) {
+            Ok(document) => Ok(MarkdownSaveResult::Saved { document }),
+            Err(AppError::Conflict(_)) => do_load_markdown(&request.path)
+                .map(|latest| MarkdownSaveResult::Conflict { latest })
+                .map_err(|error| error.to_string()),
+            Err(error) => Err(error.to_string()),
+        };
     }
     let config = SharePointAuthConfig::embedded();
-    state
+    let saved = state
         .sharepoint
-        .save_markdown(request, &config, |prompt| {
+        .save_markdown(request.clone(), &config, |prompt| {
             window
                 .emit("sharepoint-authentication-required", prompt)
                 .map_err(|error| SharePointError::Authentication(error.to_string()))
         })
-        .await
-        .map_err(|error| error.to_string())
+        .await;
+    match saved {
+        Ok(document) => Ok(MarkdownSaveResult::Saved { document }),
+        Err(SharePointError::MarkdownConflict) => {
+            let source = parse_spmd_uri(&request.path).map_err(|error| error.to_string())?;
+            state
+                .sharepoint
+                .load_markdown(&source, &config, |prompt| {
+                    window
+                        .emit("sharepoint-authentication-required", prompt)
+                        .map_err(|error| SharePointError::Authentication(error.to_string()))
+                })
+                .await
+                .map(|latest| MarkdownSaveResult::Conflict { latest })
+                .map_err(|error| error.to_string())
+        }
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "status", rename_all = "camelCase")]
+pub enum MarkdownSaveResult {
+    Saved { document: MarkdownLoadResult },
+    Conflict { latest: MarkdownLoadResult },
+}
+
+#[tauri::command]
+pub fn create_markdown(request: CreateMarkdownRequest) -> Result<MarkdownLoadResult, String> {
+    do_create_markdown(request).map_err(|error| error.to_string())
 }
 
 #[derive(Deserialize)]
@@ -236,6 +435,26 @@ pub struct StageDocumentAssetRequest {
     preferred_filename: String,
     base64: Option<String>,
     text: Option<String>,
+    preferred_source: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StageClipboardImageRequest {
+    document_path: String,
+    preferred_filename: String,
+    base64: String,
+    destination: String,
+    absolute_directory: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StagedClipboardImageResult {
+    id: String,
+    filename: String,
+    media_type: &'static str,
+    base64: String,
 }
 
 #[tauri::command]
@@ -252,14 +471,61 @@ pub fn stage_document_asset(
         )
         .map_err(|_| "Base64 asset data is invalid.".to_string())?
     };
+    if let Some(source) = request.preferred_source.filter(|value| !value.trim().is_empty()) {
+        state.asset_staging.stage_relative(&request.document_path, &source, &bytes)
+    } else {
+        state.asset_staging.stage(&request.document_path, &request.preferred_filename, &bytes)
+    }
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn update_staged_text_asset(
+    state: State<'_, AppState>,
+    id: String,
+    text: String,
+) -> Result<(), String> {
     state
         .asset_staging
-        .stage(
+        .update_text(&id, &text)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn stage_clipboard_image(
+    state: State<'_, AppState>,
+    request: StageClipboardImageRequest,
+) -> Result<StagedClipboardImageResult, String> {
+    let source = base64::Engine::decode(
+        &base64::engine::general_purpose::STANDARD,
+        request.base64,
+    )
+    .map_err(|_| "Base64 clipboard image data is invalid.".to_string())?;
+    let image = image::load_from_memory(&source)
+        .map_err(|_| "Clipboard image data is not a supported raster image.".to_string())?;
+    let mut png = Cursor::new(Vec::new());
+    image
+        .write_to(&mut png, image::ImageFormat::Png)
+        .map_err(|error| format!("Convert clipboard image to PNG: {error}"))?;
+    let staged = state
+        .asset_staging
+        .stage_at(
             &request.document_path,
             &request.preferred_filename,
-            &bytes,
+            &request.destination,
+            request.absolute_directory.as_deref(),
+            png.get_ref(),
         )
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+    Ok(StagedClipboardImageResult {
+        id: staged.id,
+        filename: staged.filename,
+        media_type: "image/png",
+        base64: base64::Engine::encode(
+            &base64::engine::general_purpose::STANDARD,
+            png.get_ref(),
+        ),
+    })
 }
 
 #[tauri::command]
@@ -318,7 +584,7 @@ pub struct DiagnosticItem {
     message: String,
 }
 
-fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>) -> String {
+fn heading_base_id(value: &str) -> String {
     let normalized = value.trim().to_lowercase();
     let mut slug = String::new();
     let mut separator = false;
@@ -332,11 +598,29 @@ fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>
         }
     }
     let slug = slug.trim_matches('-').to_string();
-    let base = if slug.is_empty() {
+    if slug.is_empty() {
         "section".to_string()
     } else {
         slug
-    };
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteDocumentAssetRequest {
+    pub document_path: String,
+    pub source: String,
+    pub expected_revision: Option<String>,
+}
+
+#[tauri::command]
+pub fn delete_document_asset(request: DeleteDocumentAssetRequest) -> Result<(), String> {
+    do_delete_document_asset(&request.document_path, &request.source, request.expected_revision.as_deref())
+        .map_err(|error| error.to_string())
+}
+
+fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>) -> String {
+    let base = heading_base_id(value);
     let count = counts
         .entry(base.clone())
         .and_modify(|value| *value += 1)
@@ -348,6 +632,228 @@ fn heading_id(value: &str, counts: &mut std::collections::HashMap<String, usize>
     }
 }
 
+fn decode_reference(value: &str) -> String {
+    percent_encoding::percent_decode_str(value).decode_utf8_lossy().into_owned()
+}
+
+fn fence_marker(line: &str) -> Option<(char, usize, &str)> {
+    let indentation = line.len() - line.trim_start_matches(' ').len();
+    if indentation > 3 {
+        return None;
+    }
+    let marker = line[indentation..].chars().next()?;
+    if marker != '`' && marker != '~' {
+        return None;
+    }
+    let count = line[indentation..]
+        .chars()
+        .take_while(|character| *character == marker)
+        .count();
+    (count >= 3).then(|| (marker, count, &line[indentation + count..]))
+}
+
+fn update_fence(fence: &mut Option<(char, usize)>, line: &str) {
+    let Some((marker, count, remainder)) = fence_marker(line) else {
+        return;
+    };
+    match *fence {
+        None => *fence = Some((marker, count)),
+        Some((open_marker, open_count))
+            if marker == open_marker && count >= open_count && remainder.trim().is_empty() =>
+        {
+            *fence = None;
+        }
+        _ => {}
+    }
+}
+
+fn atx_heading_title(line: &str) -> Option<&str> {
+    let indentation = line.len() - line.trim_start_matches(' ').len();
+    if indentation > 3 {
+        return None;
+    }
+    let content = &line[indentation..];
+    let hash_count = content.chars().take_while(|character| *character == '#').count();
+    if !(1..=6).contains(&hash_count) {
+        return None;
+    }
+    let rest = &content[hash_count..];
+    if !rest.starts_with(' ') && !rest.starts_with('\t') {
+        return None;
+    }
+    let mut title = rest.trim();
+    while title.ends_with('#') {
+        let without_hash = title[..title.len() - 1].trim_end();
+        if without_hash.len() == title.len() {
+            break;
+        }
+        title = without_hash;
+    }
+    Some(title)
+}
+
+fn markdown_heading_ids(
+    source: &str,
+) -> (std::collections::HashSet<String>, std::collections::HashMap<String, usize>) {
+    let mut counts = std::collections::HashMap::new();
+    let mut ids = std::collections::HashSet::new();
+    let mut bases = std::collections::HashMap::new();
+    let mut fence = None;
+    for line in source.replace("\r\n", "\n").replace('\r', "\n").lines() {
+        if fence.is_some() {
+            update_fence(&mut fence, line);
+            continue;
+        }
+        if fence_marker(line).is_some() {
+            update_fence(&mut fence, line);
+            continue;
+        }
+        if let Some(title) = atx_heading_title(line) {
+            let id = heading_id(title, &mut counts);
+            let base = heading_base_id(title);
+            *bases.entry(base).or_insert(0) += 1;
+            ids.insert(id);
+        }
+    }
+    (ids, bases)
+}
+
+fn diagnostic_reference_target(
+    reference: &str,
+    base: &Path,
+    document_path: &Path,
+) -> (PathBuf, Option<String>) {
+    // Split before percent-decoding so an encoded '#' remains part of a file name.
+    let (without_fragment, anchor) = reference
+        .split_once('#')
+        .map_or((reference, None), |(file, anchor)| (file, Some(decode_reference(anchor))));
+    let path_part = without_fragment
+        .split_once('?')
+        .map_or(without_fragment, |(path, _)| path);
+    let path_part = decode_reference(path_part).trim().to_string();
+    let target = if path_part.is_empty() {
+        document_path.to_path_buf()
+    } else {
+        let candidate = PathBuf::from(path_part);
+        if candidate.is_absolute() { candidate } else { base.join(candidate) }
+    };
+    (target, anchor)
+}
+
+fn is_external_reference(reference: &str) -> bool {
+    let value = decode_reference(reference).trim().to_ascii_lowercase();
+    if value.starts_with("//") {
+        return true;
+    }
+    let is_windows_path = value.as_bytes().get(1) == Some(&b':')
+        && value.as_bytes().first().is_some_and(u8::is_ascii_alphabetic);
+    !is_windows_path
+        && value
+            .find(':')
+            .is_some_and(|colon| colon > 0 && value[..colon].chars().all(|character| {
+                character.is_ascii_alphanumeric() || matches!(character, '+' | '-' | '.')
+            }))
+}
+
+fn markdown_references(line: &str) -> Vec<(String, bool)> {
+    let pattern = regex::Regex::new(
+        r#"(?x)(?P<image>!)?\[[^\]]*\]\(\s*(?:<(?P<bracket>[^>\r\n]*)>|(?P<plain>[^\s)\r\n]+))"#,
+    )
+    .unwrap();
+    pattern
+        .captures_iter(line)
+        .filter_map(|capture| {
+            let reference = capture
+                .name("bracket")
+                .or_else(|| capture.name("plain"))?
+                .as_str()
+                .trim()
+                .to_string();
+            Some((reference, capture.name("image").is_some()))
+        })
+        .collect()
+}
+
+fn html_image_references(line: &str) -> Vec<(String, bool)> {
+    let image_tag = regex::Regex::new(r"(?is)<img\b[^>]*>").unwrap();
+    let attribute = regex::Regex::new(
+        r#"(?i)(?:^|\s)([a-z_:][a-z0-9:._-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))"#,
+    )
+    .unwrap();
+    image_tag
+        .find_iter(line)
+        .filter_map(|tag| {
+            let mut source = None;
+            let mut alt = None;
+            for capture in attribute.captures_iter(tag.as_str()) {
+                let name = capture.get(1)?.as_str();
+                let value = capture
+                    .get(2)
+                    .or_else(|| capture.get(3))
+                    .or_else(|| capture.get(4))
+                    .map(|value| value.as_str().to_string())
+                    .unwrap_or_default();
+                if name.eq_ignore_ascii_case("src") {
+                    source = Some(value);
+                } else if name.eq_ignore_ascii_case("alt") {
+                    alt = Some(value);
+                }
+            }
+            source.map(|source| (source, alt.map_or(true, |value| value.trim().is_empty())))
+        })
+        .collect()
+}
+
+fn reference_target_path(reference: &str, base: &Path, document_path: &Path) -> PathBuf {
+    let (target, _) = diagnostic_reference_target(reference, base, document_path);
+    target.canonicalize().unwrap_or(target)
+}
+
+fn collect_document_watch_targets(loaded: &MarkdownLoadResult) -> Vec<String> {
+    if loaded.kind != DocumentKind::Markdown {
+        return vec![loaded.path.clone()];
+    }
+    let source = loaded.content.replace("\r\n", "\n");
+    let base = PathBuf::from(&loaded.base_dir);
+    let obsidian = regex::Regex::new(r#"!?\[\[([^\]|#]+)(?:\|[^\]]*)?\]\]"#).unwrap();
+    let mut result = vec![PathBuf::from(&loaded.path)];
+    let mut fence = None;
+    for line in source.lines() {
+        if fence.is_some() {
+            update_fence(&mut fence, line);
+            continue;
+        }
+        if fence_marker(line).is_some() {
+            update_fence(&mut fence, line);
+            continue;
+        }
+        let mut refs: Vec<String> = markdown_references(line)
+            .into_iter()
+            .map(|(reference, _)| reference)
+            .collect();
+        refs.extend(html_image_references(line).into_iter().map(|(reference, _)| reference));
+        refs.extend(obsidian.captures_iter(line).filter_map(|capture| capture.get(1).map(|value| value.as_str().trim().to_owned())));
+        for reference in refs {
+            if is_external_reference(&reference) {
+                continue;
+            }
+            let target = reference_target_path(&reference, &base, Path::new(&loaded.path));
+            if target != Path::new(&loaded.path) {
+                result.push(target);
+            }
+        }
+    }
+    result.sort();
+    result.dedup();
+    result.into_iter().map(|path| path.to_string_lossy().into_owned()).collect()
+}
+
+#[tauri::command]
+pub fn document_watch_targets(path: String) -> Result<Vec<String>, String> {
+    let loaded = do_load_markdown(&path).map_err(|error| error.to_string())?;
+    Ok(collect_document_watch_targets(&loaded))
+}
+
 #[tauri::command]
 pub fn diagnose_document(path: String) -> Result<Vec<DiagnosticItem>, String> {
     let loaded = do_load_markdown(&path).map_err(|error| error.to_string())?;
@@ -357,98 +863,93 @@ pub fn diagnose_document(path: String) -> Result<Vec<DiagnosticItem>, String> {
     let source = loaded.content.replace("\r\n", "\n");
     let base = PathBuf::from(&loaded.base_dir);
     let mut diagnostics = Vec::new();
-    let mut ids = std::collections::HashMap::new();
-    let mut heading_ids = std::collections::HashSet::new();
+    let (heading_ids, heading_bases) = markdown_heading_ids(&source);
+    let mut seen_heading_bases = std::collections::HashMap::new();
+    let mut heading_fence = None;
     for (index, line) in source.lines().enumerate() {
-        if let Some(captures) = regex::Regex::new(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
-            .unwrap()
-            .captures(line)
-        {
-            let id = heading_id(
-                captures
-                    .get(2)
-                    .map(|value| value.as_str())
-                    .unwrap_or_default(),
-                &mut ids,
-            );
-            if !heading_ids.insert(id.clone()) {
+        if heading_fence.is_some() {
+            update_fence(&mut heading_fence, line);
+            continue;
+        }
+        if fence_marker(line).is_some() {
+            update_fence(&mut heading_fence, line);
+            continue;
+        }
+        // Heading duplicate checks are based on the renderer's base slug,
+        // before its deterministic -2/-3 suffix is applied.
+        if let Some(title) = atx_heading_title(line) {
+            let base_id = heading_base_id(title);
+            let seen = seen_heading_bases.entry(base_id.clone()).or_insert(0);
+            *seen += 1;
+            if *seen > 1 && heading_bases.get(&base_id).copied().unwrap_or(0) > 1 {
                 diagnostics.push(DiagnosticItem {
                     severity: "warning".into(),
                     kind: "見出しID".into(),
                     line: index + 1,
-                    reference: id,
-                    message: "見出しIDが重複しています。".into(),
+                    reference: base_id,
+                    message: "見出しIDの基底値が重複しています。自動採番されたアンカーを使用してください。".into(),
                 });
             }
         }
     }
-    let link = regex::Regex::new(r"!?\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)").unwrap();
+    let mut fence = None;
     for (index, line) in source.lines().enumerate() {
-        for captures in link.captures_iter(line) {
-            let reference = captures
-                .get(1)
-                .map(|value| value.as_str())
-                .unwrap_or_default();
-            if reference.starts_with("http://")
-                || reference.starts_with("https://")
-                || reference.starts_with("mailto:")
-            {
+        if fence.is_some() {
+            update_fence(&mut fence, line);
+            continue;
+        }
+        if fence_marker(line).is_some() {
+            update_fence(&mut fence, line);
+            continue;
+        }
+        let mut references = markdown_references(line);
+        references.extend(
+            html_image_references(line)
+                .into_iter()
+                .map(|(reference, _)| (reference, true)),
+        );
+        for (reference, is_image) in references {
+            if is_external_reference(&reference) {
                 continue;
             }
-            let (file_part, anchor) = reference
-                .split_once('#')
-                .map_or((reference, None), |(file, anchor)| (file, Some(anchor)));
-            let target = if file_part.is_empty() {
-                PathBuf::from(&loaded.path)
-            } else {
-                let candidate = PathBuf::from(file_part);
-                if candidate.is_absolute() {
-                    candidate
-                } else {
-                    base.join(candidate)
-                }
-            };
+            let (target, anchor) = diagnostic_reference_target(&reference, &base, Path::new(&loaded.path));
             if !target.exists() {
                 diagnostics.push(DiagnosticItem {
                     severity: "error".into(),
-                    kind: if line.trim_start().starts_with("!") {
-                        "画像".into()
-                    } else {
-                        "Markdownリンク".into()
-                    },
-                    line: index + 1,
-                    reference: reference.into(),
+                    kind: if is_image { "画像".into() } else { "Markdownリンク".into() }, line: index + 1, reference: reference.clone(),
                     message: "参照先ファイルが存在しません。".into(),
                 });
             } else if let Some(anchor) = anchor {
-                if target == PathBuf::from(&loaded.path) && !heading_ids.contains(anchor) {
+                let target_ids = if target.canonicalize().ok().as_deref() == Some(Path::new(&loaded.path)) {
+                    Some(heading_ids.clone())
+                } else if matches!(
+                    crate::markdown::document_kind(&target),
+                    Some(DocumentKind::Markdown)
+                ) {
+                    do_load_markdown(&target.to_string_lossy())
+                        .ok()
+                        .map(|document| markdown_heading_ids(&document.content).0)
+                } else {
+                    None
+                };
+                if target_ids.is_some_and(|ids| {
+                    !ids.contains(&anchor) && !ids.contains(&heading_base_id(&anchor))
+                }) {
                     diagnostics.push(DiagnosticItem {
-                        severity: "error".into(),
-                        kind: "見出しアンカー".into(),
-                        line: index + 1,
-                        reference: reference.into(),
-                        message: "参照先見出しが存在しません。".into(),
+                        severity: "error".into(), kind: "見出しアンカー".into(), line: index + 1, reference: reference.clone(), message: "参照先見出しが存在しません。".into(),
                     });
                 }
             }
         }
-        if let Some(captures) = regex::Regex::new(r"!\[([^\]]*)\]\(")
+        let markdown_alt_empty = regex::Regex::new(r#"!\[([^\]]*)\]\("#)
             .unwrap()
-            .captures(line)
-        {
-            if captures
-                .get(1)
-                .map(|value| value.as_str().trim().is_empty())
-                .unwrap_or(false)
-            {
-                diagnostics.push(DiagnosticItem {
-                    severity: "warning".into(),
-                    kind: "画像alt".into(),
-                    line: index + 1,
-                    reference: line.trim().into(),
-                    message: "画像のaltテキストが空です。".into(),
-                });
-            }
+            .captures_iter(line)
+            .any(|capture| capture.get(1).is_some_and(|value| value.as_str().trim().is_empty()));
+        let html_alt_empty = html_image_references(line)
+            .into_iter()
+            .any(|(_, alt_empty)| alt_empty);
+        if markdown_alt_empty || html_alt_empty {
+            diagnostics.push(DiagnosticItem { severity: "warning".into(), kind: "画像alt".into(), line: index + 1, reference: line.trim().into(), message: "画像のaltテキストが空です。".into() });
         }
     }
     Ok(diagnostics)
@@ -578,6 +1079,8 @@ pub struct RenameImageReferencesRequest {
     markdown_path: String,
     image_path: String,
     new_filename: String,
+    #[serde(default)]
+    overwrite: bool,
 }
 
 #[tauri::command]
@@ -588,6 +1091,7 @@ pub fn rename_image_and_references(
         Path::new(&request.markdown_path),
         Path::new(&request.image_path),
         &request.new_filename,
+        request.overwrite,
     )
     .map_err(|error| error.to_string())
 }
@@ -1125,6 +1629,31 @@ mod tests {
     use super::*;
 
     #[test]
+    fn markdown_save_conflict_serializes_with_the_latest_document() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("latest.md");
+        std::fs::write(&path, "# latest").unwrap();
+        let latest = do_load_markdown(&path.to_string_lossy()).unwrap();
+        let value = serde_json::to_value(MarkdownSaveResult::Conflict { latest }).unwrap();
+
+        assert_eq!(value["status"], "conflict");
+        assert_eq!(value["latest"]["content"], "# latest");
+        assert!(!value["latest"]["revision"].as_str().unwrap().is_empty());
+    }
+
+    #[test]
+    fn table_csv_save_requires_an_absolute_csv_path_and_writes_exact_content() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("table.csv");
+        let content = "\u{feff}名前,値\nA,1";
+
+        assert_eq!(save_table_csv_file(&path, content).unwrap(), path);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), content);
+        assert!(save_table_csv_file(Path::new("relative.csv"), content).is_err());
+        assert!(save_table_csv_file(&directory.path().join("table.txt"), content).is_err());
+    }
+
+    #[test]
     fn vscode_lookup_checks_path_and_install_layout_executables() {
         let candidates = vscode_path_candidates(Path::new("C:/tools/vscode/bin"));
         #[cfg(target_os = "windows")]
@@ -1177,18 +1706,16 @@ mod tests {
             document_path: document.to_string_lossy().into_owned(),
             language: "pwsh".into(),
             source: "Get-Location".into(),
-            working_directory: None,
         })
         .unwrap();
         assert_eq!(
             validated.working_directory,
-            std::fs::canonicalize(directory.path()).unwrap()
+            normalize_powershell_path(&std::fs::canonicalize(directory.path()).unwrap())
         );
         assert!(validate_powershell_request(RunPowerShellRequest {
             document_path: document.to_string_lossy().into_owned(),
             language: "bash".into(),
             source: "echo unsafe".into(),
-            working_directory: None,
         })
         .is_err());
         let text_file = directory.path().join("sample.txt");
@@ -1197,18 +1724,32 @@ mod tests {
             document_path: text_file.to_string_lossy().into_owned(),
             language: "pwsh".into(),
             source: "Get-Location".into(),
-            working_directory: None,
         })
         .is_err());
     }
 
     #[cfg(target_os = "windows")]
     #[test]
+    fn powershell_path_normalization_removes_verbatim_prefixes() {
+        assert_eq!(
+            normalize_powershell_path(Path::new(r"\\?\C:\docs\sample")),
+            PathBuf::from(r"C:\docs\sample")
+        );
+        assert_eq!(
+            normalize_powershell_path(Path::new(r"\\?\UNC\server\share\sample")),
+            PathBuf::from(r"\\server\share\sample")
+        );
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
     fn powershell_process_captures_output_and_enforces_timeout() {
         let directory = tempfile::tempdir().unwrap();
+        let special_directory = directory.path().join("日本語 & O'Brien");
+        std::fs::create_dir(&special_directory).unwrap();
         let output = run_powershell_process(
             ValidatedPowerShellRequest {
-                working_directory: directory.path().to_path_buf(),
+                working_directory: special_directory.clone(),
                 source: "Write-Output 'safe-output'".into(),
             },
             Duration::from_secs(30),
@@ -1223,6 +1764,19 @@ mod tests {
         );
         assert!(output.stdout.contains("safe-output"));
         assert!(!output.timed_out);
+
+        let location = run_powershell_process(
+            ValidatedPowerShellRequest {
+                working_directory: special_directory.clone(),
+                source: "(Get-Location).Path".into(),
+            },
+            Duration::from_secs(30),
+        )
+        .unwrap();
+        assert_eq!(
+            normalize_powershell_path(Path::new(location.stdout.trim())),
+            normalize_powershell_path(&special_directory)
+        );
 
         let timed_out = run_powershell_process(
             ValidatedPowerShellRequest {
@@ -1649,26 +2203,70 @@ mod tests {
     fn prepares_expected_file_contents_for_each_mermaid_copy_kind() {
         let request = || MermaidFileCopyRequest {
             kind: "code".into(),
+            diagram_kind: "mermaid".into(),
             source: "flowchart LR".into(),
             svg: "<svg/>".into(),
             png_bytes: vec![137, 80, 78, 71],
         };
         assert_eq!(
             mermaid_clipboard_file(request()).unwrap(),
-            ("mmd".into(), b"flowchart LR".to_vec())
+            ("mermaid".into(), "mmd".into(), b"flowchart LR".to_vec())
         );
         let mut svg = request();
         svg.kind = "svg".into();
         assert_eq!(
             mermaid_clipboard_file(svg).unwrap(),
-            ("svg".into(), b"<svg/>".to_vec())
+            ("mermaid".into(), "svg".into(), b"<svg/>".to_vec())
         );
         let mut png = request();
         png.kind = "png".into();
         assert_eq!(
             mermaid_clipboard_file(png).unwrap(),
-            ("png".into(), vec![137, 80, 78, 71])
+            ("mermaid".into(), "png".into(), vec![137, 80, 78, 71])
         );
+        let mut bmp = request();
+        bmp.kind = "bmp".into();
+        bmp.png_bytes = vec![0x42, 0x4d, 0, 0];
+        assert_eq!(
+            mermaid_clipboard_file(bmp).unwrap(),
+            ("mermaid".into(), "bmp".into(), vec![0x42, 0x4d, 0, 0])
+        );
+
+        let mut drawio = request();
+        drawio.diagram_kind = "drawio".into();
+        drawio.source = "<mxfile/>".into();
+        assert_eq!(
+            mermaid_clipboard_file(drawio).unwrap(),
+            ("drawio".into(), "drawio".into(), b"<mxfile/>".to_vec())
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_bmp_before_touching_the_clipboard() {
+        assert!(copy_bmp_bytes_to_clipboard(&[]).is_err());
+        assert!(copy_bmp_bytes_to_clipboard(b"not-a-bmp").is_err());
+    }
+
+    #[test]
+    fn prepares_validated_text_clipboard_files_with_optional_utf8_bom() {
+        assert_eq!(
+            text_clipboard_file(TextFileCopyRequest {
+                filename: "table.csv".into(),
+                content: "a,b\n1,2".into(),
+                utf8_bom: true,
+            }).unwrap(),
+            ("table".into(), "csv".into(), [vec![0xef, 0xbb, 0xbf], b"a,b\n1,2".to_vec()].concat()),
+        );
+        assert!(text_clipboard_file(TextFileCopyRequest {
+            filename: "../escape.txt".into(),
+            content: "x".into(),
+            utf8_bom: false,
+        }).is_err());
+        assert!(text_clipboard_file(TextFileCopyRequest {
+            filename: "no-extension".into(),
+            content: "x".into(),
+            utf8_bom: false,
+        }).is_err());
     }
 
     #[test]
@@ -1685,5 +2283,97 @@ mod tests {
         assert!(diagnose_document(svg.to_string_lossy().into_owned())
             .unwrap()
             .is_empty());
+    }
+
+    #[test]
+    fn diagnostics_decode_references_and_check_external_anchors_and_html_alt() {
+        let directory = tempfile::tempdir().unwrap();
+        let target = directory.path().join("参照先.md");
+        std::fs::write(&target, "# 見出し\n").unwrap();
+        let source = directory.path().join("main.md");
+        std::fs::write(&source, "# 重複\n# 重複\n[ok](%E5%8F%82%E7%85%A7%E5%85%88.md#%E8%A6%8B%E5%87%BA%E3%81%97)\n[bad](%E5%8F%82%E7%85%A7%E5%85%88.md#missing)\n<img src=\"missing.png\" alt=\"\">\n```md\n[ignored](missing.md)\n````\n").unwrap();
+        let items = diagnose_document(source.to_string_lossy().into_owned()).unwrap();
+        assert!(items.iter().any(|item| item.kind == "見出しID"));
+        assert!(items.iter().any(|item| item.kind == "見出しアンカー" && item.reference.contains("missing")));
+        assert!(items.iter().any(|item| item.kind == "画像" && item.reference == "missing.png"));
+        assert!(items.iter().any(|item| item.kind == "画像alt"));
+        assert!(!items.iter().any(|item| item.reference.contains("ignored")));
+    }
+
+    #[test]
+    fn reference_target_decodes_path_and_fragment_without_decoding_encoded_hashes() {
+        let base = Path::new("C:/docs");
+        let document = base.join("main.md");
+        let (target, anchor) = diagnostic_reference_target(
+            "%E5%8F%82%E7%85%A7%232.md#%E8%A6%8B%E5%87%BA%E3%81%97%202",
+            base,
+            &document,
+        );
+
+        assert_eq!(target, base.join("参照#2.md"));
+        assert_eq!(anchor.as_deref(), Some("見出し 2"));
+    }
+
+    #[test]
+    fn diagnostics_handle_indented_headings_and_do_not_parse_fenced_content() {
+        let directory = tempfile::tempdir().unwrap();
+        let source = directory.path().join("headings.md");
+        std::fs::write(
+            &source,
+            "  # Same\n# Same\n~~~md\n# Same\n[missing](missing.md)\n~~~\n",
+        )
+        .unwrap();
+
+        let items = diagnose_document(source.to_string_lossy().into_owned()).unwrap();
+        let duplicate_lines: Vec<_> = items
+            .iter()
+            .filter(|item| item.kind == "見出しID")
+            .map(|item| item.line)
+            .collect();
+        assert_eq!(duplicate_lines, vec![2]);
+        assert!(!items.iter().any(|item| item.reference.contains("missing")));
+    }
+
+    #[test]
+    fn diagnostics_check_each_html_image_and_keep_markdown_link_kind() {
+        let directory = tempfile::tempdir().unwrap();
+        let image = directory.path().join("present.png");
+        std::fs::write(&image, b"image").unwrap();
+        let source = directory.path().join("images.md");
+        std::fs::write(
+            &source,
+            "[missing](missing.md) ![missing alt](present.png)\n<img alt=\"ok\" src=\"present.png\"><img src=\"present.png\" alt=\"\"><img src=missing.png>\n",
+        )
+        .unwrap();
+
+        let items = diagnose_document(source.to_string_lossy().into_owned()).unwrap();
+        assert!(items.iter().any(|item| item.kind == "Markdownリンク"));
+        assert!(items.iter().any(|item| item.kind == "画像" && item.reference == "missing.png"));
+        assert!(items.iter().any(|item| item.kind == "画像alt" && item.line == 2));
+        assert_eq!(items.iter().filter(|item| item.kind == "画像alt").count(), 1);
+    }
+
+    #[test]
+    fn document_watch_targets_return_decoded_local_references_and_skip_external_and_fences() {
+        let directory = tempfile::tempdir().unwrap();
+        let referenced = directory.path().join("参照先.md");
+        std::fs::write(&referenced, "# target").unwrap();
+        let image = directory.path().join("image.png");
+        std::fs::write(&image, b"image").unwrap();
+        let source = directory.path().join("watch.md");
+        std::fs::write(
+            &source,
+            "[doc](%E5%8F%82%E7%85%A7%E5%85%88.md)\n<img src=image.png alt=\"image\">\n[web](https://example.com/ref.md)\n```\n[ignored](ignored.md)\n```\n",
+        )
+        .unwrap();
+
+        let targets = document_watch_targets(source.to_string_lossy().into_owned()).unwrap();
+        let source = std::fs::canonicalize(source).unwrap().to_string_lossy().into_owned();
+        let referenced = std::fs::canonicalize(referenced).unwrap().to_string_lossy().into_owned();
+        let image = std::fs::canonicalize(image).unwrap().to_string_lossy().into_owned();
+        let mut expected = vec![source, image, referenced];
+        expected.sort();
+        assert_eq!(targets, expected);
+        assert!(!targets.iter().any(|target| target.contains("ignored")));
     }
 }

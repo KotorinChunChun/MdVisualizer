@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { countMermaidFences, MarkdownPreview } from "./MarkdownPreview";
 import { openExternalUrl } from "../lib/commands";
 
@@ -7,6 +7,8 @@ vi.mock("./ImageRenderer", () => ({
   ImageRenderer: ({ alt, headingMode }: { alt?: string; headingMode?: boolean }) => <span data-testid={`image-${alt}`} data-heading-mode={headingMode ? "true" : "false"} />,
 }));
 vi.mock("../lib/commands", () => ({ openExternalUrl: vi.fn(), runPowerShell: vi.fn() }));
+
+afterEach(cleanup);
 
 describe("MarkdownPreview sanitization", () => {
   it("renders safe HTML and removes scripts, event handlers, and unsafe URLs", () => {
@@ -91,6 +93,57 @@ describe("MarkdownPreview sanitization", () => {
     expect(screen.getAllByRole("button", { name: "PowerShellを実行" })).toHaveLength(1);
   });
 
+  it("shows the embedded fence title and normalized language name", async () => {
+    render(<MarkdownPreview
+      content={'```ts title="src/index.ts"\nexport const value = 1;\n```'}
+      baseDir="C:\\docs"
+      documentPath="C:\\docs\\sample.md"
+      imageVersions={{}}
+    />);
+
+    await waitFor(() => expect(screen.getByText("TypeScript")).toBeTruthy());
+    expect(screen.getByText("src/index").className).toContain("code-block__heading");
+    expect(screen.queryByText("src/index.ts")).toBeNull();
+  });
+
+  it("finds decorated heading fences by their actual AST fence position", async () => {
+    const onTextStorageConvert = vi.fn();
+    render(<MarkdownPreview
+      content={'### src/index.ts\n\n```ts\nexport const value = 1;\n```'}
+      baseDir="C:\\docs"
+      documentPath="C:\\docs\\sample.md"
+      imageVersions={{}}
+      onTextStorageConvert={onTextStorageConvert}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: "外部ファイルへ切替" }));
+    await waitFor(() => expect(onTextStorageConvert).toHaveBeenCalledWith(expect.objectContaining({
+      storage: "embedded",
+      relativePath: "src/index.ts",
+      source: "export const value = 1;",
+    })));
+  });
+
+  it("コードフェンスの相対パス表現を外部ファイル切替へ渡す", async () => {
+    const onTextStorageConvert = vi.fn();
+    render(<MarkdownPreview
+      content={"```ts:src/index.ts\nexport const value = 1;\n```"}
+      baseDir="C:\\docs"
+      documentPath="C:\\docs\\sample.md"
+      imageVersions={{}}
+      onTextStorageConvert={onTextStorageConvert}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: "外部ファイルへ切替" }));
+
+    await waitFor(() => expect(onTextStorageConvert).toHaveBeenCalledWith(expect.objectContaining({
+      storage: "embedded",
+      language: "ts",
+      relativePath: "src/index.ts",
+      source: "export const value = 1;",
+    })));
+  });
+
   it("preserves a Mermaid block DOM node when surrounding render context changes", () => {
     const imageVersions = {};
     const content = "```mermaid\nflowchart LR\nA --> B\n```";
@@ -106,6 +159,39 @@ describe("MarkdownPreview sanitization", () => {
     />);
 
     expect(view.container.querySelector(".mermaid-source")).toBe(block);
+  });
+
+  it("recognizes both PlantUML fence names with local rendering controls", () => {
+    render(<MarkdownPreview content={"```plantuml\nA -> B: one\n```\n\n```puml\nB --> A: two\n```"} baseDir="" imageVersions={{}} mermaidMode="off" />);
+    expect(screen.getAllByText("PlantUML（ローカル）")).toHaveLength(2);
+    expect(screen.getByText(/A -> B: one/)).toBeTruthy();
+  });
+
+  it("renders modifier inline code and key fences with the same SVG model", () => {
+    const content = "インラインの `Ctrl+S` と `Windows`。\n\n```key\nCtrl+Shift+S\n```";
+    const { container } = render(<MarkdownPreview content={content} baseDir="" imageVersions={{}} />);
+    expect(container.querySelectorAll("svg.shortcut-key-svg")).toHaveLength(3);
+    expect(container.querySelector("svg.shortcut-key-svg--inline")?.getAttribute("aria-label")).toBe("キーボードショートカット: Ctrl + S");
+    expect(container.querySelector("svg.shortcut-key-svg--block")?.getAttribute("aria-label")).toBe("キーボードショートカット: Ctrl + Shift + S");
+  });
+
+  it("adds a filled swatch only to exact six-digit hexadecimal inline colors", () => {
+    const { container } = render(<MarkdownPreview
+      content={"`#12Ab34` `#12Ab3` `prefix#12Ab34` `plain code`"}
+      baseDir=""
+      imageVersions={{}}
+    />);
+    const inlineCodes = [...container.querySelectorAll<HTMLElement>("code.markdown-inline-code")];
+    const colorCode = inlineCodes.find((element) => element.textContent === "#12Ab34")!;
+    const ordinary = inlineCodes.find((element) => element.textContent === "plain code")!;
+    const swatches = container.querySelectorAll<HTMLElement>(".markdown-inline-code__color-swatch");
+
+    expect(swatches).toHaveLength(1);
+    expect(colorCode.classList.contains("markdown-inline-code--color")).toBe(true);
+    expect(swatches[0].style.backgroundColor).toBe("rgb(18, 171, 52)");
+    expect(ordinary.classList.contains("markdown-inline-code--color")).toBe(false);
+    expect(inlineCodes.find((element) => element.textContent === "#12Ab3")?.querySelector(".markdown-inline-code__color-swatch")).toBeNull();
+    expect(inlineCodes.find((element) => element.textContent === "prefix#12Ab34")?.querySelector(".markdown-inline-code__color-swatch")).toBeNull();
   });
 });
 

@@ -14,6 +14,26 @@ const loadedDocument = (path: string) => ({
 });
 
 describe("tabsReducer", () => {
+  it("creates independent dirty untitled Markdown tabs in Edit mode", () => {
+    let state = tabsReducer(initialTabsState, { type: "NEW_MARKDOWN" });
+    state = tabsReducer(state, { type: "NEW_MARKDOWN" });
+
+    expect(state.tabs).toHaveLength(2);
+    expect(state.tabs[0]).toMatchObject({ path: "無題-1.md", untitled: true, dirty: true, loading: false, editorMode: "edit", draft: "" });
+    expect(state.tabs[1]).toMatchObject({ path: "無題-2.md", untitled: true, dirty: true, loading: false, editorMode: "edit", draft: "" });
+    expect(state.activeId).toBe(state.tabs[1].id);
+  });
+
+  it("keeps an untitled tab dirty until save succeeds and adopts the saved path", () => {
+    let state = tabsReducer(initialTabsState, { type: "NEW_MARKDOWN" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "SAVE_STARTED", id });
+    expect(state.tabs[0].saving).toBe(true);
+    state = tabsReducer(state, { type: "SAVE_CANCELLED", id });
+    expect(state.tabs[0]).toMatchObject({ untitled: true, dirty: true, saving: false });
+    state = tabsReducer(state, { type: "SAVED", id, document: { ...loadedDocument("C:\\docs\\saved.md"), content: "" } });
+    expect(state.tabs[0]).toMatchObject({ path: "C:\\docs\\saved.md", untitled: false, dirty: false, saving: false });
+  });
   it("keeps each tab scroll position independently", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;
@@ -49,7 +69,16 @@ describe("tabsReducer", () => {
     expect(state.tabs.find((tab) => tab.id === second)).toMatchObject({ searchOpen: false, externalChanged: false });
   });
 
-  it("clears only the reloaded tab's pending change", () => {
+  it("marks a document as deleted until storage is successfully reloaded", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "STORAGE_UNAVAILABLE", id, error: "ファイルが削除または移動されました。", deleted: true });
+    expect(state.tabs[0]).toMatchObject({ deleted: true, externalChanged: true });
+    state = tabsReducer(state, { type: "LOADED", id, generation: state.tabs[0].generation, document: loadedDocument("C:\\docs\\a.md") });
+    expect(state.tabs[0].deleted).toBe(false);
+  });
+
+  it("再読込が成功するまでは変更通知を保持し、他タブにも影響しない", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;
     state = tabsReducer(state, { type: "OPEN", path: "b.md" });
@@ -59,7 +88,7 @@ describe("tabsReducer", () => {
     state = tabsReducer(state, { type: "SCROLL", id: first, scrollTop: 640 });
     state = tabsReducer(state, { type: "RELOAD", id: first });
 
-    expect(state.tabs.find((tab) => tab.id === first)).toMatchObject({ externalChanged: false, scrollTop: 640, loading: true });
+    expect(state.tabs.find((tab) => tab.id === first)).toMatchObject({ externalChanged: true, scrollTop: 640, loading: true });
     expect(state.tabs.find((tab) => tab.id === second)?.externalChanged).toBe(true);
   });
 
@@ -161,6 +190,41 @@ describe("tabsReducer", () => {
     expect(state.tabs[0].document?.content).toBe("# Test");
   });
 
+  it("allows an adopted clean draft to enter the saving state", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
+    const id = state.activeId!;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: loadedDocument("C:\\docs\\a.md") });
+    expect(state.tabs[0].dirty).toBe(false);
+    state = tabsReducer(state, { type: "SAVE_STARTED", id, force: true });
+    expect(state.tabs[0].saving).toBe(true);
+  });
+
+  it("正常に再読込した内容へDiff基準と最新版を更新する", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
+    const id = state.tabs[0].id;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: { ...loadedDocument("C:\\docs\\a.md"), content: "opened" } });
+    state = tabsReducer(state, { type: "SAVED", id, document: { ...loadedDocument("C:\\docs\\a.md"), content: "saved" } });
+    state = tabsReducer(state, { type: "RELOAD", id });
+    state = tabsReducer(state, { type: "LOADED", id, generation: state.tabs[0].generation, document: { ...loadedDocument("C:\\docs\\a.md"), content: "external" } });
+    expect(state.tabs[0].openedContent).toBe("external");
+    expect(state.tabs[0].storageDocument?.content).toBe("external");
+  });
+
+  it("即時保存では保存済み基準の確定部分と未保存ドラフトを同時更新する", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:\\docs\\a.md" });
+    const id = state.tabs[0].id;
+    state = tabsReducer(state, { type: "LOADED", id, generation: 1, document: { ...loadedDocument("C:\\docs\\a.md"), content: "opened" } });
+    state = tabsReducer(state, {
+      type: "IMMEDIATE_SAVED",
+      id,
+      document: { ...loadedDocument("C:\\docs\\a.md"), content: "forced", revision: "revision-2" },
+      openedContent: "forced",
+      draft: "forced\nunsaved",
+    });
+    expect(state.tabs[0]).toMatchObject({ openedContent: "forced", draft: "forced\nunsaved", dirty: true });
+    expect(state.tabs[0].document?.revision).toBe("revision-2");
+  });
+
   it("keeps the editor workspace mode independently in each tab", () => {
     let state = tabsReducer(initialTabsState, { type: "OPEN", path: "a.md" });
     const first = state.activeId!;
@@ -206,8 +270,34 @@ describe("tabsReducer", () => {
     state = tabsReducer(state, { type: "STAGED_ASSET_ADDED", id: "tab-1", content: "![x](image.png)", asset: { id: "stage-1", filename: "image.png" } });
     state = tabsReducer(state, { type: "DRAFT_CHANGED", id: "tab-1", content: "# title\n![x](image.png)" });
     expect(state.tabs[0].pendingAssets?.map((asset) => asset.id)).toEqual(["stage-1"]);
+    state = tabsReducer(state, { type: "STAGED_ASSET_UPDATED", id: "tab-1", stagingId: "stage-1", text: "updated" });
+    expect(state.tabs[0].pendingAssets?.[0]?.text).toBe("updated");
     state = tabsReducer(state, { type: "SAVED", id: "tab-1", document: { ...loadedDocument("C:/docs/a.md"), content: "![x](image.png)", revision: "revision-2" }, committedAssetIds: ["stage-1"] });
     expect(state.tabs[0].pendingAssets).toEqual([]);
     expect(state.tabs[0].dirty).toBe(true);
+  });
+
+  it("marks an unchanged Markdown draft dirty while an external text asset is staged", () => {
+    let state = tabsReducer(initialTabsState, { type: "OPEN", path: "C:/docs/a.md" });
+    const document = { ...loadedDocument("C:/docs/a.md"), content: "![TSV](table.tsv)" };
+    state = tabsReducer(state, { type: "LOADED", id: "tab-1", generation: 1, document });
+    state = tabsReducer(state, {
+      type: "STAGED_ASSET_ADDED",
+      id: "tab-1",
+      content: document.content,
+      asset: { id: "stage-table", filename: "table.tsv", text: "a\n1" },
+    });
+
+    expect(state.tabs[0].dirty).toBe(true);
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id: "tab-1", content: "temporary" });
+    state = tabsReducer(state, { type: "DRAFT_CHANGED", id: "tab-1", content: document.content });
+    expect(state.tabs[0].dirty).toBe(true);
+    state = tabsReducer(state, {
+      type: "SAVED",
+      id: "tab-1",
+      document: { ...document, revision: "revision-2" },
+      committedAssetIds: ["stage-table"],
+    });
+    expect(state.tabs[0]).toMatchObject({ dirty: false, pendingAssets: [] });
   });
 });

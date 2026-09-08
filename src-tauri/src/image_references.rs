@@ -69,6 +69,15 @@ pub fn rename_image_and_references(
     image_path: &Path,
     new_filename: &str,
 ) -> AppResult<RenameImageResult> {
+    rename_image_and_references_with_options(markdown_path, image_path, new_filename, false)
+}
+
+pub fn rename_image_and_references_with_options(
+    markdown_path: &Path,
+    image_path: &Path,
+    new_filename: &str,
+    overwrite: bool,
+) -> AppResult<RenameImageResult> {
     validate_filename(new_filename)?;
     let markdown_path = canonical_existing_path(markdown_path, "Markdown file")?;
     let old_image_path = canonical_existing_path(image_path, "Image file")?;
@@ -76,7 +85,7 @@ pub fn rename_image_and_references(
         .parent()
         .ok_or_else(|| AppError::IoError("Image file has no parent directory.".into()))?;
     let new_image_path = image_parent.join(new_filename);
-    if new_image_path.exists() {
+    if new_image_path.exists() && !overwrite {
         return Err(AppError::IoError(format!(
             "Cannot rename image: target already exists: {}",
             new_image_path.display()
@@ -133,9 +142,21 @@ pub fn rename_image_and_references(
         written.push(change);
     }
 
+    let target_backup = if overwrite && new_image_path.exists() {
+        Some(fs::read(&new_image_path).map_err(|error| AppError::IoError(format!("read existing image: {error}")))?)
+    } else { None };
+    if overwrite && new_image_path.exists() {
+        if let Err(error) = fs::remove_file(&new_image_path)
+            .map_err(|error| AppError::IoError(format!("remove existing image: {error}")))
+        {
+            let rollback_error = rollback_documents(&written);
+            return Err(with_rollback_context(error, rollback_error));
+        }
+    }
     if let Err(error) = fs::rename(&old_image_path, &new_image_path)
         .map_err(|error| AppError::IoError(format!("rename image: {error}")))
     {
+        if let Some(bytes) = target_backup.as_ref() { let _ = fs::write(&new_image_path, bytes); }
         let rollback_error = rollback_documents(&written);
         return Err(with_rollback_context(error, rollback_error));
     }
@@ -217,6 +238,8 @@ enum CaptionLocation {
     HtmlMissing {
         insert_at: usize,
     },
+    /// Obsidian embeds are renamed through `source_range`.
+    Ignored,
 }
 
 fn read_document(path: &Path) -> AppResult<TextDocument> {
@@ -328,6 +351,14 @@ fn scan_image_references(text: &str) -> Vec<ImageReference> {
                 continue;
             }
         }
+        if text[index..].starts_with("![[") {
+            if let Some(reference) = parse_obsidian_image_at(text, index) {
+                let next = reference.source_range.end;
+                references.push(reference);
+                index = next.min(text.len());
+                continue;
+            }
+        }
         if is_html_img_start(text, index) {
             if let Some((reference, end)) = parse_html_image_at(text, index) {
                 references.push(reference);
@@ -367,6 +398,27 @@ fn parse_markdown_image_at(text: &str, start: usize) -> Option<ImageReference> {
         source: text[source_range.clone()].to_string(),
         source_range,
         caption: CaptionLocation::Markdown(alt_start..alt_end),
+    })
+}
+
+fn parse_obsidian_image_at(text: &str, start: usize) -> Option<ImageReference> {
+    let prefix_end = start.checked_add(3)?;
+    if text.get(start..prefix_end)? != "![[" {
+        return None;
+    }
+    let close = text[prefix_end..].find("]]")? + prefix_end;
+    let inner = &text[prefix_end..close];
+    let path_end = inner.find('|').unwrap_or(inner.len());
+    let path = inner[..path_end].trim();
+    if path.is_empty() {
+        return None;
+    }
+    let source_start = prefix_end + inner[..path_end].find(path)?;
+    let source_end = source_start + path.len();
+    Some(ImageReference {
+        source: path.to_string(),
+        source_range: source_start..source_end,
+        caption: CaptionLocation::Ignored,
     })
 }
 
@@ -601,6 +653,7 @@ fn replace_caption(text: &str, reference: &ImageReference, caption: &str) -> Str
             result.push_str(&text[*insert_at..]);
             result
         }
+        CaptionLocation::Ignored => text.to_string(),
     }
 }
 
@@ -898,6 +951,26 @@ mod tests {
         assert_eq!(
             fs::read_to_string(root.join("nested").join("other.MARKDOWN")).unwrap(),
             "<img alt='caption' src='../images/renamed.png?x#fragment'>\n"
+        );
+    }
+
+    #[test]
+    fn renames_obsidian_mermaid_references() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        let mermaid = root.join("flow.mmd");
+        let markdown = root.join("main.md");
+        fs::write(&mermaid, "flowchart LR\nA --> B\n").unwrap();
+        fs::write(&markdown, "![[flow.mmd|処理フロー]]\n").unwrap();
+
+        let result = rename_image_and_references(&markdown, &mermaid, "renamed.mmd").unwrap();
+
+        assert!(!mermaid.exists());
+        assert!(root.join("renamed.mmd").exists());
+        assert_eq!(result.updated_references, 1);
+        assert_eq!(
+            fs::read_to_string(&markdown).unwrap(),
+            "![[renamed.mmd|処理フロー]]\n"
         );
     }
 

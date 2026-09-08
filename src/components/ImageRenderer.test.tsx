@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ImageRenderer } from "./ImageRenderer";
 import { readDocumentAsset } from "../lib/commands";
+import { collectEditableMarkdownOccurrences } from "../lib/markdownOccurrences";
 
 vi.mock("../lib/commands", () => ({ readDocumentAsset: vi.fn() }));
 
@@ -169,6 +170,19 @@ describe("ImageRenderer inline resize", () => {
     expect(screen.getByText("画像").className).toContain("caption");
   });
 
+  it("shows a simple image filename without a format label", () => {
+    render(<ImageRenderer
+      src="photo.png"
+      alt="写真"
+      baseDir="C:\\docs"
+      imageVersions={{}}
+      onExternalRename={vi.fn()}
+    />);
+
+    expect(screen.getByRole("button", { name: "photo.png" })).not.toBeNull();
+    expect(screen.queryByText("PNG")).toBeNull();
+  });
+
   it("keeps the caption outside the bordered resize stage", () => {
     const { container } = renderImage();
     fireEvent.load(screen.getByAltText("テスト画像"));
@@ -278,6 +292,26 @@ describe("ImageRenderer inline resize", () => {
     rerender(<div className="markdown-body"><ImageRenderer src="data:image/png;base64,AAAA" alt="データ画像" baseDir="C:\\docs" imageVersions={{}} onMediaOpen={() => {}} /></div>);
     fireEvent.load(screen.getByAltText("データ画像"));
     expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+
+  it("uses one actual image extension for an editable Base64 image name", () => {
+    const onMediaOpen = vi.fn();
+    const source = "data:image/png;base64,AAAA";
+    const occurrence = collectEditableMarkdownOccurrences(`![photo.png](${source})`)[0];
+    if (occurrence.kind !== "image") throw new Error("画像出現箇所を解析できません");
+    render(<ImageRenderer
+      src={source}
+      alt="photo.png"
+      baseDir="C:\\docs"
+      imageVersions={{}}
+      conversionContext={{ documentPath: "C:\\docs\\note.md", occurrence, assetKind: "raster", storage: "embedded" }}
+      onMediaOpen={onMediaOpen}
+    />);
+
+    fireEvent.click(screen.getByAltText("photo.png"));
+    expect(onMediaOpen).toHaveBeenCalledWith(expect.objectContaining({
+      editTarget: expect.objectContaining({ filename: "photo.png", storage: "embedded" }),
+    }));
   });
 
   it("displays local SVG files without exposing raster editing controls", () => {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { DRAWIO_EDITOR_URL, DRAWIO_ORIGIN, extractDrawioFenceData, parseTrustedDrawioMessage, prepareDrawioLoad } from "../lib/drawio";
+import { useFocusTrap } from "../hooks/useFocusTrap";
+import { disableDrawioPageView, DRAWIO_EDITOR_URL, DRAWIO_ORIGIN, extractDrawioFenceData, parseTrustedDrawioMessage, prepareDrawioLoad } from "../lib/drawio";
 
 export function DrawioEditorModal({ source, onSave, onCancel }: {
   source: string;
@@ -8,6 +9,7 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
   onCancel: () => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const modalRef = useFocusTrap<HTMLDivElement>(true, onCancel);
   const payload = useMemo(() => prepareDrawioLoad(source), [source]);
   const [status, setStatus] = useState("draw.ioを読み込んでいます…");
   const [error, setError] = useState<string | null>(null);
@@ -16,6 +18,25 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setError("draw.ioから初期化通知を受信できませんでした。ネットワーク接続を確認して再試行してください。"), 20_000);
+    const centerTimers: number[] = [];
+    const postToCurrentFrame = (frameWindow: Window | null, message: Record<string, unknown>) => {
+      if (!frameWindow || iframeRef.current?.contentWindow !== frameWindow) return false;
+      try {
+        frameWindow.postMessage(JSON.stringify(message), DRAWIO_ORIGIN);
+        return true;
+      } catch {
+        // Best-effort layout messages may race with iframe replacement or close.
+        return false;
+      }
+    };
+    const centerDrawing = () => {
+      const frameWindow = iframeRef.current?.contentWindow ?? null;
+      postToCurrentFrame(frameWindow, { action: "fit", border: 48, maxScale: 1 });
+      postToCurrentFrame(frameWindow, { action: "invokeAction", actionName: "fitWindow" });
+    };
+    const scheduleCentering = (delays: number[]) => {
+      delays.forEach((delay) => centerTimers.push(window.setTimeout(centerDrawing, delay)));
+    };
     const receive = (event: MessageEvent) => {
       const frameWindow = iframeRef.current?.contentWindow ?? null;
       const message = parseTrustedDrawioMessage(event, frameWindow);
@@ -24,10 +45,24 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
         window.clearTimeout(timeout);
         setStatus("編集中");
         setError(null);
-        const load: Record<string, unknown> = { action: "load", title: "Markdown diagram", noSaveBtn: 1, saveAndExit: 1, fit: 1 };
+        const load: Record<string, unknown> = {
+          action: "load",
+          title: "Markdown diagram",
+          noSaveBtn: 1,
+          saveAndExit: 1,
+          fit: 1,
+          border: 48,
+          maxFitScale: 1,
+        };
         if ("descriptor" in payload) load.descriptor = payload.descriptor;
-        else load.xml = payload.xml;
-        frameWindow?.postMessage(JSON.stringify(load), DRAWIO_ORIGIN);
+        else load.xml = disableDrawioPageView(payload.xml);
+        postToCurrentFrame(frameWindow, load);
+        scheduleCentering([80, 320, 900]);
+      } else if (message.event === "load") {
+        // 読み込み後に図形境界が確定するため、編集領域のレイアウト確定後にも
+        // draw.io標準の「ウィンドウに合わせる」を繰り返して中央へ配置する。
+        centerDrawing();
+        scheduleCentering([240, 720]);
       } else if (message.event === "save" && typeof message.xml === "string" && message.xml.length <= 20 * 1024 * 1024) {
         setSaving(true);
         Promise.resolve(onSave(extractDrawioFenceData(message.xml))).then((saved) => {
@@ -42,11 +77,12 @@ export function DrawioEditorModal({ source, onSave, onCancel }: {
     window.addEventListener("message", receive);
     return () => {
       window.clearTimeout(timeout);
+      centerTimers.forEach((timer) => window.clearTimeout(timer));
       window.removeEventListener("message", receive);
     };
   }, [onCancel, onSave, payload, retryToken]);
 
-  return createPortal(<div className="drawio-editor" role="dialog" aria-modal="true" aria-label="draw.io図の編集">
+  return createPortal(<div ref={modalRef} className="drawio-editor" role="dialog" aria-modal="true" aria-label="draw.io図の編集" tabIndex={-1}>
     <header className="drawio-editor__header">
       <strong>draw.io図の編集</strong>
       <span>{saving ? "Markdownへ反映中…" : status}</span>

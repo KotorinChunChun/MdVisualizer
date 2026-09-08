@@ -16,6 +16,60 @@ export type MarkdownEditAction =
   | "drawio"
   | "image";
 
+import { isMarkdownBlockInsertionAction, resolveMarkdownInsertionContext } from "./toolbarContext";
+
+export {
+  isMarkdownBlockInsertionAction,
+  resolveMarkdownInsertionContext,
+  MARKDOWN_BLOCK_INSERTION_ACTIONS,
+  type MarkdownBlockInsertionAction,
+  type MarkdownInsertionContext,
+  type MarkdownInsertionContextKind,
+} from "./toolbarContext";
+
+export {
+  buildStructuredListEnter,
+  buildStructuredListSoftEnter,
+  buildOrderedListNormalization,
+  buildStructuredListIndent,
+  buildStructuredListMove,
+  buildStructuredListPaste,
+  buildStructuredListToggle,
+  parseMarkdownListLine,
+  normalizeStructuredListIndentationForRendering,
+  renumberOrderedLists,
+  type MarkdownListLine,
+  type StructuredListKind,
+} from "./structuredLists";
+
+export {
+  moveHeadingBlock,
+  normalizeNumberedHeadings,
+  parseMarkdownHeadingBlocks,
+  type MarkdownHeadingBlock,
+} from "./structuredHeadings";
+
+export {
+  buildShortcutKeySvg,
+  isShortcutKeySource,
+  normalizeShortcutKeyToken,
+  parseShortcutKeySequence,
+  type ShortcutKeyGroup,
+  type ShortcutKeySequence,
+  type ShortcutKeySvgOptions,
+  type ShortcutKeyToken,
+  type ShortcutKeyTokenKind,
+} from "./shortcutKeys";
+
+export {
+  isPlantUmlFenceLanguage,
+  plantUmlToMermaid,
+  type PlantUmlConversion,
+  type PlantUmlDiagramKind,
+} from "./plantUml";
+
+export { resolveExpandedExportReference } from "./notionExport";
+
 export interface MarkdownEditChange {
   from: number;
   to: number;
@@ -41,9 +95,19 @@ export function isMarkdownDocumentName(value: string): boolean {
 }
 
 export function detectLineEnding(value: string): MarkdownLineEnding {
-  if (value.includes("\r\n")) return "\r\n";
-  if (value.includes("\r")) return "\r";
-  return "\n";
+  const counts: Record<MarkdownLineEnding, number> = { "\r\n": 0, "\n": 0, "\r": 0 };
+  let first: MarkdownLineEnding | null = null;
+  for (const match of value.matchAll(/\r\n|\r|\n/g)) {
+    const ending = match[0] as MarkdownLineEnding;
+    counts[ending] += 1;
+    first ??= ending;
+  }
+  if (!first) return "\n";
+  return (["\r\n", "\n", "\r"] as const).reduce((selected, ending) => {
+    if (counts[ending] > counts[selected]) return ending;
+    if (counts[ending] === counts[selected] && ending === first) return ending;
+    return selected;
+  }, first);
 }
 
 export function normalizeLineEndings(value: string, lineEnding: MarkdownLineEnding): string {
@@ -140,4 +204,23 @@ export function buildMarkdownEdit(source: string, from: number, to: number, acti
       return inserted(start, end, insert, [pathStart, pathStart + "image.png".length]);
     }
   }
+}
+
+export function isMarkdownToolbarActionDisabled(source: string, cursor: number, action: MarkdownEditAction): boolean {
+  return isMarkdownBlockInsertionAction(action) && resolveMarkdownInsertionContext(source, cursor).disabled;
+}
+
+export function buildContextualMarkdownEdit(source: string, from: number, to: number, action: MarkdownEditAction, cursor = to): MarkdownEditChange | null {
+  if (!isMarkdownBlockInsertionAction(action)) return buildMarkdownEdit(source, from, to, action);
+  const context = resolveMarkdownInsertionContext(source, cursor);
+  if (context.disabled) return null;
+  if (context.kind === "plain") return buildMarkdownEdit(source, from, to, action);
+  const change = buildMarkdownEdit(source, context.position, context.position, action);
+  if (!context.requiredClosure) return change;
+  return {
+    ...change,
+    insert: context.requiredClosure + change.insert,
+    anchor: change.anchor + context.requiredClosure.length,
+    head: change.head + context.requiredClosure.length,
+  };
 }

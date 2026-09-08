@@ -39,8 +39,18 @@ describe("remarkObsidianImages", () => {
   });
 
   it("leaves notes, inline code, and non-image wiki links unchanged", () => {
-    const markdown = "[[設計ノート]] `[[code.png]]` [[diagram.drawio]]";
+    const markdown = "[[設計ノート]] `[[code.png]]` [[diagram.txt]]";
     expect(imageNodes(markdown)).toEqual([]);
+  });
+
+  it("treats draw.io files as Obsidian image embeds", () => {
+    expect(parseObsidianImageReference("diagrams/system.drawio|システム構成")).toEqual({
+      source: "diagrams/system.drawio",
+      alt: "システム構成",
+    });
+    expect(imageNodes("![[diagrams/system.drawio|システム構成]]")).toMatchObject([
+      { url: "diagrams/system.drawio", alt: "システム構成" },
+    ]);
   });
 
   it("converts local Markdown wiki links while leaving other wiki links alone", () => {
@@ -56,6 +66,7 @@ describe("remarkObsidianImages", () => {
   it("converts standalone Mermaid wiki links", () => {
     expect(parseObsidianMarkdownLinkReference("flow.mmd|フロー図")).toEqual({ source: "flow.mmd", label: "フロー図" });
     expect(parseObsidianMarkdownLinkReference("sequence.mermaid")).toEqual({ source: "sequence.mermaid", label: "sequence.mermaid" });
+    expect(imageNodes("![[flow.mmd|フロー図]]")).toMatchObject([{ url: "flow.mmd", alt: "フロー図" }]);
   });
 
   it("treats Obsidian size aliases as dimensions rather than visible alt text", () => {

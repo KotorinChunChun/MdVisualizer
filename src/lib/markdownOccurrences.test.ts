@@ -1,13 +1,31 @@
 import { describe, expect, it } from "vitest";
 import {
+  codeFenceAlt,
+  codeFenceTitle,
   collectEditableMarkdownOccurrences,
   MarkdownOccurrenceConflictError,
   replaceCodeFenceBody,
   replaceMarkdownOccurrence,
+  serializeMarkdownTable,
   type CodeFenceOccurrence,
+  type MarkdownTableOccurrence,
 } from "./markdownOccurrences";
 
 describe("editable Markdown occurrences", () => {
+  it("extracts quoted and unquoted diagram titles from fence metadata", () => {
+    expect(codeFenceTitle('title="システム 構成"')).toBe("システム 構成");
+    expect(codeFenceTitle("caption='処理フロー'")).toBe("処理フロー");
+    expect(codeFenceTitle("title=overview other=value")).toBe("overview");
+    expect(codeFenceTitle("other=value")).toBeUndefined();
+  });
+
+  it("extracts optional quoted and unquoted alt text from fence metadata", () => {
+    expect(codeFenceAlt('title="diagram" alt="説明テキスト"')).toBe("説明テキスト");
+    expect(codeFenceAlt("alt='処理フロー'")).toBe("処理フロー");
+    expect(codeFenceAlt("alt=overview other=value")).toBe("overview");
+    expect(codeFenceAlt('title="diagram"')).toBeUndefined();
+  });
+
   it("collects fenced blocks, duplicate images, HTML images, and inline SVG with exact ranges", () => {
     const markdown = [
       "```csv",
@@ -81,5 +99,53 @@ describe("editable Markdown occurrences", () => {
 
     expect(fence).toMatchObject({ language: "drawio", body: "old", continuationPrefix: "> " });
     expect(replaced).toBe("> ```drawio\n> new\n> next\n> ```");
+  });
+
+  it("collects GFM tables with raw cells, alignment, exact ranges, and CRLF", () => {
+    const tableSource = "| **名前** | 操作 |\r\n| :--- | ---: |\r\n| Alice | Ctrl+\\| |";
+    const markdown = `前\r\n\r\n${tableSource}\r\n\r\n後`;
+    const table = collectEditableMarkdownOccurrences(markdown).find((item): item is MarkdownTableOccurrence => item.kind === "table");
+
+    expect(table).toMatchObject({
+      expected: tableSource,
+      headers: ["**名前**", "操作"],
+      rows: [["Alice", "Ctrl+\\|"]],
+      alignments: ["left", "right"],
+      lineEnding: "\r\n",
+    });
+    expect(markdown.slice(table!.start, table!.end)).toBe(tableSource);
+  });
+
+  it("serializes table edits while escaping pipes and normalizing cell newlines", () => {
+    const serialized = serializeMarkdownTable({
+      headers: ["name", "note"],
+      rows: [["Alice", "A|B\nnext"]],
+      alignments: [null, "center"],
+      lineEnding: "\r\n",
+    });
+
+    expect(serialized).toBe("| name | note |\r\n| --- | :---: |\r\n| Alice | A\\|B<br>next |");
+  });
+
+  it("serializes calculated aggregate cells", () => {
+    const serialized = serializeMarkdownTable({
+      headers: ["項目", "値", "平均"],
+      rows: [["A", "10", "old"], ["B", "20", "old"], ["合計", "old", "old"]],
+      alignments: [null, "right", "right"],
+      lineEnding: "\n",
+    });
+
+    expect(serialized).toContain("| A | 10 | 10 |");
+    expect(serialized).toContain("| 合計 | 30 | - |");
+  });
+
+  it("preserves a block quote container while serializing a nested GFM table", () => {
+    const markdown = "> | A | B |\n> | --- | --- |\n> | 1 | 2 |";
+    const table = collectEditableMarkdownOccurrences(markdown).find((item): item is MarkdownTableOccurrence => item.kind === "table");
+
+    expect(table).toMatchObject({ headers: ["A", "B"], rows: [["1", "2"]], continuationPrefix: "> " });
+    const replacement = serializeMarkdownTable({ ...table!, rows: [["3", "4"]] });
+    expect(replacement).toBe("| A | B |\n> | --- | --- |\n> | 3 | 4 |");
+    expect(replaceMarkdownOccurrence(markdown, table!, replacement)).toBe("> | A | B |\n> | --- | --- |\n> | 3 | 4 |");
   });
 });

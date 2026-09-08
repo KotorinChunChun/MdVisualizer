@@ -27,7 +27,7 @@ describe("ContextMenu", () => {
     const onResult = vi.fn();
     vi.mocked(openContainingFolder).mockResolvedValue(undefined);
     render(<ContextMenu tab={tab} x={0} y={0} onDismiss={onDismiss} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onNewWindow={() => {}} onResult={onResult} onError={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: "フォルダを開く" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "フォルダを開く" }));
     expect(onDismiss).toHaveBeenCalledOnce();
     await vi.waitFor(() => expect(onResult).toHaveBeenCalledWith("フォルダーを開きました"));
   });
@@ -37,8 +37,25 @@ describe("ContextMenu", () => {
     const onError = vi.fn();
     vi.mocked(openContainingFolder).mockRejectedValue(new Error("起動失敗"));
     render(<ContextMenu tab={tab} x={0} y={0} onDismiss={onDismiss} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onNewWindow={() => {}} onResult={() => {}} onError={onError} />);
-    fireEvent.click(screen.getByRole("button", { name: "フォルダを開く" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "フォルダを開く" }));
     expect(onDismiss).toHaveBeenCalledOnce();
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith("Error: 起動失敗"));
+  });
+
+  it("copies a regular Windows path without the extended-length prefix", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<ContextMenu tab={{ ...tab, path: String.raw`\\?\C:\develop\MarkdownViewer\samples\sample.md` }} x={0} y={0} onDismiss={() => {}} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onResult={() => {}} onError={() => {}} />);
+
+    fireEvent.click(screen.getByRole("menuitem", { name: "フルパスをコピー" }));
+
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith(String.raw`C:\develop\MarkdownViewer\samples\sample.md`));
+  });
+
+  it("disables filesystem actions for an untitled tab", () => {
+    render(<ContextMenu tab={{ ...tab, untitled: true }} x={0} y={0} onDismiss={() => {}} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onResult={() => {}} onError={() => {}} />);
+    expect((screen.getByRole("menuitem", { name: "フォルダを開く" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("menuitem", { name: "VS Code で開く" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("menuitem", { name: "別ウィンドウで開く" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

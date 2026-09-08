@@ -18,6 +18,22 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][3]).toBe(32);
     expect(onSave.mock.calls[0][4]).toMatchObject({ theme: "adaptive", customColors: false });
     expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#1f2328", monochrome: false });
+    expect(onSave.mock.calls[0][6]).toMatchObject({ breakMode: "commonmark", useThemeColor: true, fontSize: 16, lineHeight: 1.65 });
+    expect(onSave.mock.calls[0][7]).toEqual({ storage: "base64", pngLocation: "images", absoluteDirectory: "" });
+    expect(onSave.mock.calls[0][8]).toBe("fence-title");
+  });
+
+  it("外部ファイルパスの埋め込み表現を選択して保存する", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} embeddedPathStyle="heading" onSave={onSave} />);
+
+    const select = screen.getByLabelText("外部ファイルパスの埋め込み表現") as HTMLSelectElement;
+    expect(select.value).toBe("heading");
+    fireEvent.change(select, { target: { value: "fence-colon" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][8]).toBe("fence-colon");
   });
 
   it("keeps required built-ins undeletable and validates a new document app", async () => {
@@ -84,12 +100,66 @@ describe("SettingsPanel", () => {
     expect(screen.getByLabelText("印刷スタイルプレビュー").getAttribute("style")).toContain("rgb(255, 255, 255)");
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0][5]).toEqual({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true });
+    expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#123456", borderColor: "#654321", backgroundColor: "#eeeeee", fontFamily: "serif", monochrome: true, foldMode: "all", showTitle: true, showFilename: true, showDate: true });
+  });
+
+  it("saves the selected fold mode and metadata visibility flags", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText("印刷時の折りたたみ"), { target: { value: "current" } });
+    fireEvent.click(screen.getByLabelText("文書タイトル"));
+    fireEvent.click(screen.getByLabelText("印刷日時"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][5]).toMatchObject({ foldMode: "current", showTitle: false, showFilename: true, showDate: false });
+  });
+
+  it("previews and saves Markdown layout settings with a generated CSS file", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const onOpenMarkdownStyle = vi.fn().mockResolvedValue(undefined);
+    const onReloadMarkdownStyle = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel
+      apps={DEFAULT_EXTERNAL_APPS}
+      presentationLineThreshold={10}
+      markdownStylePath="C:\\AppData\\markdown-style.css"
+      onOpenMarkdownStyle={onOpenMarkdownStyle}
+      onReloadMarkdownStyle={onReloadMarkdownStyle}
+      onSave={onSave}
+    />);
+    fireEvent.change(screen.getByLabelText("Markdown改行モード"), { target: { value: "soft-break" } });
+    fireEvent.click(screen.getByLabelText("Markdownテーマ文字色"));
+    fireEvent.change(screen.getByLabelText("Markdown文字色"), { target: { value: "#123456" } });
+    fireEvent.change(screen.getByLabelText("Markdown文字サイズ"), { target: { value: "19" } });
+    fireEvent.change(screen.getByLabelText("Markdownフォント"), { target: { value: "serif" } });
+    fireEvent.change(screen.getByLabelText("Markdown行間"), { target: { value: "1.8" } });
+    expect((screen.getByLabelText("Markdown CSS内容") as HTMLTextAreaElement).value).toContain("white-space: pre-line");
+    expect(screen.getByText(/markdown-style\.css/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "CSSファイルを開く" }));
+    fireEvent.click(screen.getByRole("button", { name: "外部変更を再読込" }));
+    await waitFor(() => expect(onOpenMarkdownStyle).toHaveBeenCalled());
+    await waitFor(() => expect(onReloadMarkdownStyle).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][6]).toEqual({ breakMode: "soft-break", useThemeColor: false, color: "#123456", fontSize: 19, fontFamily: "serif", lineHeight: 1.8 });
   });
 
   it("does not ask users for SharePoint application registration values", () => {
     render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={vi.fn()} />);
     expect(screen.queryByLabelText("SharePointクライアントID")).toBeNull();
     expect(screen.queryByLabelText("SharePointテナント")).toBeNull();
+  });
+
+  it("configures PNG paste destinations and validates an absolute folder", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText("貼り付け画像の保存形式"), { target: { value: "png" } });
+    fireEvent.change(screen.getByLabelText("貼り付け画像のPNG保存先"), { target: { value: "absolute" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("絶対パス");
+
+    fireEvent.change(screen.getByLabelText("貼り付け画像の絶対保存フォルダー"), { target: { value: "C:\\Markdown Images" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][7]).toEqual({ storage: "png", pngLocation: "absolute", absoluteDirectory: "C:\\Markdown Images" });
   });
 });

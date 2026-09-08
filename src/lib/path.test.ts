@@ -4,9 +4,14 @@ vi.mock("@tauri-apps/api/core", () => ({
   convertFileSrc: (path: string) => `asset://${path}`,
 }));
 
-import { isAbsoluteLocalPath, isWindowsAbsolutePath, resolveImageSrc, resolveLocalDocumentPath, resolveLocalMarkdownPath, resolveSharePointDocumentPath } from "./path";
+import { isAbsoluteLocalPath, isWindowsAbsolutePath, resolveImageSrc, resolveLocalDocumentPath, resolveLocalImagePath, resolveLocalMarkdownPath, resolveSharePointDocumentPath, stripWindowsExtendedPathPrefix } from "./path";
 
 describe("Windows image paths", () => {
+  it("converts extended-length paths to regular local and UNC paths", () => {
+    expect(stripWindowsExtendedPathPrefix(String.raw`\\?\C:\docs\sample.md`)).toBe(String.raw`C:\docs\sample.md`);
+    expect(stripWindowsExtendedPathPrefix(String.raw`\\?\UNC\server\share\sample.md`)).toBe(String.raw`\\server\share\sample.md`);
+  });
+
   it.each(["C:/images/a.png", "C:\\images\\a.png", "z:/x/y.png"])("recognizes %s as an absolute Windows path", (path) => {
     expect(isWindowsAbsolutePath(path)).toBe(true);
     expect(isAbsoluteLocalPath(path)).toBe(true);
@@ -16,8 +21,29 @@ describe("Windows image paths", () => {
     expect(resolveImageSrc("C:/images/a.png", "C:\\docs")).toBe("asset://C:/images/a.png");
   });
 
+  it("normalizes canonical Windows extended-length paths", () => {
+    const imagePath = "\\\\?\\C:\\images\\sample.svg";
+    expect(isWindowsAbsolutePath(imagePath)).toBe(true);
+    expect(isAbsoluteLocalPath(imagePath)).toBe(true);
+    expect(resolveImageSrc(imagePath, "\\\\?\\C:\\ignored")).toBe("asset://C:/images/sample.svg");
+    expect(resolveLocalImagePath(imagePath, "C:\\ignored")).toBe("C:/images/sample.svg");
+    expect(resolveLocalDocumentPath(imagePath, "C:\\ignored")).toBe("C:/images/sample.svg");
+  });
+
+  it("normalizes a canonical base directory when resolving relative images", () => {
+    expect(resolveImageSrc("images/a.png", "\\\\?\\C:\\docs"))
+      .toBe("asset://C:/docs/images/a.png");
+  });
+
   it("keeps file URLs directly viewable without treating them as local paths", () => {
     expect(resolveImageSrc("file:///C:/images/a.png", "C:\\docs")).toBe("file:///C:/images/a.png");
+  });
+
+  it("resolves URL-encoded Notion export links and relative image folders", () => {
+    expect(resolveLocalDocumentPath("Project%20Notes%20abcdef1234567890abcdef1234567890.md", "C:\\exports\\Workspace"))
+      .toBe("C:/exports/Workspace/Project Notes abcdef1234567890abcdef1234567890.md");
+    expect(resolveImageSrc("Project%20Notes%20abcdef/image%201.png", "C:\\exports\\Workspace"))
+      .toBe("asset://C:/exports/Workspace/Project Notes abcdef/image 1.png");
   });
 
   it("resolves relative and tauri.localhost Markdown links inside the document directory", () => {

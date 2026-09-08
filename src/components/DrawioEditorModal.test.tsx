@@ -4,7 +4,7 @@ import { DRAWIO_ORIGIN } from "../lib/drawio";
 import { DrawioEditorModal } from "./DrawioEditorModal";
 
 describe("DrawioEditorModal", () => {
-  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+  afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
   it("loads and saves only messages from the expected diagrams.net frame", async () => {
     const onSave = vi.fn(() => true);
@@ -20,6 +20,14 @@ describe("DrawioEditorModal", () => {
 
     window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: JSON.stringify({ event: "init" }) }));
     expect(postMessage).toHaveBeenCalledWith(expect.stringContaining('"action":"load"'), DRAWIO_ORIGIN);
+    expect(postMessage).toHaveBeenCalledWith(expect.stringContaining('page=\\"0\\"'), DRAWIO_ORIGIN);
+    expect(postMessage).toHaveBeenCalledWith(expect.stringContaining('"maxFitScale":1'), DRAWIO_ORIGIN);
+    expect(postMessage).toHaveBeenCalledWith(expect.stringContaining('"border":48'), DRAWIO_ORIGIN);
+
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: JSON.stringify({ event: "load", pageVisible: true }) }));
+    expect(postMessage).not.toHaveBeenCalledWith(JSON.stringify({ action: "invokeAction", actionName: "pageView" }), DRAWIO_ORIGIN);
+    expect(postMessage).toHaveBeenCalledWith(JSON.stringify({ action: "fit", border: 48, maxScale: 1 }), DRAWIO_ORIGIN);
+    expect(postMessage).toHaveBeenCalledWith(JSON.stringify({ action: "invokeAction", actionName: "fitWindow" }), DRAWIO_ORIGIN);
 
     window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "save", xml: "<mxfile><diagram><mxGraphModel><root/></mxGraphModel></diagram></mxfile>", exit: true } }));
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.stringContaining("mxGraphModel")));
@@ -34,5 +42,19 @@ describe("DrawioEditorModal", () => {
     window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "exit", modified: true } }));
     expect(onSave).not.toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("ignores delayed layout messages after the iframe window becomes unavailable", () => {
+    vi.useFakeTimers();
+    const { unmount } = render(<DrawioEditorModal source="" onSave={vi.fn()} onCancel={vi.fn()} />);
+    const frame = (screen.getByTitle("draw.io editor") as HTMLIFrameElement).contentWindow!;
+    const postMessage = vi.spyOn(frame, "postMessage").mockImplementation(() => undefined);
+
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: JSON.stringify({ event: "init" }) }));
+    postMessage.mockImplementation(() => { throw new TypeError("iframe is unavailable"); });
+
+    expect(() => vi.advanceTimersByTime(1_000)).not.toThrow();
+    unmount();
+    expect(() => vi.runAllTimers()).not.toThrow();
   });
 });

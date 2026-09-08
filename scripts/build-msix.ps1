@@ -1,12 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$OutputDirectory,
-    [string]$PfxPath,
-    [string]$PfxPassword,
     [string]$CertificateThumbprint,
     [string]$Publisher,
-    [string]$PersistentCertificateFriendlyName,
-    [int]$PersistentCertificateValidityYears = 5,
     [string]$TimestampUrl,
     [string]$ConfigPath,
     [switch]$SkipTauriBuild
@@ -18,6 +14,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $tauriRoot = Join-Path $projectRoot "src-tauri"
 Import-Module (Join-Path $PSScriptRoot "ReleaseTools.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "MsixSigning.psm1") -Force
 $releaseConfiguration = Import-ReleaseConfiguration -Path $ConfigPath -ProjectRoot $projectRoot
 $tauriConfigPath = $releaseConfiguration.TauriConfigPath
 $manifestTemplatePath = Join-Path $projectRoot "packaging\msix\AppxManifest.xml.in"
@@ -31,10 +28,6 @@ $releaseExecutable = Join-Path $tauriRoot "target\release\markdown-viewer.exe"
 if ([string]::IsNullOrWhiteSpace($Publisher)) {
     $Publisher = $releaseConfiguration.Raw.application.publisher
 }
-if ([string]::IsNullOrWhiteSpace($PersistentCertificateFriendlyName)) {
-    $PersistentCertificateFriendlyName = $releaseConfiguration.Raw.application.certificateFriendlyName
-}
-
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = $releaseConfiguration.ReleaseDirectory
 }
@@ -106,132 +99,28 @@ function Convert-ToMsixVersion {
     return $normalized -join "."
 }
 
-function Test-CodeSigningCertificate {
-    param(
-        [Parameter(Mandatory)]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
-    )
-
-    if (-not $Certificate.HasPrivateKey) {
-        return $false
-    }
-    if ($Certificate.NotBefore -gt (Get-Date) -or $Certificate.NotAfter -le (Get-Date)) {
-        return $false
-    }
-
-    foreach ($extension in $Certificate.Extensions) {
-        if ($extension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
-            foreach ($usage in $extension.EnhancedKeyUsages) {
-                if ($usage.Value -eq "1.3.6.1.5.5.7.3.3") {
-                    return $true
-                }
-            }
-        }
-    }
-
-    return $false
-}
-
-function Get-PersistentSigningCertificate {
-    param(
-        [Parameter(Mandatory)]
-        [string]$Subject,
-        [Parameter(Mandatory)]
-        [string]$FriendlyName,
-        [Parameter(Mandatory)]
-        [int]$ValidityYears
-    )
-
-    if ($ValidityYears -lt 1 -or $ValidityYears -gt 20) {
-        throw "PersistentCertificateValidityYears must be between 1 and 20."
-    }
-
-    $existingCertificate = Get-ChildItem -LiteralPath "Cert:\CurrentUser\My" |
-        Where-Object {
-            $_.Subject -eq $Subject -and
-            $_.FriendlyName -eq $FriendlyName -and
-            (Test-CodeSigningCertificate -Certificate $_)
-        } |
-        Sort-Object NotAfter -Descending |
-        Select-Object -First 1
-
-    if ($existingCertificate) {
-        Write-Host "Reusing persistent signing certificate: $($existingCertificate.Thumbprint)"
-        return $existingCertificate
-    }
-
-    $newCertificate = New-SelfSignedCertificate `
-        -Type CodeSigningCert `
-        -Subject $Subject `
-        -FriendlyName $FriendlyName `
-        -CertStoreLocation "Cert:\CurrentUser\My" `
-        -KeyAlgorithm RSA `
-        -KeyLength 3072 `
-        -HashAlgorithm SHA256 `
-        -KeyExportPolicy Exportable `
-        -NotAfter (Get-Date).AddYears($ValidityYears)
-
-    if (-not (Test-CodeSigningCertificate -Certificate $newCertificate)) {
-        throw "The persistent code-signing certificate was created without a usable private key or Code Signing EKU."
-    }
-
-    Write-Host "Created persistent signing certificate: $($newCertificate.Thumbprint)"
-    return $newCertificate
-}
-
 $tauriConfig = Get-Content -LiteralPath $tauriConfigPath -Raw | ConvertFrom-Json
 $packageVersion = Convert-ToMsixVersion -Version $tauriConfig.version
 $packageName = "${artifactBaseName}_${packageVersion}_${architecture}"
 $outputDirectoryFullPath = [System.IO.Path]::GetFullPath($OutputDirectory)
 $msixPath = Join-Path $outputDirectoryFullPath "${packageName}.msix"
 $certificatePath = Join-Path $outputDirectoryFullPath $releaseConfiguration.Raw.application.certificateFileName
-$usingPfx = -not [string]::IsNullOrWhiteSpace($PfxPath)
-$signingCertificate = $null
-$signingPassword = $PfxPassword
-
-New-Item -ItemType Directory -Path $outputDirectoryFullPath -Force | Out-Null
-
-if ($usingPfx) {
-    if (-not [string]::IsNullOrWhiteSpace($CertificateThumbprint)) {
-        throw "Specify either PfxPath or CertificateThumbprint, not both."
-    }
-    $PfxPath = [System.IO.Path]::GetFullPath($PfxPath)
-    if (-not (Test-Path -LiteralPath $PfxPath)) {
-        throw "Signing certificate was not found: $PfxPath"
-    }
-    $signingCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-        $PfxPath,
-        $PfxPassword,
-        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
-    )
-    $Publisher = $signingCertificate.Subject
+if ($Publisher -cne $releaseConfiguration.Raw.application.publisher) {
+    throw 'Publisherの上書きは使用できません。共通証明書とアプリ設定を一致させてください。'
 }
-elseif (-not [string]::IsNullOrWhiteSpace($CertificateThumbprint)) {
-    $normalizedThumbprint = $CertificateThumbprint.Replace(" ", "").ToUpperInvariant()
-    $signingCertificate = Get-ChildItem -LiteralPath "Cert:\CurrentUser\My\$normalizedThumbprint" -ErrorAction Stop
-    if (-not (Test-CodeSigningCertificate -Certificate $signingCertificate)) {
-        throw "The selected certificate does not have a usable private key and Code Signing EKU: $normalizedThumbprint"
-    }
-    $Publisher = $signingCertificate.Subject
-}
-else {
-    $signingCertificate = Get-PersistentSigningCertificate `
-        -Subject $Publisher `
-        -FriendlyName $PersistentCertificateFriendlyName `
-        -ValidityYears $PersistentCertificateValidityYears
-}
-
-$certificateBytes = $signingCertificate.Export(
-    [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert
-)
-if (Set-FileBytesIfChanged -Path $certificatePath -Bytes $certificateBytes) {
-    Write-Host "Updated public certificate: $certificatePath"
-}
-else {
-    Write-Host "Reusing unchanged public certificate file: $certificatePath"
-}
-
+# ビルドや成果物変更の前に共通設定を検証する。秘密鍵の新規発行はしない。
+$signingCertificate = Get-MsixSigningCertificate -Publisher $Publisher -CertificateThumbprint $CertificateThumbprint
 try {
+    New-Item -ItemType Directory -Path $outputDirectoryFullPath -Force | Out-Null
+    $certificateBytes = $signingCertificate.Export(
+        [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert
+    )
+    if (Set-FileBytesIfChanged -Path $certificatePath -Bytes $certificateBytes) {
+        Write-Host "Updated public certificate: $certificatePath"
+    }
+    else {
+        Write-Host "Reusing unchanged public certificate file: $certificatePath"
+    }
     if (-not $SkipTauriBuild) {
         Push-Location $projectRoot
         try {
@@ -306,15 +195,7 @@ try {
         "/fd",
         "SHA256"
     )
-    if ($usingPfx) {
-        $signArguments += @("/f", $PfxPath)
-        if (-not [string]::IsNullOrEmpty($signingPassword)) {
-            $signArguments += @("/p", $signingPassword)
-        }
-    }
-    else {
-        $signArguments += @("/s", "My", "/sha1", $signingCertificate.Thumbprint)
-    }
+    $signArguments += @("/s", "My", "/sha1", $signingCertificate.Thumbprint)
     if (-not [string]::IsNullOrWhiteSpace($TimestampUrl)) {
         $signArguments += @("/tr", $TimestampUrl, "/td", "SHA256")
     }
@@ -334,9 +215,7 @@ try {
 
     Write-Host "MSIX package: $msixPath"
     Write-Host "Public certificate: $certificatePath"
-    if (-not $usingPfx) {
-        Write-Warning "This package uses a self-signed certificate from Cert:\CurrentUser\My. Keep its private key for future updates and trust the .cer file on client devices."
-    }
+    Write-Host "Signing certificate: $($signingCertificate.Thumbprint) (CurrentUser/My)"
 }
 finally {
     if ($signingCertificate) {

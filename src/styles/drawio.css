@@ -1,11 +1,15 @@
 .drawio-block { margin: 1em 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: 8px; background: var(--panel-bg); }
-.drawio-block__toolbar { display: flex; align-items: center; gap: 12px; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid var(--border-color); }
-.drawio-block__toolbar span { color: var(--text-secondary); font-size: 12px; font-weight: 600; }
-.drawio-block__toolbar button { margin-left: auto; }
-.drawio-block__preview { min-height: 180px; padding: 12px; overflow: auto; background: #fff; color: #1f2937; }
-.drawio-block__viewer { min-height: 180px; }
-.drawio-block__svg { display: grid; place-items: center; min-height: 180px; }
-.drawio-block__svg svg { max-width: 100%; max-height: 520px; }
+.drawio-block__toolbar { gap: 12px; }
+.drawio-block__toolbar .responsive-toolbar__label { color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+.drawio-block__toolbar .mermaid-toolbar { padding: 0; }
+.drawio-block__preview { min-height: 0; padding: 12px; overflow: auto; background: #fff; color: #1f2937; }
+.drawio-block__viewer { display: grid; place-items: center; min-height: 0; }
+.drawio-block__viewer-frame { display: block; width: 100%; min-height: 0; border: 0; pointer-events: none; background: transparent; }
+.drawio-block__viewer svg { display: block; max-width: 100%; height: auto !important; margin: auto; }
+.drawio-block__svg { display: grid; place-items: center; min-height: 0; }
+.drawio-block__svg svg { display: block; width: 100%; max-width: 100%; height: 100%; }
+.drawio-block__zoom { display: block; width: 100%; padding: 0; color: inherit; background: transparent; border: 0; cursor: zoom-in; }
+.drawio-block__source { max-height: 520px; margin: 0; overflow: auto; white-space: pre-wrap; }
 .drawio-block__error,.drawio-block__fallback p { color: #b42318; white-space: pre-wrap; }
 .drawio-block__fallback pre { max-height: 240px; overflow: auto; }
 .drawio-editor { position: fixed; inset: 0; z-index: 1400; display: flex; flex-direction: column; background: var(--bg-color); }
@@ -16,4 +20,5 @@
 .drawio-editor__warnings p { margin: 2px 0; }
 .drawio-editor__error { display: flex; align-items: center; gap: 12px; color: #b42318; background: #fff1f0; }
 .drawio-editor__error button { margin-left: auto; }
+.drawio-editor:focus-visible { outline: 2px solid var(--accent-color); outline-offset: -2px; }
 .drawio-editor iframe { flex: 1 1 auto; width: 100%; min-height: 0; border: 0; background: #fff; }

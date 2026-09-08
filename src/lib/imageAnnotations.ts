@@ -14,6 +14,8 @@ export interface AnnotationRect {
   y: number;
   width: number;
   height: number;
+  /** Clockwise rotation around the rectangle center, in degrees. */
+  rotation?: number;
 }
 
 export interface FrameAnnotation extends AnnotationRect {
@@ -21,6 +23,8 @@ export interface FrameAnnotation extends AnnotationRect {
   type: "frame";
   color: string;
   lineWidth: number;
+  /** Zero renders an ordinary rectangle. */
+  cornerRadius?: number;
 }
 
 export interface EllipseAnnotation extends AnnotationRect {
@@ -100,6 +104,7 @@ export interface AnnotationChanges extends Partial<AnnotationRect> {
   backgroundColor?: string;
   fontSize?: number;
   direction?: ArrowDirection;
+  cornerRadius?: number;
 }
 
 export type ImageAnnotationAction =
@@ -148,13 +153,33 @@ export function clampRect(rect: AnnotationRect, bounds: ImageBounds): Annotation
 /** Clamp geometry and type-specific numeric fields while retaining annotation data. */
 export function clampAnnotation(annotation: ImageAnnotation, bounds: ImageBounds): ImageAnnotation {
   const rect = clampRect(annotation, bounds);
-  if (annotation.type === "frame" || annotation.type === "ellipse" || annotation.type === "arrow" || annotation.type === "line" || annotation.type === "stroke") {
-    return { ...annotation, ...rect, lineWidth: Math.max(1, finite(annotation.lineWidth, 1)) };
+  const rotation = normalizeAnnotationRotation(annotation.rotation ?? 0);
+  if (annotation.type === "frame") {
+    return {
+      ...annotation,
+      ...rect,
+      rotation,
+      lineWidth: Math.max(1, finite(annotation.lineWidth, 1)),
+      cornerRadius: clamp(annotation.cornerRadius ?? 0, 0, Math.min(rect.width, rect.height) / 2),
+    };
+  }
+  if (annotation.type === "ellipse" || annotation.type === "arrow" || annotation.type === "line" || annotation.type === "stroke") {
+    return { ...annotation, ...rect, rotation, lineWidth: Math.max(1, finite(annotation.lineWidth, 1)) };
   }
   if (annotation.type === "label") {
-    return { ...annotation, ...rect, fontSize: Math.max(1, finite(annotation.fontSize, 1)) };
+    return { ...annotation, ...rect, rotation, fontSize: Math.max(1, finite(annotation.fontSize, 1)) };
   }
-  return { ...annotation, ...rect };
+  return { ...annotation, ...rect, rotation };
+}
+
+export function normalizeAnnotationRotation(value: number): number {
+  const normalized = ((finite(value) % 360) + 540) % 360 - 180;
+  return Object.is(normalized, -0) ? 0 : normalized;
+}
+
+export function isStampAnnotation(annotation: ImageAnnotation): annotation is Extract<ImageAnnotation, { type: AnnotationKind }> {
+  return annotation.type === "frame" || annotation.type === "ellipse" || annotation.type === "arrow"
+    || annotation.type === "mask" || annotation.type === "label";
 }
 
 export function createImageAnnotationState(
@@ -343,6 +368,15 @@ export function containsAnnotationPoint(annotation: ImageAnnotation, x: number, 
       return Math.hypot(x - (previous.x + dx * ratio), y - (previous.y + dy * ratio)) <= annotation.lineWidth + 4;
     });
   }
+  if (isStampAnnotation(annotation) && annotation.rotation) {
+    const radians = -annotation.rotation * Math.PI / 180;
+    const centerX = annotation.x + annotation.width / 2;
+    const centerY = annotation.y + annotation.height / 2;
+    const offsetX = x - centerX;
+    const offsetY = y - centerY;
+    x = centerX + offsetX * Math.cos(radians) - offsetY * Math.sin(radians);
+    y = centerY + offsetX * Math.sin(radians) + offsetY * Math.cos(radians);
+  }
   if (annotation.type === "ellipse") {
     if (annotation.width <= 0 || annotation.height <= 0) return false;
     const normalizedX = (x - (annotation.x + annotation.width / 2)) / (annotation.width / 2);
@@ -362,6 +396,13 @@ export function containsAnnotationPoint(annotation: ImageAnnotation, x: number, 
     const ratio = clamp(((x - start.x) * dx + (y - start.y) * dy) / lengthSquared, 0, 1);
     const distance = Math.hypot(x - (start.x + dx * ratio), y - (start.y + dy * ratio));
     return distance <= Math.max(6, annotation.lineWidth + 4);
+  }
+  if (annotation.type === "frame" && (annotation.cornerRadius ?? 0) > 0) {
+    const radius = Math.min(annotation.cornerRadius ?? 0, annotation.width / 2, annotation.height / 2);
+    if (!containsPoint(annotation, x, y)) return false;
+    const innerX = clamp(x, annotation.x + radius, annotation.x + annotation.width - radius);
+    const innerY = clamp(y, annotation.y + radius, annotation.y + annotation.height - radius);
+    return Math.hypot(x - innerX, y - innerY) <= radius;
   }
   return containsPoint(annotation, x, y);
 }
@@ -399,6 +440,32 @@ export function hitTestAnnotation(
 
 function canvasRect(annotation: AnnotationRect, bounds: ImageBounds): AnnotationRect {
   return clampRect(annotation, bounds);
+}
+
+function beginAnnotationRotation(ctx: CanvasRenderingContext2D, annotation: ImageAnnotation): boolean {
+  if (!isStampAnnotation(annotation) || !annotation.rotation) return false;
+  const centerX = annotation.x + annotation.width / 2;
+  const centerY = annotation.y + annotation.height / 2;
+  ctx.save();
+  ctx.translate(centerX, centerY);
+  ctx.rotate(annotation.rotation * Math.PI / 180);
+  ctx.translate(-centerX, -centerY);
+  return true;
+}
+
+function strokeRoundedFrame(ctx: CanvasRenderingContext2D, rect: AnnotationRect, radius: number): void {
+  const boundedRadius = Math.min(Math.max(0, radius), rect.width / 2, rect.height / 2);
+  if (boundedRadius <= 0) {
+    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    return;
+  }
+  ctx.beginPath();
+  if (typeof ctx.roundRect === "function") {
+    ctx.roundRect(rect.x, rect.y, rect.width, rect.height, boundedRadius);
+  } else {
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+  }
+  ctx.stroke();
 }
 
 function isHtmlCanvasContext(ctx: CanvasRenderingContext2D): boolean {
@@ -597,23 +664,27 @@ export function drawImageAnnotations(
       annotation.points.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y));
       ctx.stroke();
       ctx.restore();
-    } else if (annotation.type !== "mask") continue;
-    else if (annotation.style === "solid") {
-      ctx.save();
-      ctx.fillStyle = annotation.color;
-      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-      ctx.restore();
-    } else if (annotation.style === "blur") {
-      if (isHtmlCanvasContext(ctx)) applyNativeBlur(ctx, rect);
-      else applyPixelBlur(ctx, rect);
-    } else {
-      if (isHtmlCanvasContext(ctx)) applyNativeMosaic(ctx, rect);
-      else applyPixelMosaic(ctx, rect);
+    } else if (annotation.type === "mask") {
+      const rotated = beginAnnotationRotation(ctx, annotation);
+      if (annotation.style === "solid") {
+        ctx.save();
+        ctx.fillStyle = annotation.color;
+        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        ctx.restore();
+      } else if (annotation.style === "blur") {
+        if (isHtmlCanvasContext(ctx)) applyNativeBlur(ctx, rect);
+        else applyPixelBlur(ctx, rect);
+      } else {
+        if (isHtmlCanvasContext(ctx)) applyNativeMosaic(ctx, rect);
+        else applyPixelMosaic(ctx, rect);
+      }
+      if (rotated) ctx.restore();
     }
   }
 
   for (const annotation of annotations) {
     const rect = canvasRect(annotation, bounds);
+    const rotated = beginAnnotationRotation(ctx, annotation);
     if (annotation.type === "stroke" && annotation.mode !== "eraser") {
       ctx.save();
       ctx.strokeStyle = annotation.color;
@@ -639,7 +710,7 @@ export function drawImageAnnotations(
       ctx.save();
       ctx.strokeStyle = annotation.color;
       ctx.lineWidth = annotation.lineWidth;
-      ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      strokeRoundedFrame(ctx, rect, annotation.cornerRadius ?? 0);
       ctx.restore();
     } else if (annotation.type === "ellipse") {
       ctx.save();
@@ -678,6 +749,7 @@ export function drawImageAnnotations(
       ctx.fillText(annotation.text, rect.x + Math.min(6, rect.width / 2), rect.y + rect.height / 2, Math.max(0, rect.width - 12));
       ctx.restore();
     }
+    if (rotated) ctx.restore();
   }
 }
 

@@ -54,4 +54,13 @@ describe("Markdown and presentation print styles", () => {
     expect(presentationCss).toContain("color: var(--print-effective-heading");
     expect(presentationCss).toContain("border-color: var(--print-effective-border");
   });
+
+  it("defines paper settings, continuous normal flow, and one-page presentation breaks", () => {
+    expect(appCss).toContain("@page {");
+    expect(appCss).toContain("margin: 14mm 14mm 16mm");
+    expect(appCss).toContain(".presentation-print-page:not(:first-child)");
+    expect(appCss).toContain("break-before: page");
+    expect(appCss).not.toContain(".print-metadata__page-number::after");
+    expect(appCss).not.toContain(".print-metadata__page-number");
+  });
 });

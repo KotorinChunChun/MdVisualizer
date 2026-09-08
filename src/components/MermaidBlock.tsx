@@ -1,8 +1,11 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { mermaidInputError, mermaidRenderId, renderMermaid } from "../lib/mermaidService";
+import { copyMermaid } from "../lib/mermaidClipboard";
 import { removeMermaidBlockStatus, setMermaidBlockStatus } from "../lib/mermaidStatus";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { MermaidToolbar } from "./MermaidToolbar";
+import { MermaidEditorPlaceholderModal } from "./MermaidEditorPlaceholderModal";
+import { ResponsiveToolbar } from "./ResponsiveToolbar";
 
 interface MermaidBlockProps {
   source: string;
@@ -15,6 +18,17 @@ interface MermaidBlockProps {
   diagramIndex?: number;
   diagramCount?: number;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
+  showToolbar?: boolean;
+  onRenderedSvg?: (svg: string | undefined) => void;
+  /** Original source shown by the shared popup when a local translator is used. */
+  mediaSource?: string;
+  diagramAlt?: string;
+  headingTitle?: string;
+  headingLabel?: ReactNode;
+  description?: string;
+  editable?: boolean;
+  storage?: "embedded" | "external";
+  onStorageConvert?: () => boolean | void | Promise<boolean | void>;
 }
 
 type RenderState = { svg: string | null; error: string | null; pending: boolean };
@@ -29,11 +43,23 @@ export function MermaidBlock({
   diagramIndex,
   diagramCount,
   onMediaOpen,
+  showToolbar = true,
+  onRenderedSvg,
+  mediaSource,
+  diagramAlt = "Mermaid図",
+  headingTitle,
+  headingLabel,
+  description,
+  editable = false,
+  storage,
+  onStorageConvert,
 }: MermaidBlockProps) {
   const [state, setState] = useState<RenderState>({ svg: null, error: null, pending: false });
   const [showDetails, setShowDetails] = useState(false);
   const [visible, setVisible] = useState(false);
   const [display, setDisplay] = useState<"diagram" | "code">("diagram");
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [convertingStorage, setConvertingStorage] = useState(false);
   const hostRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
   const localId = useId().replace(/:/g, "-");
@@ -41,6 +67,10 @@ export function MermaidBlock({
   const statusId = mermaidRenderId({ windowId, tabId, blockId: stableBlockId });
 
   useEffect(() => () => removeMermaidBlockStatus(statusId), [statusId]);
+
+  useEffect(() => {
+    onRenderedSvg?.(state.svg ?? undefined);
+  }, [onRenderedSvg, state.svg]);
 
   useEffect(() => {
     const element = hostRef.current;
@@ -70,6 +100,7 @@ export function MermaidBlock({
 
     const generation = ++generationRef.current;
     const renderId = mermaidRenderId({ windowId, tabId, blockId: stableBlockId, generation }, `mermaid-${localId}`);
+    setShowDetails(false);
     const inputError = mermaidInputError(source, { diagramIndex, diagramCount });
     if (inputError) {
       setState({ svg: null, error: inputError, pending: false });
@@ -77,7 +108,6 @@ export function MermaidBlock({
       return;
     }
 
-    setShowDetails(false);
     setState({ svg: null, error: null, pending: true });
     setMermaidBlockStatus(statusId, { state: "pending" });
     let disposed = false;
@@ -96,18 +126,52 @@ export function MermaidBlock({
     return () => { disposed = true; };
   }, [diagramCount, diagramIndex, localId, mode, source, stableBlockId, statusId, tabId, theme, visible, windowId]);
 
-  if (mode === "off" || mode === "always-code") return <div className="mermaid-container">
-    <MermaidToolbar source={source} display="code" />
+  const toolbarLabel = `Mermaid${headingTitle?.trim() ? ` — ${headingTitle.trim()}` : ""}`;
+  const descriptionNode = description?.trim() ? <div className="diagram-alt">{description.trim()}</div> : null;
+  const toolbar = showToolbar && <ResponsiveToolbar collapseAll className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
+    ...(editable ? [{ id: "edit", group: "edit", priority: 80, node: <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button> }] : []),
+    { id: "copy-view", group: "copy", priority: 100, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} /> },
+    ...(storage && onStorageConvert ? [{ id: "storage", group: "storage", priority: 10, node: <button className="diagram-action-button" type="button" disabled={convertingStorage} onClick={() => {
+      setConvertingStorage(true);
+      void Promise.resolve().then(onStorageConvert).catch((error) => window.dispatchEvent(new CustomEvent("markdown-toast", {
+        detail: { type: "error", message: error instanceof Error ? error.message : String(error) },
+      }))).finally(() => setConvertingStorage(false));
+    }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button> }] : []),
+  ]} />;
+  const editor = editorOpen && <MermaidEditorPlaceholderModal source={source} onClose={() => setEditorOpen(false)} />;
+
+  if (mode === "off" || mode === "always-code") return <div className={`mermaid-container${showToolbar ? "" : " is-embedded"}`}>
+    {toolbar}
     <pre className="mermaid-source"><code>{source}</code></pre>
+    {descriptionNode}
+    {editor}
   </div>;
   const shouldShowCode = mode === "error-code" && state.error !== null;
   const displayedContent = shouldShowCode ? "code" : display;
-  return <div ref={hostRef} className="mermaid-container">
-    <MermaidToolbar source={source} svg={state.svg ?? undefined} display={displayedContent} onDisplayChange={setDisplay} />
-    {state.error && <div className="mermaid-error"><strong>Mermaid を描画できません。</strong><div><button type="button" onClick={() => setShowDetails((value) => !value)}>エラー詳細</button>{displayedContent !== "code" && <button type="button" onClick={() => setDisplay("code")}>コードを表示</button>}</div>{showDetails && <pre>{state.error}</pre>}</div>}
+  return <div ref={hostRef} className={`mermaid-container${showToolbar ? "" : " is-embedded"}`}>
+    {toolbar}
+    {state.error && <div className="mermaid-error" role="alert"><strong>Mermaid を描画できません。</strong><button type="button" onClick={() => setShowDetails(true)}>エラー詳細</button>{displayedContent !== "code" && <button type="button" onClick={() => setDisplay("code")}>コードを表示</button>}</div>}
+    {showDetails && state.error && <div className="mermaid-error-dialog" onClick={() => setShowDetails(false)}><section role="dialog" aria-modal="true" aria-label="Mermaidエラー詳細" onClick={(event) => event.stopPropagation()}><header><strong>Mermaidエラー詳細</strong><button type="button" aria-label="エラー詳細を閉じる" onClick={() => setShowDetails(false)}>×</button></header><pre>{state.error}</pre><footer><button type="button" onClick={() => setShowDetails(false)}>閉じる</button></footer></section></div>}
     {displayedContent === "code" && <pre className="mermaid-source"><code>{source}</code></pre>}
     {displayedContent === "diagram" && !state.error && state.pending && <div className="mermaid-loading">Rendering Mermaid…</div>}
     {displayedContent === "diagram" && !state.error && !state.pending && !state.svg && <div className="mermaid-loading">Mermaid を表示する準備中です…</div>}
-    {displayedContent === "diagram" && state.svg && <button type="button" className="mermaid-block" aria-label="図を拡大" onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: "Mermaid図" }, mermaidSource: source })} dangerouslySetInnerHTML={{ __html: state.svg }} />}
+    {displayedContent === "diagram" && state.svg && <button
+      type="button"
+      className="mermaid-block"
+      aria-label="図を拡大"
+      onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: diagramAlt }, headingTitle: headingTitle ?? diagramAlt, diagramSource: mediaSource ?? source, diagramKind: "mermaid" })}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void copyMermaid("bmp", mediaSource ?? source, state.svg!).then(() => {
+          window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type: "success", message: "BMP画像をコピーしました" } }));
+        }).catch((error) => {
+          window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type: "error", message: error instanceof Error ? error.message : "図をコピーできませんでした" } }));
+        });
+      }}
+      dangerouslySetInnerHTML={{ __html: state.svg }}
+    />}
+    {descriptionNode}
+    {editor}
   </div>;
 }

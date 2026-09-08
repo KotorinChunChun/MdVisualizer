@@ -89,4 +89,12 @@ describe("StatusBar", () => {
     fireEvent.click(help);
     expect(onOpenShortcutHelp).toHaveBeenCalledOnce();
   });
+
+  it("opens the Markdown editing test report", () => {
+    const onOpenEditingTests = vi.fn();
+    render(<StatusBar document={null} onOpenEditingTests={onOpenEditingTests} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "編集テスト結果を開く" }));
+    expect(onOpenEditingTests).toHaveBeenCalledOnce();
+  });
 });

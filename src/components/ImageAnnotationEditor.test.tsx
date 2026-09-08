@@ -57,6 +57,7 @@ describe("ImageAnnotationEditor", () => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
     tauriDrop.callback = null;
+    localStorage.clear();
   });
 
   it("shows independent tools, the color palette, and canvas dot controls", () => {
@@ -165,6 +166,35 @@ describe("ImageAnnotationEditor", () => {
     expect(width.value).toBe("318");
   });
 
+  it("switches frames to rounded corners and rotates a selected stamp with accelerated Alt+wheel", () => {
+    const { container } = render(<ImageAnnotationEditor {...props} />);
+    const canvas = editorCanvas(container);
+    fireEvent.click(screen.getByLabelText("角丸四角形"));
+    fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 150, clientY: 75 });
+    const angle = screen.getByLabelText("角度") as HTMLInputElement;
+    expect(angle.value).toBe("0");
+    fireEvent.wheel(canvas, { deltaY: -100, altKey: true, timeStamp: 100 });
+    expect(angle.value).toBe("2");
+    fireEvent.wheel(canvas, { deltaY: -100, altKey: true, timeStamp: 200 });
+    expect(angle.value).toBe("4");
+    fireEvent.wheel(canvas, { deltaY: -100, altKey: true, timeStamp: 250 });
+    expect(angle.value).toBe("14");
+  });
+
+  it("shows shortcut help and persists wheel step settings", () => {
+    render(<ImageAnnotationEditor {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
+    expect(screen.getByRole("dialog", { name: "画像編集設定" })).toBeTruthy();
+    expect(screen.getByText("Alt+ホイール")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("通常の変化量"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("高速時の変化量"), { target: { value: "12" } });
+    fireEvent.click(screen.getByRole("button", { name: "設定を保存" }));
+    expect(JSON.parse(localStorage.getItem("markdown-viewer.image-editor-settings.v1") ?? "{}")).toMatchObject({
+      normalWheelStep: 3,
+      fastWheelStep: 12,
+    });
+  });
+
   it("uses rectangular blur masks and a font-sized label default", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     const canvas = editorCanvas(container);
@@ -229,6 +259,33 @@ describe("ImageAnnotationEditor", () => {
     })));
     const { saveRenderedImage } = await import("../lib/commands");
     expect(saveRenderedImage).not.toHaveBeenCalled();
+  });
+
+  it("renders a rounded and rotated stamp into the saved PNG", async () => {
+    const rotate = vi.fn();
+    const roundRect = vi.fn();
+    const context = {
+      canvas: { width: 1000, height: 800 }, drawImage: vi.fn(), save: vi.fn(), restore: vi.fn(),
+      translate: vi.fn(), rotate, strokeRect: vi.fn(), setLineDash: vi.fn(), beginPath: vi.fn(),
+      roundRect, rect: vi.fn(), stroke: vi.fn(), strokeStyle: "", lineWidth: 1, globalAlpha: 1,
+    };
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => callback(new Blob(["png"], { type: "image/png" })));
+    const onApply = vi.fn();
+    const { container } = render(<ImageAnnotationEditor
+      {...props}
+      target={{ rawSrc: "data:image/png;base64,AAAA", filename: "embedded.png", storage: "embedded" }}
+      onApply={onApply}
+    />);
+    loadEditorImage(container, 1000, 800);
+    const canvas = editorCanvas(container);
+    fireEvent.click(screen.getByLabelText("角丸四角形"));
+    fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 150, clientY: 75 });
+    fireEvent.wheel(canvas, { deltaY: -100, altKey: true, timeStamp: 100 });
+    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+    await waitFor(() => expect(onApply).toHaveBeenCalled());
+    expect(rotate).toHaveBeenCalledWith(2 * Math.PI / 180);
+    expect(roundRect).toHaveBeenCalled();
   });
 
   it("returns edited SharePoint images as PNG data without calling the local file saver", async () => {

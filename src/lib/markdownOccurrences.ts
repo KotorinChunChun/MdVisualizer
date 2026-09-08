@@ -2,6 +2,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import { remarkObsidianImages } from "./remarkObsidianImages";
+import { calculateTableAggregates } from "./tableAggregation";
 
 type MarkdownPosition = {
   start?: { line?: number; offset?: number };
@@ -15,6 +16,7 @@ type MarkdownNode = {
   url?: string;
   alt?: string | null;
   value?: string;
+  align?: Array<"left" | "center" | "right" | null>;
   position?: MarkdownPosition;
   children?: MarkdownNode[];
 };
@@ -52,7 +54,16 @@ export interface InlineSvgOccurrence extends MarkdownOccurrenceBase {
   svg: string;
 }
 
-export type EditableMarkdownOccurrence = CodeFenceOccurrence | ImageMarkdownOccurrence | InlineSvgOccurrence;
+export interface MarkdownTableOccurrence extends MarkdownOccurrenceBase {
+  kind: "table";
+  headers: string[];
+  rows: string[][];
+  alignments: Array<"left" | "center" | "right" | null>;
+  lineEnding: "\n" | "\r\n" | "\r";
+  continuationPrefix: string;
+}
+
+export type EditableMarkdownOccurrence = CodeFenceOccurrence | ImageMarkdownOccurrence | InlineSvgOccurrence | MarkdownTableOccurrence;
 
 export class MarkdownOccurrenceConflictError extends Error {
   constructor() {
@@ -120,6 +131,79 @@ function parseCodeFence(markdown: string, node: MarkdownNode): CodeFenceOccurren
   };
 }
 
+/** Returns the human-readable title/caption declared on a fenced code block. */
+export function codeFenceTitle(meta: string | null | undefined): string | undefined {
+  if (!meta) return undefined;
+  const match = /(?:^|\s)(?:title|caption)=(?:"([^"]+)"|'([^']+)'|([^\s]+))/i.exec(meta);
+  const title = (match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
+  return title || undefined;
+}
+
+/** Returns the optional alt text declared on a fenced code block. */
+export function codeFenceAlt(meta: string | null | undefined): string | undefined {
+  if (!meta) return undefined;
+  const match = /(?:^|\s)alt=(?:"([^"]*)"|'([^']*)'|([^\s]+))/i.exec(meta);
+  const alt = (match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
+  return alt || undefined;
+}
+
+function splitMarkdownTableRow(line: string): string[] {
+  let source = line.trim();
+  if (source.startsWith("|")) source = source.slice(1);
+  if (/(^|[^\\])\|\s*$/.test(source)) source = source.replace(/\|\s*$/, "");
+  const cells: string[] = [];
+  let cell = "";
+  let backslashes = 0;
+  for (const character of source) {
+    if (character === "|" && backslashes % 2 === 0) {
+      cells.push(cell.trim());
+      cell = "";
+    } else cell += character;
+    backslashes = character === "\\" ? backslashes + 1 : 0;
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+
+function parseMarkdownTable(markdown: string, node: MarkdownNode): MarkdownTableOccurrence | null {
+  const range = rangeFor(node);
+  if (!range) return null;
+  const expected = markdown.slice(range.start, range.end);
+  const sourceLines = expected.split(/\r\n|\r|\n/);
+  const continuationPrefix = /^(?:(?:[ \t]*>[ \t]?)+)/.exec(sourceLines[1] ?? "")?.[0] ?? "";
+  const lines = sourceLines.map((line, index) => index > 0 && continuationPrefix && line.startsWith(continuationPrefix) ? line.slice(continuationPrefix.length) : line);
+  if (lines.length < 2) return null;
+  const parsedRows = lines.map(splitMarkdownTableRow);
+  const columnCount = Math.max(1, node.align?.length ?? 0, ...parsedRows.map((row) => row.length));
+  const normalize = (row: string[]) => Array.from({ length: columnCount }, (_, column) => row[column] ?? "");
+  return {
+    kind: "table",
+    id: occurrenceId("table", range.start, range.end),
+    ...range,
+    expected,
+    headers: normalize(parsedRows[0]),
+    rows: parsedRows.slice(2).map(normalize),
+    alignments: Array.from({ length: columnCount }, (_, column) => node.align?.[column] ?? null),
+    lineEnding: expected.includes("\r\n") ? "\r\n" : expected.includes("\r") ? "\r" : "\n",
+    continuationPrefix,
+  };
+}
+
+function encodeMarkdownTableCell(value: string): string {
+  return value.trim().replace(/\r\n|\r|\n/g, "<br>").replace(/(^|[^\\])\|/g, "$1\\|");
+}
+
+export function serializeMarkdownTable(table: Pick<MarkdownTableOccurrence, "headers" | "rows" | "alignments" | "lineEnding"> & { continuationPrefix?: string }): string {
+  const calculated = calculateTableAggregates(table);
+  const width = Math.max(1, calculated.headers.length);
+  const row = (values: string[]) => `| ${Array.from({ length: width }, (_, column) => encodeMarkdownTableCell(values[column] ?? "")).join(" | ")} |`;
+  const separator = row(Array.from({ length: width }, (_, column) => {
+    const alignment = table.alignments[column] ?? null;
+    return alignment === "left" ? ":---" : alignment === "center" ? ":---:" : alignment === "right" ? "---:" : "---";
+  }));
+  return [row(calculated.headers), separator, ...calculated.rows.map(row)].map((line, index) => `${index > 0 ? table.continuationPrefix ?? "" : ""}${line}`).join(table.lineEnding);
+}
+
 function collectHtmlImages(node: MarkdownNode): ImageMarkdownOccurrence[] {
   const range = rangeFor(node);
   if (!range || !node.value) return [];
@@ -154,6 +238,9 @@ export function collectEditableMarkdownOccurrences(markdown: string): EditableMa
       const range = rangeFor(node);
       if (range) protectedRanges.push(range);
       const occurrence = parseCodeFence(markdown, node);
+      if (occurrence) occurrences.push(occurrence);
+    } else if (node.type === "table") {
+      const occurrence = parseMarkdownTable(markdown, node);
       if (occurrence) occurrences.push(occurrence);
     } else if (node.type === "inlineCode") {
       const range = rangeFor(node);

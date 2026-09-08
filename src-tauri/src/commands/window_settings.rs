@@ -1,18 +1,33 @@
 use crate::app_state::{AppState, WindowGeometry};
 use crate::errors::AppError;
+use crate::file_lock::{atomic_write, with_lock};
 use crate::markdown::is_supported_document;
 use crate::settings::{
     load_application_settings, load_settings as load_settings_file, merge_external_app_settings,
     merge_fold_state, merge_settings, SettingsLoadResult,
 };
 use crate::sharepoint::{is_spmd_uri, parse_spmd_uri};
+use serde::Serialize;
 use serde_json::{Map, Value};
+use sha2::{Digest, Sha256};
+use std::fs;
 use std::path::Path;
 use std::sync::atomic::Ordering;
 use tauri::{
     AppHandle, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindow,
     WebviewWindowBuilder,
 };
+use tauri_plugin_opener::OpenerExt;
+
+const MARKDOWN_STYLE_FILENAME: &str = "markdown-style.css";
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MarkdownStyleFile {
+    pub css: String,
+    pub path: String,
+    pub revision: String,
+}
 
 fn settings_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
     app_handle
@@ -28,6 +43,48 @@ fn fold_state_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String>
         .app_data_dir()
         .map(|path| path.join("fold-state.json"))
         .map_err(|error| error.to_string())
+}
+
+fn markdown_style_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
+    app_handle
+        .path()
+        .app_data_dir()
+        .map(|path| path.join(MARKDOWN_STYLE_FILENAME))
+        .map_err(|error| error.to_string())
+}
+
+fn markdown_style_revision(css: &str) -> String {
+    Sha256::digest(css.as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+fn markdown_style_result(path: &Path, css: String) -> MarkdownStyleFile {
+    MarkdownStyleFile {
+        revision: markdown_style_revision(&css),
+        css,
+        path: path.to_string_lossy().into_owned(),
+    }
+}
+
+pub(super) fn load_markdown_style_file(path: &Path, default_css: &str) -> Result<MarkdownStyleFile, String> {
+    if !path.exists() {
+        with_lock(path, || {
+            if !path.exists() {
+                atomic_write(path, default_css.as_bytes())?;
+            }
+            Ok(())
+        })
+        .map_err(|error| error.to_string())?;
+    }
+    let css = fs::read_to_string(path).map_err(|error| format!("Markdown CSSの読込に失敗しました: {error}"))?;
+    Ok(markdown_style_result(path, css))
+}
+
+pub(super) fn save_markdown_style_file(path: &Path, css: &str) -> Result<MarkdownStyleFile, String> {
+    with_lock(path, || atomic_write(path, css.as_bytes())).map_err(|error| error.to_string())?;
+    Ok(markdown_style_result(path, css.to_string()))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -259,6 +316,28 @@ pub fn save_settings(app_handle: AppHandle, updates: Value) -> Result<Value, Str
 }
 
 #[tauri::command]
+pub fn load_markdown_style(app_handle: AppHandle, default_css: String) -> Result<MarkdownStyleFile, String> {
+    load_markdown_style_file(&markdown_style_path(&app_handle)?, &default_css)
+}
+
+#[tauri::command]
+pub fn save_markdown_style(app_handle: AppHandle, css: String) -> Result<MarkdownStyleFile, String> {
+    save_markdown_style_file(&markdown_style_path(&app_handle)?, &css)
+}
+
+#[tauri::command]
+pub fn open_markdown_style(app_handle: AppHandle) -> Result<(), String> {
+    let path = markdown_style_path(&app_handle)?;
+    if !path.exists() {
+        return Err("Markdown CSSファイルがまだ生成されていません。".into());
+    }
+    app_handle
+        .opener()
+        .open_path(path.to_string_lossy().into_owned(), None::<&str>)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 pub fn update_external_app_settings(
     app_handle: AppHandle,
     upserts: Vec<Value>,
@@ -377,4 +456,22 @@ pub async fn open_in_new_window(
         .map_err(|_| "Window geometry state is unavailable.".to_string())?
         .insert(label, geometry);
     Ok(())
+}
+
+#[cfg(test)]
+mod markdown_style_tests {
+    use super::{load_markdown_style_file, save_markdown_style_file};
+
+    #[test]
+    fn creates_reads_and_atomically_replaces_the_fixed_css_file() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("markdown-style.css");
+        let created = load_markdown_style_file(&path, ":scope { color: red; }").unwrap();
+        assert_eq!(created.css, ":scope { color: red; }");
+        assert_eq!(created.path, path.to_string_lossy());
+        let saved = save_markdown_style_file(&path, ":scope { color: blue; }").unwrap();
+        assert_ne!(created.revision, saved.revision);
+        assert_eq!(load_markdown_style_file(&path, "ignored").unwrap(), saved);
+        assert!(!directory.path().join("markdown-style.lock").exists());
+    }
 }

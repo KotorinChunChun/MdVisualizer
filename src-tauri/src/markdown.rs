@@ -12,8 +12,10 @@ use std::path::{Path, PathBuf};
 #[serde(rename_all = "lowercase")]
 pub enum DocumentKind {
     Markdown,
+    Tsv,
     Svg,
     Mermaid,
+    Drawio,
 }
 
 #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,8 +53,10 @@ pub fn document_kind(path: &Path) -> Option<DocumentKind> {
         .as_deref()
     {
         Some("md") | Some("markdown") => Some(DocumentKind::Markdown),
+        Some("tsv") => Some(DocumentKind::Tsv),
         Some("svg") => Some(DocumentKind::Svg),
         Some("mmd") | Some("mermaid") => Some(DocumentKind::Mermaid),
+        Some("drawio") => Some(DocumentKind::Drawio),
         _ => None,
     }
 }
@@ -205,7 +209,7 @@ pub fn extract_image_paths(content: &str, base_dir: &Path) -> Vec<String> {
 }
 
 fn is_image_filename(src: &str) -> bool {
-    Regex::new(r"(?i)\.(?:avif|bmp|gif|ico|jpe?g|png|svg|tiff?|webp)(?:[?#].*)?$")
+    Regex::new(r"(?i)\.(?:avif|bmp|drawio|gif|ico|jpe?g|mmd|mermaid|png|svg|tiff?|webp)(?:[?#].*)?$")
         .unwrap()
         .is_match(src)
 }
@@ -250,14 +254,22 @@ mod tests {
     fn extracts_obsidian_image_embeds_but_not_note_links() {
         let directory = tempfile::tempdir().unwrap();
         let image = directory.path().join("構成図.png");
+        let drawio = directory.path().join("構成図.drawio");
+        let mermaid = directory.path().join("処理.mmd");
         std::fs::write(&image, b"image").unwrap();
+        std::fs::write(&drawio, b"<mxfile/>").unwrap();
+        std::fs::write(&mermaid, b"flowchart LR\nA --> B").unwrap();
 
         let paths = extract_image_paths(
-            "![[構成図.png|システム構成]]\n[[構成図.png]]\n[[設計ノート.md]]",
+            "![[構成図.png|システム構成]]\n[[構成図.png]]\n![[構成図.drawio]]\n![Mermaid](処理.mmd)\n[[設計ノート.md]]",
             directory.path(),
         );
 
-        assert_eq!(paths, vec![image.canonicalize().unwrap().to_string_lossy()]);
+        assert_eq!(paths, vec![
+            mermaid.canonicalize().unwrap().to_string_lossy().into_owned(),
+            drawio.canonicalize().unwrap().to_string_lossy().into_owned(),
+            image.canonicalize().unwrap().to_string_lossy().into_owned(),
+        ]);
     }
 
     #[test]
@@ -292,19 +304,23 @@ mod tests {
     fn classifies_every_supported_document_extension_case_insensitively() {
         assert_eq!(document_kind(Path::new("readme.md")), Some(DocumentKind::Markdown));
         assert_eq!(document_kind(Path::new("README.MARKDOWN")), Some(DocumentKind::Markdown));
+        assert_eq!(document_kind(Path::new("table.TSV")), Some(DocumentKind::Tsv));
         assert_eq!(document_kind(Path::new("diagram.svg")), Some(DocumentKind::Svg));
         assert_eq!(document_kind(Path::new("flow.MMD")), Some(DocumentKind::Mermaid));
         assert_eq!(document_kind(Path::new("flow.mermaid")), Some(DocumentKind::Mermaid));
+        assert_eq!(document_kind(Path::new("system.DRAWIO")), Some(DocumentKind::Drawio));
         assert_eq!(document_kind(Path::new("image.png")), None);
     }
 
     #[test]
-    fn loads_svg_and_mermaid_as_standalone_documents_without_image_references() {
+    fn loads_svg_mermaid_and_drawio_as_standalone_documents_without_image_references() {
         let directory = tempfile::tempdir().unwrap();
         let svg = directory.path().join("diagram.svg");
         let mermaid = directory.path().join("flow.mmd");
+        let drawio = directory.path().join("system.drawio");
         std::fs::write(&svg, r#"<svg><image href="nested.png"/></svg>"#).unwrap();
         std::fs::write(&mermaid, "flowchart LR\n  A --> B").unwrap();
+        std::fs::write(&drawio, "<mxfile><diagram/></mxfile>").unwrap();
 
         let loaded_svg = load_markdown(&svg.to_string_lossy()).unwrap();
         assert_eq!(loaded_svg.kind, DocumentKind::Svg);
@@ -314,6 +330,11 @@ mod tests {
         assert_eq!(loaded_mermaid.kind, DocumentKind::Mermaid);
         assert!(loaded_mermaid.image_paths.is_empty());
         assert!(loaded_mermaid.content.contains("A --> B"));
+
+        let loaded_drawio = load_markdown(&drawio.to_string_lossy()).unwrap();
+        assert_eq!(loaded_drawio.kind, DocumentKind::Drawio);
+        assert!(loaded_drawio.image_paths.is_empty());
+        assert!(loaded_drawio.content.contains("mxfile"));
     }
 
     #[test]
