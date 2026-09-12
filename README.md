@@ -8,10 +8,12 @@ Windows向けのMarkdownビューア／エディターです。複数の文書�
 
 ## beta版ダウンロード
 
-[MdVisualizer v0.0.7-beta ダウンロード](https://excel-chunchun.sakura.ne.jp/download/MdVisualizer.html)から、
-初回インストール用のApp Installer、MSIX、自己署名証明書を取得できます。自己署名証明書を
+MdVisualizer v0.0.16-betaは公開準備中です。[新しい配布ページ](https://excel-chunchun.sakura.ne.jp/download/MdVisualizer.html)は公開工程で切り替えます。
+公開後は初回インストール用のApp Installer、MSIX、自己署名証明書を取得できます。自己署名証明書を
 「信頼されたユーザー」へ登録してからApp Installerを開いてください。導入後はアプリ起動時に
 betaチャネルの更新を確認します。
+
+v0.0.16から名称と内部識別子を変更し、旧MarkdownViewerとは別アプリとして導入します。旧版の設定・認証情報を自動移行せず、新版で設定とサインインを行います。旧版の保存領域は削除しません。
 
 ## 起動
 
@@ -53,7 +55,7 @@ npm.cmd run tauri -- dev -- -- C:\Project\README.md C:\Project\design.markdown
 
 開発中のアプリは `http://localhost:1420` のViteサーバーを表示します。起動したPowerShellを終了するとサーバーも停止するため、アプリには接続拒否画面が表示されます。`src-tauri\target\debug\mdvisualizer.exe` を単独で起動するのではなく、上記コマンドから起動してください。
 
-リリース版は `.md`、`.markdown`、`.svg`、`.mmd`、`.mermaid` の関連付けを登録します。ファイルをダブルクリックすると、Markdown、SVG、Mermaid文書として開きます。
+リリース版は `.md`、`.markdown`、`.svg`、`.mmd`、`.mermaid`、`.drawio`、`.tsv` の関連付けを登録します。WindowsでMdVisualizerを開くアプリに選ぶと、対応する文書として開きます。MSIXでは形式別アイコンを登録します。
 
 ### SharePoint Markdown（spmd）
 

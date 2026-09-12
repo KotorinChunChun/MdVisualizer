@@ -1,7 +1,7 @@
 {
   "name": "mdvisualizer",
   "private": true,
-  "version": "0.0.15",
+  "version": "0.0.16",
   "author": "KotorinChunChun",
   "license": "MIT",
   "repository": "https://github.com/KotorinChunChun/MdVisualizer",
@@ -32,7 +32,8 @@
     "test:drawio-editing": "vitest run src/components/DrawioEditingFlow.test.tsx src/components/DrawioEditorModal.test.tsx src/components/DrawioBlock.test.tsx src/components/ExternalDrawioBlock.test.tsx src/components/MarkdownPreview.drawio.test.tsx src/components/StandaloneDocumentPreview.test.tsx src/lib/drawio.test.ts src/lib/drawioStorage.test.ts",
     "report:editing": "node ./scripts/generate-editing-test-report.mjs",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test:branding": "node ./scripts/test-branding.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.4",
@@ -40,7 +41,7 @@
     "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.8",
-    "@mdvisualizer/markdown-core": "0.0.15",
+    "@mdvisualizer/markdown-core": "0.0.16",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-opener": "^2",

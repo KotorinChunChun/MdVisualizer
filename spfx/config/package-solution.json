@@ -3,7 +3,7 @@
   "solution": {
     "name": "spfx-mdvisualizer-client-side-solution",
     "id": "3cd821e0-528a-4df9-b4b0-523b8cbed930",
-    "version": "0.0.15.0",
+    "version": "0.0.16.0",
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
     "skipFeatureDeployment": true,
@@ -30,7 +30,7 @@
         "title": "spfx-mdvisualizer Feature",
         "description": "MdVisualizer Web Partを有効にします。",
         "id": "7b5bc405-d84b-440e-aa8d-d3f4ca6a4417",
-        "version": "0.0.15.0"
+        "version": "0.0.16.0"
       }
     ]
   },
