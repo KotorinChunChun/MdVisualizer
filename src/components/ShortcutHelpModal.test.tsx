@@ -29,7 +29,7 @@ describe("ShortcutHelpModal", () => {
 
     expect(screen.getByRole("heading", { name: "バージョン情報" })).toBeTruthy();
     expect(screen.getByText("2026-08-14")).toBeTruthy();
-    expect(screen.getByText("0.0.14")).toBeTruthy();
+    expect(screen.getByText("0.0.15")).toBeTruthy();
     expect(screen.getByText("KotorinChunChun")).toBeTruthy();
 
     const readme = screen.getByRole("link", { name: "READMEを開く" });
