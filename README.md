@@ -8,7 +8,7 @@ Windows向けのMarkdownビューア／エディターです。複数の文書�
 
 ## beta版ダウンロード
 
-MdVisualizer v0.0.16-betaは公開準備中です。[新しい配布ページ](https://excel-chunchun.sakura.ne.jp/download/MdVisualizer.html)は公開工程で切り替えます。
+MdVisualizer v0.0.16-betaは公開準備中です。[配布ページ](https://excel-chunchun.sakura.ne.jp/download/MdVisualizer.html)で準備状況と旧版v0.0.15のダウンロードをご案内しています。
 公開後は初回インストール用のApp Installer、MSIX、自己署名証明書を取得できます。自己署名証明書を
 「信頼されたユーザー」へ登録してからApp Installerを開いてください。導入後はアプリ起動時に
 betaチャネルの更新を確認します。
