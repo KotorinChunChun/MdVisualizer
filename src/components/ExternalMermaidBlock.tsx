@@ -4,6 +4,7 @@ import { getFileName, resolveLocalImagePath } from "../lib/path";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { MermaidBlock } from "./MermaidBlock";
 import { ExternalFileHeader } from "./ExternalFileHeader";
+import { FileSvgCodexAction } from "../features/codex/FileSvgCodexAction";
 
 export function ExternalMermaidBlock({
   source,
@@ -67,7 +68,7 @@ export function ExternalMermaidBlock({
   if (loading) return <div className="mermaid-container"><div className="mermaid-loading">Mermaidファイルを読み込んでいます…</div></div>;
   if (error || (loadedSource === null && stagedSource === undefined)) return <div className="mermaid-container"><div className="mermaid-error" role="alert"><strong>{error ?? "Mermaidファイルを読み込めません。"}</strong><button type="button" onClick={() => setRetryToken((value) => value + 1)}>再読込</button></div></div>;
   const diagramSource = stagedSource ?? loadedSource!;
-  return <div className="external-mermaid-block" data-mermaid-source={source}>
+  const preview = <div className="external-mermaid-block" data-mermaid-source={source}>
     <MermaidBlock
       source={diagramSource}
       mediaSource={diagramSource}
@@ -85,4 +86,5 @@ export function ExternalMermaidBlock({
       onMediaOpen={onMediaOpen}
     />
   </div>;
+  return editable && path && stagedSource === undefined ? <FileSvgCodexAction kind="mermaid" path={path} onSaved={() => setRetryToken((value) => value + 1)}>{preview}</FileSvgCodexAction> : preview;
 }

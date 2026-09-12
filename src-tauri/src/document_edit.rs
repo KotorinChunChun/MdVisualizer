@@ -71,7 +71,7 @@ struct OriginalDocument {
 
 pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
-    if !matches!(document_kind(&requested), Some(DocumentKind::Markdown | DocumentKind::Drawio | DocumentKind::Svg)) {
+    if !matches!(document_kind(&requested), Some(DocumentKind::Markdown | DocumentKind::Drawio | DocumentKind::Svg | DocumentKind::Mermaid)) {
         return Err(AppError::UnsupportedDocument(request.path));
     }
     if !requested.exists() {
@@ -106,7 +106,7 @@ pub fn save_markdown_with_assets(
 ) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
     let kind = document_kind(&requested);
-    if !matches!(kind, Some(DocumentKind::Markdown | DocumentKind::Drawio | DocumentKind::Svg)) {
+    if !matches!(kind, Some(DocumentKind::Markdown | DocumentKind::Drawio | DocumentKind::Svg | DocumentKind::Mermaid)) {
         return Err(AppError::UnsupportedDocument(request.path));
     }
     if kind != Some(DocumentKind::Markdown) && !request.staged_asset_ids.is_empty() {
@@ -362,6 +362,25 @@ mod tests {
         assert!(matches!(save_markdown(stale), Err(AppError::Conflict(_))));
         let before = fs::read(&path).unwrap();
         let mut with_assets = request(&path, "<svg/>\n");
+        with_assets.staged_asset_ids.push("unexpected".into());
+        assert!(save_markdown_with_assets(with_assets, &staging).is_err());
+        assert_eq!(fs::read(&path).unwrap(), before);
+    }
+
+    #[test]
+    fn saves_mermaid_without_losing_encoding_and_rejects_stale_revision() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("diagram.mmd");
+        fs::write(&path, "\u{feff}flowchart TD\r\nA-->B\r\n").unwrap();
+        let staging = crate::asset_staging::AssetStagingManager::new().unwrap();
+        let stale = request(&path, "flowchart TD\nA-->C\n");
+        let saved = save_markdown_with_assets(request(&path, "flowchart TD\nA-->D\n"), &staging).unwrap();
+        assert_eq!(saved.kind, DocumentKind::Mermaid);
+        assert_eq!(fs::read_to_string(&path).unwrap(), "\u{feff}flowchart TD\r\nA-->D\r\n");
+        let before = fs::read(&path).unwrap();
+        assert!(matches!(save_markdown(stale), Err(AppError::Conflict(_))));
+        assert_eq!(fs::read(&path).unwrap(), before);
+        let mut with_assets = request(&path, "flowchart TD\n");
         with_assets.staged_asset_ids.push("unexpected".into());
         assert!(save_markdown_with_assets(with_assets, &staging).is_err());
         assert_eq!(fs::read(&path).unwrap(), before);

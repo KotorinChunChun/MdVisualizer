@@ -8,11 +8,13 @@ import "./codex.css";
 import { IMAGE_INSTRUCTION, imageInsertion, loadTranscriptionImage, transcriptionImages } from "./imageTranscription";
 import { resolveImageSrc } from "../../lib/path";
 import { diagramInstruction, validateDiagramReplacement, type CodexDiagramKind } from "./diagram";
+import { scopeRequest, type CodexEditMode, type CodexTarget } from "./scope";
 
-export function CodexPanel({ open: visible, onClose, documentName, documentText, documentPath = "", baseDir = "", imageTarget, stagedImages = {}, available, getSnapshot, applyProposal, applyProposalAsync, diagramKind, renderProposal }: {
+export function CodexPanel({ open: visible, onClose, documentName, documentText, documentPath = "", baseDir = "", imageTarget, consultationTarget, stagedImages = {}, available, getSnapshot, applyProposal, applyProposalAsync, diagramKind, renderProposal }: {
   open: boolean; onClose: () => void; documentName: string; documentText: string; available: boolean;
   documentPath?: string; baseDir?: string;
   imageTarget?: { offset: number } | null; stagedImages?: Record<string, string>;
+  consultationTarget?: CodexTarget | null;
   getSnapshot: () => EditorSnapshot | null;
   applyProposal: (base: EditorSnapshot, replacement: string) => boolean;
   applyProposalAsync?: (base: EditorSnapshot, replacement: string) => Promise<boolean>;
@@ -30,6 +32,14 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
   useEffect(() => { if (imageTarget) setImageId(images.find((image) => image.start === imageTarget.offset)?.id ?? ""); }, [imageTarget]);
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [selection, setSelection] = useState<EditorSnapshot | null>(null);
+  const [editMode, setEditMode] = useState<CodexEditMode>("selection");
+  const [consultationImage, setConsultationImage] = useState<string | undefined>();
+  useEffect(() => {
+    if (!consultationTarget) return;
+    if (active.current) { cancelled.current = true; void cancelCodex(active.current).catch(() => {}); }
+    setSelection(consultationTarget); setEditMode("question"); setHistory([]); setProposal(null); setPreviewOpen(false);
+    setConsultationImage(consultationTarget.imageSource);
+  }, [consultationTarget]);
   const [proposal, setProposal] = useState<{ base: EditorSnapshot; replacement: string } | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
@@ -99,7 +109,7 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
   function captureSelection() {
     const snapshot = getSnapshot();
     if (!snapshot || snapshot.from === snapshot.to) { setError("エディタで対象の文章を選択してから取り込んでください。"); return; }
-    setSelection(snapshot); setProposal(null); setPreviewOpen(false); setError("");
+    setSelection(snapshot); setConsultationImage(undefined); setHistory([]); setProposal(null); setPreviewOpen(false); setError("");
   }
   async function stop() {
     cancelled.current = true;
@@ -114,22 +124,24 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
     const current = getSnapshot();
     if (!current) { setError("編集画面を開いてから送信してください。"); return; }
     if (selection && !canApplyProposal(current, selection)) { setError("選択後に本文が変わりました。選択範囲を取り込み直してください。"); return; }
-    const base = selection ?? { ...current, from: 0, to: current.content.length };
-    const text = base.content.slice(base.from, base.to);
+    const scoped = scopeRequest(current, selection, editMode, instruction.trim());
+    const { base, text } = scoped;
     if (history.length > 40 || requestBytes(instruction, text, history) > 120000) { setError("送信量が上限を超えています。選択範囲を縮めるか会話をクリアしてください。"); return; }
     const id = crypto.randomUUID();
     active.current = id; cancelled.current = false;
     setBusy(true); setError(""); setProposal(null); setPreviewOpen(false); setStatus("Codexが回答を生成しています…");
     const user: ChatMessage = { role: "user", text: instruction.trim() };
     try {
-      const reply = await generateCodex({ id, instruction: diagramKind ? diagramInstruction(diagramKind, user.text) : user.text, text, history });
+      const image = consultationImage ? await loadTranscriptionImage(documentPath, stagedImages[consultationImage] ?? consultationImage) : undefined;
+      if (!mounted.current || cancelled.current) return;
+      const reply = await generateCodex({ id, instruction: diagramKind ? diagramInstruction(diagramKind, scoped.instruction) : scoped.instruction, text, history, ...(image ? { image } : {}) });
       if (!mounted.current || cancelled.current) return;
       // 変更案も会話に含めることで「もう少し短く」などの継続指示を可能にする。
       setHistory((old) => [...old, user, { role: "assistant", text: reply.answer + (reply.replacement !== null ? `\n\n変更案:\n${reply.replacement}` : "") }]);
       setInstruction("");
-      if (reply.replacement !== null) { setProposal({ base, replacement: (diagramKind ? validateDiagramReplacement(diagramKind, reply.replacement) : reply.replacement).replace(/\r\n?|\n/g, "\n") }); setPreviewOpen(true); }
+      if (editMode !== "question" && reply.replacement !== null) { setProposal({ base, replacement: (diagramKind ? validateDiagramReplacement(diagramKind, reply.replacement) : reply.replacement).replace(/\r\n?|\n/g, "\n") }); setPreviewOpen(true); }
       void refreshLogs();
-      setStatus(reply.replacement === null ? "回答を受信しました。" : "変更案を受信しました。差分を確認して採用できます。");
+      setStatus(reply.replacement === null || editMode === "question" ? "回答を受信しました。" : "変更案を受信しました。差分を確認して採用できます。");
     } catch (cause) { if (mounted.current && !cancelled.current) setError(String(cause)); }
     finally {
       active.current = null;
@@ -137,7 +149,7 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
     }
   }
   async function transcribeImage() {
-    if (active.current || !savedOptions.enabled || settingsDirty || !available || !selectedImage) return;
+    if (active.current || editMode === "question" || !savedOptions.enabled || settingsDirty || !available || !selectedImage) return;
     const current = getSnapshot();
     if (!current || current.content.replace(/\r\n?/g, "\n") !== documentText.replace(/\r\n?/g, "\n")) { setError("本文が変わりました。画像を選択し直してください。"); return; }
     // CodeMirrorはLFへ正規化するため、表示元のCRLFオフセットをそのまま使わない。
@@ -176,7 +188,7 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
     finally { applyingRef.current = false; if (mounted.current) setApplying(false); }
   }
   const capturedText = selection?.content.slice(selection.from, selection.to);
-  const sendBytes = requestBytes(instruction, capturedText ?? documentText.replace(/\r\n?/g, "\n"), history);
+  const sendBytes = requestBytes(instruction, editMode === "document" ? documentText : capturedText ?? documentText.replace(/\r\n?/g, "\n"), history);
   function beginResize(event: ReactPointerEvent<HTMLDivElement>) {
     event.preventDefault();
     const resize = (move: PointerEvent) => setWidth(Math.max(300, Math.min(760, window.innerWidth - move.clientX)));
@@ -190,7 +202,7 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
       if (event.key === "ArrowLeft") { event.preventDefault(); setWidth((value) => Math.min(760, value + 20)); }
       if (event.key === "ArrowRight") { event.preventDefault(); setWidth((value) => Math.max(300, value - 20)); }
     }} />
-    <header inert={previewOpen || logsOpen}><strong>Codex{diagramKind ? ` — ${diagramKind === "svg" ? "SVG" : "draw.io"}` : ""}</strong><div><button type="button" onClick={() => void showLogs()}>ログ（{logs.entries.length}）</button><button type="button" disabled={applying} onClick={() => { if (busy) void stop(); onClose(); }} aria-label="Codexパネルを閉じる">×</button></div></header>
+    <header inert={previewOpen || logsOpen}><strong>Codex{diagramKind ? ` — ${diagramKind === "svg" ? "SVG" : diagramKind === "mermaid" ? "Mermaid" : "draw.io"}` : ""}</strong><div><button type="button" onClick={() => void showLogs()}>ログ（{logs.entries.length}）</button><button type="button" disabled={applying} onClick={() => { if (busy) void stop(); onClose(); }} aria-label="Codexパネルを閉じる">×</button></div></header>
     <div className="codex-panel__body" inert={previewOpen || logsOpen}>
       <details open={!savedOptions.enabled}>
         <summary>連携設定（任意）</summary>
@@ -205,20 +217,24 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
       {savedOptions.enabled && <>
         <section className="codex-panel__scope"><strong>取り込み範囲と送信設定</strong><p>対象: {documentName || "文書なし"}<br />モデル: {savedOptions.model}<br />送信先: Codex（OpenAI）</p></section>
         {!available && <p>ローカルMarkdownの編集画面で利用できます。保存中・差分画面では採用できません。</p>}
-        {!diagramKind && <section aria-label="画像の解説・文字起こし">
+        {!diagramKind && !consultationTarget && <section aria-label="画像の解説・文字起こし">
           <label>対象画像<select value={imageId} disabled={busy || !available} onChange={(event) => setImageId(event.target.value)}>
             <option value="">画像を選択してください</option>
             {images.map((image) => <option key={image.id} value={image.id}>{image.sourceLine}行: {image.caption || "画像"}</option>)}
           </select></label>
           {selectedImage && <img className="codex-image-preview" src={stagedImages[selectedImage.source] ?? resolveImageSrc(selectedImage.source, baseDir)} alt={selectedImage.caption || "選択した画像"} />}
           <p>選択した画像をCodexへ送信し、解説と文字起こしを画像直下のコードブロックへ挿入します。独立した行のローカル画像・埋め込み画像が対象です。</p>
-          <button type="button" disabled={busy || !available || !selectedImage || settingsDirty} onClick={() => void transcribeImage()}>解説・文字起こしを挿入</button>
+          <button type="button" disabled={busy || editMode === "question" || !available || !selectedImage || settingsDirty} onClick={() => void transcribeImage()}>解説・文字起こしを挿入</button>
         </section>}
         <div className="codex-panel__actions">
           {!diagramKind && <button type="button" disabled={busy || !available} onClick={captureSelection}>選択範囲を取り込む</button>}
           <button type="button" disabled={busy || !selection} onClick={() => { setSelection(null); setProposal(null); setPreviewOpen(false); }}>全文を対象にする</button>
           <button type="button" disabled={busy} onClick={() => { setHistory([]); setProposal(null); setPreviewOpen(false); setError(""); setStatus("会話をクリアしました。"); }}>会話をクリア</button>
         </div>
+        <label>編集の許可<select aria-label="編集の許可" value={editMode} disabled={busy || applying} onChange={(event) => { setEditMode(event.target.value as CodexEditMode); setHistory([]); setProposal(null); setPreviewOpen(false); }}>
+          <option value="question">質問のみ</option><option value="selection">指定場所のみ編集</option><option value="document">指定場所以外の編集を認める</option>
+        </select></label>
+        <p>{editMode === "document" ? "同じ文書の全文を送信し、文書内の変更を許可します。" : editMode === "question" ? "対象について回答します。変更案は本文へ適用しません。" : "取り込んだ対象範囲だけを置換できます。"}{consultationImage ? "画像そのものもCodexへ送信します。画像ファイルの画素編集は行いません。" : ""}</p>
         <p>{selection ? `選択範囲 ${capturedText?.length ?? 0}文字` : "送信時の編集中の全文"}と、このパネルの会話を送信します。会話はパネルを閉じるか文書を切り替えると消えます。</p>
         <p>本文・指示・会話: {sendBytes.toLocaleString()} / 120,000 bytes</p>
         {selection && <details><summary>送信する選択範囲</summary><pre>{capturedText}</pre></details>}

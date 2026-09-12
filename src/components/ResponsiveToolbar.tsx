@@ -81,7 +81,7 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items, ite
           width: itemWidths.current.get(item.id) ?? 0,
         };
       });
-      const availableWidth = responsiveItemAreaWidth(root.clientWidth, labelWidth, Boolean(label), gap);
+      const availableWidth = responsiveItemAreaWidth(root.clientWidth, threeStage ? Math.min(labelWidth, root.clientWidth * .25) : labelWidth, Boolean(label), gap);
       if (threeStage) {
         const fullWidth = widths.reduce((sum, item) => sum + item.width, 0) + Math.max(0, widths.length - 1) * gap;
         const essential = itemsRef.current.filter((item) => item.id === "edit" || item.id.startsWith("copy") || item.id === "view");
@@ -144,7 +144,7 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items, ite
 
   const overflow = new Set(overflowIds);
   return <div ref={rootRef} data-stage={threeStage ? stage : undefined} className={`responsive-toolbar ${className}`.trim()} role="toolbar" aria-label={ariaLabel}>
-    {label && <div ref={labelRef} className="responsive-toolbar__label">{label}</div>}
+    {label && <div ref={labelRef} className="responsive-toolbar__label" style={threeStage ? { maxWidth: "25%" } : undefined}>{label}</div>}
     <div className={`responsive-toolbar__items ${itemsClassName}`.trim()} style={itemsStyle}>
       {items.map((item) => <Fragment key={item.id}><div
         key={item.id}

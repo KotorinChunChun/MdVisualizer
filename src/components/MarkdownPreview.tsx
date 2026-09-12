@@ -31,6 +31,8 @@ import { ExternalMermaidBlock } from "./ExternalMermaidBlock";
 import { ExternalDelimitedTableBlock } from "./ExternalDelimitedTableBlock";
 import { ExternalTextBlock } from "./ExternalTextBlock";
 import { DiagramCodexAction } from "../features/codex/DiagramCodexAction";
+import { useConsultationMenu } from "../features/codex/useConsultationMenu";
+import type { CodexTarget } from "../features/codex/scope";
 import { PlantUmlBlock } from "./PlantUmlBlock";
 import { isPlantUmlFenceLanguage } from "@markdown-viewer/markdown-core";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
@@ -72,6 +74,7 @@ export function countMermaidFences(markdown: string): number {
 }
 
 interface MarkdownPreviewProps {
+  onCodexConsult?: (target: CodexTarget) => void;
   content: string;
   baseDir: string;
   imageVersions: Record<string, number>;
@@ -352,8 +355,8 @@ const MarkdownPre: NonNullable<Components["pre"]> = ({ children, ...props }) => 
   const child = React.Children.only(children);
   if (React.isValidElement<{ node?: { properties?: { className?: unknown } }; children?: React.ReactNode }>(child) && child.type !== "code") {
     const className = child.props.node?.properties?.className;
-    if (child.type === MarkdownCode && !className) return <CodeBlock>{child.props.children}</CodeBlock>;
-    return child;
+    if (child.type === MarkdownCode && !className) return <div data-source-line={props.node?.position?.start.line}><CodeBlock>{child.props.children}</CodeBlock></div>;
+    return <div data-source-line={props.node?.position?.start.line}>{child}</div>;
   }
   // react-markdown uses the same `code` renderer for inline and fenced code.
   // Fenced blocks without a language have no className, but they still arrive
@@ -361,7 +364,7 @@ const MarkdownPre: NonNullable<Components["pre"]> = ({ children, ...props }) => 
   if (React.isValidElement<{ className?: string; children?: React.ReactNode }>(child)
     && child.type === "code"
     && !child.props.className?.includes("language-")) {
-    return <CodeBlock>{child.props.children}</CodeBlock>;
+    return <div data-source-line={props.node?.position?.start.line}><CodeBlock>{child.props.children}</CodeBlock></div>;
   }
   return <pre {...props}>{children}</pre>;
 };
@@ -392,7 +395,7 @@ const MarkdownTable: NonNullable<Components["table"]> = ({ node, children, ...pr
   const occurrence = offset === undefined ? undefined : context.tableByOffset.get(offset);
   const editable = Boolean(occurrence && context.documentPath && context.onMarkdownTableChange && !context.staticMode && !context.presentationMode);
   const calculation = occurrence ? calculateTableAggregates(occurrence) : null;
-  return <div className="table-scroll markdown-table-card">
+  return <div className="table-scroll markdown-table-card" data-source-line={node?.position?.start.line}>
     {editable && <button type="button" className="markdown-table-edit" aria-label="表を編集" title="表を編集" onClick={() => setEditing(true)}>✎</button>}
     <table {...props}>{calculation ? calculatedMarkdownTableChildren(children, calculation) : children}</table>
     {editing && occurrence && <TableEditorDialog
@@ -607,6 +610,7 @@ const markdownComponents: Components = {
 };
 
 const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
+  onCodexConsult,
   content,
   baseDir,
   imageVersions,
@@ -721,9 +725,10 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourceLineOffset, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, stagedTableSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 
+  const consultation = useConsultationMenu(content.replace(/\r\n?/g, "\n"), tabId ?? "", onCodexConsult);
   return (
     <MarkdownRenderContext.Provider value={renderContext}>
-      <div className="markdown-body" ref={contentRef}>
+      <div className="markdown-body" ref={contentRef} onContextMenuCapture={consultation.onContextMenuCapture}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkObsidianImages]}
           rehypePlugins={[
@@ -739,6 +744,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
           {renderedContent}
         </ReactMarkdown>
       </div>
+      {consultation.menu}
     </MarkdownRenderContext.Provider>
   );
 };

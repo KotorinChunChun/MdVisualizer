@@ -891,3 +891,4 @@ body {
 .diagram-block__header .responsive-toolbar__label,
 .code-block__header .code-block__heading,
 .data-grid-toolbar .responsive-toolbar__label { font-size: 12px; font-weight: 600; }
+.responsive-toolbar select { min-height: 28px; padding: 3px 6px; font-size: 12px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; }

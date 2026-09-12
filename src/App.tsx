@@ -23,6 +23,7 @@ import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
 import { DocumentSidePanel, type DocumentSidePanelTab } from "./components/DocumentSidePanel";
 import { CodexPanel } from "./features/codex/CodexPanel";
+import type { CodexTarget } from "./features/codex/scope";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
 import { DocumentDiffWorkspace, type DocumentDiffTarget, type DiffSaveReview } from "./components/DocumentDiffWorkspace";
 import type { MarkdownEditorHandle } from "./components/MarkdownEditor";
@@ -193,6 +194,7 @@ export function App() {
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const [codexOpen, setCodexOpen] = useState(false);
+  const [codexTarget, setCodexTarget] = useState<CodexTarget | null>(null);
   const [codexImageTarget, setCodexImageTarget] = useState<{ documentId: string; offset: number } | null>(null);
   const codexButtonRef = useRef<HTMLButtonElement>(null);
   const focusNewDocumentRef = useRef(false);
@@ -2383,6 +2385,7 @@ export function App() {
       />}
       {canEditActive && editorMode !== "preview" && activeTab?.document && <Suspense fallback={<div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
         <MarkdownEditor
+          onCodexConsult={!printing && !activeTab.saving ? (target) => { setCodexTarget(target); setCodexOpen(true); } : undefined}
           ref={editorRef}
           documentId={`${activeTab.id}:${activeTab.generation}`}
           value={activeTab.draft}
@@ -2502,6 +2505,11 @@ export function App() {
               if (editorMode === "preview") changeEditorMode("split");
               setCodexOpen(true);
             } : undefined}
+            onCodexConsult={canEditActive && !printing && !activeTab.saving ? (target) => {
+              setCodexTarget(target);
+              if (editorMode === "preview") changeEditorMode("split");
+              setCodexOpen(true);
+            } : undefined}
             searchExpandedIds={searchExpandedIds}
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
             onOpenDocument={handleOpenDocument}
@@ -2553,6 +2561,7 @@ export function App() {
         documentPath={activeTab?.document?.path ?? ""}
         baseDir={activeTab?.document?.base_dir ?? ""}
         imageTarget={codexImageTarget?.documentId === activeTab?.id ? codexImageTarget : null}
+        consultationTarget={codexTarget?.documentId === activeTab?.id ? codexTarget : null}
         stagedImages={Object.fromEntries((activeTab?.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
         documentText={activeTab?.draft ?? ""}
         available={Boolean(canEditActive && editorMode !== "preview" && !activeTab?.saving)}

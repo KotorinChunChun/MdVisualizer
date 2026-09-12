@@ -3,6 +3,13 @@ import { diagramInstruction, validateDiagramReplacement } from "./diagram";
 
 const model = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="2" parent="1" vertex="1" value="開始"><mxGeometry x="10" y="20" width="100" height="50" as="geometry"/></mxCell></root></mxGraphModel>';
 describe("Codex図の応答検証", () => {
+  it("Mermaidソースを受け取り、実行設定や外部参照を拒否する", () => {
+    expect(validateDiagramReplacement("mermaid", "flowchart TD\nA-->B")).toBe("flowchart TD\nA-->B");
+    for (const source of ["```mermaid\nA-->B\n```", "flowchart TD\nclick A callback", "%%{init: {}}%%\nflowchart TD", "flowchart TD\nA[<script>]"]) {
+      expect(() => validateDiagramReplacement("mermaid", source)).toThrow();
+    }
+    expect(diagramInstruction("mermaid", "質問のみ")).toContain("Mermaid");
+  });
   it("SVGの実行可能な内容と外部参照を表示・保存前に除去する", () => {
     const safe = validateDiagramReplacement("svg", '<svg xmlns="http://www.w3.org/2000/svg" onload="bad()"><script>bad()</script><image href="https://example.com/a"/><rect fill="red" width="10" height="20"/></svg>');
     expect(safe).not.toMatch(/onload|script|https:/);

@@ -1,4 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { useConsultationMenu } from "../features/codex/useConsultationMenu";
+import type { CodexTarget } from "../features/codex/scope";
 import { basicSetup } from "codemirror";
 import { indentWithTab, isolateHistory } from "@codemirror/commands";
 import { canApplyProposal, type EditorSnapshot } from "../features/codex/model";
@@ -30,6 +32,7 @@ import type { EditorCursorPosition } from "../lib/paneSync";
 import "../styles/markdown-editor.css";
 
 interface MarkdownEditorProps {
+  onCodexConsult?: (target: CodexTarget) => void;
   documentId: string;
   value: string;
   dirty: boolean;
@@ -137,7 +140,7 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, diffChangedLines, onScrollLine, onActiveLineChange, onCursorPositionChange }, ref) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, diffChangedLines, onScrollLine, onActiveLineChange, onCursorPositionChange, onCodexConsult }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const viewDocumentIdRef = useRef<string | null>(null);
@@ -408,6 +411,14 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     view.focus();
   };
 
+  const consultation = useConsultationMenu(value, documentId, onCodexConsult, (event) => {
+    const view = viewRef.current;
+    if (!view || saving) return null;
+    const selected = view.state.selection.main;
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY }) ?? selected.head;
+    const range = !selected.empty && pos >= selected.from && pos <= selected.to ? selected : view.state.doc.lineAt(pos);
+    return { documentId, content: view.state.sliceDoc(), from: range.from, to: range.to };
+  });
   return <section className={`markdown-editor${compact ? " markdown-editor--compact" : ""}`} aria-label="Markdown編集">
     <div className="markdown-editor__toolbar" role="toolbar" aria-label="Markdown書式">
       {TOOLBAR_ACTIONS.map((item) => <button key={item.action} type="button" title={item.title} aria-label={item.title} disabled={disabledToolbarActions.includes(item.action)} onClick={() => apply(item.action)}>{item.label}</button>)}
@@ -416,6 +427,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       <button type="button" title="すべて展開" onClick={() => { const view = viewRef.current; if (view) unfoldAll(view); }}>展開</button>
       <button type="button" className="markdown-editor__save" disabled={!dirty || saving} onClick={onSave}>{saving ? "保存中…" : "保存"}</button>
     </div>
-    <div className="markdown-editor__surface" ref={hostRef} />
+    <div className="markdown-editor__surface" ref={hostRef} onContextMenuCapture={consultation.onContextMenuCapture} />
+    {consultation.menu}
   </section>;
 });

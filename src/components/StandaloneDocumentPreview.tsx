@@ -6,6 +6,7 @@ import { MermaidBlock } from "./MermaidBlock";
 import { DrawioBlock } from "./DrawioBlock";
 import { getFileName } from "../lib/path";
 import { DelimitedTableBlock } from "./DelimitedTableBlock";
+import { FileSvgCodexAction } from "../features/codex/FileSvgCodexAction";
 
 interface StandaloneDocumentPreviewProps {
   document: MarkdownLoadResult;
@@ -43,7 +44,7 @@ export function StandaloneDocumentPreview({
   }
 
   if (document.kind === "mermaid") {
-    return <div className="markdown-body standalone-document standalone-document--mermaid" ref={contentRef}>
+    const preview = <div className="markdown-body standalone-document standalone-document--mermaid" ref={contentRef}>
       <MermaidBlock
         source={document.content}
         theme={theme}
@@ -57,6 +58,7 @@ export function StandaloneDocumentPreview({
         onMediaOpen={onMediaOpen}
       />
     </div>;
+    return document.path.toLowerCase().startsWith("spmd:") ? preview : <FileSvgCodexAction kind="mermaid" path={document.path}>{preview}</FileSvgCodexAction>;
   }
 
   if (document.kind === "tsv") {

@@ -29,6 +29,15 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe("Codexパネル", () => {
+  it("質問のみではCLIが変更案を返しても採用できない", async () => {
+    const apply = vi.fn();
+    render(<CodexPanel open onClose={vi.fn()} documentName="test.md" documentText={snapshot.content} available consultationTarget={snapshot} getSnapshot={() => snapshot} applyProposal={apply} />);
+    await send("説明して");
+    await waitFor(() => expect(generateCodex).toHaveBeenCalled());
+    expect(generateCodex).toHaveBeenCalledWith(expect.objectContaining({ text: snapshot.content.slice(0, 3), instruction: expect.stringContaining("replacementは必ずnull") }));
+    expect(screen.queryByRole("button", { name: "採用" })).not.toBeInTheDocument();
+    expect(apply).not.toHaveBeenCalled();
+  });
   it.each(["成功", "本文変更", "停止", "文書切替", "空応答"])("画像添付と自動挿入: %s", async (mode) => {
     const content = "![画像](data:image/png;base64,YQ==)\n\n後続";
     let current = { documentId: "image-doc", content, from: 0, to: 0 };
