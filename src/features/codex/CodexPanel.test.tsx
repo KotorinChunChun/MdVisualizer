@@ -29,6 +29,23 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe("Codexパネル", () => {
+  it.each(["成功", "本文変更", "停止", "文書切替", "空応答"])("画像添付と自動挿入: %s", async (mode) => {
+    const content = "![画像](data:image/png;base64,YQ==)\n\n後続";
+    let current = { documentId: "image-doc", content, from: 0, to: 0 };
+    const apply = vi.fn().mockReturnValue(true);
+    let resolve!: (reply: CodexReply) => void;
+    vi.mocked(generateCodex).mockImplementation(() => new Promise((done) => { resolve = done; }));
+    const view = render(<CodexPanel open onClose={vi.fn()} documentName="image.md" documentText={content} available getSnapshot={() => current} applyProposal={apply} imageTarget={{ offset: 0 }} />);
+    fireEvent.click(await screen.findByRole("button", { name: "解説・文字起こしを挿入" }));
+    await waitFor(() => expect(generateCodex).toHaveBeenCalled());
+    expect(generateCodex).toHaveBeenCalledWith(expect.objectContaining({ text: "", history: [], image: { base64: "YQ==" } }));
+    if (mode === "本文変更") current = { ...current, content: "変更" + content };
+    if (mode === "停止") fireEvent.click(screen.getByText("停止"));
+    if (mode === "文書切替") view.unmount();
+    await act(async () => { resolve({ answer: mode === "空応答" ? "" : "解説\n文字起こし", replacement: null }); });
+    if (mode === "成功") expect(apply).toHaveBeenCalledWith(expect.objectContaining({ from: content.indexOf("\n"), to: content.indexOf("\n"), content }), "\n\n```text\n解説\n文字起こし\n```\n");
+    else expect(apply).not.toHaveBeenCalled();
+  });
   it("未有効時はCLIを呼ばず、明示保存で有効化する", async () => {
     vi.mocked(loadSettings).mockResolvedValue({});
     mount();

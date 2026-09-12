@@ -5,9 +5,13 @@ import { canApplyProposal, DEFAULT_CODEX_OPTIONS, normalizeCodexOptions, request
 import { CodexLogViewer } from "./CodexLogViewer";
 import { buildProposalDiff } from "./proposalDiff";
 import "./codex.css";
+import { IMAGE_INSTRUCTION, imageInsertion, loadTranscriptionImage, transcriptionImages } from "./imageTranscription";
+import { resolveImageSrc } from "../../lib/path";
 
-export function CodexPanel({ open: visible, onClose, documentName, documentText, available, getSnapshot, applyProposal }: {
+export function CodexPanel({ open: visible, onClose, documentName, documentText, documentPath = "", baseDir = "", imageTarget, stagedImages = {}, available, getSnapshot, applyProposal }: {
   open: boolean; onClose: () => void; documentName: string; documentText: string; available: boolean;
+  documentPath?: string; baseDir?: string;
+  imageTarget?: { offset: number } | null; stagedImages?: Record<string, string>;
   getSnapshot: () => EditorSnapshot | null;
   applyProposal: (base: EditorSnapshot, replacement: string) => boolean;
 }) {
@@ -16,6 +20,10 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
   const [ready, setReady] = useState(false);
   const [savingOptions, setSavingOptions] = useState(false);
   const [instruction, setInstruction] = useState("");
+  const [imageId, setImageId] = useState("");
+  const images = useMemo(() => transcriptionImages(documentText), [documentText]);
+  const selectedImage = images.find((image) => image.id === imageId);
+  useEffect(() => { if (imageTarget) setImageId(images.find((image) => image.start === imageTarget.offset)?.id ?? ""); }, [imageTarget]);
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [selection, setSelection] = useState<EditorSnapshot | null>(null);
   const [proposal, setProposal] = useState<{ base: EditorSnapshot; replacement: string } | null>(null);
@@ -29,6 +37,8 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
   const active = useRef<string | null>(null);
   const cancelled = useRef(false);
   const mounted = useRef(false);
+  const latest = useRef({ available, applyProposal, getSnapshot });
+  latest.current = { available, applyProposal, getSnapshot };
   const input = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -113,6 +123,33 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
       if (mounted.current) { setBusy(false); if (cancelled.current) setStatus("停止しました。変更案は破棄しました。"); }
     }
   }
+  async function transcribeImage() {
+    if (active.current || !savedOptions.enabled || settingsDirty || !available || !selectedImage) return;
+    const current = getSnapshot();
+    if (!current || current.content.replace(/\r\n?/g, "\n") !== documentText.replace(/\r\n?/g, "\n")) { setError("本文が変わりました。画像を選択し直してください。"); return; }
+    // CodeMirrorはLFへ正規化するため、表示元のCRLFオフセットをそのまま使わない。
+    const target = transcriptionImages(current.content)[images.indexOf(selectedImage)];
+    if (!target || target.source !== selectedImage.source) { setError("画像を選択し直してください。"); return; }
+    const id = crypto.randomUUID();
+    active.current = id; cancelled.current = false;
+    setBusy(true); setError(""); setProposal(null); setPreviewOpen(false);
+    setStatus("画像の解説・文字起こしを生成しています…");
+    try {
+      imageInsertion(current.content, target, "位置確認");
+      const image = await loadTranscriptionImage(documentPath, stagedImages[selectedImage.source] ?? selectedImage.source);
+      if (!mounted.current || cancelled.current) return;
+      if (image.base64.length > 14_000_000) throw new Error("画像は10MB以下にしてください。");
+      const reply = await generateCodex({ id, instruction: IMAGE_INSTRUCTION, text: "", history: [], image });
+      if (!mounted.current || cancelled.current) return;
+      const insertion = imageInsertion(current.content, target, reply.answer);
+      const base = { ...current, from: insertion.from, to: insertion.to };
+      if (!latest.current.available || !canApplyProposal(latest.current.getSnapshot(), base) || !latest.current.applyProposal(base, insertion.replacement)) throw new Error("生成中に本文や文書が変わったため挿入しませんでした。最新の画像で実行し直してください。");
+      setSelection(null); setImageId("");
+      setStatus("画像の直下に挿入しました。Ctrl+Zで戻せます。保存は通常の保存操作で行ってください。");
+      void refreshLogs();
+    } catch (cause) { if (mounted.current && !cancelled.current) setError(String(cause)); }
+    finally { active.current = null; if (mounted.current) { setBusy(false); if (cancelled.current) setStatus("停止しました。"); } }
+  }
   function adopt() {
     if (!proposal || !available || busy) return;
     if (!applyProposal(proposal.base, proposal.replacement)) { setError("生成後に本文や文書が変わりました。最新の本文で生成し直してください。"); return; }
@@ -148,6 +185,15 @@ export function CodexPanel({ open: visible, onClose, documentName, documentText,
       {savedOptions.enabled && <>
         <section className="codex-panel__scope"><strong>取り込み範囲と送信設定</strong><p>対象: {documentName || "文書なし"}<br />モデル: {savedOptions.model}<br />送信先: Codex（OpenAI）</p></section>
         {!available && <p>ローカルMarkdownの編集画面で利用できます。保存中・差分画面では採用できません。</p>}
+        <section aria-label="画像の解説・文字起こし">
+          <label>対象画像<select value={imageId} disabled={busy || !available} onChange={(event) => setImageId(event.target.value)}>
+            <option value="">画像を選択してください</option>
+            {images.map((image) => <option key={image.id} value={image.id}>{image.sourceLine}行: {image.caption || "画像"}</option>)}
+          </select></label>
+          {selectedImage && <img className="codex-image-preview" src={stagedImages[selectedImage.source] ?? resolveImageSrc(selectedImage.source, baseDir)} alt={selectedImage.caption || "選択した画像"} />}
+          <p>選択した画像をCodexへ送信し、解説と文字起こしを画像直下のコードブロックへ挿入します。独立した行のローカル画像・埋め込み画像が対象です。</p>
+          <button type="button" disabled={busy || !available || !selectedImage || settingsDirty} onClick={() => void transcribeImage()}>解説・文字起こしを挿入</button>
+        </section>
         <div className="codex-panel__actions">
           <button type="button" disabled={busy || !available} onClick={captureSelection}>選択範囲を取り込む</button>
           <button type="button" disabled={busy || !selection} onClick={() => { setSelection(null); setProposal(null); setPreviewOpen(false); }}>全文を対象にする</button>

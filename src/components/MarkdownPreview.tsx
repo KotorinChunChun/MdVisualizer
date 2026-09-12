@@ -84,6 +84,7 @@ interface MarkdownPreviewProps {
   tabId?: string;
   imageDisplaySizes?: Record<string, ImageSize>;
   onImageDisplaySizeChange?: (source: string, size: ImageSize) => void;
+  onCodexImageSelect?: (offset: number) => void;
   searchExpandedIds?: string[];
   onSearchFoldManualOverride?: (foldId: string) => void;
   onOpenDocument?: (path: string) => void;
@@ -171,6 +172,7 @@ interface MarkdownRenderContextValue {
   tabId?: string;
   imageDisplaySizes: Record<string, ImageSize>;
   onImageDisplaySizeChange?: (source: string, size: ImageSize) => void;
+  onCodexImageSelect?: (offset: number) => void;
   searchExpandedIds: string[];
   onSearchFoldManualOverride?: (foldId: string) => void;
   onOpenDocument?: (path: string) => void;
@@ -540,6 +542,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
     documentSourcePath={context.sourcePath}
     sourceOffset={isObsidianImage ? undefined : sourceOffset}
     conversionContext={conversionContext}
+    onCodexSelect={occurrence && context.onCodexImageSelect ? () => context.onCodexImageSelect?.(occurrence.start) : undefined}
     previewSrc={context.stagedAssetPreviews[source]}
     onExternalRename={conversionContext?.storage === "external" && context.onExternalFileRename
       ? (filename) => context.onExternalFileRename?.({ documentPath: conversionContext.documentPath, filePath: resolveLocalImagePath(source, context.baseDir)!, source }, filename)
@@ -608,6 +611,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   tabId,
   imageDisplaySizes = EMPTY_IMAGE_DISPLAY_SIZES,
   onImageDisplaySizeChange,
+  onCodexImageSelect,
   searchExpandedIds = EMPTY_SEARCH_EXPANDED_IDS,
   onSearchFoldManualOverride,
   onOpenDocument,
@@ -667,6 +671,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     tabId,
     imageDisplaySizes,
     onImageDisplaySizeChange,
+  onCodexImageSelect,
     searchExpandedIds,
     onSearchFoldManualOverride,
     onOpenDocument,
@@ -700,7 +705,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   }), [
     baseDir, codeFenceByOffset, content, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onExternalTableChange, onImageDisplaySizeChange, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onExternalTableChange, onImageDisplaySizeChange, onCodexImageSelect, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
     onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourceLineOffset, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, stagedTableSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 

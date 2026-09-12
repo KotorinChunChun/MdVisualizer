@@ -1,11 +1,18 @@
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { collectImageOccurrences } from "../lib/imageOccurrences";
 import { MarkdownPreview } from "./MarkdownPreview";
 
 afterEach(cleanup);
 
 describe("MarkdownPreview image navigation anchors", () => {
+  it("表示画像のCodexボタンは同じ画像の選択位置を区別する", () => {
+    const content = "![one](a.png)\n\n![two](a.png)";
+    const select = vi.fn();
+    render(<MarkdownPreview content={content} baseDir="C:/docs" documentPath="C:/docs/test.md" imageVersions={{}} onCodexImageSelect={select} />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Codexで画像を解説・文字起こし" })[1]);
+    expect(select).toHaveBeenCalledWith(content.indexOf("![two]"));
+  });
   it("renders the same occurrence IDs produced by the gallery parser", () => {
     const content = "before\n\n![one](images/a.png)\n\nafter";
     const occurrences = collectImageOccurrences(content, "C:\\docs");

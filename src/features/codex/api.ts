@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { ChatMessage, CodexLogData, CodexReply } from "./model";
-export function generateCodex(request: { id: string; instruction: string; text: string; history: ChatMessage[] }): Promise<CodexReply> {
+export function generateCodex(request: { id: string; instruction: string; text: string; history: ChatMessage[]; image?: { base64: string } }): Promise<CodexReply> {
   return invoke("codex_generate", { request });
 }
 export function cancelCodex(id: string): Promise<void> { return invoke("codex_cancel", { id }); }

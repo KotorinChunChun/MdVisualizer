@@ -193,6 +193,7 @@ export function App() {
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const [codexOpen, setCodexOpen] = useState(false);
+  const [codexImageTarget, setCodexImageTarget] = useState<{ documentId: string; offset: number } | null>(null);
   const codexButtonRef = useRef<HTMLButtonElement>(null);
   const focusNewDocumentRef = useRef(false);
   const paneSyncOrigin = useRef<"edit" | "view" | null>(null);
@@ -2496,6 +2497,11 @@ export function App() {
             tabId={activeTab.id}
             imageDisplaySizes={activeTab.imageDisplaySizes}
             onImageDisplaySizeChange={handleImageDisplaySizeChange}
+            onCodexImageSelect={canEditActive && !printing && !activeTab.saving ? (offset) => {
+              setCodexImageTarget({ documentId: activeTab.id, offset });
+              if (editorMode === "preview") changeEditorMode("split");
+              setCodexOpen(true);
+            } : undefined}
             searchExpandedIds={searchExpandedIds}
             onSearchFoldManualOverride={handleSearchFoldManualOverride}
             onOpenDocument={handleOpenDocument}
@@ -2535,6 +2541,10 @@ export function App() {
         open={codexOpen}
         onClose={() => { setCodexOpen(false); codexButtonRef.current?.focus(); }}
         documentName={activeTab?.path.split(/[\\/]/).pop() ?? ""}
+        documentPath={activeTab?.document?.path ?? ""}
+        baseDir={activeTab?.document?.base_dir ?? ""}
+        imageTarget={codexImageTarget?.documentId === activeTab?.id ? codexImageTarget : null}
+        stagedImages={Object.fromEntries((activeTab?.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
         documentText={activeTab?.draft ?? ""}
         available={Boolean(canEditActive && editorMode !== "preview" && !activeTab?.saving)}
         getSnapshot={() => documentDiff && activeTab ? { documentId: activeTab.id, content: activeTab.draft, from: 0, to: activeTab.draft.length } : editorRef.current?.snapshot() ?? null}

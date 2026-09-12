@@ -32,6 +32,7 @@ interface ImageRendererProps {
   previewSrc?: string;
   onExternalRename?: (filename: string) => boolean | void | Promise<boolean | void>;
   onError?: (message: string) => void;
+  onCodexSelect?: () => void;
 }
 
 export interface PresentationImageTarget {
@@ -59,6 +60,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   previewSrc,
   onExternalRename,
   onError,
+  onCodexSelect,
 }) => {
   const [loadError, setLoadError] = useState(false);
   const [authenticatedSrc, setAuthenticatedSrc] = useState<string | null>(null);
@@ -269,6 +271,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         )}
       </span>
       {!headingMode && alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
+      {!headingMode && !presentationMode && onCodexSelect && <button type="button" onClick={onCodexSelect}>Codexで画像を解説・文字起こし</button>}
     </span>
   );
 };
