@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { LanguageFn } from "highlight.js";
 import { copyTextFile, runPowerShell, type PowerShellRunResult } from "../lib/commands";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
+import { DiagramCodexAction, type DiagramSave } from "../features/codex/DiagramCodexAction";
 
 interface CodeBlockProps {
   className?: string;
@@ -12,6 +13,7 @@ interface CodeBlockProps {
   documentPath?: string;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
+  onCodexSave?: DiagramSave;
 }
 
 type LanguageModule = { default: LanguageFn };
@@ -65,7 +67,7 @@ export function syntaxHighlightLanguageName(language: string | undefined): strin
   return normalized ? languageNames[normalized] ?? normalized : undefined;
 }
 
-export function CodeBlock({ className, children, onHighlightComplete, headingTitle, documentPath, storage, onStorageConvert }: CodeBlockProps) {
+export function CodeBlock({ className, children, onHighlightComplete, headingTitle, documentPath, storage, onStorageConvert, onCodexSave }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [wrapLines, setWrapLines] = useState(false);
   const [html, setHtml] = useState("");
@@ -174,6 +176,7 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
       {languageName && <span className="code-block__language">{languageName}</span>}
       {normalizedHeadingTitle && <strong className="code-block__heading">{normalizedHeadingTitle}</strong>}
       <div className="code-actions">
+        {rawLanguage === "svg" && onCodexSave && <DiagramCodexAction kind="svg" source={source} onSave={onCodexSave} label={headingTitle ?? "SVG"} />}
         {storage && onStorageConvert && <button type="button" className="code-storage" disabled={convertingStorage} onClick={() => {
           setConvertingStorage(true);
           void Promise.resolve().then(onStorageConvert).catch((error) => emitCopyToast("error", error instanceof Error ? error.message : String(error))).finally(() => setConvertingStorage(false));

@@ -11,6 +11,7 @@ import { normalizedAssetFilename, parseRasterDataUri, type AssetConversionContex
 import type { DocumentAssetData } from "../types/app";
 import { ExternalFileHeader } from "./ExternalFileHeader";
 import "../styles/inline-image-resize.css";
+import { FileSvgCodexAction } from "../features/codex/FileSvgCodexAction";
 
 interface ImageRendererProps {
   src?: string;
@@ -33,6 +34,7 @@ interface ImageRendererProps {
   onExternalRename?: (filename: string) => boolean | void | Promise<boolean | void>;
   onError?: (message: string) => void;
   onCodexSelect?: () => void;
+  codexSvgEditable?: boolean;
 }
 
 export interface PresentationImageTarget {
@@ -61,8 +63,10 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   onExternalRename,
   onError,
   onCodexSelect,
+  codexSvgEditable = false,
 }) => {
   const [loadError, setLoadError] = useState(false);
+  const [codexVersion, setCodexVersion] = useState(0);
   const [authenticatedSrc, setAuthenticatedSrc] = useState<string | null>(null);
   const [authenticatedAsset, setAuthenticatedAsset] = useState<DocumentAssetData | null>(null);
   const [authenticatedLoading, setAuthenticatedLoading] = useState(false);
@@ -146,7 +150,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
 
   const fullPath = isRemote ? src : resolveLocalImagePath(src, baseDir) ?? src;
 
-  const version = imageVersions[fullPath] || 0;
+  const version = (imageVersions[fullPath] || 0) + codexVersion;
   const displaySrc = getCacheBusterUrl(resolvedSrc, version);
 
   if (authenticatedLoading || (isSharePointAsset && !authenticatedSrc && !loadError)) {
@@ -272,6 +276,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       </span>
       {!headingMode && alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
       {!headingMode && !presentationMode && onCodexSelect && <button type="button" onClick={onCodexSelect}>Codexで画像を解説・文字起こし</button>}
+      {!headingMode && !presentationMode && codexSvgEditable && !isRemote && !previewSrc && /\.svg$/i.test(src) && <FileSvgCodexAction path={fullPath} onSaved={() => setCodexVersion((value) => value + 1)} />}
     </span>
   );
 };

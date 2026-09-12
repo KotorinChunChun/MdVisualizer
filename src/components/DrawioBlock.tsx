@@ -8,6 +8,8 @@ import { DrawioEditorModal } from "./DrawioEditorModal";
 import { ResponsiveToolbar } from "./ResponsiveToolbar";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import "../styles/drawio.css";
+import { DiagramCodexDialog } from "../features/codex/DiagramCodexAction";
+import { createPortal } from "react-dom";
 
 export function drawioViewerConfig(xml: string): Record<string, unknown> {
   return {
@@ -131,6 +133,7 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
   onMediaOpen?: (target: MediaPreviewTarget) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [codexOpen, setCodexOpen] = useState(false);
   const [viewerError, setViewerError] = useState<string | null>(null);
   const [renderedSvg, setRenderedSvg] = useState<string>();
   const [viewerHeight, setViewerHeight] = useState(180);
@@ -294,6 +297,7 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
   return <div className="drawio-block" data-drawio-block={blockId}>
     <ResponsiveToolbar collapseAll className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
       ...(onSave ? [{ id: "edit", group: "edit", priority: 80, node: <button className="diagram-action-button" type="button" onClick={() => setEditing(true)}>編集</button> }] : []),
+      ...(onSave ? [{ id: "codex", group: "edit", priority: 75, node: <button type="button" className="diagram-action-button" onClick={() => setCodexOpen(true)}>Codexに図を依頼</button> }] : []),
       { id: "copy-view", group: "copy", priority: 100, node: <MermaidToolbar
         source={source}
         svg={renderedSvg}
@@ -321,5 +325,6 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
     <div className="drawio-block__preview" ref={previewRef}>{preview}</div>
     {description?.trim() && <div className="diagram-alt">{description.trim()}</div>}
     {editing && !(load instanceof Error) && <DrawioEditorModal source={source} onSave={onSave!} onCancel={() => setEditing(false)} />}
+    {codexOpen && onSave && createPortal(<DiagramCodexDialog kind={kind === "svg" ? "svg" : "drawio"} source={source} onSave={onSave} label={headingTitle ?? label} theme={theme} onClose={() => setCodexOpen(false)} />, document.body)}
   </div>;
 }

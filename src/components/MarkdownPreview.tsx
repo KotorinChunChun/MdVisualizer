@@ -30,6 +30,7 @@ import { ExternalDrawioBlock } from "./ExternalDrawioBlock";
 import { ExternalMermaidBlock } from "./ExternalMermaidBlock";
 import { ExternalDelimitedTableBlock } from "./ExternalDelimitedTableBlock";
 import { ExternalTextBlock } from "./ExternalTextBlock";
+import { DiagramCodexAction } from "../features/codex/DiagramCodexAction";
 import { PlantUmlBlock } from "./PlantUmlBlock";
 import { isPlantUmlFenceLanguage } from "@markdown-viewer/markdown-core";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
@@ -96,6 +97,7 @@ interface MarkdownPreviewProps {
   sourceLineOffset?: number;
   onCodeHighlightComplete?: () => void;
   onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
+  onInlineSvgChange?: (occurrence: InlineSvgOccurrence, source: string) => boolean | void;
   onMarkdownTableChange?: (occurrence: MarkdownTableOccurrence, replacement: string) => boolean | void;
   stagedAssetPreviews?: Record<string, string>;
   stagedDrawioSources?: Record<string, string>;
@@ -187,6 +189,7 @@ interface MarkdownRenderContextValue {
   mermaidIndexByOffset: Map<number, number>;
   codeFenceByOffset: Map<number, CodeFenceOccurrence>;
   onCodeFenceBodyChange?: (occurrence: CodeFenceOccurrence, body: string) => boolean | void;
+  onInlineSvgChange?: (occurrence: InlineSvgOccurrence, source: string) => boolean | void;
   tableByOffset: Map<number, MarkdownTableOccurrence>;
   onMarkdownTableChange?: (occurrence: MarkdownTableOccurrence, replacement: string) => boolean | void;
   imageOccurrenceByOffset: Map<number, ImageMarkdownOccurrence>;
@@ -255,6 +258,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
     const occurrence = sourceOffset === undefined ? undefined : context.codeFenceByOffset.get(sourceOffset);
     const decoration = occurrence ? codeFencePathDecoration(context.content, occurrence) : undefined;
     return <DrawioBlock
+      key={`${context.tabId}:${context.documentPath}:${occurrence?.id}`}
       source={String(children ?? "").replace(/\n$/, "")}
       theme={context.theme}
       blockId={occurrence?.id ?? `offset-${sourceOffset ?? 0}`}
@@ -326,9 +330,11 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
     const headingTitle = removeFilenameExtension(codeFenceTitle(occurrence?.meta)
       ?? (decoration?.style === "fence-title" || decoration?.style === "fence-colon" ? decoration.relativePath ?? "" : "")) || undefined;
     return <CodeBlock
+      key={`${context.tabId}:${context.documentPath}:${occurrence?.id}`}
       className={className}
       headingTitle={headingTitle}
       documentPath={context.presentationMode ? undefined : context.documentPath}
+      onCodexSave={language === "svg" && occurrence && context.documentPath && !context.staticMode && !context.presentationMode && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
       onHighlightComplete={context.onCodeHighlightComplete}
       storage={decoration ? "embedded" : undefined}
       onStorageConvert={decoration && context.documentPath && context.onTextStorageConvert
@@ -543,6 +549,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
     sourceOffset={isObsidianImage ? undefined : sourceOffset}
     conversionContext={conversionContext}
     onCodexSelect={occurrence && context.onCodexImageSelect ? () => context.onCodexImageSelect?.(occurrence.start) : undefined}
+    codexSvgEditable={Boolean(context.documentPath && !context.staticMode && !context.presentationMode)}
     previewSrc={context.stagedAssetPreviews[source]}
     onExternalRename={conversionContext?.storage === "external" && context.onExternalFileRename
       ? (filename) => context.onExternalFileRename?.({ documentPath: conversionContext.documentPath, filePath: resolveLocalImagePath(source, context.baseDir)!, source }, filename)
@@ -562,10 +569,12 @@ const MarkdownSvg = ({ node }: { node?: { position?: { start?: { offset?: number
   try { safeSvg = sanitizeSvgXml(occurrence.svg); }
   catch { return <span className="image-error-fallback">⚠️ SVGを表示できません</span>; }
   const conversionContext: AssetConversionContext | undefined = context.documentPath ? { documentPath: context.documentPath, occurrence, assetKind: "svg", storage: "embedded" } : undefined;
-  return <span className="inline-svg-preview" role="img" aria-label="インラインSVG" onClick={(event) => {
+  return <><span className="inline-svg-preview" role="img" aria-label="インラインSVG" onClick={(event) => {
     event.preventDefault(); event.stopPropagation();
     context.onMediaOpen?.({ content: { kind: "svg", svg: safeSvg, alt: "SVG" }, conversionContext });
-  }} dangerouslySetInnerHTML={{ __html: safeSvg }} />;
+  }} dangerouslySetInnerHTML={{ __html: safeSvg }} />
+    {context.documentPath && !context.staticMode && !context.presentationMode && context.onInlineSvgChange && <DiagramCodexAction key={`${context.tabId}:${context.documentPath}:${occurrence.id}`} kind="svg" source={occurrence.svg} onSave={(source) => context.onInlineSvgChange?.(occurrence, source)} label="インラインSVG" theme={context.theme} />}
+  </>;
 };
 
 const MarkdownListDepthContext = React.createContext(0);
@@ -623,6 +632,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   sourceLineOffset = 0,
   onCodeHighlightComplete,
   onCodeFenceBodyChange,
+  onInlineSvgChange,
   onMarkdownTableChange,
   stagedAssetPreviews = {},
   stagedDrawioSources = {},
@@ -686,6 +696,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     mermaidIndexByOffset,
     codeFenceByOffset,
     onCodeFenceBodyChange,
+    onInlineSvgChange,
     tableByOffset,
     onMarkdownTableChange,
     imageOccurrenceByOffset,
@@ -705,7 +716,8 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   }), [
     baseDir, codeFenceByOffset, content, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
-    onCodeFenceBodyChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onExternalTableChange, onImageDisplaySizeChange, onCodexImageSelect, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
+    onCodeFenceBodyChange,
+    onInlineSvgChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onExternalTableChange, onImageDisplaySizeChange, onCodexImageSelect, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
     onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourceLineOffset, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, stagedTableSources, staticMode, tabId, tableByOffset, theme, windowId,
   ]);
 

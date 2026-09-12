@@ -37,6 +37,7 @@ export function StandaloneDocumentPreview({
         baseDir={document.base_dir}
         imageVersions={imageVersions}
         onMediaOpen={onMediaOpen}
+        codexSvgEditable={!document.path.toLowerCase().startsWith("spmd:")}
       />
     </div>;
   }
@@ -67,6 +68,7 @@ export function StandaloneDocumentPreview({
   if (document.kind === "drawio") {
     return <div className="markdown-body standalone-document standalone-document--drawio" ref={contentRef}>
       <DrawioBlock
+        key={document.path}
         source={document.content}
         theme={theme}
         blockId="standalone-document"

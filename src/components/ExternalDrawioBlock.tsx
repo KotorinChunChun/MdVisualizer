@@ -108,6 +108,7 @@ export function ExternalDrawioBlock({
 
   return <div className="external-drawio-block" data-drawio-source={source}>
     <DrawioBlock
+      key={path ?? source}
       source={stagedSource ?? document!.content}
       theme={theme}
       blockId={blockId}

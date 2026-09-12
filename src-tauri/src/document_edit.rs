@@ -71,7 +71,7 @@ struct OriginalDocument {
 
 pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
-    if !matches!(document_kind(&requested), Some(DocumentKind::Markdown | DocumentKind::Drawio)) {
+    if !matches!(document_kind(&requested), Some(DocumentKind::Markdown | DocumentKind::Drawio | DocumentKind::Svg)) {
         return Err(AppError::UnsupportedDocument(request.path));
     }
     if !requested.exists() {
@@ -106,12 +106,12 @@ pub fn save_markdown_with_assets(
 ) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
     let kind = document_kind(&requested);
-    if !matches!(kind, Some(DocumentKind::Markdown | DocumentKind::Drawio)) {
+    if !matches!(kind, Some(DocumentKind::Markdown | DocumentKind::Drawio | DocumentKind::Svg)) {
         return Err(AppError::UnsupportedDocument(request.path));
     }
-    if kind == Some(DocumentKind::Drawio) && !request.staged_asset_ids.is_empty() {
+    if kind != Some(DocumentKind::Markdown) && !request.staged_asset_ids.is_empty() {
         return Err(AppError::PermissionDenied(
-            "draw.io documents cannot commit Markdown assets.".into(),
+            "Diagram documents cannot commit Markdown assets.".into(),
         ));
     }
     if !requested.exists() {
@@ -347,6 +347,24 @@ mod tests {
         assert_eq!(result.kind, DocumentKind::Drawio);
         assert!(result.content.contains("name=\"new\""));
         assert_ne!(result.revision, original_revision);
+    }
+
+    #[test]
+    fn saves_svg_with_bom_crlf_and_rejects_stale_revision() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("diagram.svg");
+        fs::write(&path, "\u{feff}<svg>\r\n<rect/>\r\n</svg>\r\n").unwrap();
+        let staging = crate::asset_staging::AssetStagingManager::new().unwrap();
+        let stale = request(&path, "<svg/>\n");
+        let saved = save_markdown_with_assets(request(&path, "<svg>\n<circle/>\n</svg>\n"), &staging).unwrap();
+        assert_eq!(saved.kind, DocumentKind::Svg);
+        assert_eq!(fs::read_to_string(&path).unwrap(), "\u{feff}<svg>\r\n<circle/>\r\n</svg>\r\n");
+        assert!(matches!(save_markdown(stale), Err(AppError::Conflict(_))));
+        let before = fs::read(&path).unwrap();
+        let mut with_assets = request(&path, "<svg/>\n");
+        with_assets.staged_asset_ids.push("unexpected".into());
+        assert!(save_markdown_with_assets(with_assets, &staging).is_err());
+        assert_eq!(fs::read(&path).unwrap(), before);
     }
 
     #[test]

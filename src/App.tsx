@@ -2511,6 +2511,15 @@ export function App() {
             sourcePath={activeTab.path}
             onCodeHighlightComplete={handleCodeHighlightComplete}
             onCodeFenceBodyChange={updateCodeFenceBody}
+            onInlineSvgChange={(occurrence, source) => {
+              const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === activeTab.id);
+              if (!tab || tab.saving || tab.id !== tabsStateRef.current.activeId) return false;
+              try {
+                const content = replaceMarkdownOccurrence(tab.draft, occurrence, sanitizeSvgXml(source));
+                dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+                return true;
+              } catch { return false; }
+            }}
             onMarkdownTableChange={updateMarkdownTable}
             onDrawioStorageConvert={convertDrawioStorage}
             onMermaidStorageConvert={convertMermaidStorage}
