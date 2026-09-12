@@ -13,3 +13,6 @@ AddType application/pkix-cert .cer
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 </IfModule>
+
+# 旧配布ページを新名称へ転送する
+RedirectMatch 301 ^/download/(?:MakdownViewer|MarkdownViewer)\.html$ /download/MdVisualizer.html
