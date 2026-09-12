@@ -1,15 +1,15 @@
 # MSIX packaging
 
-Windows SDKの`MakeAppx.exe`と`SignTool.exe`を使い、x64版のMarkdownViewerをMSIXへまとめる。
-署名にはMarkdownViewer専用ではない`KotorinChunChun`共通証明書を使用する。
+Windows SDKの`MakeAppx.exe`と`SignTool.exe`を使い、x64版のMdVisualizerをMSIXへまとめる。
+署名にはMdVisualizer専用ではない`KotorinChunChun`共通証明書を使用する。
 
 ## 自己署名版を作る
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-release-MarkdownViewer-all.ps1 -Mode Build -Channel beta -ReleaseIntentConfirmed
+pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer-all.ps1 -Mode Build -Channel beta -ReleaseIntentConfirmed
 ```
 
-`release\msix`へ署名済み`.msix`と公開鍵`MarkdownViewer.cer`を出力する。公開鍵のファイル名は
+`release\msix`へ署名済み`.msix`と公開鍵`MdVisualizer.cer`を出力する。公開鍵のファイル名は
 バージョンにかかわらず固定し、同じ証明書を使用している間は既存ファイルを再利用する。
 署名はKotorinChunChun共通設定 `%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json` の拇印で指定した
 `CurrentUser\My` の証明書を使用する。秘密鍵はWindows管理下に保持し、アプリごとには作らない。
@@ -40,7 +40,7 @@ pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 
 ## 新しい開発PCへ移植する
 
-この証明書はMarkdownViewerの所有物ではなく、同じ開発PC上の複数アプリで使う
+この証明書はMdVisualizerの所有物ではなく、同じ開発PC上の複数アプリで使う
 KotorinChunChun共通署名である。移植元で次を実行してバンドルを作成する。PFXのパスワードは別経路で伝える。
 
 ```powershell
@@ -53,10 +53,10 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File C:\develop\default\dev\templates\e
 `C:\develop\default\dev\templates`へ自動同期する。異なる既存ファイルは上書きせず停止し、別の配置先を使う場合は
 `-TemplateDirectory`で指定する。移植スクリプトは`TrustedPeople`などの信頼ストアやインストール済みアプリを変更しない。
 
-移植後、MarkdownViewerではリポジトリルートから次を実行する。
+移植後、MdVisualizerではリポジトリルートから次を実行する。
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-release-MarkdownViewer-all.ps1 `
+pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer-all.ps1 `
   -Mode Build -Channel beta -ReleaseIntentConfirmed
 ```
 
@@ -71,8 +71,8 @@ pwsh -NoProfile -File .\scripts\publish-release-MarkdownViewer-all.ps1 `
 
 ```powershell
 pwsh -NoProfile -File .\scripts\install-msix.ps1 `
-  -MsixPath .\release\msix\MarkdownViewer_<バージョン>_x64.msix `
-  -CertificatePath .\release\msix\MarkdownViewer.cer `
+  -MsixPath .\release\msix\MdVisualizer_<バージョン>_x64.msix `
+  -CertificatePath .\release\msix\MdVisualizer.cer `
   -TrustDevelopmentCertificate
 ```
 
@@ -83,8 +83,8 @@ PFXとパスワードは検証端末や一般利用者へ配布しない。
 MSIX生成後、beta更新チャネルの`.appinstaller`を生成する。
 
 ```powershell
-pwsh -NoProfile -File .\scripts\package-MarkdownViewer-appinstaller.ps1 `
-  -MsixPath .\release\msix\MarkdownViewer_0.0.9.0_x64.msix `
+pwsh -NoProfile -File .\scripts\package-MdVisualizer-appinstaller.ps1 `
+  -MsixPath .\release\msix\MdVisualizer_0.0.9.0_x64.msix `
   -ChannelBaseUri "https://excel-chunchun.sakura.ne.jp/download/beta/"
 ```
 

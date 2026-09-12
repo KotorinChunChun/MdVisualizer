@@ -1,9 +1,9 @@
 ---
 name: verify-markdownviewer
-description: MarkdownViewerの変更、対象版、受入状況をレビューし、変更領域に応じたVitest／Rust／共有core／SPFx／production build／性能検証を選択して証跡化する。総点検、回帰確認、テスト、実装レビューで使用し、修正実装やリリース公開には使用しない。
+description: MdVisualizerの変更、対象版、受入状況をレビューし、変更領域に応じたVitest／Rust／共有core／SPFx／production build／性能検証を選択して証跡化する。総点検、回帰確認、テスト、実装レビューで使用し、修正実装やリリース公開には使用しない。
 ---
 
-# MarkdownViewerを検証する
+# MdVisualizerを検証する
 
 検証済みの事実、自動化されていない受入、未確認事項を混同せず、要求への適合を判定する。
 

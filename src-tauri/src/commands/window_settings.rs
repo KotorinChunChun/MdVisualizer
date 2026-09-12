@@ -433,7 +433,7 @@ pub async fn open_in_new_window(
 
     let created_window = match
         WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
-            .title("MarkdownViewer")
+            .title("MdVisualizer")
             .inner_size(width, height)
             .position(x, y)
             .prevent_overflow()

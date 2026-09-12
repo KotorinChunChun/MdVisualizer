@@ -50,7 +50,7 @@ DB破損や移行失敗は起動を妨げず、設定画面に回復通知とバ
 
 ## 処理フロー
 
-1. アプリデータ領域の`state/markdownviewer.db`を開く。
+1. アプリデータ領域の`state/mdvisualizer.db`を開く。
 2. WAL、foreign keys、busy timeoutを設定する。
 3. `schema_migrations`を確認し、未適用migrationをtransactionで実行する。
 4. DBが新規で旧JSONが存在する場合だけ移行する。

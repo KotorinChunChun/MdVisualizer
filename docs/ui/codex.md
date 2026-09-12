@@ -6,11 +6,11 @@ Windowsデスクトップ版の任意機能です。SPFxには含みません。
 
 1. 利用する場合だけ[公式Codex CLI](https://github.com/openai/codex)を導入する。CLI 0.153.4で検証済み。
 2. 外部のPowerShellで`codex login`を実行し、利用者自身でログインする。
-3. MarkdownViewer上部の「Codex」を開く。
-4. 「Codex連携を有効にする」をチェックする。MarkdownViewerはPATHを優先し、次に公式Windowsインストーラーのユーザー領域から`codex.exe`を自動検出する。
+3. MdVisualizer上部の「Codex」を開く。
+4. 「Codex連携を有効にする」をチェックする。MdVisualizerはPATHを優先し、次に公式Windowsインストーラーのユーザー領域から`codex.exe`を自動検出する。
 5. モデルを確認して「連携設定を保存」を押す。初期値は`gpt-5.6-luna`。
 
-CLIを自動インストールしたり、ユーザーのCodex全体の設定を書き換えたりしません。検出できない場合は、Codexの導入後にPATHを更新してMarkdownViewerを再起動してください。モデルの利用可否・利用上限はログインしたアカウントに従います。
+CLIを自動インストールしたり、ユーザーのCodex全体の設定を書き換えたりしません。検出できない場合は、Codexの導入後にPATHを更新してMdVisualizerを再起動してください。モデルの利用可否・利用上限はログインしたアカウントに従います。
 
 ## 使い方
 
@@ -37,7 +37,7 @@ CLIを自動インストールしたり、ユーザーのCodex全体の設定を
 
 ローカルMarkdownの全文／選択範囲、およびSVG・draw.io・Mermaidの図の相談と書き換えが対象。SharePoint文書、SPFx、複数ファイルの自律編集、公式Codexアプリの会話同期、再起動をまたぐ会話保存、回答の逐次文字表示は対象外。回答は生成完了時に表示する。
 
-変更案の表示はMarkdownViewer独自の実装である。現在の対象と提案内容を並べて、採用前に確認できる。
+変更案の表示はMdVisualizer独自の実装である。現在の対象と提案内容を並べて、採用前に確認できる。
 
 ## 右クリックから対象部分について相談する
 

@@ -171,11 +171,11 @@ export function hasPreviewTextSelection(selection: Selection | null, root: HTMLE
 }
 
 export function applicationWindowTitle(tab: { kind?: "document" | "settings"; path: string } | null | undefined): string {
-  if (!tab) return "MarkdownViewer";
-  if (tab.kind === "settings") return "設定 - MarkdownViewer";
+  if (!tab) return "MdVisualizer";
+  if (tab.kind === "settings") return "設定 - MdVisualizer";
   const segments = tab.path.split(/[\\/]/).filter(Boolean);
   const filename = segments[segments.length - 1] ?? tab.path;
-  return `${filename} - MarkdownViewer`;
+  return `${filename} - MdVisualizer`;
 }
 
 export async function handleWindowCloseRequest(
@@ -408,7 +408,7 @@ export function App() {
   }, [activeTab?.id, activeTab?.kind, activeTab?.path]);
 
   useEffect(() => {
-    if (import.meta.env.VITE_MARKDOWNVIEWER_DEBUG_API !== "1") return;
+    if (import.meta.env.VITE_MDVISUALIZER_DEBUG_API !== "1") return;
     void reportDebugWindowState(buildDebugWindowState(windowLabel, tabsState, mediaPreview !== null));
   }, [mediaPreview, tabsState, windowLabel]);
 

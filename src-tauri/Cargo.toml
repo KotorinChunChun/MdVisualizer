@@ -1,5 +1,5 @@
 [package]
-name = "markdown-viewer"
+name = "mdvisualizer"
 version = "0.0.15"
 description = "Fast Markdown Viewer Desktop App"
 authors = ["KotorinChunChun"]
@@ -7,7 +7,7 @@ license = "MIT"
 edition = "2021"
 
 [lib]
-name = "markdown_viewer_lib"
+name = "mdvisualizer_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

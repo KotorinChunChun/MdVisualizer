@@ -5,7 +5,7 @@ use std::fs::{self, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-const APP_IDENTIFIER: &str = "com.markdownviewer.viewer";
+const APP_IDENTIFIER: &str = "com.mdvisualizer.viewer";
 const LOCK_DIRECTORY_NAME: &str = "locks";
 
 pub fn with_lock<T>(path: &Path, work: impl FnOnce() -> AppResult<T>) -> AppResult<T> {
@@ -93,7 +93,7 @@ fn lock_directory(target: &Path) -> AppResult<PathBuf> {
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
         .ok_or_else(|| AppError::IoError("resolve test lock directory".into()))?;
-    Ok(parent.join(".markdownviewer-test-locks"))
+    Ok(parent.join(".mdvisualizer-test-locks"))
 }
 
 pub fn atomic_write(path: &Path, content: &[u8]) -> AppResult<()> {
@@ -188,7 +188,7 @@ mod tests {
         let base = Path::new("application-data");
         assert_eq!(
             application_lock_directory(base),
-            base.join("com.markdownviewer.viewer").join("locks")
+            base.join("com.mdvisualizer.viewer").join("locks")
         );
     }
 

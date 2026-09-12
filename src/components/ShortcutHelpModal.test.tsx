@@ -34,12 +34,12 @@ describe("ShortcutHelpModal", () => {
 
     const readme = screen.getByRole("link", { name: "READMEを開く" });
     const releases = screen.getByRole("link", { name: "リリースを開く" });
-    expect(readme.getAttribute("href")).toBe("https://github.com/KotorinChunChun/MarkdownViewer#readme");
-    expect(releases.getAttribute("href")).toBe("https://github.com/KotorinChunChun/MarkdownViewer/releases");
+    expect(readme.getAttribute("href")).toBe("https://github.com/KotorinChunChun/MdVisualizer#readme");
+    expect(releases.getAttribute("href")).toBe("https://github.com/KotorinChunChun/MdVisualizer/releases");
 
     fireEvent.click(readme);
     fireEvent.click(releases);
-    expect(openExternalUrl).toHaveBeenNthCalledWith(1, "https://github.com/KotorinChunChun/MarkdownViewer#readme");
-    expect(openExternalUrl).toHaveBeenNthCalledWith(2, "https://github.com/KotorinChunChun/MarkdownViewer/releases");
+    expect(openExternalUrl).toHaveBeenNthCalledWith(1, "https://github.com/KotorinChunChun/MdVisualizer#readme");
+    expect(openExternalUrl).toHaveBeenNthCalledWith(2, "https://github.com/KotorinChunChun/MdVisualizer/releases");
   });
 });

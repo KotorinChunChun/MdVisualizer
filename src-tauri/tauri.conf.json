@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MarkdownViewer",
+  "productName": "MdVisualizer",
   "version": "0.0.15",
-  "identifier": "com.markdownviewer.viewer",
+  "identifier": "com.mdvisualizer.viewer",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "MarkdownViewer",
+        "title": "MdVisualizer",
         "width": 1000,
         "height": 750,
         "visible": false
@@ -22,14 +22,18 @@
       "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   },
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["spmd"]
+        "schemes": [
+          "spmd"
+        ]
       }
     }
   },
@@ -38,10 +42,46 @@
     "targets": "all",
     "fileAssociations": [
       {
-        "ext": ["md", "markdown", "tsv", "svg", "mmd", "mermaid", "drawio"],
-        "name": "Markdown, TSV, or Diagram Document",
-        "description": "Markdown, TSV, SVG, Mermaid, or draw.io document",
-        "role": "Viewer"
+        "ext": [
+          "md",
+          "markdown"
+        ],
+        "name": "MdVisualizer Markdown",
+        "description": "MdVisualizer Markdown document",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "svg"
+        ],
+        "name": "MdVisualizer SVG",
+        "description": "MdVisualizer SVG document",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "drawio"
+        ],
+        "name": "MdVisualizer draw.io",
+        "description": "MdVisualizer draw.io document",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "mmd",
+          "mermaid"
+        ],
+        "name": "MdVisualizer Mermaid",
+        "description": "MdVisualizer Mermaid document",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "tsv"
+        ],
+        "name": "MdVisualizer TSV",
+        "description": "MdVisualizer TSV document",
+        "role": "Editor"
       }
     ],
     "icon": [

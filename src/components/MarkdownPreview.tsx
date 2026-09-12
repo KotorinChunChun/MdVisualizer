@@ -34,7 +34,7 @@ import { DiagramCodexAction } from "../features/codex/DiagramCodexAction";
 import { useConsultationMenu } from "../features/codex/useConsultationMenu";
 import type { CodexTarget } from "../features/codex/scope";
 import { PlantUmlBlock } from "./PlantUmlBlock";
-import { isPlantUmlFenceLanguage } from "@markdown-viewer/markdown-core";
+import { isPlantUmlFenceLanguage } from "@mdvisualizer/markdown-core";
 import { normalizeStructuredListIndentationForRendering } from "../lib/markdownEditing";
 import type { DrawioStorageConversionContext } from "../lib/drawioStorage";
 import type { MermaidStorageConversionContext } from "../lib/mermaidStorage";
@@ -42,7 +42,7 @@ import type { TableStorageConversionContext } from "../lib/tableStorage";
 import { codeFencePathDecoration, removeFilenameExtension, splitFenceLanguagePath } from "../lib/externalPathRepresentation";
 import type { TextStorageConversionContext } from "../lib/textStorage";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
-import { isShortcutKeySource } from "@markdown-viewer/markdown-core";
+import { isShortcutKeySource } from "@mdvisualizer/markdown-core";
 import { calculateTableAggregates, isTableAggregateResultCell, type TableAggregationResult } from "../lib/tableAggregation";
 
 type MarkdownNode = {

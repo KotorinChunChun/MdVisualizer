@@ -5,7 +5,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$orchestratorPath = Join-Path $PSScriptRoot "publish-release-MarkdownViewer-all.ps1"
+$orchestratorPath = Join-Path $PSScriptRoot "publish-release-MdVisualizer-all.ps1"
 $releaseDirectory = Join-Path $projectRoot "release\msix"
 $websiteDownloadDirectory = "C:\develop\excel-chunchun\www\download"
 
@@ -59,15 +59,15 @@ Import-Module $releaseToolsPath -Force
 $configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
 foreach ($channel in @("beta", "stable")) {
     $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $channel
-    if ($artifacts.CertificateFileName -ne "MarkdownViewer.cer") {
+    if ($artifacts.CertificateFileName -ne "MdVisualizer.cer") {
         throw "The public certificate file name is not stable for ${channel}: $($artifacts.CertificateFileName)"
     }
-    if ([System.IO.Path]::GetFileName($artifacts.StagedCertificatePath) -ne "MarkdownViewer.cer") {
+    if ([System.IO.Path]::GetFileName($artifacts.StagedCertificatePath) -ne "MdVisualizer.cer") {
         throw "The staged public certificate file name is not stable for ${channel}."
     }
 }
-$temporaryCertificateDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "MarkdownViewer-certificate-test-$PID"
-$temporaryCertificatePath = Join-Path $temporaryCertificateDirectory "MarkdownViewer.cer"
+$temporaryCertificateDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "MdVisualizer-certificate-test-$PID"
+$temporaryCertificatePath = Join-Path $temporaryCertificateDirectory "MdVisualizer.cer"
 try {
     $initialBytes = [System.Text.Encoding]::UTF8.GetBytes("same certificate")
     if (-not (Set-FileBytesIfChanged -Path $temporaryCertificatePath -Bytes $initialBytes)) {

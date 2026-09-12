@@ -1,4 +1,4 @@
-# MarkdownViewer テスト計画
+# MdVisualizer テスト計画
 
 作成日: 2026-08-30
 状態: PROPOSED

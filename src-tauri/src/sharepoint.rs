@@ -236,7 +236,7 @@ impl SharePointAuthConfig {
 
     fn credential_target(&self) -> String {
         format!(
-            "MarkdownViewer/SharePoint/{}:{}",
+            "MdVisualizer/SharePoint/{}:{}",
             self.tenant, self.client_id
         )
     }
@@ -392,7 +392,7 @@ pub struct SharePointClient {
 impl SharePointClient {
     pub fn new() -> Result<Self, SharePointError> {
         let http = Client::builder()
-            .user_agent(concat!("MarkdownViewer/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("MdVisualizer/", env!("CARGO_PKG_VERSION")))
             .connect_timeout(Duration::from_secs(15))
             .timeout(Duration::from_secs(60))
             .build()
@@ -1521,7 +1521,7 @@ mod tests {
         );
         assert_eq!(
             SharePointAuthConfig::embedded().credential_target(),
-            "MarkdownViewer/SharePoint/organizations:f0fe07a2-a716-44de-bf0e-55d5b468d225"
+            "MdVisualizer/SharePoint/organizations:f0fe07a2-a716-44de-bf0e-55d5b468d225"
         );
     }
 

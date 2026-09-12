@@ -1,6 +1,6 @@
 param(
-    [string]$OutputDirectory = "C:\tmp\markdownviewer-gui",
-    [string]$UiaFocusPath = "C:\tmp\markdownviewer-uia\target\debug\uia_focus.exe"
+    [string]$OutputDirectory = "C:\tmp\mdvisualizer-gui",
+    [string]$UiaFocusPath = "C:\tmp\mdvisualizer-uia\target\debug\uia_focus.exe"
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,10 +18,10 @@ public static class GuiCaptureNative {
 "@
 Add-Type -AssemblyName System.Drawing
 
-$window = [GuiCaptureNative]::FindWindow("Tauri Window", "MarkdownViewer")
-if ($window -eq [IntPtr]::Zero) { throw "MarkdownViewer window not found." }
+$window = [GuiCaptureNative]::FindWindow("Tauri Window", "MdVisualizer")
+if ($window -eq [IntPtr]::Zero) { throw "MdVisualizer window not found." }
 [GuiCaptureNative]::ShowWindow($window, 9) | Out-Null
-& $UiaFocusPath "MarkdownViewer" | Out-Null
+& $UiaFocusPath "MdVisualizer" | Out-Null
 [GuiCaptureNative]::SetForegroundWindow($window) | Out-Null
 Start-Sleep -Milliseconds 500
 
@@ -33,7 +33,7 @@ $bitmap = New-Object System.Drawing.Bitmap $width, $height
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
 $runDirectory = Join-Path $OutputDirectory (Get-Date -Format "yyyyMMdd-HHmmss")
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
-$screenshot = Join-Path $runDirectory "markdownviewer.png"
+$screenshot = Join-Path $runDirectory "mdvisualizer.png"
 try {
     $graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
     $bitmap.Save($screenshot, [System.Drawing.Imaging.ImageFormat]::Png)

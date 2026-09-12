@@ -119,7 +119,7 @@ fn debug_query_response_path(arguments: &[String], cwd: &Path) -> Option<PathBuf
         return None;
     }
     let filename = candidate.file_name()?.to_str()?;
-    if !filename.starts_with("markdownviewer-debug-state-")
+    if !filename.starts_with("mdvisualizer-debug-state-")
         || candidate.extension().and_then(|value| value.to_str()) != Some("json")
     {
         return None;
@@ -333,7 +333,7 @@ mod tests {
         assert_eq!(
             document_launch_arguments(
                 [
-                    "MarkdownViewer.exe".into(),
+                    "MdVisualizer.exe".into(),
                     "--flag".into(),
                     "C:/docs/readme.md".into(),
                     "C:/docs/notes.MARKDOWN".into(),
@@ -408,11 +408,11 @@ mod tests {
     fn limits_debug_state_responses_to_unique_json_files_in_the_temp_directory() {
         use super::debug_query_response_path;
 
-        let allowed = std::env::temp_dir().join("markdownviewer-debug-state-test.json");
+        let allowed = std::env::temp_dir().join("mdvisualizer-debug-state-test.json");
         assert_eq!(
             debug_query_response_path(
                 &[
-                    "MarkdownViewer.exe".into(),
+                    "MdVisualizer.exe".into(),
                     "--debug-query-state".into(),
                     allowed.to_string_lossy().into_owned()
                 ],
@@ -422,7 +422,7 @@ mod tests {
         );
         assert!(debug_query_response_path(
             &[
-                "MarkdownViewer.exe".into(),
+                "MdVisualizer.exe".into(),
                 "--debug-query-state".into(),
                 "C:/workspace/state.json".into()
             ],

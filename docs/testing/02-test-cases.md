@@ -1,4 +1,4 @@
-# MarkdownViewer テストケース設計
+# MdVisualizer テストケース設計
 
 作成日: 2026-08-30
 状態: PROPOSED

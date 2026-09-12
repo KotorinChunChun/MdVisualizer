@@ -1,9 +1,9 @@
 ---
 name: release-markdownviewer
-description: MarkdownViewerのproduction検証、SPFx sppkg、ポータブルZIP、署名済みMSIX・App Installer、配布サイト更新、公開後検証を統合する。MarkdownViewerのリリース、beta公開、成果物アップロードで使用し、相談・計画だけの依頼は読み取り専用に保つ。
+description: MdVisualizerのproduction検証、SPFx sppkg、ポータブルZIP、署名済みMSIX・App Installer、配布サイト更新、公開後検証を統合する。MdVisualizerのリリース、beta公開、成果物アップロードで使用し、相談・計画だけの依頼は読み取り専用に保つ。
 ---
 
-# MarkdownViewerを公開する
+# MdVisualizerを公開する
 
 複数の成果物と公開先を一つの製品リリースとして扱いながら、各公開段階の成否を分離して記録する。
 
@@ -17,7 +17,7 @@ description: MarkdownViewerのproduction検証、SPFx sppkg、ポータブルZIP
 ## 事前確認
 
 1. ルート`AGENTS.md`、対象版の`req／imp／task`、Git状態、既存リリース報告を読む。
-2. `scripts/README.md`、`package.json`、`scripts/build-release-MarkdownViewer-spfx.ps1`、`scripts/publish-release-MarkdownViewer-spfx.ps1`、`upload-sppkg.ps1`、`packaging/release-config.json`、`scripts/publish-release-MarkdownViewer-all.ps1`を確認する。
+2. `scripts/README.md`、`package.json`、`scripts/build-release-MdVisualizer-spfx.ps1`、`scripts/publish-release-MdVisualizer-spfx.ps1`、`upload-sppkg.ps1`、`packaging/release-config.json`、`scripts/publish-release-MdVisualizer-all.ps1`を確認する。
 3. アプリ、SPFx、Websiteの各リポジトリにあるユーザー差分を分離し、対象パスだけをコミットする。
 4. 版、beta公開先、App Catalog scope、MSIX identity、署名証明書、ポータブルZIP生成経路を解決する。
 5. [references/release-matrix.md](references/release-matrix.md)を読み、成果物ごとの生成・公開・検証経路を確定する。

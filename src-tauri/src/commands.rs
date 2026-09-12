@@ -177,7 +177,7 @@ fn mermaid_clipboard_file(request: MermaidFileCopyRequest) -> Result<(String, St
 
 fn write_mermaid_clipboard_file(prefix: &str, extension: &str, bytes: &[u8]) -> Result<PathBuf, String> {
     let directory = std::env::temp_dir()
-        .join("markdown-viewer")
+        .join("mdvisualizer")
         .join("clipboard");
     std::fs::create_dir_all(&directory)
         .map_err(|error| format!("一時フォルダを作成できません: {error}"))?;

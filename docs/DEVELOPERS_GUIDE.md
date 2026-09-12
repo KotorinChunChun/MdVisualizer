@@ -1,4 +1,4 @@
-# MarkdownViewer 開発者ガイド
+# MdVisualizer 開発者ガイド
 
 ## 提供物と構成
 

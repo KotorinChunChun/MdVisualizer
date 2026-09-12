@@ -1,5 +1,5 @@
 {
-  "name": "@markdown-viewer/markdown-core",
+  "name": "@mdvisualizer/markdown-core",
   "version": "0.0.15",
   "private": true,
   "type": "module",

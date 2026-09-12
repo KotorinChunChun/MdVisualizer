@@ -22,11 +22,11 @@ npm.cmd run test:print-pdf
 - 出力後の印刷状態、メタデータ、折りたたみ、スクロール、選択表用DOMの復元を確認する。
 - 成功、取消（`afterprint`）、タイムアウト、同期／非同期例外、出力中の早期`afterprint`は通常のVitestでも検査する。無人PDF出力自体には取消ダイアログはない。
 
-localhostだけに接続できる新規ブラウザーcontextを使い、ユーザーのファイル、認証、既存ブラウザー、起動中のMarkdownViewerを使わない。OSのマウス・キー入力は送らない。
+localhostだけに接続できる新規ブラウザーcontextを使い、ユーザーのファイル、認証、既存ブラウザー、起動中のMdVisualizerを使わない。OSのマウス・キー入力は送らない。
 
 ## CubePDFとOS印刷の扱い
 
-CubePDFは、別PCでMarkdownViewerの印刷ダイアログから選択し、PDFに変換する手動受入に利用できる。ただし標準CubePDFにはGUIを非表示にして変換する設定がないため、GUIテスト禁止の当該PCでは無人印刷先にしない。CubeVPによるカスタムプリンター作成も今回の対象外とする。
+CubePDFは、別PCでMdVisualizerの印刷ダイアログから選択し、PDFに変換する手動受入に利用できる。ただし標準CubePDFにはGUIを非表示にして変換する設定がないため、GUIテスト禁止の当該PCでは無人印刷先にしない。CubeVPによるカスタムプリンター作成も今回の対象外とする。
 
 内部PDFで保証するのは共通レンダラー、印刷CSS、PDF内容、印刷セッションの動作である。WebView2固有の印刷ダイアログ、OSスプーラー、CubePDFドライバー、RDPプリンター転送は別の受入項目として残す。draw.ioの外部iframe描画や実機資格情報もこのテストでは検証しない。
 

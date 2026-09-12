@@ -243,7 +243,7 @@ fn find_codex_executable_with(
             return Ok(executable);
         }
     }
-    Err("Codex CLIを見つけられません。Codexを導入後、PATHを更新してMarkdownViewerを再起動してください。".into())
+    Err("Codex CLIを見つけられません。Codexを導入後、PATHを更新してMdVisualizerを再起動してください。".into())
 }
 
 fn find_codex_executable() -> Result<PathBuf, String> {
@@ -417,7 +417,7 @@ async fn run_cli(
     #[cfg(windows)]
     command.creation_flags(0x08000000);
     let mut child = command.spawn().map_err(|_| {
-        "Codex CLIを起動できません。Codexを再インストールするか、PATHを更新してMarkdownViewerを再起動してください。"
+        "Codex CLIを起動できません。Codexを再インストールするか、PATHを更新してMdVisualizerを再起動してください。"
     })?;
     let mut stdin = child.stdin.take().ok_or("CLI入力を取得できません。")?;
     let stdout = child.stdout.take().ok_or("CLI出力を取得できません。")?;
@@ -622,7 +622,7 @@ mod tests {
     fn request() -> CodexRequest {
         CodexRequest {
             id: "test".into(),
-            instruction: "ABCをMarkdownViewerに置換してください。".into(),
+            instruction: "ABCをMdVisualizerに置換してください。".into(),
             text: "ABCで編集します。".into(),
             history: vec![],
             image: None,
@@ -739,7 +739,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             result.reply.replacement.as_deref(),
-            Some("MarkdownViewerで編集します。")
+            Some("MdVisualizerで編集します。")
         );
     }
 }

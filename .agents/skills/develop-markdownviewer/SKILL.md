@@ -1,9 +1,9 @@
 ---
 name: develop-markdownviewer
-description: MarkdownViewerの機能追加、不具合修正、リファクタリングを、版管理文書、React／Tauri／共有core／SPFxの境界、保存安全性、段階検証に沿って実装する。実装を伴う依頼で使用し、相談・計画だけの依頼やリリース作業には使用しない。
+description: MdVisualizerの機能追加、不具合修正、リファクタリングを、版管理文書、React／Tauri／共有core／SPFxの境界、保存安全性、段階検証に沿って実装する。実装を伴う依頼で使用し、相談・計画だけの依頼やリリース作業には使用しない。
 ---
 
-# MarkdownViewerを実装する
+# MdVisualizerを実装する
 
 要求を既存の製品契約へ接続し、対象差分だけを段階的に実装・検証・記録する。
 

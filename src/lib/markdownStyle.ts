@@ -47,7 +47,7 @@ export function normalizeMarkdownStyleSettings(value: unknown): MarkdownStyleSet
 
 export function generateMarkdownStyleCss(value: MarkdownStyleSettings): string {
   const settings = normalizeMarkdownStyleSettings(value);
-  return `/* MarkdownViewerで生成したMarkdown本文用CSS */
+  return `/* MdVisualizerで生成したMarkdown本文用CSS */
 :scope {
   color: ${settings.useThemeColor ? "var(--text-primary)" : settings.color};
   font-size: ${settings.fontSize}px;

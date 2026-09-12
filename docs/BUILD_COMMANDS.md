@@ -1,6 +1,6 @@
-# MarkdownViewer ビルド・検証コマンド
+# MdVisualizer ビルド・検証コマンド
 
-すべてリポジトリルート`C:\develop\MarkdownViewer`から実行します。PowerShellは`pwsh`を使用し、PowerShell実行ポリシーの影響を避けるためnpmは`npm.cmd`を使用します。
+すべてリポジトリルート`C:\develop\MdVisualizer`から実行します。PowerShellは`pwsh`を使用し、PowerShell実行ポリシーの影響を避けるためnpmは`npm.cmd`を使用します。
 
 ## 依存導入
 
@@ -38,7 +38,7 @@ npm.cmd --prefix .\spfx test
 npm.cmd run build:spfx:local
 ```
 
-`build:spfx`と`build:spfx:local`は、どちらもApp Catalogへアップロードしないローカルproduction buildです。公開は`pwsh -NoProfile -File .\scripts\publish-release-MarkdownViewer-spfx.ps1 -PublishConfirmed`を明示的に使用し、全サイト展開が必要な場合だけ`-Deploy`を追加します。
+`build:spfx`と`build:spfx:local`は、どちらもApp Catalogへアップロードしないローカルproduction buildです。公開は`pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer-spfx.ps1 -PublishConfirmed`を明示的に使用し、全サイト展開が必要な場合だけ`-Deploy`を追加します。
 
 ## スクリプトと配布安全性
 

@@ -36,7 +36,7 @@ function escapeHtmlAttribute(value: string): string {
 
 export function drawioViewerDocument(xml: string): string {
   const config = escapeHtmlAttribute(JSON.stringify(drawioViewerConfig(xml)));
-  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}.mxgraph{width:100%;height:100%;min-height:0}</style></head><body><div class="mxgraph" data-mxgraph="${config}"></div><script>(()=>{const send=()=>{const svg=document.querySelector('svg');if(svg)parent.postMessage({type:'markdown-viewer-drawio-svg',svg:svg.outerHTML},'*')};window.captureDrawioSvg=send;window.reportDrawioViewerError=()=>parent.postMessage({type:'markdown-viewer-drawio-error'},'*');new MutationObserver(send).observe(document.body,{subtree:true,childList:true,attributes:true})})()</script><script src="https://viewer.diagrams.net/js/viewer-static.min.js" referrerpolicy="no-referrer" onload="try{GraphViewer.processElements();captureDrawioSvg()}catch(e){window.reportDrawioViewerError()}" onerror="window.reportDrawioViewerError()"></script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}.mxgraph{width:100%;height:100%;min-height:0}</style></head><body><div class="mxgraph" data-mxgraph="${config}"></div><script>(()=>{const send=()=>{const svg=document.querySelector('svg');if(svg)parent.postMessage({type:'mdvisualizer-drawio-svg',svg:svg.outerHTML},'*')};window.captureDrawioSvg=send;window.reportDrawioViewerError=()=>parent.postMessage({type:'mdvisualizer-drawio-error'},'*');new MutationObserver(send).observe(document.body,{subtree:true,childList:true,attributes:true})})()</script><script src="https://viewer.diagrams.net/js/viewer-static.min.js" referrerpolicy="no-referrer" onload="try{GraphViewer.processElements();captureDrawioSvg()}catch(e){window.reportDrawioViewerError()}" onerror="window.reportDrawioViewerError()"></script></body></html>`;
 }
 
 /** Returns the exact responsive height needed to show an SVG viewBox without clipping or trailing blank space. */
@@ -189,11 +189,11 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
     };
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.contentWindow) return;
-      if (event.data?.type === "markdown-viewer-drawio-error") {
+      if (event.data?.type === "mdvisualizer-drawio-error") {
         failOrRetry();
         return;
       }
-      if (event.data?.type !== "markdown-viewer-drawio-svg" || typeof event.data.svg !== "string") return;
+      if (event.data?.type !== "mdvisualizer-drawio-svg" || typeof event.data.svg !== "string") return;
       try {
         window.clearTimeout(timeout);
         const parsed = new DOMParser().parseFromString(event.data.svg, "image/svg+xml");

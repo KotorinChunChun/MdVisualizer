@@ -1,4 +1,4 @@
-# MarkdownViewer 開発資料目録
+# MdVisualizer 開発資料目録
 
 `dev/`は、開発者本人の計画、判断、作業記録を管理します。利用者および第三者開発者向けの説明は`README.md`と`docs/`を正本とします。
 
@@ -19,11 +19,11 @@
 | `scripts/` | 性能測定など、開発記録に密接な補助スクリプト |
 | `private/` | 秘密情報・個人情報を含む非公開資料。Git、公開、通常検索の対象外 |
 | `temp/` | プロジェクト外の一時制作物。Git、公開、資料目録、通常検索の対象外 |
-| `RELEASE_RULE.md` | MarkdownViewer固有の配布・公開手順 |
+| `RELEASE_RULE.md` | MdVisualizer固有の配布・公開手順 |
 
 `private/`と`temp/`はユーザーが対象を明示した場合だけ読みます。秘密値は実装報告、テスト出力、コミットへ転載しません。
 
-`dev/scripts/replace-MarkdownViewer-installed-msix-executable.ps1`は、開発PCで登録済みMSIX内のexeだけを差し替える特殊なデバッグ補助です。署名整合性を壊すため通常のbuild、run、publishには含めません。旧`release-MarkdownViewer.ps1`は互換転送だけを行い、安全契約は`test-MarkdownViewer-installed-msix-executable-replacement.ps1`で検証します。
+`dev/scripts/replace-MdVisualizer-installed-msix-executable.ps1`は、開発PCで登録済みMSIX内のexeだけを差し替える特殊なデバッグ補助です。署名整合性を壊すため通常のbuild、run、publishには含めません。旧`release-MdVisualizer.ps1`は互換転送だけを行い、安全契約は`test-MdVisualizer-installed-msix-executable-replacement.ps1`で検証します。
 
 ## 点検報告
 

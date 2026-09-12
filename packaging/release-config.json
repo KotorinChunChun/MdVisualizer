@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "entryScript": "scripts\\publish-release-MarkdownViewer-all.ps1",
+  "entryScript": "scripts\\publish-release-MdVisualizer-all.ps1",
   "application": {
-    "displayName": "MarkdownViewer",
-    "artifactBaseName": "MarkdownViewer",
-    "identityName": "com.markdownviewer.viewer",
+    "displayName": "MdVisualizer",
+    "artifactBaseName": "MdVisualizer",
+    "identityName": "com.mdvisualizer.viewer",
     "publisher": "CN=KotorinChunChun",
     "architecture": "x64",
     "certificateFriendlyName": "PC共通証明書（signing.jsonの拇印で固定）",
-    "certificateFileName": "MarkdownViewer.cer"
+    "certificateFileName": "MdVisualizer.cer"
   },
   "build": {
     "tauriConfig": "src-tauri\\tauri.conf.json",
@@ -25,12 +25,12 @@
     "beta": {
       "relativeDirectory": "beta",
       "baseUri": "https://excel-chunchun.sakura.ne.jp/download/beta/",
-      "appInstallerFileName": "MarkdownViewer.appinstaller"
+      "appInstallerFileName": "MdVisualizer.appinstaller"
     },
     "stable": {
       "relativeDirectory": "stable",
       "baseUri": "https://excel-chunchun.sakura.ne.jp/download/stable/",
-      "appInstallerFileName": "MarkdownViewer.appinstaller"
+      "appInstallerFileName": "MdVisualizer.appinstaller"
     }
   }
 }

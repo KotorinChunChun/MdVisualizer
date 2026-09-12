@@ -54,7 +54,7 @@ impl AssetStagingManager {
             std::process::id(),
             chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
         );
-        let session_dir = std::env::temp_dir().join("markdown-viewer").join(session);
+        let session_dir = std::env::temp_dir().join("mdvisualizer").join(session);
         fs::create_dir_all(&session_dir)
             .map_err(|error| AppError::IoError(format!("create asset staging: {error}")))?;
         Ok(Self {

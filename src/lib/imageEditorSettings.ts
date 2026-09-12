@@ -15,7 +15,7 @@ export const DEFAULT_IMAGE_EDITOR_SETTINGS: ImageEditorSettings = {
   fastWheelWindowMs: 300,
 };
 
-export const IMAGE_EDITOR_SETTINGS_KEY = "markdown-viewer.image-editor-settings.v1";
+export const IMAGE_EDITOR_SETTINGS_KEY = "mdvisualizer.image-editor-settings.v1";
 
 const positiveNumber = (value: unknown, fallback: number, maximum: number): number => {
   const parsed = typeof value === "number" ? value : Number(value);

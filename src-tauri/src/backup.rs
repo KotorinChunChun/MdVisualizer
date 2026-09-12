@@ -13,7 +13,7 @@ pub struct BackupManager {
 impl BackupManager {
     pub fn new() -> AppResult<Self> {
         let session_id = format!("{:x}", rand_simple_hash());
-        let temp_base = std::env::temp_dir().join("markdown-viewer").join(session_id);
+        let temp_base = std::env::temp_dir().join("mdvisualizer").join(session_id);
         fs::create_dir_all(&temp_base).map_err(|e| AppError::BackupError(e.to_string()))?;
 
         Ok(Self {

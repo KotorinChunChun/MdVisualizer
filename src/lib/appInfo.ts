@@ -1,6 +1,6 @@
 import packageMetadata from "../../package.json";
 
-const repositoryUrl = "https://github.com/KotorinChunChun/MarkdownViewer";
+const repositoryUrl = "https://github.com/KotorinChunChun/MdVisualizer";
 
 export const APP_INFO = {
   updatedAt: "2026-08-14",

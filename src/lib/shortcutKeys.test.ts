@@ -4,7 +4,7 @@ import {
   isShortcutKeySource,
   normalizeShortcutKeyToken,
   parseShortcutKeySequence,
-} from "@markdown-viewer/markdown-core";
+} from "@mdvisualizer/markdown-core";
 
 describe("shortcut key rendering", () => {
   it("normalizes the requested modifier names", () => {

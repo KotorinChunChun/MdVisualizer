@@ -22,7 +22,7 @@ $profilePath = Join-Path $fixture 'signing.json'
 $rsa = [Security.Cryptography.RSA]::Create(2048)
 $cert = $null; $public = $null; $noEku = $null; $badUsage = $null
 try {
-    foreach ($name in @('MsixSigning.psm1', 'initialize-msix-signing.ps1', 'package-MarkdownViewer-msix.ps1', 'package-MarkdownViewer-appinstaller.ps1', 'build-msix.ps1', 'build-appinstaller.ps1', 'publish-release-MarkdownViewer-all.ps1', 'publish-MarkdownViewer.ps1', 'test-msix-signing.ps1')) {
+    foreach ($name in @('MsixSigning.psm1', 'initialize-msix-signing.ps1', 'package-MdVisualizer-msix.ps1', 'package-MdVisualizer-appinstaller.ps1', 'build-msix.ps1', 'build-appinstaller.ps1', 'publish-release-MdVisualizer-all.ps1', 'publish-MdVisualizer.ps1', 'test-msix-signing.ps1')) {
         $tokens = $null; $errors = $null
         [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $name), [ref]$tokens, [ref]$errors) | Out-Null
         Assert-True ($errors.Count -eq 0) "PowerShell構文: $name"
