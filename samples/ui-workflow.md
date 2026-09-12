@@ -42,8 +42,8 @@ VS Codeワークスペース推定をまとめて確認するためのサンプ�
 
 ## 外部操作と別窓
 
-このファイルは`MarkdownViewer/samples`にあります。VS Code連携では上位の`.git`を探索し、
-`MarkdownViewer`をワークスペースとして開くことが期待結果です。
+このファイルは`MdVisualizer/samples`にあります。VS Code連携では上位の`.git`を探索し、
+`MdVisualizer`をワークスペースとして開くことが期待結果です。
 
 [Obsidian画像・alt配置の確認へ](obsidian-images.md)
 

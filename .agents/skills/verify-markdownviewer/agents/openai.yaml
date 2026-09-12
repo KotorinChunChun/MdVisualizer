@@ -1,4 +1,0 @@
-interface:
-  display_name: "MarkdownViewer検証"
-  short_description: "変更範囲に合う回帰テストと受入証跡を選定"
-  default_prompt: "$verify-markdownviewer を使って、現在の変更を総点検してください。"

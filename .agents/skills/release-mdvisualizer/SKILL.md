@@ -1,5 +1,5 @@
 ---
-name: release-markdownviewer
+name: release-mdvisualizer
 description: MdVisualizerのproduction検証、SPFx sppkg、ポータブルZIP、署名済みMSIX・App Installer、配布サイト更新、公開後検証を統合する。MdVisualizerのリリース、beta公開、成果物アップロードで使用し、相談・計画だけの依頼は読み取り専用に保つ。
 ---
 

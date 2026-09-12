@@ -1,5 +1,5 @@
 ---
-name: verify-markdownviewer
+name: verify-mdvisualizer
 description: MdVisualizerの変更、対象版、受入状況をレビューし、変更領域に応じたVitest／Rust／共有core／SPFx／production build／性能検証を選択して証跡化する。総点検、回帰確認、テスト、実装レビューで使用し、修正実装やリリース公開には使用しない。
 ---
 
@@ -11,7 +11,7 @@ description: MdVisualizerの変更、対象版、受入状況をレビューし�
 
 - 質問、レビュー、監査、状況確認ではコードや文書を変更しない。`AGENTS.md`、対象版の`req／imp／task`、`git diff`、実装と既存テストを読み、指摘を返す。
 - 「テストして」「検証して」と明示された場合は、[検証マトリクス](references/validation-matrix.md)から必要十分なコマンドを選ぶ。公開、署名、upload、installは検証依頼に含めない。
-- 「直して」まで含む場合は、このskillで不足を特定した後、`develop-markdownviewer`へ切り替える。
+- 「直して」まで含む場合は、このskillで不足を特定した後、`develop-mdvisualizer`へ切り替える。
 
 ## 評価手順
 

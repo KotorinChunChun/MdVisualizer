@@ -36,3 +36,7 @@
 - 品質運用: `docs/operations/01-quality-operations.md`
 - 検証設計: `docs/testing/`
 - 配布: `dev/RELEASE_RULE.md`
+
+## 改名後の資料の読み方
+
+現行アプリ名はMdVisualizer、作業場所はC:\develop\MdVisualizerです。現在の実装・進捗は[v0.0.16実装報告](v0.0.16-imp.md)と[v0.0.16進捗](v0.0.16-task.md)を参照してください。過去版の要求や実施報告、日付付き監査、初回アイコン候補にある旧名は、当時の記録として保持しています。

@@ -46,9 +46,9 @@
 
 ## プロジェクトskillの使い分け
 
-- 機能追加、不具合修正、リファクタリングを実装する場合は`.agents/skills/develop-markdownviewer/SKILL.md`を読む。
-- 総点検、レビュー、回帰確認、テスト、受入証跡を扱う場合は`.agents/skills/verify-markdownviewer/SKILL.md`を読む。
-- production成果物、SPFx、ポータブルZIP、MSIX、App Installer、配布サイトを公開する場合は`.agents/skills/release-markdownviewer/SKILL.md`を読む。
+- 機能追加、不具合修正、リファクタリングを実装する場合は`.agents/skills/develop-mdvisualizer/SKILL.md`を読む。
+- 総点検、レビュー、回帰確認、テスト、受入証跡を扱う場合は`.agents/skills/verify-mdvisualizer/SKILL.md`を読む。
+- production成果物、SPFx、ポータブルZIP、MSIX、App Installer、配布サイトを公開する場合は`.agents/skills/release-mdvisualizer/SKILL.md`を読む。
 - 相談、計画、状況確認では、各skillに実行手順があっても読み取りだけに留める。実装、テスト、成果物生成、外部公開の許可を相互に推測しない。
 
 ## 当該PCのGUIテスト方針
