@@ -1,6 +1,6 @@
 [package]
 name = "markdown-viewer"
-version = "0.0.14"
+version = "0.0.15"
 description = "Fast Markdown Viewer Desktop App"
 authors = ["KotorinChunChun"]
 license = "MIT"

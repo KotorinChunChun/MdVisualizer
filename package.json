@@ -1,7 +1,7 @@
 {
   "name": "markdown-viewer",
   "private": true,
-  "version": "0.0.14",
+  "version": "0.0.15",
   "author": "KotorinChunChun",
   "license": "MIT",
   "repository": "https://github.com/KotorinChunChun/MarkdownViewer",
@@ -40,7 +40,7 @@
     "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.8",
-    "@markdown-viewer/markdown-core": "0.0.14",
+    "@markdown-viewer/markdown-core": "0.0.15",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-opener": "^2",
