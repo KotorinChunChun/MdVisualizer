@@ -128,9 +128,9 @@ export function MermaidBlock({
 
   const toolbarLabel = `Mermaid${headingTitle?.trim() ? ` — ${headingTitle.trim()}` : ""}`;
   const descriptionNode = description?.trim() ? <div className="diagram-alt">{description.trim()}</div> : null;
-  const toolbar = showToolbar && <ResponsiveToolbar collapseAll className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
+  const toolbar = showToolbar && <ResponsiveToolbar threeStage className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
     ...(editable ? [{ id: "edit", group: "edit", priority: 80, node: <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button> }] : []),
-    { id: "copy-view", group: "copy", priority: 100, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} /> },
+    { id: "copy-view", group: "copy", priority: 100, compactNode: <MermaidToolbar compact source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} />, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} /> },
     ...(storage && onStorageConvert ? [{ id: "storage", group: "storage", priority: 10, node: <button className="diagram-action-button" type="button" disabled={convertingStorage} onClick={() => {
       setConvertingStorage(true);
       void Promise.resolve().then(onStorageConvert).catch((error) => window.dispatchEvent(new CustomEvent("markdown-toast", {

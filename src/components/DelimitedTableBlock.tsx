@@ -1,3 +1,4 @@
+import { BlockCopyMenu } from "./BlockCopyMenu";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   compareDelimitedValues,
@@ -38,6 +39,7 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
     ? { ...parsed.data, ...calculateTableAggregates(parsed.data) }
     : null, [parsed.data]);
   const [query, setQuery] = useState("");
+  const [display, setDisplay] = useState("preview");
   const [sort, setSort] = useState<SortCriterion[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<boolean[]>([]);
   const [columnsOpen, setColumnsOpen] = useState(false);
@@ -187,13 +189,13 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
   };
 
   return <section ref={cardRef} className="data-grid-card" aria-label={`${language.toUpperCase()}表`}>
-    <ResponsiveToolbar label={headingLabel ?? <strong className="data-grid-kind">{language.toUpperCase()}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</strong>} className="data-grid-toolbar" ariaLabel="表操作" itemsStyle={{ width: "auto", flexGrow: 1, flexShrink: 1, flexBasis: 0 }} items={[
+    <ResponsiveToolbar threeStage label={headingLabel ?? <strong className="data-grid-kind">{language.toUpperCase()}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</strong>} className="data-grid-toolbar" ariaLabel="表操作" itemsStyle={{ width: "auto", flexGrow: 1, flexShrink: 1, flexBasis: 0 }} items={[
       { id: "search", priority: 120, fixed: true, measurementWidth: 180, node: <label className="data-grid-search"><input aria-label="検索キーワードを入力" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="検索キーワードを入力" /></label> },
       { id: "columns", priority: 20, node: <button type="button" aria-pressed={columnsOpen} className={columnsOpen ? "active" : ""} onClick={() => setColumnsOpen((open) => !open)}>列表示</button> },
       { id: "slicer", priority: 25, node: <button type="button" aria-pressed={panesOpen} className={panesOpen ? "active" : ""} onClick={() => setPanesOpen((open) => !open)}>スライサー</button> },
       ...(onSave ? [{ id: "edit", priority: 110, node: <button type="button" onClick={() => setEditing(true)}>表を編集</button> }] : []),
-      { id: "copy-csv", priority: 100, node: <button type="button" onClick={() => void copy("csv")}>CSVコピー</button> },
-      { id: "copy-tsv", priority: 95, node: <button type="button" onClick={() => void copy("tsv")}>TSVコピー</button> },
+      { id: "view", node: <><button type="button" aria-pressed={display === "preview"} onClick={() => setDisplay("preview")}>プレビュー</button><button type="button" aria-pressed={display === "code"} onClick={() => setDisplay("code")}>コード</button></>, compactNode: <select aria-label="表の表示内容" value={display} onChange={(event) => setDisplay(event.target.value)}><option value="preview">プレビュー</option><option value="code">コード</option></select> },
+      { id: "copy", priority: 100, compactNode: <BlockCopyMenu><button type="button" onClick={() => void copy("csv")}>CSVコピー</button><button type="button" onClick={() => void copy("tsv")}>TSVコピー</button></BlockCopyMenu>, node: <><button type="button" onClick={() => void copy("csv")}>CSVコピー</button><button type="button" onClick={() => void copy("tsv")}>TSVコピー</button></> },
       { id: "print", priority: 15, node: <button type="button" onClick={printTable}>印刷</button> },
       ...(storage && onStorageConvert ? [{ id: "storage", priority: 90, node: <button type="button" disabled={convertingStorage} onClick={() => {
         setConvertingStorage(true);
@@ -210,7 +212,8 @@ export function DelimitedTableBlock({ language, source, onSave, headingLabel, st
         return { ...current, [column]: event.target.checked ? [...values, value] : values.filter((candidate) => candidate !== value) };
       })} /><span>{value || "(空白)"}</span><small>{count}</small></label>)}</fieldset>;
     })}</div>}
-    <div className="data-grid-table-wrap"><table className="data-grid-table"><thead><tr>{visibleIndexes.map((column) => {
+    {display === "code" && <pre aria-label="表のコード"><code>{source}</code></pre>}
+    <div className="data-grid-table-wrap" style={display === "code" ? { display: "none" } : undefined}><table className="data-grid-table"><thead><tr>{visibleIndexes.map((column) => {
       const priority = sort.findIndex((criterion) => criterion.column === column);
       const criterion = priority >= 0 ? sort[priority] : null;
       const sortLabel = criterion ? `${criterion.direction === "ascending" ? "昇順" : "降順"}、優先順位${priority + 1}` : "ソートなし";

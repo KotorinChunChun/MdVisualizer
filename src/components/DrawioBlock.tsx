@@ -295,10 +295,10 @@ export function DrawioBlock({ source, theme, blockId, headingTitle, headingLabel
   }
 
   return <div className="drawio-block" data-drawio-block={blockId}>
-    <ResponsiveToolbar collapseAll className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
+    <ResponsiveToolbar threeStage className="drawio-block__toolbar diagram-block__header" ariaLabel="draw.ioブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
       ...(onSave ? [{ id: "edit", group: "edit", priority: 80, node: <button className="diagram-action-button" type="button" onClick={() => setEditing(true)}>編集</button> }] : []),
       ...(onSave ? [{ id: "codex", group: "edit", priority: 75, node: <button type="button" className="diagram-action-button" onClick={() => setCodexOpen(true)}>Codexに図を依頼</button> }] : []),
-      { id: "copy-view", group: "copy", priority: 100, node: <MermaidToolbar
+      { id: "copy-view", group: "copy", priority: 100, compactNode: <MermaidToolbar compact source={source} svg={renderedSvg} display={display} onDisplayChange={setDisplay} previewDisabled={false} ariaLabel="draw.io操作" fileDiagramKind="drawio" />, node: <MermaidToolbar
         source={source}
         svg={renderedSvg}
         display={display}

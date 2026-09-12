@@ -886,3 +886,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
 }
+
+/* ブロックの見出しと圧縮操作を共通化する。 */
+.diagram-block__header .responsive-toolbar__label,
+.code-block__header .code-block__heading,
+.data-grid-toolbar .responsive-toolbar__label { font-size: 12px; font-weight: 600; }

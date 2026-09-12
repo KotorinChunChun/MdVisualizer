@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { BlockCopyMenu } from "./BlockCopyMenu";
+import { Children, isValidElement, useEffect, useRef, useState } from "react";
 import type { LanguageFn } from "highlight.js";
 import { copyTextFile, runPowerShell, type PowerShellRunResult } from "../lib/commands";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { DiagramCodexAction, type DiagramSave } from "../features/codex/DiagramCodexAction";
+
+import { ResponsiveToolbar } from "./ResponsiveToolbar";
 
 interface CodeBlockProps {
   className?: string;
@@ -118,11 +121,12 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
     setConfirmationOpen(false);
   }, [documentPath, source]);
   useEffect(() => () => { runGeneration.current += 1; }, []);
+  const sourceExtension = sourceExtensions[language ?? ""] ?? rawLanguage?.replace(/[^a-z0-9]/g, "") ?? "txt";
   const copy = async (button: HTMLButtonElement) => {
     try {
       await navigator.clipboard.writeText(source);
       setCopied(true);
-      const sourceExtension = sourceExtensions[language ?? ""] ?? rawLanguage?.replace(/[^a-z0-9]/g, "") ?? "txt";
+
       emitCopyToast("success", "コードをコピーしました", [
         { label: "TXTファイルでコピー", onAction: () => copyCodeFile("txt", "TXT") },
         { label: "ソースファイルとしてコピー", onAction: () => copyCodeFile(sourceExtension || "txt", "ソース") },
@@ -157,25 +161,22 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
     }
   };
 
+  const [shortcutDisplay, setShortcutDisplay] = useState("preview");
   if (shortcutKeyBlock) {
     return <div className="code-block shortcut-key-block">
-      <div className="code-block__header">
-        <span className="code-block__language">キーボードショートカット</span>
-        <div className="code-actions">
-          <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
-        </div>
-      </div>
+      <ResponsiveToolbar threeStage className="code-block__header" ariaLabel="ショートカット表示操作" label={<span className="code-block__language">キーボードショートカット</span>} items={[
+        { id: "copy", node: <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button> },
+        { id: "view", node: <><button type="button" aria-pressed={shortcutDisplay === "preview"} onClick={() => setShortcutDisplay("preview")}>プレビュー</button><button type="button" aria-pressed={shortcutDisplay === "code"} onClick={() => setShortcutDisplay("code")}>コード</button></>, compactNode: <select aria-label="ショートカットの表示内容" value={shortcutDisplay} onChange={(event) => setShortcutDisplay(event.target.value)}><option value="preview">プレビュー</option><option value="code">コード</option></select> },
+      ]} />
       <div className="shortcut-key-block__preview">
-        <ShortcutKeySvg source={source} variant="block" />
+        {shortcutDisplay === "preview" ? <ShortcutKeySvg source={source} variant="block" /> : <pre><code>{source}</code></pre>}
       </div>
     </div>;
   }
 
   return <div className="code-block">
-    <div className="code-block__header">
-      {languageName && <span className="code-block__language">{languageName}</span>}
-      {normalizedHeadingTitle && <strong className="code-block__heading">{normalizedHeadingTitle}</strong>}
-      <div className="code-actions">
+    <ResponsiveToolbar threeStage itemsClassName="code-actions" className="code-block__header" ariaLabel="コードブロック操作" label={<>{languageName && <span className="code-block__language">{languageName}</span>}
+      {normalizedHeadingTitle && <strong className="code-block__heading">{normalizedHeadingTitle}</strong>}</>} items={Children.toArray((<>
         {rawLanguage === "svg" && onCodexSave && <DiagramCodexAction kind="svg" source={source} onSave={onCodexSave} label={headingTitle ?? "SVG"} />}
         {storage && onStorageConvert && <button type="button" className="code-storage" disabled={convertingStorage} onClick={() => {
           setConvertingStorage(true);
@@ -193,8 +194,7 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
           onClick={() => setWrapLines((value) => !value)}
         >{wrapLines ? "↩" : "↪"}</button>
         <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button>
-      </div>
-    </div>
+</>).props.children).map((node, index) => isValidElement<{ className?: string }>(node) && node.props.className === "code-copy" ? { id: "copy", node: <>{node}<button type="button" onClick={() => void copyCodeFile("txt", "TXT")}>TXTコピー</button><button type="button" onClick={() => void copyCodeFile(sourceExtension || "txt", "ソース")}>ソースファイルコピー</button></>, compactNode: <BlockCopyMenu>{node}<button type="button" onClick={() => void copyCodeFile("txt", "TXT")}>TXTコピー</button><button type="button" onClick={() => void copyCodeFile(sourceExtension || "txt", "ソース")}>ソースファイルコピー</button></BlockCopyMenu> } : ({ id: String(index), node }))} />
     <pre className={wrapLines ? "code-block__pre--wrapped" : undefined}><code className={className} {...(html ? { dangerouslySetInnerHTML: { __html: html } } : {})}>{html ? undefined : source}</code></pre>
     {(runResult || runError) && <section className="code-run-result" aria-label="PowerShell実行結果">
       <header><strong>{runError ? "実行エラー" : runResult?.timedOut ? "タイムアウト" : `終了コード: ${runResult?.exitCode ?? "不明"}`}</strong>{runResult && <span>{runResult.durationMs}ms{runResult.truncated ? "・出力省略" : ""}</span>}</header>

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 export interface ResponsiveToolbarItem {
   id: string;
   node: ReactNode;
+  compactNode?: ReactNode;
   priority?: number;
   fixed?: boolean;
   measurementWidth?: number;
@@ -40,18 +41,22 @@ export function resolvedResponsiveOverflowIds(
   return collapseAll && progressiveIds.length > 0 ? items.map((item) => item.id) : progressiveIds;
 }
 
-export function ResponsiveToolbar({ label, ariaLabel, className = "", items, itemsStyle, collapseAll = false }: {
+export function ResponsiveToolbar({ label, ariaLabel, className = "", items, itemsStyle, itemsClassName = "", collapseAll = false, threeStage = false }: {
   label?: ReactNode;
   ariaLabel: string;
   className?: string;
   items: ResponsiveToolbarItem[];
   itemsStyle?: CSSProperties;
+  itemsClassName?: string;
   collapseAll?: boolean;
+  threeStage?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const itemWidths = useRef(new Map<string, number>());
+  const compactRefs = useRef(new Map<string, HTMLDivElement>());
+  const [stage, setStage] = useState<"full" | "compact" | "menu">("full");
   const itemsRef = useRef(items);
   const [overflowIds, setOverflowIds] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,6 +82,17 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items, ite
         };
       });
       const availableWidth = responsiveItemAreaWidth(root.clientWidth, labelWidth, Boolean(label), gap);
+      if (threeStage) {
+        const fullWidth = widths.reduce((sum, item) => sum + item.width, 0) + Math.max(0, widths.length - 1) * gap;
+        const essential = itemsRef.current.filter((item) => item.id === "edit" || item.id.startsWith("copy") || item.id === "view");
+        const secondary = itemsRef.current.filter((item) => !essential.includes(item)).map((item) => item.id);
+        const compactWidth = essential.reduce((sum, item) => sum + (item.compactNode !== undefined ? compactRefs.current.get(item.id)?.scrollWidth ?? 0 : widths.find((value) => value.id === item.id)?.width ?? 0), 0) + Math.max(0, essential.length - 1) * gap + (secondary.length ? 38 + gap : 0);
+        const nextStage = fullWidth <= availableWidth ? "full" : compactWidth <= availableWidth ? "compact" : "menu";
+        setStage(nextStage);
+        const hidden = nextStage === "menu" ? itemsRef.current.map((item) => item.id) : nextStage === "compact" ? secondary : [];
+        setOverflowIds((current) => current.length === hidden.length && current.every((id, index) => id === hidden[index]) ? current : hidden);
+        return;
+      }
       const progressive = responsiveOverflowIds(availableWidth, widths, gap);
       const next = resolvedResponsiveOverflowIds(progressive, itemsRef.current, collapseAll);
       setOverflowIds((current) => current.length === next.length && current.every((id, index) => id === next[index]) ? current : next);
@@ -127,15 +143,20 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items, ite
   }, [menuOpen]);
 
   const overflow = new Set(overflowIds);
-  return <div ref={rootRef} className={`responsive-toolbar ${className}`.trim()} role="toolbar" aria-label={ariaLabel}>
+  return <div ref={rootRef} data-stage={threeStage ? stage : undefined} className={`responsive-toolbar ${className}`.trim()} role="toolbar" aria-label={ariaLabel}>
     {label && <div ref={labelRef} className="responsive-toolbar__label">{label}</div>}
-    <div className="responsive-toolbar__items" style={itemsStyle}>
-      {items.map((item) => <div
+    <div className={`responsive-toolbar__items ${itemsClassName}`.trim()} style={itemsStyle}>
+      {items.map((item) => <Fragment key={item.id}><div
         key={item.id}
         ref={(element) => { if (element) itemRefs.current.set(item.id, element); else itemRefs.current.delete(item.id); }}
-        className={`responsive-toolbar__item${overflow.has(item.id) ? " is-overflowed" : ""}`}
-        aria-hidden={overflow.has(item.id) || undefined}
-      >{item.node}</div>)}
+        className={`responsive-toolbar__item${overflow.has(item.id) || (threeStage && stage === "compact" && item.compactNode !== undefined) ? " is-overflowed" : ""}`}
+        aria-hidden={overflow.has(item.id) || (threeStage && stage === "compact" && item.compactNode !== undefined) || undefined}
+        inert={overflow.has(item.id) || (threeStage && stage === "compact" && item.compactNode !== undefined)}
+      >{item.node}</div>{threeStage && item.compactNode !== undefined && <div
+        ref={(element) => { if (element) compactRefs.current.set(item.id, element); else compactRefs.current.delete(item.id); }}
+        className={`responsive-toolbar__item${stage !== "compact" || overflow.has(item.id) ? " is-overflowed" : ""}`}
+        aria-hidden={stage !== "compact" || overflow.has(item.id) || undefined} inert={stage !== "compact" || overflow.has(item.id)}
+      >{item.compactNode}</div>}</Fragment>)}
     </div>
     {overflowIds.length > 0 && <div className="responsive-toolbar__more">
       <button ref={moreButtonRef} type="button" aria-label="その他の操作" aria-expanded={menuOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => setMenuOpen((open) => !open)}>…</button>
