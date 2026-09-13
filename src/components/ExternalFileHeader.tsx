@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { openContainingFolder } from "../lib/commands";
 import { externalFilename, splitExternalFilename, validateExternalFilename } from "../lib/externalFile";
+import { useBrowserCapabilities } from "./BrowserCapabilities";
 
 export function ExternalFileHeader({ source, path, kind, status, onRename, onError }: {
   source: string;
@@ -11,6 +12,7 @@ export function ExternalFileHeader({ source, path, kind, status, onRename, onErr
   onRename?: (filename: string) => Promise<boolean | void> | boolean | void;
   onError?: (message: string) => void;
 }) {
+  const capabilities = useBrowserCapabilities();
   const filename = externalFilename(source, path);
   const { stem, extension } = splitExternalFilename(filename);
   const [editing, setEditing] = useState(false);
@@ -99,10 +101,10 @@ export function ExternalFileHeader({ source, path, kind, status, onRename, onErr
       onPointerDown={(event) => event.stopPropagation()}
     >
       <button type="button" role="menuitem" onClick={() => { setShowPath(true); setMenuPosition(null); }}>保存場所を表示</button>
-      <button type="button" role="menuitem" onClick={() => {
+      {capabilities.canOpenContainingFolder && <button type="button" role="menuitem" onClick={() => {
         setMenuPosition(null);
         void openContainingFolder(path).catch((error) => onError?.(String(error)));
-      }}>フォルダーを開く</button>
+      }}>フォルダーを開く</button>}
       <button type="button" role="menuitem" onClick={() => {
         setMenuPosition(null);
         void navigator.clipboard.writeText(path).catch((error) => onError?.(String(error)));

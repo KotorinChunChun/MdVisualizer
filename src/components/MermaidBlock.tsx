@@ -4,9 +4,10 @@ import { copyMermaid } from "../lib/mermaidClipboard";
 import { removeMermaidBlockStatus, setMermaidBlockStatus } from "../lib/mermaidStatus";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { MermaidToolbar } from "./MermaidToolbar";
-import { MermaidEditorPlaceholderModal } from "./MermaidEditorPlaceholderModal";
+import { MermaidEditorModal } from "./MermaidEditorModal";
 import { ResponsiveToolbar } from "./ResponsiveToolbar";
 import { DiagramCodexAction, type DiagramSave } from "../features/codex/DiagramCodexAction";
+import { useBrowserCapabilities } from "./BrowserCapabilities";
 
 interface MermaidBlockProps {
   source: string;
@@ -29,6 +30,7 @@ interface MermaidBlockProps {
   description?: string;
   editable?: boolean;
   onCodexSave?: DiagramSave;
+  onSourceChange?: DiagramSave;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
 }
@@ -54,9 +56,11 @@ export function MermaidBlock({
   description,
   editable = false,
   onCodexSave,
+  onSourceChange,
   storage,
   onStorageConvert,
 }: MermaidBlockProps) {
+  const capabilities = useBrowserCapabilities();
   const [state, setState] = useState<RenderState>({ svg: null, error: null, pending: false });
   const [showDetails, setShowDetails] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -134,7 +138,7 @@ export function MermaidBlock({
   const toolbar = showToolbar && <ResponsiveToolbar threeStage className="diagram-block__header mermaid-container__header" ariaLabel="Mermaidブロック操作" label={headingLabel ?? <span>{toolbarLabel}{storage && <span className="content-storage-status">{storage === "embedded" ? "埋め込み" : "外部参照"}</span>}</span>} items={[
     ...(onCodexSave ? [{ id: "codex", group: "edit", priority: 75, node: <DiagramCodexAction kind="mermaid" source={source} renderedSvg={state.svg ?? undefined} onSave={onCodexSave} theme={theme} label={headingTitle ?? "Mermaid"} /> }] : []),
     ...(editable ? [{ id: "edit", group: "edit", priority: 80, node: <button className="diagram-action-button diagram-edit-button" type="button" aria-label="Mermaid GUI編集" title="Mermaid GUI編集" onClick={() => setEditorOpen(true)}>編集</button> }] : []),
-    { id: "copy-view", group: "copy", priority: 100, compactNode: <MermaidToolbar compact source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} />, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} /> },
+    { id: "copy-view", group: "copy", priority: 100, compactNode: <MermaidToolbar compact source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} allowBitmapCopy={capabilities.canCopyBitmap} />, node: <MermaidToolbar source={source} svg={state.svg ?? undefined} display={display} onDisplayChange={mode === "off" || mode === "always-code" ? undefined : setDisplay} allowBitmapCopy={capabilities.canCopyBitmap} /> },
     ...(storage && onStorageConvert ? [{ id: "storage", group: "storage", priority: 10, node: <button className="diagram-action-button" type="button" disabled={convertingStorage} onClick={() => {
       setConvertingStorage(true);
       void Promise.resolve().then(onStorageConvert).catch((error) => window.dispatchEvent(new CustomEvent("markdown-toast", {
@@ -142,7 +146,7 @@ export function MermaidBlock({
       }))).finally(() => setConvertingStorage(false));
     }}>{convertingStorage ? "切替中…" : storage === "embedded" ? "外部ファイルへ切替" : "埋め込みへ切替"}</button> }] : []),
   ]} />;
-  const editor = editorOpen && <MermaidEditorPlaceholderModal source={source} onClose={() => setEditorOpen(false)} />;
+  const editor = editorOpen && <MermaidEditorModal source={source} onApply={onSourceChange ?? onCodexSave ?? (() => undefined)} onClose={() => setEditorOpen(false)} />;
 
   if (mode === "off" || mode === "always-code") return <div className={`mermaid-container${showToolbar ? "" : " is-embedded"}`}>
     {toolbar}
@@ -164,7 +168,7 @@ export function MermaidBlock({
       className="mermaid-block"
       aria-label="図を拡大"
       onClick={() => onMediaOpen?.({ content: { kind: "svg", svg: state.svg!, alt: diagramAlt }, headingTitle: headingTitle ?? diagramAlt, diagramSource: mediaSource ?? source, diagramKind: "mermaid" })}
-      onContextMenu={(event) => {
+      onContextMenu={capabilities.canCopyBitmap ? (event) => {
         event.preventDefault();
         event.stopPropagation();
         void copyMermaid("bmp", mediaSource ?? source, state.svg!).then(() => {
@@ -172,7 +176,7 @@ export function MermaidBlock({
         }).catch((error) => {
           window.dispatchEvent(new CustomEvent("markdown-toast", { detail: { type: "error", message: error instanceof Error ? error.message : "図をコピーできませんでした" } }));
         });
-      }}
+      } : undefined}
       dangerouslySetInnerHTML={{ __html: state.svg }}
     />}
     {descriptionNode}

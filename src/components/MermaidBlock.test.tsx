@@ -18,6 +18,7 @@ vi.mock("../lib/mermaidClipboard", () => ({
 }));
 
 import { MermaidBlock } from "./MermaidBlock";
+import { BrowserCapabilitiesContext, desktopBrowserCapabilities } from "./BrowserCapabilities";
 
 afterEach(() => {
   cleanup();
@@ -100,7 +101,7 @@ describe("MermaidBlock", () => {
     expect(screen.queryByRole("dialog", { name: "Mermaidエラー詳細" })).toBeNull();
   });
 
-  it("opens the Mermaid GUI editor placeholder from the header pencil", async () => {
+  it("opens the Mermaid GUI editor from the header pencil", async () => {
     mocks.renderMermaid.mockResolvedValueOnce("<svg><text>diagram</text></svg>");
     render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" headingTitle="処理フロー" editable />);
 
@@ -109,7 +110,8 @@ describe("MermaidBlock", () => {
     expect(screen.getByRole("button", { name: "Mermaid GUI編集" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集" }));
     expect(screen.getByRole("dialog", { name: "Mermaid GUI編集" })).toBeTruthy();
-    expect(screen.getByText("Mermaid専用GUI編集ツールを準備中です。")).toBeTruthy();
+    const titled = screen.getAllByTitle("Mermaid GUI編集");
+    expect(titled[titled.length - 1]).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集を閉じる" }));
     expect(screen.queryByRole("dialog", { name: "Mermaid GUI編集" })).toBeNull();
   });
@@ -136,5 +138,14 @@ describe("MermaidBlock", () => {
     fireEvent.click(screen.getByRole("button", { name: "コードをコピー" }));
     await waitFor(() => expect(mocks.copyMermaid).toHaveBeenCalledWith("code", source, ""));
     expect(screen.getByRole("toolbar", { name: "Mermaid操作" })).toBeTruthy();
+  });
+
+  it("browser-only host hides BMP actions and does not register a bitmap context action", async () => {
+    mocks.renderMermaid.mockResolvedValueOnce('<svg><text>diagram</text></svg>');
+    render(<BrowserCapabilitiesContext.Provider value={{ ...desktopBrowserCapabilities, canCopyBitmap: false }}><MermaidBlock source="flowchart LR\nA --> B" theme="light" mode="on" /></BrowserCapabilitiesContext.Provider>);
+    const diagram = await screen.findByRole("button", { name: "図を拡大" });
+    expect(screen.queryByRole("button", { name: "BMPコピー" })).toBeNull();
+    fireEvent.contextMenu(diagram);
+    expect(mocks.copyMermaid).not.toHaveBeenCalled();
   });
 });

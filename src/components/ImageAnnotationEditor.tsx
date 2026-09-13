@@ -94,12 +94,15 @@ export function ImageAnnotationEditor({
   onApply,
   onCancel,
   onError,
+  enableNativeDragDrop = true,
 }: {
   target: ImageEditTarget;
   imageVersion: number;
   onApply: (result: { filename: string; backupAvailable: boolean; dataUri?: string }) => void | Promise<void>;
   onCancel: () => void;
   onError: (message: string) => void;
+  /** Web版はTauri Webviewのドラッグ&ドロップ登録を行わない。 */
+  enableNativeDragDrop?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -388,6 +391,7 @@ export function ImageAnnotationEditor({
   }, []);
 
   useEffect(() => {
+    if (!enableNativeDragDrop) return;
     let disposed = false;
     let unlisten: (() => void) | null = null;
     void getCurrentWebview().onDragDropEvent((event) => {
@@ -404,7 +408,7 @@ export function ImageAnnotationEditor({
       disposed = true;
       unlisten?.();
     };
-  }, []);
+  }, [enableNativeDragDrop]);
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {

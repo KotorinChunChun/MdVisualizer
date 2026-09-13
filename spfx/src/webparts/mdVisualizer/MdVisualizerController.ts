@@ -34,6 +34,8 @@ import mermaid from 'mermaid';
 import { DrawioEditorBridge } from './DrawioEditorBridge';
 import type { IResolvedDrawioConnection } from './DrawioConnection';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { openSpfxMermaidEditor } from './SpfxMermaidEditorDialog';
+import { downloadHtml, exportHtmlInBrowser } from '../../generated/embeddedTools';
 
 export type EditorViewMode = 'edit' | 'split' | 'preview';
 
@@ -42,6 +44,7 @@ export interface IMdVisualizerControllerOptions {
   drawioConnection: IResolvedDrawioConnection;
   onChanged: (value: string) => void;
   onSave: () => void;
+  onExportAsset?: (source: string, base?: string) => Promise<{ base: string; mime: string; text?: string; data: string }>;
 }
 
 const actions: Array<{ action: MarkdownEditAction; label: string }> = [
@@ -76,6 +79,8 @@ export class MdVisualizerController {
   private _editingDrawioIndex = -1;
   private _applying = false;
   private _normalizingLists = false;
+  private _htmlExportOverlay?: HTMLElement;
+  private _htmlExportAbort?: AbortController;
 
   public constructor(private readonly _options: IMdVisualizerControllerOptions) {
     _options.root.innerHTML = '';
@@ -94,6 +99,10 @@ export class MdVisualizerController {
     save.textContent = '保存';
     save.addEventListener('click', _options.onSave);
     toolbar.appendChild(save);
+    const htmlExport = document.createElement('button');
+    htmlExport.type = 'button'; htmlExport.textContent = 'HTML出力';
+    htmlExport.addEventListener('click', () => this._openHtmlExport());
+    toolbar.appendChild(htmlExport);
     const panes = document.createElement('div');
     panes.className = 'spfxMarkdownPanes';
     this._editorHost = document.createElement('div');
@@ -173,6 +182,10 @@ export class MdVisualizerController {
   }
 
   public dispose(): void {
+    this._htmlExportAbort?.abort();
+    this._htmlExportAbort = undefined;
+    this._htmlExportOverlay?.remove();
+    this._htmlExportOverlay = undefined;
     this._drawio.dispose();
     this._editor.destroy();
   }
@@ -214,11 +227,13 @@ export class MdVisualizerController {
     this._preview.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(link => {
       if (/^https?:/i.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
     });
+    let mermaidIndex = 0;
     this._preview.querySelectorAll<HTMLElement>('pre > code').forEach(code => {
       const language = Array.from(code.classList).find(value => value.startsWith('language-'))?.slice('language-'.length);
       const plantUml = isPlantUmlFenceLanguage(language);
       if (code.classList.contains('language-mermaid') || plantUml) {
         const originalSource = code.textContent || '';
+        const currentMermaidIndex = plantUml ? -1 : mermaidIndex++;
         const host = document.createElement('div');
         host.className = plantUml ? 'spfxMarkdownPlantUml' : 'spfxMarkdownMermaid';
         code.parentElement?.replaceWith(host);
@@ -226,7 +241,7 @@ export class MdVisualizerController {
           const source = plantUml ? plantUmlToMermaid(originalSource).mermaid : originalSource;
           mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
           void mermaid.render(`spfx-markdown-${sequence}-${Math.random().toString(36).slice(2)}`, source)
-            .then(result => { if (sequence === this._renderSequence) host.innerHTML = result.svg; })
+            .then(result => { if (sequence === this._renderSequence) { host.innerHTML = result.svg; if (!plantUml) this._addMermaidEditButton(host, originalSource, currentMermaidIndex); } })
             .catch(error => { host.textContent = `${plantUml ? 'PlantUML' : 'Mermaid'}を描画できません: ${String(error)}`; });
         } catch (error) {
           host.textContent = `PlantUMLを描画できません: ${String(error)}`;
@@ -300,5 +315,73 @@ export class MdVisualizerController {
     this._editingDrawioIndex = -1;
     this.setValue(replaced);
     this._options.onChanged(replaced);
+  }
+
+  private _addMermaidEditButton(host: HTMLElement, source: string, occurrence: number): void {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'spfxMermaidEditButton'; button.textContent = 'Mermaid GUI編集';
+    button.addEventListener('click', () => openSpfxMermaidEditor(source, replacement => this._replaceMermaidFence(source, occurrence, replacement)));
+    host.prepend(button);
+  }
+
+  private _replaceMermaidFence(original: string, occurrence: number, replacement: string): void {
+    const expression = /(^|\n)(```|~~~)mermaid[^\r\n]*\r?\n([\s\S]*?)\r?\n\2(?=\r?\n|$)/gi;
+    let match: RegExpExecArray | null; let index = -1;
+    while ((match = expression.exec(this.value))) {
+      index += 1;
+      if (index !== occurrence) continue;
+      if (match[3] !== original) throw new Error('Mermaidコードが編集開始後に変更されています。画面を更新してからやり直してください。');
+      const bodyStart = match.index + match[0].indexOf(original);
+      const bodyEnd = bodyStart + original.length;
+      this._editor.dispatch({ changes: { from: bodyStart, to: bodyEnd, insert: replacement }, selection: { anchor: bodyStart, head: bodyStart + replacement.length }, scrollIntoView: true, userEvent: 'input.mermaid.gui' });
+      return;
+    }
+    throw new Error('編集対象のMermaidブロックを確認できません。画面を更新してからやり直してください。');
+  }
+
+  private _openHtmlExport(): void {
+    if (!this._options.onExportAsset) { alert('HTML出力にはMarkdownファイルを選択してください。'); return; }
+    if (this._htmlExportOverlay) {
+      this._htmlExportOverlay.querySelector<HTMLElement>('input')?.focus();
+      return;
+    }
+    const overlay = document.createElement('div'); overlay.className = 'spfxHtmlExportOverlay';
+    const dialog = document.createElement('section'); dialog.setAttribute('role', 'dialog'); dialog.setAttribute('aria-modal', 'true'); dialog.setAttribute('aria-label', 'HTML出力');
+    const name = document.createElement('input'); name.value = 'document.html'; name.setAttribute('aria-label', 'ファイル名');
+    const mode = document.createElement('select'); mode.setAttribute('aria-label', '出力形式'); mode.append(new Option('スクリプトなし', 'static'), new Option('スクリプトあり', 'interactive'));
+    const status = document.createElement('output'); status.setAttribute('role', 'status');
+    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = 'キャンセル';
+    const execute = document.createElement('button'); execute.type = 'button'; execute.className = 'primary'; execute.textContent = 'HTMLを出力';
+    const close = (): void => {
+      if (this._htmlExportOverlay === overlay) this._htmlExportOverlay = undefined;
+      if (this._htmlExportAbort === controller) this._htmlExportAbort = undefined;
+      overlay.remove();
+    };
+    dialog.append(Object.assign(document.createElement('h2'), { textContent: 'HTML出力' }), name, mode, status, cancel, execute); overlay.append(dialog); document.body.append(overlay);
+    this._htmlExportOverlay = overlay;
+    let controller: AbortController | undefined;
+    cancel.onclick = () => { if (controller) controller.abort(); else close(); };
+    execute.onclick = () => {
+      if (controller) return;
+      controller = new AbortController(); this._htmlExportAbort = controller;
+      execute.disabled = true; name.disabled = true; mode.disabled = true; cancel.textContent = '中止';
+      const snapshot = this.value;
+      const filename = name.value.trim() || 'document.html';
+      const activeController = controller;
+      void exportHtmlInBrowser({ markdown: snapshot, title: filename.replace(/\.html$/i, '') || 'document', theme: 'light', mode: mode.value === 'interactive' ? 'interactive' : 'static', baseDir: this._documentPath, readAsset: this._options.onExportAsset!, signal: activeController.signal, onProgress: (message: string) => { status.textContent = message; } })
+        .then(result => {
+          if (activeController.signal.aborted || this._htmlExportOverlay !== overlay) return;
+          downloadHtml(result.html, filename);
+          close();
+        })
+        .catch(error => {
+          if (this._htmlExportOverlay !== overlay) return;
+          status.textContent = error instanceof Error ? error.message : String(error);
+          execute.disabled = false; name.disabled = false; mode.disabled = false;
+          if (controller === activeController) controller = undefined;
+          if (this._htmlExportAbort === activeController) this._htmlExportAbort = undefined;
+          cancel.textContent = 'キャンセル';
+        });
+    };
+    name.focus();
   }
 }

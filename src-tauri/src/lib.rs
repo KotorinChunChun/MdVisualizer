@@ -11,6 +11,7 @@ pub mod document_edit;
 pub mod errors;
 pub mod file_lock;
 pub mod image_ops;
+pub mod html_export;
 pub mod image_references;
 pub mod markdown;
 pub mod settings;
@@ -282,6 +283,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            html_export::save_html_export,
             codex::codex_generate,
             codex::codex_cancel,
             codex::codex_list_logs,

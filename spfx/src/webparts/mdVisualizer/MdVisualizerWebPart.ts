@@ -81,7 +81,8 @@ export default class MdVisualizerWebPart extends BaseClientSideWebPart<IMdVisual
         root: editorHost,
         drawioConnection: connection,
         onChanged: () => { this._dirty = true; status.textContent = '未保存の変更があります。'; },
-        onSave: () => { void this._saveFile(generation); }
+        onSave: () => { void this._saveFile(generation); },
+        onExportAsset: (source, base) => this._readExportAsset(source, base)
       });
     } catch (error) {
       status.textContent = `draw.io設定エラー: ${this._message(error)}`;
@@ -197,6 +198,62 @@ export default class MdVisualizerWebPart extends BaseClientSideWebPart<IMdVisual
       this._status.textContent = 'SharePointへ保存しました。';
     } catch (error) {
       this._status.textContent = `保存できませんでした: ${this._message(error)}`;
+    }
+  }
+
+  private async _readExportAsset(source: string, base = this.properties.serverRelativeFileUrl || ''): Promise<{ base: string; mime: string; text?: string; data: string }> {
+    if (/^data:/i.test(source)) {
+      const comma = source.indexOf(',');
+      if (comma < 0) throw new Error('Data URLが不正です。');
+      const header = source.slice(5, comma);
+      const mime = (header.split(';', 1)[0] || 'text/plain').toLowerCase();
+      return { base, mime, text: this._dataUriText(source, header, mime), data: source };
+    }
+    const resolved = new URL(source, new URL(base || '/', window.location.origin));
+    if (resolved.origin !== window.location.origin) throw new Error('HTML出力では同一SharePointサイト内の資産だけを取り込めます。');
+    const path = decodeURIComponent(resolved.pathname);
+    const endpoint = `${this._webUrl}/_api/web/GetFileByServerRelativePath(decodedUrl='${path.replace(/'/g, "''")}')/$value`;
+    const response = await this.context.spHttpClient.get(endpoint, SPHttpClient.configurations.v1, { headers: { Accept: 'application/octet-stream' } });
+    if (!response.ok) throw new Error(`参照資産を読み込めません: HTTP ${response.status}`);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    let binary = '';
+    for (let index = 0; index < bytes.length; index += 0x8000) {
+      const chunk = bytes.subarray(index, Math.min(index + 0x8000, bytes.length));
+      for (let offset = 0; offset < chunk.length; offset += 1) binary += String.fromCharCode(chunk[offset]);
+    }
+    const responseMime = response.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase();
+    const mime = !responseMime || responseMime === 'application/octet-stream' ? this._mimeForPath(path) : responseMime;
+    return { base: path, mime, text: this._isTextualMime(mime) ? this._decodeText(bytes) : undefined, data: `data:${mime};base64,${btoa(binary)}` };
+  }
+
+  private _mimeForPath(path: string): string {
+    const extension = path.split('.').pop()?.toLowerCase();
+    return extension === 'png' ? 'image/png' : extension === 'jpg' || extension === 'jpeg' ? 'image/jpeg' : extension === 'gif' ? 'image/gif' : extension === 'svg' ? 'image/svg+xml' : extension === 'webp' ? 'image/webp' : extension === 'bmp' ? 'image/bmp' : extension === 'avif' ? 'image/avif' : extension === 'ico' ? 'image/x-icon' : extension === 'csv' ? 'text/csv' : extension === 'tsv' ? 'text/tab-separated-values' : extension === 'mmd' || extension === 'mermaid' ? 'text/plain' : extension === 'drawio' ? 'application/vnd.jgraph.mxfile' : extension === 'json' ? 'application/json' : extension === 'xml' ? 'application/xml' : 'application/octet-stream';
+  }
+
+  private _isTextualMime(mime: string): boolean {
+    return mime === 'image/svg+xml' || mime.startsWith('text/') || /(?:json|xml|jgraph)/i.test(mime);
+  }
+
+  private _decodeText(bytes: Uint8Array): string {
+    if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+    if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+    return new TextDecoder('utf-8').decode(bytes).replace(/^\uFEFF/, '');
+  }
+
+  private _dataUriText(source: string, header: string, mime: string): string | undefined {
+    if (!this._isTextualMime(mime)) return undefined;
+    const payload = source.slice(source.indexOf(',') + 1);
+    try {
+      if (/(?:^|;)base64(?:;|$)/i.test(header)) {
+        const binary = atob(payload);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+        return this._decodeText(bytes);
+      }
+      return decodeURIComponent(payload);
+    } catch {
+      throw new Error('Data URLのテキストを復号できません。');
     }
   }
 

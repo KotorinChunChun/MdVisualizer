@@ -76,6 +76,11 @@ describe("ImageAnnotationEditor", () => {
     expect(container.querySelector(".annotation-editor__scale-controls")).toBeNull();
   });
 
+  it("can skip Tauri native drag-drop registration for browser hosts", () => {
+    render(<ImageAnnotationEditor {...props} enableNativeDragDrop={false} />);
+    expect(tauriDrop.callback).toBeNull();
+  });
+
   it("uses two-dot stamp inputs and exposes all arrow directions", () => {
     render(<ImageAnnotationEditor {...props} />);
     expect((screen.getByLabelText("幅") as HTMLInputElement).step).toBe("2");

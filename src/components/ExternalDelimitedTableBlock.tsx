@@ -54,10 +54,7 @@ export function ExternalDelimitedTableBlock({
     source={displayedSource}
     headingLabel={<ExternalFileHeader source={source} path={path} kind={language.toUpperCase()} status={stagedSource !== undefined ? "未保存" : version > 0 ? "更新あり" : undefined} onRename={onRename} onError={onError} />}
     storage="external"
-    onSave={onSave ? (nextSource) => {
-      void Promise.resolve(onSave(nextSource)).catch((saveError) => onError?.(saveError instanceof Error ? saveError.message : String(saveError)));
-      return true;
-    } : undefined}
+    onSave={onSave ? async (nextSource) => await onSave(nextSource) : undefined}
     onStorageConvert={onStorageConvert ? () => onStorageConvert(displayedSource) : undefined}
   />;
 }

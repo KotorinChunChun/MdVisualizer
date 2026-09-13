@@ -4,6 +4,7 @@ import type { LanguageFn } from "highlight.js";
 import { copyTextFile, runPowerShell, type PowerShellRunResult } from "../lib/commands";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { DiagramCodexAction, type DiagramSave } from "../features/codex/DiagramCodexAction";
+import { useBrowserCapabilities } from "./BrowserCapabilities";
 
 import { ResponsiveToolbar } from "./ResponsiveToolbar";
 
@@ -72,6 +73,7 @@ export function syntaxHighlightLanguageName(language: string | undefined): strin
 }
 
 export function CodeBlock({ className, children, onHighlightComplete, headingTitle, documentPath, storage, onStorageConvert, onCodexSave, codexMenu }: CodeBlockProps) {
+  const capabilities = useBrowserCapabilities();
   const [copied, setCopied] = useState(false);
   const [wrapLines, setWrapLines] = useState(false);
   const [html, setHtml] = useState("");
@@ -140,7 +142,7 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
     }
   };
 
-  const executable = Boolean(documentPath && rawLanguage && isPowerShellLanguage(rawLanguage));
+  const executable = Boolean(capabilities.canRunPowerShell && documentPath && rawLanguage && isPowerShellLanguage(rawLanguage));
   const execute = async () => {
     if (!documentPath || !rawLanguage || !executable || runInFlight.current) return;
     runInFlight.current = true;

@@ -17,7 +17,7 @@ interface TableEditorDialogProps {
   initialAlignments?: TableColumnAlignment[];
   showAlignments?: boolean;
   onCancel: () => void;
-  onSave: (table: EditableTableData) => boolean | void;
+  onSave: (table: EditableTableData) => boolean | void | Promise<boolean | void>;
 }
 
 interface GridPoint { row: number; column: number }
@@ -36,6 +36,10 @@ interface TableEditorSnapshot {
   rows: string[][];
   alignments: TableColumnAlignment[];
   selection: GridSelection;
+}
+
+function isSavePromise(value: unknown): value is Promise<boolean | void> {
+  return typeof value === "object" && value !== null && "then" in value && typeof (value as PromiseLike<unknown>).then === "function";
 }
 
 const cellKey = ({ row, column }: GridPoint) => `${row}:${column}`;
@@ -94,6 +98,8 @@ export function TableEditorDialog({
   const [reordered, setReordered] = useState<{ axis: "row" | "column"; index: number } | null>(null);
   const [contextMenu, setContextMenu] = useState<TableEditorContextMenu | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingTableDelete | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const calculated = useMemo(() => calculateTableAggregates({ headers, rows }), [headers, rows]);
 
   const invalidatePasteUndo = () => { pasteUndoHistory.current = []; };
@@ -111,8 +117,25 @@ export function TableEditorDialog({
   };
 
   const applyChanges = () => {
-    const accepted = onSave({ headers, rows: calculated.rows.map((row) => headers.map((_, column) => row[column] ?? "")), alignments });
-    if (accepted !== false) onCancel();
+    if (saving) return;
+    setSaveError(null);
+    let result: boolean | void | Promise<boolean | void>;
+    try {
+      result = onSave({ headers, rows: calculated.rows.map((row) => headers.map((_, column) => row[column] ?? "")), alignments });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
+      return;
+    }
+    if (!isSavePromise(result)) {
+      if (result !== false) onCancel();
+      return;
+    }
+    setSaving(true);
+    void result.then((accepted) => {
+      if (accepted !== false) onCancel();
+    }).catch((error: unknown) => {
+      setSaveError(error instanceof Error ? error.message : String(error));
+    }).finally(() => setSaving(false));
   };
 
   useEffect(() => {
@@ -589,7 +612,8 @@ export function TableEditorDialog({
       </div>
       <footer className="table-editor-footer">
         <button type="button" onClick={onCancel}>キャンセル</button>
-        <button type="button" className="table-editor-save" onClick={applyChanges}>反映</button>
+        {saveError && <output className="table-editor-save-error" role="alert">{saveError}</output>}
+        <button type="button" className="table-editor-save" disabled={saving} onClick={applyChanges}>{saving ? "保存中…" : "反映"}</button>
       </footer>
       {contextMenu && createPortal(<div
         ref={contextMenuRef}

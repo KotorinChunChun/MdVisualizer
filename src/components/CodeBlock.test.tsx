@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CodeBlock, powerShellWorkingDirectory, syntaxHighlightLanguageName } from "./CodeBlock";
 import { copyTextFile, runPowerShell } from "../lib/commands";
+import { BrowserCapabilitiesContext, desktopBrowserCapabilities } from "./BrowserCapabilities";
 
 vi.mock("../lib/commands", () => ({ copyTextFile: vi.fn(), runPowerShell: vi.fn() }));
 
@@ -74,6 +75,11 @@ describe("CodeBlock", () => {
     await waitFor(() => expect(runPowerShell).toHaveBeenCalledWith({ documentPath, language: "pwsh", source: "Write-Output 'safe-output'" }));
     expect((await screen.findByLabelText("標準出力")).textContent).toContain("safe-output");
     expect(screen.getByLabelText("PowerShell実行結果").textContent).toContain("終了コード: 0");
+  });
+
+  it("does not expose PowerShell execution in a browser-only host", () => {
+    render(<BrowserCapabilitiesContext.Provider value={{ ...desktopBrowserCapabilities, canRunPowerShell: false }}><CodeBlock className="language-pwsh" documentPath="C:\\docs\\note.md">Write-Output no</CodeBlock></BrowserCapabilitiesContext.Provider>);
+    expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
   });
 
   it("does not offer execution for unlabeled or non-PowerShell code", () => {

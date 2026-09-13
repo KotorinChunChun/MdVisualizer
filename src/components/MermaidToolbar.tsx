@@ -13,6 +13,7 @@ export function MermaidToolbar({
   onDisplayChange,
   ariaLabel = "Mermaid操作",
   allowFileCopy = true,
+  allowBitmapCopy = true,
   fileDiagramKind = "mermaid",
   previewDisabled,
   onEdit,
@@ -24,6 +25,7 @@ export function MermaidToolbar({
   onDisplayChange?: (display: "diagram" | "code") => void;
   ariaLabel?: string;
   allowFileCopy?: boolean;
+  allowBitmapCopy?: boolean;
   fileDiagramKind?: "mermaid" | "drawio";
   previewDisabled?: boolean;
   onEdit?: () => void;
@@ -56,10 +58,10 @@ export function MermaidToolbar({
     <div className="mermaid-toolbar__copy" data-group="copy" role="group" aria-label="コピー">
       {compact ? <BlockCopyMenu>
         <button type="button" onClick={(event) => void copy(event, "code")}>コードをコピー</button>
-        {svg && <><button type="button" onClick={(event) => void copy(event, "bmp")}>BMPコピー</button><button type="button" onClick={(event) => void copy(event, "svg")}>ベクタコピー</button></>}
+        {svg && <>{allowBitmapCopy && <button type="button" onClick={(event) => void copy(event, "bmp")}>BMPコピー</button>}<button type="button" onClick={(event) => void copy(event, "svg")}>ベクタコピー</button></>}
       </BlockCopyMenu> : <>
       <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "code")}>コードをコピー</button>
-      {svg && <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "bmp")}>BMPコピー</button>}
+      {svg && allowBitmapCopy && <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "bmp")}>BMPコピー</button>}
       {svg && <button className="diagram-action-button" type="button" onClick={(event) => void copy(event, "svg")}>ベクタコピー</button>}
       </>}
     </div>

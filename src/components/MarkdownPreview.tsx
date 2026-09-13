@@ -48,6 +48,7 @@ import { copyPreviewSelection } from "../lib/previewClipboard";
 import { calculateTableAggregates, isTableAggregateResultCell, type TableAggregationResult } from "../lib/tableAggregation";
 import { bindRenderedPreviewInlineEditLeaves, collectPreviewInlineEditLeaves, escapePreviewInlineReplacement, type PreviewInlineEditLeaf } from "../lib/previewInlineEdit";
 import { PreviewInlineEditor } from "./PreviewInlineEditor";
+import { BrowserCapabilitiesContext, type BrowserCapabilities, useBrowserCapabilities } from "./BrowserCapabilities";
 
 type MarkdownNode = {
   type?: string;
@@ -122,6 +123,8 @@ interface MarkdownPreviewProps {
   renderSvgFences?: boolean;
   onTextEdit?: (baseContent: string, from: number, to: number, replacement: string) => boolean;
   onTextUndo?: (redo: boolean) => void;
+  /** Browser hosts pass false for commands unavailable outside the desktop app. */
+  browserCapabilities?: BrowserCapabilities;
 }
 
 export interface ExternalFileRenameContext {
@@ -383,6 +386,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       onMediaOpen={context.onMediaOpen}
       editable={!context.staticMode && !context.presentationMode && Boolean(context.documentPath)}
       onCodexSave={occurrence && context.documentPath && !context.staticMode && !context.presentationMode && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
+      onSourceChange={occurrence && context.documentPath && !context.staticMode && !context.presentationMode && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
       storage={occurrence ? "embedded" : undefined}
       onStorageConvert={decoration && context.documentPath && context.onMermaidStorageConvert
         ? () => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: mermaidSource, relativePath: decoration.relativePath, alt: decoration.alt })
@@ -587,6 +591,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       version={context.imageVersions[mermaidPath] ?? 0}
       editable={!context.staticMode && !context.presentationMode}
       stagedSource={context.stagedMermaidSources[source]}
+      onStagedSourceChange={context.stagedMermaidSources[source] !== undefined && context.onStagedTextAssetChange ? (text) => context.onStagedTextAssetChange?.(source, text) : undefined}
       onStorageConvert={occurrence && context.documentPath && context.onMermaidStorageConvert
         ? (mermaidSource, mermaidAlt) => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "external", occurrence, source: mermaidSource, alt: mermaidAlt })
         : undefined}
@@ -748,7 +753,10 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   renderSvgFences = false,
   onTextEdit,
   onTextUndo,
+  browserCapabilities,
 }) => {
+  const inheritedBrowserCapabilities = useBrowserCapabilities();
+  const effectiveBrowserCapabilities = browserCapabilities ?? inheritedBrowserCapabilities;
   const renderedContent = React.useMemo(() => normalizeStructuredListIndentationForRendering(content), [content]);
   const mermaidFenceOffsets = React.useMemo(() => collectMermaidFenceOffsets(content), [content]);
   const mermaidIndexByOffset = React.useMemo(
@@ -832,6 +840,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
 
   const consultation = useConsultationMenu(content, tabId ?? "", onCodexConsult);
   return (
+    <BrowserCapabilitiesContext.Provider value={effectiveBrowserCapabilities}>
     <MarkdownRenderContext.Provider value={renderContext}>
       <div className="markdown-body" ref={contentRef} tabIndex={onTextUndo ? -1 : undefined} onCopy={event => copyPreviewSelection(event, content)} onContextMenuCapture={consultation.onContextMenuCapture} onKeyDown={(event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && onTextUndo) { event.preventDefault(); onTextUndo(event.shiftKey); }
@@ -854,6 +863,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
       </div>
       {consultation.menu}
     </MarkdownRenderContext.Provider>
+    </BrowserCapabilitiesContext.Provider>
   );
 };
 

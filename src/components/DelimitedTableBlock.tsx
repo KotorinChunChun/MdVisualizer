@@ -16,7 +16,7 @@ import "../styles/delimited-table.css";
 interface DelimitedTableBlockProps {
   language: DelimitedTableLanguage;
   source: string;
-  onSave?: (body: string) => boolean | void;
+  onSave?: (body: string) => boolean | void | Promise<boolean | void>;
   headingLabel?: ReactNode;
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
