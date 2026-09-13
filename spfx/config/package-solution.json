@@ -1,22 +1,22 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "spfx-markdown-editor-client-side-solution",
-    "id": "cc592ba5-ad2e-4616-ba55-5c9cc000a6ab",
-    "version": "0.0.15.0",
+    "name": "spfx-mdvisualizer-client-side-solution",
+    "id": "3cd821e0-528a-4df9-b4b0-523b8cbed930",
+    "version": "0.0.17.1",
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
     "skipFeatureDeployment": true,
     "developer": {
       "name": "KotorinChunChun",
-      "websiteUrl": "https://github.com/KotorinChunChun/MarkdownViewer",
+      "websiteUrl": "https://github.com/KotorinChunChun/MdVisualizer",
       "privacyUrl": "",
       "termsOfUseUrl": "",
       "mpnId": "Undefined-1.23.2"
     },
     "metadata": {
       "shortDescription": {
-        "default": "SharePoint Markdown Editor"
+        "default": "SharePoint MdVisualizer"
       },
       "longDescription": {
         "default": "SharePoint上のMarkdownファイルをCodeMirror 6で編集します。"
@@ -27,14 +27,14 @@
     },
     "features": [
       {
-        "title": "spfx-markdown-editor Feature",
-        "description": "Markdown Editor Web Partを有効にします。",
-        "id": "21be68cf-476f-4fcd-9b1e-449b3d855ad4",
-        "version": "0.0.15.0"
+        "title": "spfx-mdvisualizer Feature",
+        "description": "MdVisualizer Web Partを有効にします。",
+        "id": "7b5bc405-d84b-440e-aa8d-d3f4ca6a4417",
+        "version": "0.0.17.1"
       }
     ]
   },
   "paths": {
-    "zippedPackage": "solution/spfx-markdown-editor.sppkg"
+    "zippedPackage": "solution/spfx-mdvisualizer.sppkg"
   }
 }

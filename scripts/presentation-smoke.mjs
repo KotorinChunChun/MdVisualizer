@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 
 const port = Number(process.argv[2] ?? 9334);
-const outputDirectory = process.argv[3] ?? "C:/develop/MarkdownViewer/tmp/presentation-evidence";
+const outputDirectory = process.argv[3] ?? "C:/develop/MdVisualizer/tmp/presentation-evidence";
 await mkdir(outputDirectory, { recursive: true });
 const targets = await fetch(`http://127.0.0.1:${port}/json`).then((response) => response.json());
 const target = targets.find((candidate) => candidate.type === "page" && candidate.url.includes("tauri.localhost"));

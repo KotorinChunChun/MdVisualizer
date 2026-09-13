@@ -5,7 +5,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$orchestratorPath = Join-Path $PSScriptRoot "publish-release-MarkdownViewer-all.ps1"
+$orchestratorPath = Join-Path $PSScriptRoot "publish-release-MdVisualizer-all.ps1"
 $releaseDirectory = Join-Path $projectRoot "release\msix"
 $websiteDownloadDirectory = "C:\develop\excel-chunchun\www\download"
 
@@ -59,15 +59,18 @@ Import-Module $releaseToolsPath -Force
 $configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
 foreach ($channel in @("beta", "stable")) {
     $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $channel
-    if ($artifacts.CertificateFileName -ne "MarkdownViewer.cer") {
+    if ($artifacts.PublicVersion -ne "0.0.17.1 beta" -or $artifacts.ApplicationVersion -ne "0.0.17+beta.1" -or $artifacts.PackageVersion -ne "0.0.17.1") {
+        throw "公開表示版・内部版・MSIX版の対応が不正です: $($artifacts.PublicVersion) / $($artifacts.ApplicationVersion) / $($artifacts.PackageVersion)"
+    }
+    if ($artifacts.CertificateFileName -ne "MdVisualizer.cer") {
         throw "The public certificate file name is not stable for ${channel}: $($artifacts.CertificateFileName)"
     }
-    if ([System.IO.Path]::GetFileName($artifacts.StagedCertificatePath) -ne "MarkdownViewer.cer") {
+    if ([System.IO.Path]::GetFileName($artifacts.StagedCertificatePath) -ne "MdVisualizer.cer") {
         throw "The staged public certificate file name is not stable for ${channel}."
     }
 }
-$temporaryCertificateDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "MarkdownViewer-certificate-test-$PID"
-$temporaryCertificatePath = Join-Path $temporaryCertificateDirectory "MarkdownViewer.cer"
+$temporaryCertificateDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "MdVisualizer-certificate-test-$PID"
+$temporaryCertificatePath = Join-Path $temporaryCertificateDirectory "MdVisualizer.cer"
 try {
     $initialBytes = [System.Text.Encoding]::UTF8.GetBytes("same certificate")
     if (-not (Set-FileBytesIfChanged -Path $temporaryCertificatePath -Bytes $initialBytes)) {
@@ -105,6 +108,15 @@ Assert-BlockedBeforeWork `
     -ExpectedMessage "PublishConfirmed" `
     -ReleaseIntentConfirmed
 Assert-BlockedBeforeWork -Mode Full -ExpectedMessage "ReleaseIntentConfirmed"
+
+$portableBlocked = $false
+try { & (Join-Path $PSScriptRoot 'package-MdVisualizer-portable.ps1') }
+catch { $portableBlocked = $_.Exception.Message.Contains('ReleaseIntentConfirmed') }
+if (!$portableBlocked) { throw 'ポータブル版の無承認生成を防げませんでした。' }
+$publishSource = Get-Content -LiteralPath $orchestratorPath -Raw
+if ($publishSource -match '@\(\$configuration.FtpUploadScriptPath,\s*(?:"--dry-run",\s*)?\$configuration.SiteDirectory\)') {
+    throw '配布ルート全体を送信する呼び出しは禁止です。製品ファイル一覧を使用してください。'
+}
 
 $releaseFingerprintAfter = Get-DirectoryFingerprint -Path $releaseDirectory
 $websiteFingerprintAfter = Get-DirectoryFingerprint -Path $websiteDownloadDirectory

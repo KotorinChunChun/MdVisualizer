@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 
 const port = Number(process.argv[2] ?? 9222);
-const outputDirectory = process.argv[3] ?? "C:/tmp/markdownviewer-theme";
+const outputDirectory = process.argv[3] ?? "C:/tmp/mdvisualizer-theme";
 await mkdir(outputDirectory, { recursive: true });
 
 const targets = await fetch(`http://127.0.0.1:${port}/json`).then((response) => response.json());

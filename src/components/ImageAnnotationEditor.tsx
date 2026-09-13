@@ -918,8 +918,7 @@ export function ImageAnnotationEditor({
           {RECOMMENDED_COLORS.map((paletteColor) => <button
             key={paletteColor}
             type="button"
-            className={activeColor.toLowerCase() === paletteColor ? "is-active" : ""}
-            style={{ "--annotation-color": paletteColor } as React.CSSProperties}
+            className={`annotation-editor__palette-color annotation-editor__palette-color--${paletteColor.slice(1)}${activeColor.toLowerCase() === paletteColor ? " is-active" : ""}`}
             aria-label={paletteColor}
             aria-pressed={activeColor.toLowerCase() === paletteColor}
             onClick={() => setActiveColor(paletteColor)}

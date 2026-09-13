@@ -1,6 +1,6 @@
 # ローカルMarkdownリンク確認
 
-以下のリンクは外部ブラウザではなくMarkdownViewerの新しいタブで開きます。
+以下のリンクは外部ブラウザではなくMdVisualizerの新しいタブで開きます。
 
 - [同じフォルダーの文書](linked-document.md)
 - [総合サンプルへ戻る](./all-markdown.md)

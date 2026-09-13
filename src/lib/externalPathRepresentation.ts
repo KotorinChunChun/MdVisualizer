@@ -71,6 +71,8 @@ function previousDescriptorLine(markdown: string, occurrenceStart: number): { li
     let end = cursor;
     if (markdown[end - 1] === "\n") end -= 1;
     if (markdown[end - 1] === "\r") end -= 1;
+    // lastIndexOfの負の位置は0へ丸められるため、先頭の改行を再発見しない。
+    if (end === 0) return undefined;
     const previousBreak = Math.max(markdown.lastIndexOf("\n", Math.max(0, end - 1)), markdown.lastIndexOf("\r", Math.max(0, end - 1)));
     const start = previousBreak + 1;
     const line = markdown.slice(start, end);

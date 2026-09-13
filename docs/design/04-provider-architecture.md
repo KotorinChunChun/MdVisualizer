@@ -121,7 +121,7 @@ export interface AiProvider {
 | 新規 | `packages/application-core/src/providers/fakes.ts` |
 | 新規 | `src/providers/desktopProviderRegistry.ts` |
 | 新規 | `src/adapters/tauriLocalDocumentProvider.ts`、`tauriSharePointDocumentProvider.ts` |
-| 新規 | `spfx/src/webparts/markdownEditor/adapters/spfxProviderRegistry.ts` |
+| 新規 | `spfx/src/webparts/mdVisualizer/adapters/spfxProviderRegistry.ts` |
 | 変更 | `spfx/.../SharePointMarkdownRepository.ts`（contract adapter化） |
 
 ### 作成するクラス・関数

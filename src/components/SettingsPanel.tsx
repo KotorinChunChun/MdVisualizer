@@ -14,10 +14,13 @@ import {
   type MarkdownStyleSettings,
 } from "../lib/markdownStyle";
 import "../styles/settings.css";
+import { CodexSkillSettings } from "../features/codex/CodexSkillSettings";
+import { DEFAULT_CODE_BLOCK_FOLD_MIN_LINES, normalizeCodeBlockFoldMinLines } from "../lib/editorPreferences";
 
 export function SettingsPanel({
   apps,
   presentationLineThreshold,
+  codeBlockFoldMinLines = DEFAULT_CODE_BLOCK_FOLD_MIN_LINES,
   imageA4TargetWidth = DEFAULT_IMAGE_A4_TARGET_WIDTH,
   imageEqualPadding = DEFAULT_IMAGE_EQUAL_PADDING,
   clipboardImage = DEFAULT_CLIPBOARD_IMAGE_SETTINGS,
@@ -33,6 +36,7 @@ export function SettingsPanel({
 }: {
   apps: ExternalAppConfig[];
   presentationLineThreshold: number;
+  codeBlockFoldMinLines?: number;
   imageA4TargetWidth?: number;
   imageEqualPadding?: number;
   clipboardImage?: ClipboardImageSettings;
@@ -44,10 +48,11 @@ export function SettingsPanel({
   markdownStylePath?: string;
   onOpenMarkdownStyle?: () => Promise<void>;
   onReloadMarkdownStyle?: () => Promise<void>;
-  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings, markdownStyle: MarkdownStyleSettings, clipboardImage: ClipboardImageSettings, embeddedPathStyle: EmbeddedPathStyle) => Promise<void>;
+  onSave: (apps: ExternalAppConfig[], presentationLineThreshold: number, imageA4TargetWidth: number, imageEqualPadding: number, syntaxHighlight: SyntaxHighlightSettings, printStyle: PrintStyleSettings, markdownStyle: MarkdownStyleSettings, clipboardImage: ClipboardImageSettings, embeddedPathStyle: EmbeddedPathStyle, codeBlockFoldMinLines: number) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => apps.map((app) => ({ ...app, args: [...app.args] })));
   const [lineThreshold, setLineThreshold] = useState(presentationLineThreshold);
+  const [foldMinLines, setFoldMinLines] = useState(codeBlockFoldMinLines);
   const [a4TargetWidth, setA4TargetWidth] = useState(imageA4TargetWidth);
   const [equalPadding, setEqualPadding] = useState(imageEqualPadding);
   const [clipboardImageDraft, setClipboardImageDraft] = useState<ClipboardImageSettings>(() => ({ ...clipboardImage }));
@@ -60,6 +65,7 @@ export function SettingsPanel({
   const [saving, setSaving] = useState(false);
   useEffect(() => setDraft(apps.map((app) => ({ ...app, args: [...app.args] }))), [apps]);
   useEffect(() => setLineThreshold(presentationLineThreshold), [presentationLineThreshold]);
+  useEffect(() => setFoldMinLines(codeBlockFoldMinLines), [codeBlockFoldMinLines]);
   useEffect(() => setA4TargetWidth(imageA4TargetWidth), [imageA4TargetWidth]);
   useEffect(() => setEqualPadding(imageEqualPadding), [imageEqualPadding]);
   useEffect(() => setClipboardImageDraft({ ...clipboardImage }), [clipboardImage]);
@@ -103,7 +109,7 @@ export function SettingsPanel({
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, normalizePrintStyleSettings(printDraft), normalizeMarkdownStyleSettings(markdownStyleDraft), normalizeClipboardImageSettings(clipboardImageDraft), normalizeEmbeddedPathStyle(embeddedPathStyleDraft));
+      await onSave(draft.map((app, order) => ({ ...app, order })), lineThreshold, a4TargetWidth, equalPadding, syntaxDraft, normalizePrintStyleSettings(printDraft), normalizeMarkdownStyleSettings(markdownStyleDraft), normalizeClipboardImageSettings(clipboardImageDraft), normalizeEmbeddedPathStyle(embeddedPathStyleDraft), normalizeCodeBlockFoldMinLines(foldMinLines));
       setMarkdownStyleDirty(false);
     } catch (reason) {
       setError(String(reason));
@@ -118,6 +124,12 @@ export function SettingsPanel({
       <button type="button" className="settings-save" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
     </header>
     {error && <p role="alert" className="settings-error">{error}</p>}
+    <CodexSkillSettings />
+    <fieldset className="settings-section">
+      <legend>コード画面の折畳</legend>
+      <label>コードブロックを折りたたむ最小行数<input type="number" min={1} max={100000} value={foldMinLines} onChange={event => setFoldMinLines(Number(event.target.value))} /></label>
+      <p>初期表示と「折畳」に適用します。既定は10行です。Base64画像は行数にかかわらず折りたたみ、H1見出しは「折畳」の対象から除外します。</p>
+    </fieldset>
     <fieldset className="settings-section embedded-path-settings">
       <legend>外部ファイルパスの埋め込み表現</legend>
       <label>表現方式

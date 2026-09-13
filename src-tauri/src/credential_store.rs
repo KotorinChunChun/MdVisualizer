@@ -60,7 +60,7 @@ pub fn read_secret(target_name: &str) -> Result<Option<String>, CredentialStoreE
 
 pub fn write_secret(target_name: &str, secret: &str) -> Result<(), CredentialStoreError> {
     let mut target_name = wide_null(target_name);
-    let mut comment = wide_null("MarkdownViewer SharePoint OAuth refresh token");
+    let mut comment = wide_null("MdVisualizer SharePoint OAuth refresh token");
     let mut username = wide_null("Microsoft SharePoint");
     let mut secret = secret.as_bytes().to_vec();
     if secret.is_empty() {
@@ -124,7 +124,7 @@ mod tests {
                 .unwrap()
                 .as_nanos();
             Self {
-                target_name: format!("MarkdownViewer/Test/{}/{}", std::process::id(), unique),
+                target_name: format!("MdVisualizer/Test/{}/{}", std::process::id(), unique),
             }
         }
     }

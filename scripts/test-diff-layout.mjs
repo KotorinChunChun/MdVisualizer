@@ -55,6 +55,27 @@ async function measure(page, label) {
   assert(Math.max(...tops) - Math.min(...tops) <= 1, `${label}: スクロールのずれ ${tops}`);
   return { label, coordinates, arrows, style: expectedStyle, scroll: sample.columns.map(({ column, top, height, client }) => ({ column, top, height, client })) };
 }
+async function assertPreviewColumnsFollowCode(page, label) {
+  const layout = await page.evaluate(() => {
+    const rect = (element) => { const value = element.getBoundingClientRect(); return { left: value.left, width: value.width }; };
+    return {
+      code: [...document.querySelectorAll(".document-diff__pane")].map(rect),
+      preview: [...document.querySelectorAll(".diff-previews__columns > article")].map(rect),
+    };
+  });
+  assert.equal(layout.code.length, layout.preview.length, `${label}: コードとプレビューの列数が不一致`);
+  for (const [index, code] of layout.code.entries()) {
+    assert(Math.abs(code.left - layout.preview[index].left) <= .6, `${label}: ${index}列目の左端が不一致`);
+    assert(Math.abs(code.width - layout.preview[index].width) <= .6, `${label}: ${index}列目の幅が不一致`);
+  }
+}
+async function dragSeparator(page, selector, deltaX) {
+  const handle = page.locator(selector).first();
+  const before = await handle.boundingBox(); assert(before, `${selector}: 境界がありません`);
+  await page.mouse.move(before.x + before.width / 2, before.y + Math.min(20, before.height / 2));
+  await page.mouse.down(); await page.mouse.move(before.x + before.width / 2 + deltaX, before.y + Math.min(20, before.height / 2)); await page.mouse.up();
+  await settle(page);
+}
 
 try {
   await mkdir(output, { recursive: true });
@@ -80,12 +101,36 @@ try {
         window.diffTest.reset({ threeWay: false, theme, mode: width === 390 ? "preview" : width === 768 ? "split" : "edit" });
       }, { theme, width, zoom });
       await settle(page);
-      assert.equal(await page.locator(".cm-editor").count(), 2);
+      assert.equal(await page.locator(".cm-editor").count(), width === 390 ? 0 : 2);
+      assert.equal(await page.locator(".diff-previews__columns > article").count(), width === 1440 ? 0 : 2);
+      if (width === 390) {
+        const before = await page.locator(".diff-previews__columns > article").first().boundingBox();
+        await dragSeparator(page, '.diff-preview-resize[aria-label="比較列の幅を変更"]', 60);
+        const after = await page.locator(".diff-previews__columns > article").first().boundingBox();
+        assert(before && after && Math.abs(after.width - before.width) > 1, "閲覧プレビューの横境界が動きません");
+        await page.evaluate(() => window.diffTest.external());
+        await settle(page);
+        assert.equal(await page.locator(".cm-editor").count(), 0);
+        assert.equal(await page.locator(".diff-previews__columns > article").count(), 3);
+        assert.equal(await page.locator(".diff-resize-handle").count(), 0);
+        report.cases.push({ name, status: "passed", checks: [{ label: "閲覧プレビュー", panes: 3 }] });
+        process.stdout.write(`${name}: PASS\n`);
+        continue;
+      }
       checks.push(await measure(page, "2way先頭"));
+      if (width === 768) {
+        await assertPreviewColumnsFollowCode(page, "2way上下列");
+        const before = await page.locator('[data-pane-key="storage"]').boundingBox();
+        await dragSeparator(page, '.diff-action-column [role="separator"]', 60);
+        const after = await page.locator('[data-pane-key="storage"]').boundingBox();
+        assert(before && after && Math.abs(after.width - before.width) > 1, "編集/閲覧の横境界が動きません");
+        await assertPreviewColumnsFollowCode(page, "2way横変更後");
+      }
       await page.evaluate(() => window.diffTest.external());
       await settle(page);
       assert.equal(await page.locator(".cm-editor").count(), 3);
       checks.push(await measure(page, "3way先頭"));
+      if (width === 768) await assertPreviewColumnsFollowCode(page, "3way上下列");
       for (const top of [440, 1e8]) {
         await page.evaluate((top) => { document.querySelector('[data-pane-key="result"] .cm-scroller').scrollTop = top; }, top);
         checks.push(await measure(page, top === 440 ? "途中" : "末尾"));

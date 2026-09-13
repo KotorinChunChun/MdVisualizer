@@ -1,10 +1,11 @@
 # ============================================================================
-# .gitignore (MarkdownViewer)
+# .gitignore (MdVisualizer)
 # ============================================================================
 
 /release/
 /dev/private/
 /dev/temp/
+/dev/test-videos/
 /.pnpm-store/
 
 # ビルド成果物・中間生成物

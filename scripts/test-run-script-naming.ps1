@@ -6,18 +6,18 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $expectedScripts = @(
-    "run-debug-MarkdownViewer-all.ps1",
-    "run-debug-MarkdownViewer-all-sample.ps1",
-    "run-debug-MarkdownViewer-all-smoke.ps1",
-    "run-release-MarkdownViewer-all.ps1",
-    "run-exe-MarkdownViewer-all.ps1",
-    "run-exe-MarkdownViewer-all-sample.ps1",
-    "build-release-MarkdownViewer-spfx.ps1",
-    "package-MarkdownViewer-msix.ps1",
-    "package-MarkdownViewer-appinstaller.ps1",
-    "publish-release-MarkdownViewer-all.ps1",
-    "publish-release-MarkdownViewer-spfx.ps1",
-    "publish-MarkdownViewer.ps1"
+    "run-debug-MdVisualizer-all.ps1",
+    "run-debug-MdVisualizer-all-sample.ps1",
+    "run-debug-MdVisualizer-all-smoke.ps1",
+    "run-release-MdVisualizer-all.ps1",
+    "run-exe-MdVisualizer-all.ps1",
+    "run-exe-MdVisualizer-all-sample.ps1",
+    "build-release-MdVisualizer-spfx.ps1",
+    "package-MdVisualizer-msix.ps1",
+    "package-MdVisualizer-appinstaller.ps1",
+    "publish-release-MdVisualizer-all.ps1",
+    "publish-release-MdVisualizer-spfx.ps1",
+    "publish-MdVisualizer.ps1"
 )
 $obsoleteScripts = @(
     "debug-rebuild-smoke.ps1",
@@ -37,7 +37,7 @@ foreach ($scriptName in $obsoleteScripts) {
     }
 }
 
-$launcherNamePattern = '^run-(debug|release|exe)-MarkdownViewer-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)?\.ps1$'
+$launcherNamePattern = '^run-(debug|release|exe)-MdVisualizer-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)?\.ps1$'
 $launchers = @(Get-ChildItem -LiteralPath $PSScriptRoot -File -Filter "run-*.ps1")
 foreach ($launcher in $launchers) {
     if ($launcher.Name -notmatch $launcherNamePattern) {
@@ -45,11 +45,11 @@ foreach ($launcher in $launchers) {
     }
 }
 
-$productEntryPattern = '^(build|run|test|publish)-(debug|release|exe)-MarkdownViewer-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)?\.ps1$'
+$productEntryPattern = '^(build|run|test|publish)-(debug|release|exe)-MdVisualizer-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)?\.ps1$'
 foreach ($scriptName in @(
-    'build-release-MarkdownViewer-spfx.ps1',
-    'publish-release-MarkdownViewer-all.ps1',
-    'publish-release-MarkdownViewer-spfx.ps1'
+    'build-release-MdVisualizer-spfx.ps1',
+    'publish-release-MdVisualizer-all.ps1',
+    'publish-release-MdVisualizer-spfx.ps1'
 )) {
     if ($scriptName -notmatch $productEntryPattern) {
         throw "製品操作用スクリプト名が規則外です: $scriptName"
@@ -69,11 +69,11 @@ if ($parseErrors.Count -gt 0) {
     throw "PowerShell構文エラーがあります: $($parseErrors | ConvertTo-Json -Compress)"
 }
 
-& (Join-Path $PSScriptRoot "run-debug-MarkdownViewer-all.ps1") -WhatIf
-& (Join-Path $PSScriptRoot "run-debug-MarkdownViewer-all-sample.ps1") -WhatIf
-& (Join-Path $PSScriptRoot "run-release-MarkdownViewer-all.ps1") -WhatIf
-& (Join-Path $PSScriptRoot "run-exe-MarkdownViewer-all.ps1") -WhatIf
-& (Join-Path $PSScriptRoot "run-exe-MarkdownViewer-all-sample.ps1") -WhatIf
+& (Join-Path $PSScriptRoot "run-debug-MdVisualizer-all.ps1") -WhatIf
+& (Join-Path $PSScriptRoot "run-debug-MdVisualizer-all-sample.ps1") -WhatIf
+& (Join-Path $PSScriptRoot "run-release-MdVisualizer-all.ps1") -WhatIf
+& (Join-Path $PSScriptRoot "run-exe-MdVisualizer-all.ps1") -WhatIf
+& (Join-Path $PSScriptRoot "run-exe-MdVisualizer-all-sample.ps1") -WhatIf
 
 $oldDebugSample = Join-Path $projectRoot "dev\scripts\run-debug-test.ps1"
 $oldExeSample = Join-Path $projectRoot "dev\scripts\run-release-test.ps1"

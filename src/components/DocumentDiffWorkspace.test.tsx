@@ -27,14 +27,16 @@ const editor = () => EditorView.findFromDOM(document.querySelector('[data-pane-k
 describe("Diffの選択と編集履歴", () => {
   it.each(["edit", "split", "preview"] as const)("%sでも外部更新で2列から3列へ切り替え、自分の内容を保持する", (mode) => {
     const { rerender } = render(<Fixture mode={mode} />);
-    expect(document.querySelectorAll(".cm-editor")).toHaveLength(2);
+    expect(document.querySelectorAll(".cm-editor")).toHaveLength(mode === "preview" ? 0 : 2);
+    expect(document.querySelectorAll(".diff-previews__columns > article")).toHaveLength(mode === "edit" ? 0 : 2);
     rerender(<Fixture mode={mode} storage={"a\nS\nc"} />);
-    expect(document.querySelectorAll(".cm-editor")).toHaveLength(3);
+    expect(document.querySelectorAll(".cm-editor")).toHaveLength(mode === "preview" ? 0 : 3);
+    expect(document.querySelectorAll(".diff-previews__columns > article")).toHaveLength(mode === "edit" ? 0 : 3);
     expect(screen.getByText(/3-way（ストレージ/)).toBeTruthy();
-    expect(document.querySelector('[data-pane-key="local"] .cm-content')?.textContent).toBe("aLc");
+    if (mode !== "preview") expect(document.querySelector('[data-pane-key="base"] .cm-content')?.textContent).toBe("abc");
     expect(draft()).toBe("a\nL\nc");
     expect(save().disabled).toBe(true);
-    expect(document.querySelectorAll('.cm-content[contenteditable="true"]')).toHaveLength(1);
+    expect(document.querySelectorAll('.cm-content[contenteditable="true"]')).toHaveLength(mode === "preview" ? 0 : 1);
   });
   it("行の両側を採用でき、本文と判断をUndo/Redoし、明示保存まで書き込まない", () => {
     const onSave = vi.fn();
@@ -73,7 +75,7 @@ describe("Diffの選択と編集履歴", () => {
     rerender(<Fixture storage={"a\nS2\nT"} />);
     expect(draft()).toBe("a\nL\nT");
     expect(screen.getByText("未選択 1行")).toBeTruthy();
-    expect(document.querySelector('[data-pane-key="local"] .cm-content')?.textContent).toBe("aLc");
+    expect(document.querySelector('[data-pane-key="base"] .cm-content')?.textContent).toBe("abc");
     expect(screen.getByRole("button", { name: /ストレージ側の3行目を採用/ }).getAttribute("aria-pressed")).toBe("true");
     choose("自分");
     expect(save().disabled).toBe(false);
@@ -83,7 +85,7 @@ describe("Diffの選択と編集履歴", () => {
     rerender(<Fixture />);
     act(() => { editor().dispatch({ changes: { from: 2, to: 3, insert: "L2" } }); });
     rerender(<Fixture storage={"a\nS2\nc"} />);
-    expect(document.querySelector('[data-pane-key="local"] .cm-content')?.textContent).toBe("aL2c");
+    expect(document.querySelector('[data-pane-key="base"] .cm-content')?.textContent).toBe("abc");
   });
   it.each([{ refreshing: true }, { error: "ファイルが削除されました" }])("確認中・取得失敗でも本文を保持し採用と保存を禁止する %j", (props) => {
     const { rerender } = render(<Fixture storage={"a\nS\nc"} />);
@@ -99,5 +101,10 @@ describe("Diffの選択と編集履歴", () => {
     scrollers[0].scrollTop = 44;
     fireEvent.scroll(scrollers[0]);
     expect(scrollers.every((node) => node.scrollTop === 44)).toBe(true);
+  });
+  it("編集/閲覧時だけプレビューを常時表示し、境界にはキーボードで識別できるドラッグハンドルを置く", () => {
+    render(<Fixture mode="split" storage={"a\nS\nc"} />);
+    expect(document.querySelector(".diff-previews")).toBeTruthy();
+    expect(screen.getAllByRole("separator")).toHaveLength(5);
   });
 });

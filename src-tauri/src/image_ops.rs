@@ -142,8 +142,12 @@ pub fn crop_image(req: CropImageRequest, backup_mgr: &BackupManager) -> AppResul
         let request_bottom = i64::from(req.y) + i64::from(output_h);
         let source_x = req.x.max(0) as u32;
         let source_y = req.y.max(0) as u32;
-        let source_right = request_right.min(i64::from(orig_w)).max(i64::from(source_x)) as u32;
-        let source_bottom = request_bottom.min(i64::from(orig_h)).max(i64::from(source_y)) as u32;
+        let source_right = request_right
+            .min(i64::from(orig_w))
+            .max(i64::from(source_x)) as u32;
+        let source_bottom = request_bottom
+            .min(i64::from(orig_h))
+            .max(i64::from(source_y)) as u32;
         if source_right <= source_x || source_bottom <= source_y {
             return Err(AppError::ImageError(
                 "The crop selection must overlap the source image.".into(),
@@ -172,7 +176,8 @@ pub fn crop_image(req: CropImageRequest, backup_mgr: &BackupManager) -> AppResul
             source_y,
             source_right - source_x,
             source_bottom - source_y,
-        ).to_image();
+        )
+        .to_image();
         imageops::overlay(
             &mut output,
             &copied,
@@ -248,9 +253,17 @@ fn average_perimeter_color(image: &RgbaImage) -> Rgba<u8> {
             sample(image.get_pixel(width - 1, y));
         }
     }
-    let dominant = buckets.into_iter().max_by_key(|bucket| bucket[0]).unwrap_or([1, 0, 0, 0]);
+    let dominant = buckets
+        .into_iter()
+        .max_by_key(|bucket| bucket[0])
+        .unwrap_or([1, 0, 0, 0]);
     let count = dominant[0].max(1);
-    Rgba([(dominant[1] / count) as u8, (dominant[2] / count) as u8, (dominant[3] / count) as u8, 255])
+    Rgba([
+        (dominant[1] / count) as u8,
+        (dominant[2] / count) as u8,
+        (dominant[3] / count) as u8,
+        255,
+    ])
 }
 
 fn unique_crop_temp_path(original_path: &Path) -> AppResult<PathBuf> {
@@ -387,13 +400,9 @@ mod tests {
             .save(&path)
             .unwrap();
         let mut bytes = Vec::new();
-        image::DynamicImage::ImageRgba8(RgbaImage::from_pixel(
-            6,
-            5,
-            Rgba([200, 10, 20, 255]),
-        ))
-        .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
-        .unwrap();
+        image::DynamicImage::ImageRgba8(RgbaImage::from_pixel(6, 5, Rgba([200, 10, 20, 255])))
+            .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
+            .unwrap();
         let manager = BackupManager::new().unwrap();
         let result = save_rendered_image(
             SaveRenderedImageRequest {

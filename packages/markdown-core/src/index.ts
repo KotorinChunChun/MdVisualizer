@@ -14,6 +14,7 @@ export type MarkdownEditAction =
   | "mermaid"
   | "horizontal-rule"
   | "drawio"
+  | "svg"
   | "image";
 
 import { isMarkdownBlockInsertionAction, resolveMarkdownInsertionContext } from "./toolbarContext";
@@ -194,6 +195,12 @@ export function buildMarkdownEdit(source: string, from: number, to: number, acti
     case "drawio": {
       const body = selected || '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>';
       const insert = `\n\n\`\`\`drawio\n${body}\n\`\`\`\n\n`;
+      const bodyStart = insert.indexOf(body);
+      return inserted(start, end, insert, [bodyStart, bodyStart + body.length]);
+    }
+    case "svg": {
+      const body = selected || '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120" role="img" aria-label="SVGサンプル"><circle cx="60" cy="60" r="40" fill="#4f46e5"/><text x="115" y="67" font-family="sans-serif" font-size="20">SVGサンプル</text></svg>';
+      const insert = `\n\n\`\`\`svg\n${body}\n\`\`\`\n\n`;
       const bodyStart = insert.indexOf(body);
       return inserted(start, end, insert, [bodyStart, bodyStart + body.length]);
     }

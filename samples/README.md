@@ -1,4 +1,4 @@
-# MarkdownViewer サンプル集
+# MdVisualizer サンプル集
 
 アプリの表示・回帰確認に使う入力ファイルです。
 

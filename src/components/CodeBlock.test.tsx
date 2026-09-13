@@ -34,6 +34,14 @@ describe("CodeBlock", () => {
     window.removeEventListener("markdown-toast", listener);
   });
 
+  it("applies the shared action style to every visible code copy button", () => {
+    const { container } = render(<CodeBlock className="language-typescript">const value = 1;</CodeBlock>);
+
+    const copyButtons = container.querySelectorAll(".code-block__header .code-copy");
+    expect(copyButtons).toHaveLength(3);
+    expect(Array.from(copyButtons).map((button) => button.textContent)).toEqual(["Copy", "TXTコピー", "ソースファイルコピー"]);
+  });
+
   it("emits an error notification when the clipboard rejects the copy", async () => {
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error("denied")) } });
     const listener = vi.fn();

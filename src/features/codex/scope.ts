@@ -2,9 +2,20 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import type { EditorSnapshot } from "./model";
+import type { SkillTarget } from "./skills";
 
 export type CodexEditMode = "question" | "selection" | "document";
-export interface CodexTarget extends EditorSnapshot { imageSource?: string; label?: string }
+export interface CodexTarget extends EditorSnapshot {
+  /** 同じ対象への再操作も新しい会話として扱うための、操作単位の識別子。 */
+  requestId?: string;
+  imageSource?: string;
+  label?: string;
+  skillId?: string;
+  editMode?: CodexEditMode;
+  conversationAction?: "add" | "new";
+  targetKind?: SkillTarget;
+  renderedSvg?: string;
+}
 type Node = { type: string; url?: string; position?: { start: { line: number; offset: number }; end: { line: number; offset: number } }; children?: Node[] };
 const parser = unified().use(remarkParse).use(remarkGfm);
 
@@ -26,6 +37,15 @@ export function targetAtLine(content: string, line: number, selectedText = "", i
     return { from: start.offset + offset, to: start.offset + offset + selectedText.length };
   }
   return { from: start.offset, to: end.offset, ...(image ? { imageSource: candidate.url } : {}) };
+}
+
+export function sourceRangeForLines(content: string, firstLine: number, lastLine: number): { from: number; to: number } | null {
+  const lines = content.split(/\n/);
+  const first = Math.max(1, Math.min(lines.length, Math.min(firstLine, lastLine)));
+  const last = Math.max(first, Math.min(lines.length, Math.max(firstLine, lastLine)));
+  const from = lines.slice(0, first - 1).reduce((sum, line) => sum + line.length + 1, 0);
+  const to = from + lines.slice(first - 1, last).reduce((sum, line, index) => sum + line.length + (index < last - first ? 1 : 0), 0);
+  return { from, to };
 }
 
 export function scopeRequest(current: EditorSnapshot, selected: EditorSnapshot | null, mode: CodexEditMode, instruction: string) {

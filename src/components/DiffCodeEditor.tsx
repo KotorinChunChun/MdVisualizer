@@ -7,7 +7,8 @@ import { markdown } from "@codemirror/lang-markdown";
 import { mergeLines, type MergeRow } from "../lib/documentMerge";
 
 export const DIFF_LINE_HEIGHT = 22;
-export type DiffColumn = "storage" | "local" | "result";
+/** `base` は3-wayでのみ表示する読込時本文。採用元のlocalとは別の表示列である。 */
+export type DiffColumn = "base" | "storage" | "local" | "result";
 const setRows = StateEffect.define<{ rows: readonly MergeRow[]; column: DiffColumn; active?: string }>();
 class MissingLines extends WidgetType {
   constructor(readonly count: number) { super(); }
@@ -25,7 +26,12 @@ const alignedLines = StateField.define<DecorationSet>({
       const { rows, column, active } = effect.value;
       let missing = 0;
       for (const row of rows) {
-        const cell = row[column];
+        // MergeRow.base は行番号を持たない原文文字列である。base:N はその原文の
+        // N+1行目に一対一対応するため、表示専用のセルへ安全に復元する。
+        const baseIndex = column === "base" ? /^base:(\d+)$/.exec(row.id)?.[1] : undefined;
+        const cell = column === "base"
+          ? (baseIndex !== undefined && row.base !== undefined ? { line: Number(baseIndex) + 1, text: row.base } : undefined)
+          : row[column];
         if (!cell) { missing++; continue; }
         if (cell.line > transaction.state.doc.lines) continue;
         const position = transaction.state.doc.line(cell.line).from;

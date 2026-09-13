@@ -1,0 +1,948 @@
+{
+  "pngSizes": [
+    16,
+    20,
+    24,
+    30,
+    32,
+    40,
+    44,
+    48,
+    50,
+    60,
+    64,
+    71,
+    80,
+    89,
+    96,
+    107,
+    128,
+    142,
+    150,
+    176,
+    192,
+    200,
+    256,
+    284,
+    300,
+    310,
+    512,
+    600,
+    620,
+    1024
+  ],
+  "icoSizes": [
+    16,
+    20,
+    24,
+    32,
+    40,
+    48,
+    64,
+    96,
+    128,
+    256
+  ],
+  "files": [
+    {
+      "file": "png/app/16.png",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "png/app/20.png",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "png/app/24.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "png/app/30.png",
+      "width": 30,
+      "height": 30
+    },
+    {
+      "file": "png/app/32.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "png/app/40.png",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "png/app/44.png",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "file": "png/app/48.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "png/app/50.png",
+      "width": 50,
+      "height": 50
+    },
+    {
+      "file": "png/app/60.png",
+      "width": 60,
+      "height": 60
+    },
+    {
+      "file": "png/app/64.png",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "png/app/71.png",
+      "width": 71,
+      "height": 71
+    },
+    {
+      "file": "png/app/80.png",
+      "width": 80,
+      "height": 80
+    },
+    {
+      "file": "png/app/89.png",
+      "width": 89,
+      "height": 89
+    },
+    {
+      "file": "png/app/96.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "png/app/107.png",
+      "width": 107,
+      "height": 107
+    },
+    {
+      "file": "png/app/128.png",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "png/app/142.png",
+      "width": 142,
+      "height": 142
+    },
+    {
+      "file": "png/app/150.png",
+      "width": 150,
+      "height": 150
+    },
+    {
+      "file": "png/app/176.png",
+      "width": 176,
+      "height": 176
+    },
+    {
+      "file": "png/app/192.png",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "png/app/200.png",
+      "width": 200,
+      "height": 200
+    },
+    {
+      "file": "png/app/256.png",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "png/app/284.png",
+      "width": 284,
+      "height": 284
+    },
+    {
+      "file": "png/app/300.png",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "file": "png/app/310.png",
+      "width": 310,
+      "height": 310
+    },
+    {
+      "file": "png/app/512.png",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "png/app/600.png",
+      "width": 600,
+      "height": 600
+    },
+    {
+      "file": "png/app/620.png",
+      "width": 620,
+      "height": 620
+    },
+    {
+      "file": "png/app/1024.png",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "png/md/16.png",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "png/md/20.png",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "png/md/24.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "png/md/30.png",
+      "width": 30,
+      "height": 30
+    },
+    {
+      "file": "png/md/32.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "png/md/40.png",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "png/md/44.png",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "file": "png/md/48.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "png/md/50.png",
+      "width": 50,
+      "height": 50
+    },
+    {
+      "file": "png/md/60.png",
+      "width": 60,
+      "height": 60
+    },
+    {
+      "file": "png/md/64.png",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "png/md/71.png",
+      "width": 71,
+      "height": 71
+    },
+    {
+      "file": "png/md/80.png",
+      "width": 80,
+      "height": 80
+    },
+    {
+      "file": "png/md/89.png",
+      "width": 89,
+      "height": 89
+    },
+    {
+      "file": "png/md/96.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "png/md/107.png",
+      "width": 107,
+      "height": 107
+    },
+    {
+      "file": "png/md/128.png",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "png/md/142.png",
+      "width": 142,
+      "height": 142
+    },
+    {
+      "file": "png/md/150.png",
+      "width": 150,
+      "height": 150
+    },
+    {
+      "file": "png/md/176.png",
+      "width": 176,
+      "height": 176
+    },
+    {
+      "file": "png/md/192.png",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "png/md/200.png",
+      "width": 200,
+      "height": 200
+    },
+    {
+      "file": "png/md/256.png",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "png/md/284.png",
+      "width": 284,
+      "height": 284
+    },
+    {
+      "file": "png/md/300.png",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "file": "png/md/310.png",
+      "width": 310,
+      "height": 310
+    },
+    {
+      "file": "png/md/512.png",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "png/md/600.png",
+      "width": 600,
+      "height": 600
+    },
+    {
+      "file": "png/md/620.png",
+      "width": 620,
+      "height": 620
+    },
+    {
+      "file": "png/md/1024.png",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "png/svg/16.png",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "png/svg/20.png",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "png/svg/24.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "png/svg/30.png",
+      "width": 30,
+      "height": 30
+    },
+    {
+      "file": "png/svg/32.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "png/svg/40.png",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "png/svg/44.png",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "file": "png/svg/48.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "png/svg/50.png",
+      "width": 50,
+      "height": 50
+    },
+    {
+      "file": "png/svg/60.png",
+      "width": 60,
+      "height": 60
+    },
+    {
+      "file": "png/svg/64.png",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "png/svg/71.png",
+      "width": 71,
+      "height": 71
+    },
+    {
+      "file": "png/svg/80.png",
+      "width": 80,
+      "height": 80
+    },
+    {
+      "file": "png/svg/89.png",
+      "width": 89,
+      "height": 89
+    },
+    {
+      "file": "png/svg/96.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "png/svg/107.png",
+      "width": 107,
+      "height": 107
+    },
+    {
+      "file": "png/svg/128.png",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "png/svg/142.png",
+      "width": 142,
+      "height": 142
+    },
+    {
+      "file": "png/svg/150.png",
+      "width": 150,
+      "height": 150
+    },
+    {
+      "file": "png/svg/176.png",
+      "width": 176,
+      "height": 176
+    },
+    {
+      "file": "png/svg/192.png",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "png/svg/200.png",
+      "width": 200,
+      "height": 200
+    },
+    {
+      "file": "png/svg/256.png",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "png/svg/284.png",
+      "width": 284,
+      "height": 284
+    },
+    {
+      "file": "png/svg/300.png",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "file": "png/svg/310.png",
+      "width": 310,
+      "height": 310
+    },
+    {
+      "file": "png/svg/512.png",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "png/svg/600.png",
+      "width": 600,
+      "height": 600
+    },
+    {
+      "file": "png/svg/620.png",
+      "width": 620,
+      "height": 620
+    },
+    {
+      "file": "png/svg/1024.png",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "png/drawio/16.png",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "png/drawio/20.png",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "png/drawio/24.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "png/drawio/30.png",
+      "width": 30,
+      "height": 30
+    },
+    {
+      "file": "png/drawio/32.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "png/drawio/40.png",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "png/drawio/44.png",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "file": "png/drawio/48.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "png/drawio/50.png",
+      "width": 50,
+      "height": 50
+    },
+    {
+      "file": "png/drawio/60.png",
+      "width": 60,
+      "height": 60
+    },
+    {
+      "file": "png/drawio/64.png",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "png/drawio/71.png",
+      "width": 71,
+      "height": 71
+    },
+    {
+      "file": "png/drawio/80.png",
+      "width": 80,
+      "height": 80
+    },
+    {
+      "file": "png/drawio/89.png",
+      "width": 89,
+      "height": 89
+    },
+    {
+      "file": "png/drawio/96.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "png/drawio/107.png",
+      "width": 107,
+      "height": 107
+    },
+    {
+      "file": "png/drawio/128.png",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "png/drawio/142.png",
+      "width": 142,
+      "height": 142
+    },
+    {
+      "file": "png/drawio/150.png",
+      "width": 150,
+      "height": 150
+    },
+    {
+      "file": "png/drawio/176.png",
+      "width": 176,
+      "height": 176
+    },
+    {
+      "file": "png/drawio/192.png",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "png/drawio/200.png",
+      "width": 200,
+      "height": 200
+    },
+    {
+      "file": "png/drawio/256.png",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "png/drawio/284.png",
+      "width": 284,
+      "height": 284
+    },
+    {
+      "file": "png/drawio/300.png",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "file": "png/drawio/310.png",
+      "width": 310,
+      "height": 310
+    },
+    {
+      "file": "png/drawio/512.png",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "png/drawio/600.png",
+      "width": 600,
+      "height": 600
+    },
+    {
+      "file": "png/drawio/620.png",
+      "width": 620,
+      "height": 620
+    },
+    {
+      "file": "png/drawio/1024.png",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "png/mmd/16.png",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "png/mmd/20.png",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "png/mmd/24.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "png/mmd/30.png",
+      "width": 30,
+      "height": 30
+    },
+    {
+      "file": "png/mmd/32.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "png/mmd/40.png",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "png/mmd/44.png",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "file": "png/mmd/48.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "png/mmd/50.png",
+      "width": 50,
+      "height": 50
+    },
+    {
+      "file": "png/mmd/60.png",
+      "width": 60,
+      "height": 60
+    },
+    {
+      "file": "png/mmd/64.png",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "png/mmd/71.png",
+      "width": 71,
+      "height": 71
+    },
+    {
+      "file": "png/mmd/80.png",
+      "width": 80,
+      "height": 80
+    },
+    {
+      "file": "png/mmd/89.png",
+      "width": 89,
+      "height": 89
+    },
+    {
+      "file": "png/mmd/96.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "png/mmd/107.png",
+      "width": 107,
+      "height": 107
+    },
+    {
+      "file": "png/mmd/128.png",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "png/mmd/142.png",
+      "width": 142,
+      "height": 142
+    },
+    {
+      "file": "png/mmd/150.png",
+      "width": 150,
+      "height": 150
+    },
+    {
+      "file": "png/mmd/176.png",
+      "width": 176,
+      "height": 176
+    },
+    {
+      "file": "png/mmd/192.png",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "png/mmd/200.png",
+      "width": 200,
+      "height": 200
+    },
+    {
+      "file": "png/mmd/256.png",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "png/mmd/284.png",
+      "width": 284,
+      "height": 284
+    },
+    {
+      "file": "png/mmd/300.png",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "file": "png/mmd/310.png",
+      "width": 310,
+      "height": 310
+    },
+    {
+      "file": "png/mmd/512.png",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "png/mmd/600.png",
+      "width": 600,
+      "height": 600
+    },
+    {
+      "file": "png/mmd/620.png",
+      "width": 620,
+      "height": 620
+    },
+    {
+      "file": "png/mmd/1024.png",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "png/tsv/16.png",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "png/tsv/20.png",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "png/tsv/24.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "png/tsv/30.png",
+      "width": 30,
+      "height": 30
+    },
+    {
+      "file": "png/tsv/32.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "png/tsv/40.png",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "png/tsv/44.png",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "file": "png/tsv/48.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "png/tsv/50.png",
+      "width": 50,
+      "height": 50
+    },
+    {
+      "file": "png/tsv/60.png",
+      "width": 60,
+      "height": 60
+    },
+    {
+      "file": "png/tsv/64.png",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "png/tsv/71.png",
+      "width": 71,
+      "height": 71
+    },
+    {
+      "file": "png/tsv/80.png",
+      "width": 80,
+      "height": 80
+    },
+    {
+      "file": "png/tsv/89.png",
+      "width": 89,
+      "height": 89
+    },
+    {
+      "file": "png/tsv/96.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "png/tsv/107.png",
+      "width": 107,
+      "height": 107
+    },
+    {
+      "file": "png/tsv/128.png",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "png/tsv/142.png",
+      "width": 142,
+      "height": 142
+    },
+    {
+      "file": "png/tsv/150.png",
+      "width": 150,
+      "height": 150
+    },
+    {
+      "file": "png/tsv/176.png",
+      "width": 176,
+      "height": 176
+    },
+    {
+      "file": "png/tsv/192.png",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "png/tsv/200.png",
+      "width": 200,
+      "height": 200
+    },
+    {
+      "file": "png/tsv/256.png",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "png/tsv/284.png",
+      "width": 284,
+      "height": 284
+    },
+    {
+      "file": "png/tsv/300.png",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "file": "png/tsv/310.png",
+      "width": 310,
+      "height": 310
+    },
+    {
+      "file": "png/tsv/512.png",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "png/tsv/600.png",
+      "width": 600,
+      "height": 600
+    },
+    {
+      "file": "png/tsv/620.png",
+      "width": 620,
+      "height": 620
+    },
+    {
+      "file": "png/tsv/1024.png",
+      "width": 1024,
+      "height": 1024
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "MdVisualizer公開"
+  short_description: "複数成果物をbeta配布先へ安全に公開して検証する"
+  default_prompt: "Use $release-mdvisualizer to plan or execute the explicitly authorized MdVisualizer beta release."

@@ -25,7 +25,11 @@
 .annotation-editor__replacement-file { display: none; }
 .annotation-editor__replacement-status { overflow-wrap: anywhere; color: var(--text-secondary); font-size: 11px; line-height: 1.5; }
 .annotation-editor__palette { display: flex; align-items: center; gap: 8px; }
-.annotation-editor__palette > button { width: 30px; height: 30px; padding: 0; background: var(--annotation-color); border: 2px solid transparent; border-radius: 50%; box-shadow: 0 0 0 1px var(--border-color); }
+.annotation-editor__palette > button { width: 30px; height: 30px; padding: 0; border: 2px solid transparent; border-radius: 50%; box-shadow: 0 0 0 1px var(--border-color); }
+.annotation-editor__palette > .annotation-editor__palette-color--ef4444 { background: #ef4444; }
+.annotation-editor__palette > .annotation-editor__palette-color--f59e0b { background: #f59e0b; }
+.annotation-editor__palette > .annotation-editor__palette-color--22c55e { background: #22c55e; }
+.annotation-editor__palette > .annotation-editor__palette-color--3b82f6 { background: #3b82f6; }
 .annotation-editor__palette > button.is-active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent-color); }
 .annotation-editor__custom-color { position: relative; display: grid!important; place-items: center; width: 30px; height: 30px; overflow: hidden; color: var(--text-primary)!important; background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 50%; cursor: pointer; }
 .annotation-editor__custom-color span { position: relative; z-index: 1; pointer-events: none; }

@@ -1,4 +1,4 @@
-import { buildShortcutKeySvg, type ShortcutKeySvgOptions } from "@markdown-viewer/markdown-core";
+import { buildShortcutKeySvg, type ShortcutKeySvgOptions } from "@mdvisualizer/markdown-core";
 
 interface ShortcutKeySvgProps extends ShortcutKeySvgOptions {
   source: string;

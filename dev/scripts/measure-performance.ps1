@@ -1,9 +1,9 @@
 param(
-  [string]$ExePath = "C:\develop\MarkdownViewer\src-tauri\target\release\markdown-viewer.exe",
+  [string]$ExePath = "C:\develop\MdVisualizer\src-tauri\target\release\mdvisualizer.exe",
   [int]$Runs = 5
 )
 
-$samplePath = Join-Path ([System.IO.Path]::GetTempPath()) "markdown-viewer-perf-10000.md"
+$samplePath = Join-Path ([System.IO.Path]::GetTempPath()) "mdvisualizer-perf-10000.md"
 $line = "- Performance test line with **Markdown** and `code`." + [Environment]::NewLine
 [System.IO.File]::WriteAllText($samplePath, ($line * 10000), [System.Text.UTF8Encoding]::new($false))
 

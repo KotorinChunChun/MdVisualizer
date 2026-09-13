@@ -143,8 +143,13 @@ pub fn rename_image_and_references_with_options(
     }
 
     let target_backup = if overwrite && new_image_path.exists() {
-        Some(fs::read(&new_image_path).map_err(|error| AppError::IoError(format!("read existing image: {error}")))?)
-    } else { None };
+        Some(
+            fs::read(&new_image_path)
+                .map_err(|error| AppError::IoError(format!("read existing image: {error}")))?,
+        )
+    } else {
+        None
+    };
     if overwrite && new_image_path.exists() {
         if let Err(error) = fs::remove_file(&new_image_path)
             .map_err(|error| AppError::IoError(format!("remove existing image: {error}")))
@@ -156,7 +161,9 @@ pub fn rename_image_and_references_with_options(
     if let Err(error) = fs::rename(&old_image_path, &new_image_path)
         .map_err(|error| AppError::IoError(format!("rename image: {error}")))
     {
-        if let Some(bytes) = target_backup.as_ref() { let _ = fs::write(&new_image_path, bytes); }
+        if let Some(bytes) = target_backup.as_ref() {
+            let _ = fs::write(&new_image_path, bytes);
+        }
         let rollback_error = rollback_documents(&written);
         return Err(with_rollback_context(error, rollback_error));
     }

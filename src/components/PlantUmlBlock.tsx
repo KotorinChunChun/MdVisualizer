@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { plantUmlToMermaid } from "@markdown-viewer/markdown-core";
+import { plantUmlToMermaid } from "@mdvisualizer/markdown-core";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
 import { MermaidBlock } from "./MermaidBlock";
 import { ResponsiveToolbar } from "./ResponsiveToolbar";
