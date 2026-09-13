@@ -91,6 +91,7 @@ body {
 .responsive-toolbar__label { flex: 0 1 auto; min-width: 0; margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .responsive-toolbar__items { display: flex; min-width: 0; align-items: center; gap: 6px; flex-wrap: nowrap; }
 .responsive-toolbar__item { flex: 0 0 auto; }
+.responsive-toolbar__item > .code-copy + .code-copy { margin-left: 6px; }
 .responsive-toolbar__item.is-overflowed { position: fixed; left: -100000px; width: max-content; visibility: hidden; pointer-events: none; }
 .responsive-toolbar__more { position: relative; flex: 0 0 auto; }
 .responsive-toolbar__menu { position: fixed; z-index: 12020; display: flex; min-width: 210px; max-height: calc(100vh - 16px); flex-direction: column; align-items: stretch; gap: 4px; padding: 6px; overflow: auto; border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); background: var(--panel-bg); box-shadow: 0 8px 24px #0008; }
@@ -104,7 +105,8 @@ body {
 .responsive-toolbar__menu [data-group="view"] + [data-group="edit"],
 .responsive-toolbar__menu .mermaid-toolbar__copy + .mermaid-toolbar__view,
 .responsive-toolbar__menu .mermaid-toolbar__view + .mermaid-toolbar__edit { border-top: 1px solid var(--border-color); padding-top: 6px; }
-.responsive-toolbar__menu button { width: 100%; min-width: max-content; margin: 0; border-radius: 6px; text-align: left; white-space: nowrap; }
+.responsive-toolbar__menu button { width: 100%; min-width: max-content; min-height: 30px; margin: 0; padding: 7px 10px; border: 0; border-radius: 6px; color: var(--text-primary); background: transparent; text-align: left; white-space: nowrap; }
+.responsive-toolbar__menu button:not(:disabled):hover { background-image: none; background-color: var(--btn-hover); border-color: transparent; }
 .responsive-toolbar__menu .mermaid-toolbar__view button:first-child,
 .responsive-toolbar__menu .mermaid-toolbar__view button:last-child { margin: 0; border-radius: 6px; }
 .external-file-header { position: relative; display: inline-flex; min-width: 0; max-width: 100%; align-items: center; gap: 5px; color: var(--text-secondary); }
@@ -535,7 +537,7 @@ body {
 .diagram-block__header { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid var(--border-color); }
 .diagram-block__header > span { margin-right: auto; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
 .diagram-block__header > .mermaid-toolbar { padding: 0; }
-.diagram-edit-button { flex: 0 0 auto; width: auto; min-height: 30px; padding: 5px 9px; font-size: inherit; white-space: nowrap; }
+.diagram-edit-button { flex: 0 0 auto; width: auto; height: 30px; min-height: 30px; padding: 4px 9px; font-size: inherit; line-height: 20px; white-space: nowrap; }
 .mermaid-container > .mermaid-source { margin: 0; border: 0; border-radius: 0; }
 .diagram-alt { padding: 8px 10px; color: var(--text-primary); text-align: center; background: var(--panel-bg); border-top: 1px solid var(--border-color); overflow-wrap: anywhere; }
 .plantuml-container > .mermaid-toolbar { justify-content: flex-end; }
@@ -558,11 +560,8 @@ body {
 .mermaid-toolbar { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 6px; align-items: center; padding: 6px 0; }
 .mermaid-toolbar button[aria-pressed="true"] { color: var(--accent-contrast, #fff); background: var(--accent-color); border-color: var(--accent-color); }
 .mermaid-toolbar button:disabled { cursor: not-allowed; opacity: 0.55; }
-.mermaid-toolbar__view { display: flex; order: 2; }
+.mermaid-toolbar__view { display: flex; order: 2; gap: 6px; }
 .mermaid-toolbar__copy { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 6px; order: 1; }
-.mermaid-toolbar__view button { border-radius: 0; }
-.mermaid-toolbar__view button:first-child { border-radius: 7px 0 0 7px; }
-.mermaid-toolbar__view button:last-child { margin-left: -1px; border-radius: 0 7px 7px 0; }
 .media-preview {
   position: fixed;
   inset: 0;
@@ -890,4 +889,4 @@ body {
 .diagram-block__header .responsive-toolbar__label,
 .code-block__header .code-block__heading,
 .data-grid-toolbar .responsive-toolbar__label { font-size: 12px; font-weight: 600; }
-.responsive-toolbar select { min-height: 28px; padding: 3px 6px; font-size: 12px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; }
+.responsive-toolbar select { min-height: 30px; padding: 3px 6px; font-size: 12px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; }

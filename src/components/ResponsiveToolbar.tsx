@@ -159,7 +159,7 @@ export function ResponsiveToolbar({ label, ariaLabel, className = "", items, ite
       >{item.compactNode}</div>}</Fragment>)}
     </div>
     {overflowIds.length > 0 && <div className="responsive-toolbar__more">
-      <button ref={moreButtonRef} type="button" aria-label="その他の操作" aria-expanded={menuOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => setMenuOpen((open) => !open)}>…</button>
+      <button ref={moreButtonRef} type="button" className="diagram-action-button responsive-toolbar__more-button" aria-label="その他の操作" aria-expanded={menuOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => setMenuOpen((open) => !open)}>…</button>
       {menuOpen && menuPosition && createPortal(<div
         className="responsive-toolbar__menu"
         role="menu"

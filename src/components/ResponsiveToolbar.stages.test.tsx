@@ -20,7 +20,10 @@ it("幅に応じて全表示・編集を残す圧縮・全収納を往復する"
   expect(screen.queryByRole("button", { name: "その他の操作" })).not.toBeInTheDocument();
   act(() => { width = 70; window.dispatchEvent(new Event("resize")); });
   expect(root).toHaveAttribute("data-stage", "menu");
-  expect(screen.getByRole("button", { name: "その他の操作" })).toBeVisible();
+  const moreButton = screen.getByRole("button", { name: "その他の操作" });
+  expect(moreButton).toBeVisible();
+  expect(moreButton).toHaveClass("diagram-action-button", "responsive-toolbar__more-button");
+  expect(moreButton).toHaveAttribute("aria-expanded", "false");
   act(() => { width = 500; window.dispatchEvent(new Event("resize")); });
   expect(root).toHaveAttribute("data-stage", "full");
 });
