@@ -489,7 +489,7 @@ body {
 .code-block__heading { flex: 1 1 auto; min-width: 0; overflow: hidden; color: var(--text-primary); font-size: 0.9rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .code-block > pre { margin: 0; padding: 16px; overflow: auto; color: var(--code-block-color); background: var(--code-block-bg); border: 0; border-radius: 0; }
 .code-actions { display: flex; flex: 0 0 auto; gap: 0.35rem; margin-left: auto; }
-.code-copy, .code-run, .code-storage, .code-wrap { padding: 3px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
+.code-copy, .code-run, .code-storage, .code-wrap, .diagram-action-button, .block-copy-menu { min-height: 30px; padding: 4px 9px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
 .code-wrap { min-width: 2rem; padding-inline: 6px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.95rem; line-height: 1.25; }
 .code-wrap[aria-pressed="true"] { color: var(--accent-color); }
 .code-block > pre.code-block__pre--wrapped,
@@ -556,7 +556,6 @@ body {
 .mermaid-editor-placeholder__icon { font-size: 42px; color: var(--accent-color); }
 .mermaid-source { overflow-x: auto; padding: 12px; background: var(--panel-bg); }
 .mermaid-toolbar { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 6px; align-items: center; padding: 6px 0; }
-.diagram-action-button { min-height: 30px; padding: 5px 9px; color: inherit; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 7px; cursor: pointer; }
 .mermaid-toolbar button[aria-pressed="true"] { color: var(--accent-contrast, #fff); background: var(--accent-color); border-color: var(--accent-color); }
 .mermaid-toolbar button:disabled { cursor: not-allowed; opacity: 0.55; }
 .mermaid-toolbar__view { display: flex; order: 2; }

@@ -78,6 +78,7 @@ const TOOLBAR_ACTIONS: Array<{ action: MarkdownEditAction; label: string; title:
   { action: "mermaid", label: "Mermaid", title: "Mermaid図を挿入" },
   { action: "horizontal-rule", label: "―", title: "水平線" },
   { action: "drawio", label: "+ draw.io", title: "draw.io図を挿入" },
+  { action: "svg", label: "+ SVG", title: "SVGを挿入" },
   { action: "image", label: "画像", title: "画像を挿入" },
 ];
 
