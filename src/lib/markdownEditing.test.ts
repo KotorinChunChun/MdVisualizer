@@ -33,4 +33,12 @@ describe("buildMarkdownEdit", () => {
     expect(change.insert).toContain("```drawio");
     expect(change.insert).toContain("<mxGraphModel>");
   });
+
+  it("inserts a sample SVG with a circle and label in a fenced block", () => {
+    const change = buildMarkdownEdit("", 0, 0, "svg");
+    expect(change.insert).toContain("```svg");
+    expect(change.insert).toContain("<circle");
+    expect(change.insert).toContain("SVGサンプル");
+    expect(change.anchor).toBe(change.from + change.insert.indexOf("<svg"));
+  });
 });

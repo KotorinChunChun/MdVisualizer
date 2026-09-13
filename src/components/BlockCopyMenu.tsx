@@ -18,5 +18,5 @@ export function BlockCopyMenu({ children }: { children: ReactNode }) {
     const bounds = trigger.current?.getBoundingClientRect();
     if (!bounds || position) { setPosition(null); return; }
     setPosition({ right: Math.max(8, window.innerWidth - bounds.right), ...(bounds.bottom < window.innerHeight / 2 ? { top: bounds.bottom + 4 } : { bottom: window.innerHeight - bounds.top + 4 }) });
-  }}>コピー</button>{position && createPortal(<div ref={popup} className="responsive-toolbar__menu" role="menu" aria-label="コピー形式" style={position} onPointerDown={(event) => event.stopPropagation()} onClick={() => { setPosition(null); trigger.current?.focus(); }}>{children}</div>, document.body)}</>;
+  }} className="block-copy-menu">コピー</button>{position && createPortal(<div ref={popup} className="responsive-toolbar__menu" role="menu" aria-label="コピー形式" style={position} onPointerDown={(event) => event.stopPropagation()} onClick={() => { setPosition(null); trigger.current?.focus(); }}>{children}</div>, document.body)}</>;
 }

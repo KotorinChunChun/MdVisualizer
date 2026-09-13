@@ -35,6 +35,8 @@ interface ImageRendererProps {
   onError?: (message: string) => void;
   onCodexSelect?: () => void;
   codexSvgEditable?: boolean;
+  /** When supplied, double-click edits preview ALT while a single click still opens the image. */
+  onPreviewTextEdit?: () => void;
 }
 
 export interface PresentationImageTarget {
@@ -62,8 +64,9 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   previewSrc,
   onExternalRename,
   onError,
-  onCodexSelect,
+  onCodexSelect: _onCodexSelect,
   codexSvgEditable = false,
+  onPreviewTextEdit,
 }) => {
   const [loadError, setLoadError] = useState(false);
   const [codexVersion, setCodexVersion] = useState(0);
@@ -71,6 +74,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   const [authenticatedAsset, setAuthenticatedAsset] = useState<DocumentAssetData | null>(null);
   const [authenticatedLoading, setAuthenticatedLoading] = useState(false);
   const stageRef = useRef<HTMLSpanElement>(null);
+  const previewClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [stageWidth, setStageWidth] = useState(0);
   const assetDocumentPath = documentSourcePath ?? markdownPath;
   const isSharePointAsset = Boolean(
@@ -122,8 +126,6 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     consumeResizeClick,
   } = useInlineImageResize({ resetKey: src, size: displaySize, onSizeChange: onDisplaySizeChange });
 
-  if (!src) return null;
-
   const resolvedSrc = previewSrc ?? authenticatedSrc ?? (isSharePointAsset ? "" : resolveImageSrc(src, baseDir));
   const isRemote =
     src.toLowerCase().startsWith("http://") ||
@@ -148,6 +150,10 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     return () => observer.disconnect();
   }, [size?.width, src, headingMode]);
 
+  useEffect(() => () => { if (previewClickTimer.current) clearTimeout(previewClickTimer.current); }, []);
+
+  if (!src) return null;
+
   const fullPath = isRemote ? src : resolveLocalImagePath(src, baseDir) ?? src;
 
   const version = (imageVersions[fullPath] || 0) + codexVersion;
@@ -165,12 +171,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     );
   }
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (consumeResizeClick()) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
+  const openMedia = (e: React.SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -235,6 +236,22 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     });
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (consumeResizeClick()) { e.preventDefault(); e.stopPropagation(); return; }
+    if (!onPreviewTextEdit) { openMedia(e); return; }
+    e.preventDefault(); e.stopPropagation();
+    if (previewClickTimer.current) clearTimeout(previewClickTimer.current);
+    previewClickTimer.current = setTimeout(() => { previewClickTimer.current = null; openMedia(e); }, 300);
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (!onPreviewTextEdit) return;
+    if (previewClickTimer.current) clearTimeout(previewClickTimer.current);
+    previewClickTimer.current = null;
+    e.preventDefault(); e.stopPropagation();
+    onPreviewTextEdit();
+  };
+
   return (
     <span
       id={occurrenceId}
@@ -265,6 +282,10 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
           title={isEditableLocalImage ? "クリックして拡大表示。プレビューでもう一度クリックするとクロップ編集" : "クリックして拡大表示"}
           onLoad={headingMode ? undefined : setInitialSize}
           onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
+          role={onPreviewTextEdit ? "button" : undefined}
+          tabIndex={onPreviewTextEdit ? 0 : undefined}
+          onKeyDown={onPreviewTextEdit ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openMedia(event); } } : undefined}
           onError={() => setLoadError(true)}
         />
         {canInlineResize && (
@@ -275,7 +296,6 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         )}
       </span>
       {!headingMode && alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
-      {!headingMode && !presentationMode && onCodexSelect && <button type="button" onClick={onCodexSelect}>Codexで画像を解説・文字起こし</button>}
       {!headingMode && !presentationMode && codexSvgEditable && !isRemote && !previewSrc && /\.svg$/i.test(src) && <FileSvgCodexAction path={fullPath} onSaved={() => setCodexVersion((value) => value + 1)} />}
     </span>
   );

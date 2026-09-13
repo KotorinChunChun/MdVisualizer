@@ -11,7 +11,7 @@
     ProcessorArchitecture="@@ARCHITECTURE@@" />
 
   <Properties>
-    <DisplayName>MarkdownViewer</DisplayName>
+    <DisplayName>MdVisualizer</DisplayName>
     <PublisherDisplayName>@@PUBLISHER_DISPLAY_NAME@@</PublisherDisplayName>
     <Description>Fast Markdown Viewer Desktop App</Description>
     <Logo>Assets\StoreLogo.png</Logo>
@@ -31,27 +31,60 @@
 
   <Applications>
     <Application
-      Id="MarkdownViewer"
-      Executable="markdown-viewer.exe"
+      Id="MdVisualizer"
+      Executable="mdvisualizer.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="MarkdownViewer"
+        DisplayName="MdVisualizer"
         Description="Fast Markdown Viewer Desktop App"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png" />
       <Extensions>
         <uap:Extension Category="windows.fileTypeAssociation">
-          <uap:FileTypeAssociation
-            Name="markdown">
-            <uap:DisplayName>Markdown or Diagram Document</uap:DisplayName>
-            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+          <uap:FileTypeAssociation Name="mdvisualizer.md">
+            <uap:DisplayName>MdVisualizer Markdown</uap:DisplayName>
+            <uap:Logo>Assets\filetypes\md.png</uap:Logo>
             <uap:SupportedFileTypes>
               <uap:FileType ContentType="text/markdown">.md</uap:FileType>
               <uap:FileType ContentType="text/markdown">.markdown</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="mdvisualizer.svg">
+            <uap:DisplayName>MdVisualizer SVG</uap:DisplayName>
+            <uap:Logo>Assets\filetypes\svg.png</uap:Logo>
+            <uap:SupportedFileTypes>
               <uap:FileType ContentType="image/svg+xml">.svg</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="mdvisualizer.drawio">
+            <uap:DisplayName>MdVisualizer draw.io</uap:DisplayName>
+            <uap:Logo>Assets\filetypes\drawio.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType ContentType="application/vnd.jgraph.mxfile">.drawio</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="mdvisualizer.mmd">
+            <uap:DisplayName>MdVisualizer Mermaid</uap:DisplayName>
+            <uap:Logo>Assets\filetypes\mmd.png</uap:Logo>
+            <uap:SupportedFileTypes>
               <uap:FileType ContentType="text/plain">.mmd</uap:FileType>
               <uap:FileType ContentType="text/plain">.mermaid</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="mdvisualizer.tsv">
+            <uap:DisplayName>MdVisualizer TSV</uap:DisplayName>
+            <uap:Logo>Assets\filetypes\tsv.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType ContentType="text/tab-separated-values">.tsv</uap:FileType>
             </uap:SupportedFileTypes>
           </uap:FileTypeAssociation>
         </uap:Extension>

@@ -134,7 +134,7 @@ describe("DrawioBlock", () => {
 
     fireEvent(window, new MessageEvent("message", {
       source: firstFrame.contentWindow,
-      data: { type: "markdown-viewer-drawio-error" },
+      data: { type: "mdvisualizer-drawio-error" },
     }));
 
     await waitFor(() => expect(screen.getByTitle("draw.ioプレビュー")).not.toBe(firstFrame));
@@ -147,7 +147,7 @@ describe("DrawioBlock", () => {
     const iframe = screen.getByTitle("draw.ioプレビュー") as HTMLIFrameElement;
     window.dispatchEvent(new MessageEvent("message", {
       source: iframe.contentWindow,
-      data: { type: "markdown-viewer-drawio-svg", svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100"><rect width="400" height="100"/></svg>' },
+      data: { type: "mdvisualizer-drawio-svg", svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100"><rect width="400" height="100"/></svg>' },
     }));
 
     await waitFor(() => expect(screen.queryByTitle("draw.ioプレビュー")).toBeNull());

@@ -54,7 +54,7 @@ impl AssetStagingManager {
             std::process::id(),
             chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
         );
-        let session_dir = std::env::temp_dir().join("markdown-viewer").join(session);
+        let session_dir = std::env::temp_dir().join("mdvisualizer").join(session);
         fs::create_dir_all(&session_dir)
             .map_err(|error| AppError::IoError(format!("create asset staging: {error}")))?;
         Ok(Self {
@@ -85,24 +85,42 @@ impl AssetStagingManager {
         bytes: &[u8],
     ) -> AppResult<StagedAssetResult> {
         if bytes.is_empty() || bytes.len() > MAX_ASSET_BYTES {
-            return Err(AppError::IoError("Asset data is empty or exceeds 50 MiB.".into()));
+            return Err(AppError::IoError(
+                "Asset data is empty or exceeds 50 MiB.".into(),
+            ));
         }
         let normalized = preferred_source.trim().replace('\\', "/");
         let relative = Path::new(&normalized);
-        if normalized.split('/').any(|part| part.is_empty() || part == "." || part == "..")
+        if normalized
+            .split('/')
+            .any(|part| part.is_empty() || part == "." || part == "..")
             || relative.is_absolute()
-            || relative.components().any(|component| !matches!(component, Component::Normal(_)))
+            || relative
+                .components()
+                .any(|component| !matches!(component, Component::Normal(_)))
         {
-            return Err(AppError::PermissionDenied("Asset path must be a safe relative path.".into()));
+            return Err(AppError::PermissionDenied(
+                "Asset path must be a safe relative path.".into(),
+            ));
         }
-        let filename = relative.file_name().and_then(|value| value.to_str()).unwrap_or_default();
+        let filename = relative
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default();
         validate_filename(filename)?;
         let document = canonical_markdown(document_path)?;
-        let parent = document.parent().ok_or_else(|| AppError::IoError("Markdown parent folder is unavailable.".into()))?;
+        let parent = document
+            .parent()
+            .ok_or_else(|| AppError::IoError("Markdown parent folder is unavailable.".into()))?;
         let destination = parent.join(relative);
         let entries = self.entries.lock().unwrap();
-        if entries.values().any(|entry| entry.document == document && entry.destination == destination) {
-            return Err(AppError::Conflict(format!("Asset path is already staged: {normalized}")));
+        if entries
+            .values()
+            .any(|entry| entry.document == document && entry.destination == destination)
+        {
+            return Err(AppError::Conflict(format!(
+                "Asset path is already staged: {normalized}"
+            )));
         }
         drop(entries);
         self.write_staged_entry(document, destination, normalized, true, bytes)
@@ -150,7 +168,10 @@ impl AssetStagingManager {
             .values()
             .filter(|entry| entry.document == document)
             .filter_map(|entry| {
-                entry.destination.parent().filter(|value| *value == parent)
+                entry
+                    .destination
+                    .parent()
+                    .filter(|value| *value == parent)
                     .and_then(|_| entry.destination.file_name())
                     .map(|value| value.to_string_lossy().to_lowercase())
             })
@@ -196,7 +217,10 @@ impl AssetStagingManager {
                 overwrite,
             },
         );
-        Ok(StagedAssetResult { id, filename: markdown_source })
+        Ok(StagedAssetResult {
+            id,
+            filename: markdown_source,
+        })
     }
 
     pub fn update_text(&self, id: &str, text: &str) -> AppResult<()> {
@@ -265,36 +289,56 @@ impl AssetStagingManager {
                 fs::create_dir_all(parent)
                     .map_err(|error| AppError::IoError(format!("create image folder: {error}")))?;
                 if entry.overwrite {
-                    let document_parent = document.parent().ok_or_else(|| AppError::IoError("Markdown parent folder is unavailable.".into()))?;
-                    let resolved_parent = parent.canonicalize()
-                        .map_err(|error| AppError::IoError(format!("canonicalize asset folder: {error}")))?;
+                    let document_parent = document.parent().ok_or_else(|| {
+                        AppError::IoError("Markdown parent folder is unavailable.".into())
+                    })?;
+                    let resolved_parent = parent.canonicalize().map_err(|error| {
+                        AppError::IoError(format!("canonicalize asset folder: {error}"))
+                    })?;
                     if !resolved_parent.starts_with(document_parent) {
-                        return Err(AppError::PermissionDenied("Asset path escaped the Markdown folder.".into()));
+                        return Err(AppError::PermissionDenied(
+                            "Asset path escaped the Markdown folder.".into(),
+                        ));
                     }
                 }
                 let bytes = fs::read(&entry.temp_path)
                     .map_err(|error| AppError::IoError(format!("read staged asset: {error}")))?;
                 let previous = if entry.overwrite && destination.exists() {
-                    Some(fs::read(destination).map_err(|error| AppError::IoError(format!("backup existing asset: {error}")))?)
-                } else { None };
+                    Some(fs::read(destination).map_err(|error| {
+                        AppError::IoError(format!("backup existing asset: {error}"))
+                    })?)
+                } else {
+                    None
+                };
                 let mut options = OpenOptions::new();
                 options.write(true);
-                if entry.overwrite { options.create(true).truncate(true); } else { options.create_new(true); }
-                let mut output = options.open(destination)
-                    .map_err(|error| AppError::Conflict(format!(
+                if entry.overwrite {
+                    options.create(true).truncate(true);
+                } else {
+                    options.create_new(true);
+                }
+                let mut output = options.open(destination).map_err(|error| {
+                    AppError::Conflict(format!(
                         "Asset filename is no longer available ({}): {error}",
                         entry.markdown_source
-                    )))?;
+                    ))
+                })?;
                 if let Err(error) = output.write_all(&bytes).and_then(|_| output.sync_all()) {
-                    if let Some(bytes) = &previous { let _ = fs::write(destination, bytes); }
-                    else { let _ = fs::remove_file(destination); }
+                    if let Some(bytes) = &previous {
+                        let _ = fs::write(destination, bytes);
+                    } else {
+                        let _ = fs::remove_file(destination);
+                    }
                     return Err(AppError::IoError(format!("commit staged asset: {error}")));
                 }
                 Ok::<Option<Vec<u8>>, AppError>(previous)
             })();
             match write_result {
                 Ok(previous) => committed.push((destination.clone(), previous)),
-                Err(error) => { rollback_committed_assets(&committed); return Err(error); }
+                Err(error) => {
+                    rollback_committed_assets(&committed);
+                    return Err(error);
+                }
             }
         }
         match save() {
@@ -429,9 +473,9 @@ fn media_type_for(path: &Path) -> AppResult<(&'static str, bool)> {
         "mmd" | "mermaid" => Ok(("text/vnd.mermaid", true)),
         "csv" => Ok(("text/csv", true)),
         "tsv" => Ok(("text/tab-separated-values", true)),
-        "txt" | "md" | "json" | "xml" | "html" | "css" | "js" | "jsx" | "ts" | "tsx"
-        | "py" | "rs" | "cs" | "java" | "c" | "h" | "cpp" | "hpp" | "sql" | "yaml" | "yml"
-        | "toml" | "ini" | "log" | "sh" | "ps1" | "vb" => Ok(("text/plain", true)),
+        "txt" | "md" | "json" | "xml" | "html" | "css" | "js" | "jsx" | "ts" | "tsx" | "py"
+        | "rs" | "cs" | "java" | "c" | "h" | "cpp" | "hpp" | "sql" | "yaml" | "yml" | "toml"
+        | "ini" | "log" | "sh" | "ps1" | "vb" => Ok(("text/plain", true)),
         _ => Err(AppError::UnsupportedDocument(
             path.to_string_lossy().into_owned(),
         )),
@@ -539,8 +583,16 @@ mod tests {
         fs::write(&document, "# note").unwrap();
         fs::write(&asset, "graph TD\nA-->B").unwrap();
         let loaded = read_document_asset(document.to_str().unwrap(), "diagram.mmd").unwrap();
-        assert!(delete_document_asset(document.to_str().unwrap(), "diagram.mmd", Some("wrong")).is_err());
-        delete_document_asset(document.to_str().unwrap(), "diagram.mmd", loaded.revision.as_deref()).unwrap();
+        assert!(
+            delete_document_asset(document.to_str().unwrap(), "diagram.mmd", Some("wrong"))
+                .is_err()
+        );
+        delete_document_asset(
+            document.to_str().unwrap(),
+            "diagram.mmd",
+            loaded.revision.as_deref(),
+        )
+        .unwrap();
         assert!(!asset.exists());
     }
 
@@ -551,12 +603,21 @@ mod tests {
         fs::write(&document, "old").unwrap();
         let manager = AssetStagingManager::new().unwrap();
         let staged = manager
-            .stage(&document.to_string_lossy(), "diagram.drawio", b"<mxGraphModel/>")
+            .stage(
+                &document.to_string_lossy(),
+                "diagram.drawio",
+                b"<mxGraphModel/>",
+            )
             .unwrap();
         assert_eq!(staged.filename, "diagram.drawio");
         assert!(!dir.path().join("diagram.drawio").exists());
-        manager.commit_with(&document, &[staged.id], || Ok(())).unwrap();
-        assert_eq!(fs::read_to_string(dir.path().join("diagram.drawio")).unwrap(), "<mxGraphModel/>");
+        manager
+            .commit_with(&document, &[staged.id], || Ok(()))
+            .unwrap();
+        assert_eq!(
+            fs::read_to_string(dir.path().join("diagram.drawio")).unwrap(),
+            "<mxGraphModel/>"
+        );
     }
 
     #[test]
@@ -566,11 +627,20 @@ mod tests {
         fs::write(&document, "old").unwrap();
         let manager = AssetStagingManager::new().unwrap();
         let staged = manager
-            .stage(&document.to_string_lossy(), "flow.mmd", b"flowchart LR\nA --> B")
+            .stage(
+                &document.to_string_lossy(),
+                "flow.mmd",
+                b"flowchart LR\nA --> B",
+            )
             .unwrap();
         assert_eq!(staged.filename, "flow.mmd");
-        manager.commit_with(&document, &[staged.id], || Ok(())).unwrap();
-        assert_eq!(fs::read_to_string(dir.path().join("flow.mmd")).unwrap(), "flowchart LR\nA --> B");
+        manager
+            .commit_with(&document, &[staged.id], || Ok(()))
+            .unwrap();
+        assert_eq!(
+            fs::read_to_string(dir.path().join("flow.mmd")).unwrap(),
+            "flowchart LR\nA --> B"
+        );
     }
 
     #[test]
@@ -582,12 +652,16 @@ mod tests {
         fs::write(&document, "old markdown").unwrap();
         fs::write(&asset, "old code").unwrap();
         let manager = AssetStagingManager::new().unwrap();
-        let staged = manager.stage_relative(&document.to_string_lossy(), "src/main.rs", b"new code").unwrap();
+        let staged = manager
+            .stage_relative(&document.to_string_lossy(), "src/main.rs", b"new code")
+            .unwrap();
         assert_eq!(staged.filename, "src/main.rs");
-        manager.commit_with(&document, &[staged.id], || {
-            fs::write(&document, "new markdown").unwrap();
-            Ok(())
-        }).unwrap();
+        manager
+            .commit_with(&document, &[staged.id], || {
+                fs::write(&document, "new markdown").unwrap();
+                Ok(())
+            })
+            .unwrap();
         assert_eq!(fs::read_to_string(asset).unwrap(), "new code");
     }
 
@@ -620,8 +694,12 @@ mod tests {
         fs::write(&document, "old markdown").unwrap();
         fs::write(&asset, "old code").unwrap();
         let manager = AssetStagingManager::new().unwrap();
-        let staged = manager.stage_relative(&document.to_string_lossy(), "src/main.rs", b"new code").unwrap();
-        let result = manager.commit_with(&document, &[staged.id], || Err::<(), _>(AppError::Conflict("stale".into())));
+        let staged = manager
+            .stage_relative(&document.to_string_lossy(), "src/main.rs", b"new code")
+            .unwrap();
+        let result = manager.commit_with(&document, &[staged.id], || {
+            Err::<(), _>(AppError::Conflict("stale".into()))
+        });
         assert!(result.is_err());
         assert_eq!(fs::read_to_string(asset).unwrap(), "old code");
     }
@@ -634,7 +712,12 @@ mod tests {
         let manager = AssetStagingManager::new().unwrap();
 
         for source in ["../main.rs", "src/../main.rs", "/main.rs", "src//main.rs"] {
-            assert!(manager.stage_relative(&document.to_string_lossy(), source, b"code").is_err(), "{source}");
+            assert!(
+                manager
+                    .stage_relative(&document.to_string_lossy(), source, b"code")
+                    .is_err(),
+                "{source}"
+            );
         }
     }
 
@@ -646,18 +729,39 @@ mod tests {
         fs::write(&document, "old").unwrap();
         let manager = AssetStagingManager::new().unwrap();
         let relative = manager
-            .stage_at(&document.to_string_lossy(), "20260824_090507.png", "images", None, b"relative")
+            .stage_at(
+                &document.to_string_lossy(),
+                "20260824_090507.png",
+                "images",
+                None,
+                b"relative",
+            )
             .unwrap();
         let external = manager
-            .stage_at(&document.to_string_lossy(), "20260824_090507.png", "absolute", Some(&absolute.to_string_lossy()), b"absolute")
+            .stage_at(
+                &document.to_string_lossy(),
+                "20260824_090507.png",
+                "absolute",
+                Some(&absolute.to_string_lossy()),
+                b"absolute",
+            )
             .unwrap();
         assert_eq!(relative.filename, "images/20260824_090507.png");
-        assert!(external.filename.replace('\\', "/").ends_with("/Shared Images/20260824_090507.png"));
+        assert!(external
+            .filename
+            .replace('\\', "/")
+            .ends_with("/Shared Images/20260824_090507.png"));
         manager
             .commit_with(&document, &[relative.id, external.id], || Ok(()))
             .unwrap();
-        assert_eq!(fs::read(dir.path().join("images/20260824_090507.png")).unwrap(), b"relative");
-        assert_eq!(fs::read(absolute.join("20260824_090507.png")).unwrap(), b"absolute");
+        assert_eq!(
+            fs::read(dir.path().join("images/20260824_090507.png")).unwrap(),
+            b"relative"
+        );
+        assert_eq!(
+            fs::read(absolute.join("20260824_090507.png")).unwrap(),
+            b"absolute"
+        );
     }
 
     #[test]
@@ -666,7 +770,15 @@ mod tests {
         let document = dir.path().join("note.md");
         fs::write(&document, "old").unwrap();
         let manager = AssetStagingManager::new().unwrap();
-        assert!(manager.stage_at(&document.to_string_lossy(), "image.png", "absolute", Some("relative"), b"image").is_err());
+        assert!(manager
+            .stage_at(
+                &document.to_string_lossy(),
+                "image.png",
+                "absolute",
+                Some("relative"),
+                b"image"
+            )
+            .is_err());
     }
 
     #[test]
@@ -678,7 +790,13 @@ mod tests {
         fs::write(&blocked_folder, "not a folder").unwrap();
         let manager = AssetStagingManager::new().unwrap();
         let first = manager
-            .stage_at(&document.to_string_lossy(), "first.png", "images", None, b"first")
+            .stage_at(
+                &document.to_string_lossy(),
+                "first.png",
+                "images",
+                None,
+                b"first",
+            )
             .unwrap();
         let second = manager
             .stage_at(
@@ -690,25 +808,36 @@ mod tests {
             )
             .unwrap();
 
-        assert!(manager.commit_with(&document, &[first.id, second.id], || Ok(())).is_err());
+        assert!(manager
+            .commit_with(&document, &[first.id, second.id], || Ok(()))
+            .is_err());
         assert!(!dir.path().join("images/first.png").exists());
     }
 }
 
-pub fn delete_document_asset(document_path: &str, source: &str, expected_revision: Option<&str>) -> AppResult<()> {
+pub fn delete_document_asset(
+    document_path: &str,
+    source: &str,
+    expected_revision: Option<&str>,
+) -> AppResult<()> {
     let asset = read_document_asset(document_path, source)?;
     if let (Some(expected), Some(actual)) = (expected_revision, asset.revision.as_deref()) {
         if expected != actual {
             return Err(AppError::Conflict("Asset changed before deletion.".into()));
         }
     }
-    let path = asset.path.ok_or_else(|| AppError::FileNotFound(source.into()))?;
+    let path = asset
+        .path
+        .ok_or_else(|| AppError::FileNotFound(source.into()))?;
     fs::remove_file(&path).map_err(|error| AppError::IoError(format!("delete asset: {error}")))
 }
 
 fn rollback_committed_assets(committed: &[(PathBuf, Option<Vec<u8>>)]) {
     for (path, previous) in committed.iter().rev() {
-        if let Some(bytes) = previous { let _ = fs::write(path, bytes); }
-        else { let _ = fs::remove_file(path); }
+        if let Some(bytes) = previous {
+            let _ = fs::write(path, bytes);
+        } else {
+            let _ = fs::remove_file(path);
+        }
     }
 }

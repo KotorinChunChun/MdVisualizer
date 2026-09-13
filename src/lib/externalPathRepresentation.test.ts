@@ -5,6 +5,20 @@ import { appendFilenameExtension, codeFencePathDecoration, embeddedFenceWithPath
 const fence = (markdown: string) => collectEditableMarkdownOccurrences(markdown).find((item): item is CodeFenceOccurrence => item.kind === "code-fence")!;
 
 describe("external path representation", () => {
+  it.each(["\n", "\r\n", "\r"])("先頭の空行を含むコードフェンスを有限時間で処理する（%j）", (ending) => {
+    for (const leading of [ending, ending.repeat(2), `${ending}  ${ending}`, `${ending}> ${ending}`]) {
+      const markdown = `${leading}\`\`\`svg${ending}<svg xmlns="http://www.w3.org/2000/svg"/>${ending}\`\`\``;
+      const occurrence = fence(markdown);
+      const result = codeFencePathDecoration(markdown, occurrence);
+      expect(result.relativePath).toBeUndefined();
+      expect(result.occurrence).toBe(occurrence);
+    }
+  });
+
+  it("空行より前の先頭行にあるファイル名は引き続き検出する", () => {
+    const markdown = "### src/main.ts\n\n\n```ts\ncode\n```";
+    expect(codeFencePathDecoration(markdown, fence(markdown)).relativePath).toBe("src/main.ts");
+  });
   it.each([
     ["### src/main.ts — Main flow\n\n```ts\ncode\n```", "heading"],
     ["**`src/main.ts - Main flow`**\n\n```ts\ncode\n```", "bold-code"],

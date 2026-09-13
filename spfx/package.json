@@ -1,6 +1,6 @@
 {
-  "name": "spfx-markdown-editor",
-  "version": "0.0.15",
+  "name": "spfx-mdvisualizer",
+  "version": "0.0.17+beta.1",
   "private": true,
   "engines": {
     "node": ">=22.14.0 <23.0.0"
@@ -17,7 +17,7 @@
     "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.8",
-    "@markdown-viewer/markdown-core": "file:../packages/markdown-core",
+    "@mdvisualizer/markdown-core": "file:../packages/markdown-core",
     "@microsoft/sp-component-base": "1.23.2",
     "@microsoft/sp-core-library": "1.23.2",
     "@microsoft/sp-http": "1.23.2",

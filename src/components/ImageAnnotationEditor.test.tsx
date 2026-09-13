@@ -189,7 +189,7 @@ describe("ImageAnnotationEditor", () => {
     fireEvent.change(screen.getByLabelText("通常の変化量"), { target: { value: "3" } });
     fireEvent.change(screen.getByLabelText("高速時の変化量"), { target: { value: "12" } });
     fireEvent.click(screen.getByRole("button", { name: "設定を保存" }));
-    expect(JSON.parse(localStorage.getItem("markdown-viewer.image-editor-settings.v1") ?? "{}")).toMatchObject({
+    expect(JSON.parse(localStorage.getItem("mdvisualizer.image-editor-settings.v1") ?? "{}")).toMatchObject({
       normalWheelStep: 3,
       fastWheelStep: 12,
     });

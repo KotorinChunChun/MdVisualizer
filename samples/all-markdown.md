@@ -1,6 +1,6 @@
-# MarkdownViewer 対応記法・総合サンプル
+# MdVisualizer 対応記法・総合サンプル
 
-このファイルは、MarkdownViewerが対応する主要なMarkdown/GFM記法を一度に確認するための資料です。
+このファイルは、MdVisualizerが対応する主要なMarkdown/GFM記法を一度に確認するための資料です。
 [ローカルリンクの確認](local-links.md)と[Mermaidギャラリー](mermaid-gallery.md)は新しいタブで開きます。
 [OpenAI](https://openai.com/)は外部ブラウザで開きます。
 

@@ -1,7 +1,7 @@
 use crate::asset_staging::AssetStagingManager;
 use crate::backup::BackupManager;
-use crate::watcher::FileWatcher;
 use crate::sharepoint::SharePointClient;
+use crate::watcher::FileWatcher;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::AtomicU64;

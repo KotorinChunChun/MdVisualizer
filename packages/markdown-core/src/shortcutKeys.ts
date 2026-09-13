@@ -141,16 +141,17 @@ export function buildShortcutKeySvg(source: string, options: ShortcutKeySvgOptio
   const parsed = parseShortcutKeySequence(source) ?? fallbackSequence(source);
   const keyHeight = inline ? 29 : 44;
   const keyDepth = inline ? 3 : 5;
-  const fontSize = inline ? 12 : 17;
+  const fontSize = inline ? 24 : 17;
   const keyPadding = inline ? 8 : 13;
-  const keyGap = inline ? 4 : 7;
+  // +の文字幅に加えて、左右それぞれの余白を確保する。
+  const keyGap = inline ? 34 : 28;
   const groupPadding = inline ? 5 : 8;
   const outerPadding = inline ? 2 : 4;
   const separatorGap = inline ? 7 : 12;
   const radius = inline ? 5 : 8;
   const groupHeight = keyHeight + keyDepth + groupPadding * 2;
   const keyY = outerPadding + groupPadding;
-  const separatorFontSize = fontSize + (inline ? 1 : 3);
+  const separatorFontSize = fontSize + (inline ? 0 : 3);
   const groups = parsed.groups.map(group => {
     const tokenWidths = group.tokens.map(token => estimateLabelWidth(token.label, fontSize, keyPadding));
     const keysWidth = tokenWidths.reduce((total, width) => total + width, 0) + Math.max(0, tokenWidths.length - 1) * keyGap;
@@ -172,7 +173,7 @@ export function buildShortcutKeySvg(source: string, options: ShortcutKeySvgOptio
     let keyX = groupX + groupPadding;
     groupLayout.group.tokens.forEach((token, tokenIndex) => {
       const width = groupLayout.tokenWidths[tokenIndex];
-      const textY = keyY + keyHeight * 0.63;
+      const textY = keyY + keyHeight / 2 + fontSize * 0.35;
       body += `<g class="shortcut-key-svg__key" data-shortcut-token="${escapeXml(token.label)}">`;
       body += `<rect class="shortcut-key-svg__edge" x="${rounded(keyX)}" y="${rounded(keyY + keyDepth)}" width="${rounded(width)}" height="${keyHeight}" rx="${radius}"/>`;
       body += `<rect class="shortcut-key-svg__face" x="${rounded(keyX)}" y="${rounded(keyY)}" width="${rounded(width)}" height="${keyHeight}" rx="${radius}"/>`;

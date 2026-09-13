@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" role="img" aria-labelledby="title desc">
-  <title id="title">MarkdownViewer SVG Sample</title>
+  <title id="title">MdVisualizer SVG Sample</title>
   <desc id="desc">SVG display-only test image with shapes and text</desc>
   <defs>
     <linearGradient id="background" x1="0" x2="1">
@@ -10,6 +10,6 @@
   <rect width="640" height="320" rx="28" fill="url(#background)"/>
   <circle cx="110" cy="160" r="64" fill="#ffffff" opacity=".92"/>
   <path d="M80 160l22 22 42-48" fill="none" stroke="#2563eb" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="205" y="145" fill="#ffffff" font-family="Segoe UI, sans-serif" font-size="36" font-weight="700">MarkdownViewer</text>
+  <text x="205" y="145" fill="#ffffff" font-family="Segoe UI, sans-serif" font-size="36" font-weight="700">MdVisualizer</text>
   <text x="205" y="195" fill="#e0e7ff" font-family="Segoe UI, sans-serif" font-size="24">SVG display test</text>
 </svg>

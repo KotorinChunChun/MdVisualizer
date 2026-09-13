@@ -1,9 +1,9 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$MarkdownPath,
-    [string]$ApplicationPath = "$PSScriptRoot\..\src-tauri\target\release\markdown-viewer.exe",
-    [string]$OutputDirectory = "C:\tmp\markdownviewer-gui",
-    [string]$UiaDumpPath = "C:\tmp\markdownviewer-uia\target\debug\uia_dump.exe",
+    [string]$ApplicationPath = "$PSScriptRoot\..\src-tauri\target\release\mdvisualizer.exe",
+    [string]$OutputDirectory = "C:\tmp\mdvisualizer-gui",
+    [string]$UiaDumpPath = "C:\tmp\mdvisualizer-uia\target\debug\uia_dump.exe",
     [int]$RemoteDebuggingPort = 0
 )
 
@@ -33,7 +33,7 @@ do {
 } while ($process.MainWindowHandle -eq 0 -and -not $process.HasExited -and [DateTime]::UtcNow -lt $deadline)
 
 if ($process.HasExited -or $process.MainWindowHandle -eq 0) {
-    throw "MarkdownViewerのウィンドウが20秒以内に表示されませんでした。"
+    throw "MdVisualizerのウィンドウが20秒以内に表示されませんでした。"
 }
 
 $screen = [System.Windows.Forms.Screen]::FromHandle($process.MainWindowHandle)
@@ -50,7 +50,7 @@ try {
 }
 
 $uiaPath = Join-Path $runDirectory "uia-tree.txt"
-& $UiaDumpPath "MarkdownViewer" | Set-Content -LiteralPath $uiaPath -Encoding utf8
+& $UiaDumpPath "MdVisualizer" | Set-Content -LiteralPath $uiaPath -Encoding utf8
 
 Write-Output "READY_TO_AUTOMATE pid=$($process.Id)"
 Write-Output "SCREENSHOT=$screenshotPath"

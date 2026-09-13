@@ -2,17 +2,17 @@
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
   "version": "2.0",
   "bundles": {
-    "markdown-editor-web-part": {
+    "mdvisualizer-web-part": {
       "components": [
         {
-          "entrypoint": "./lib/webparts/markdownEditor/MarkdownEditorWebPart.js",
-          "manifest": "./src/webparts/markdownEditor/MarkdownEditorWebPart.manifest.json"
+          "entrypoint": "./lib/webparts/mdVisualizer/MdVisualizerWebPart.js",
+          "manifest": "./src/webparts/mdVisualizer/MdVisualizerWebPart.manifest.json"
         }
       ]
     }
   },
   "externals": {},
   "localizedResources": {
-    "MarkdownEditorWebPartStrings": "lib/webparts/markdownEditor/loc/{locale}.js"
+    "MdVisualizerWebPartStrings": "lib/webparts/mdVisualizer/loc/{locale}.js"
   }
 }

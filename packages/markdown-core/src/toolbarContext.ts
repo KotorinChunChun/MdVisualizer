@@ -1,4 +1,4 @@
-export const MARKDOWN_BLOCK_INSERTION_ACTIONS = ["code-block", "table", "mermaid", "horizontal-rule", "drawio"] as const;
+export const MARKDOWN_BLOCK_INSERTION_ACTIONS = ["code-block", "table", "mermaid", "horizontal-rule", "drawio", "svg"] as const;
 
 export type MarkdownBlockInsertionAction = typeof MARKDOWN_BLOCK_INSERTION_ACTIONS[number];
 export type MarkdownInsertionContextKind = "plain" | "fenced-code" | "table" | "inline-code" | "link-or-image";

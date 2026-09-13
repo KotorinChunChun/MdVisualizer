@@ -1,4 +1,0 @@
-interface:
-  display_name: "MarkdownViewer実装"
-  short_description: "機能追加・修正を安全な契約と段階検証に沿って実装"
-  default_prompt: "$develop-markdownviewer を使って、対象要求を段階実装してください。"

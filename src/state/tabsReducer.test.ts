@@ -129,12 +129,12 @@ describe("tabsReducer", () => {
       type: "LOADED",
       id,
       generation,
-      document: loadedDocument("C:\\develop\\MarkdownViewer\\README.md"),
+      document: loadedDocument("C:\\develop\\MdVisualizer\\README.md"),
     });
 
     expect(state.tabs[0]).toMatchObject({
-      path: "C:\\develop\\MarkdownViewer\\README.md",
-      document: { path: "C:\\develop\\MarkdownViewer\\README.md" },
+      path: "C:\\develop\\MdVisualizer\\README.md",
+      document: { path: "C:\\develop\\MdVisualizer\\README.md" },
     });
   });
 

@@ -45,11 +45,11 @@ describe("ContextMenu", () => {
   it("copies a regular Windows path without the extended-length prefix", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<ContextMenu tab={{ ...tab, path: String.raw`\\?\C:\develop\MarkdownViewer\samples\sample.md` }} x={0} y={0} onDismiss={() => {}} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onResult={() => {}} onError={() => {}} />);
+    render(<ContextMenu tab={{ ...tab, path: String.raw`\\?\C:\develop\MdVisualizer\samples\sample.md` }} x={0} y={0} onDismiss={() => {}} onClose={() => {}} onCloseOthers={() => {}} onCloseRight={() => {}} onResult={() => {}} onError={() => {}} />);
 
     fireEvent.click(screen.getByRole("menuitem", { name: "フルパスをコピー" }));
 
-    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith(String.raw`C:\develop\MarkdownViewer\samples\sample.md`));
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith(String.raw`C:\develop\MdVisualizer\samples\sample.md`));
   });
 
   it("disables filesystem actions for an untitled tab", () => {

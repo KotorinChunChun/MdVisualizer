@@ -29,7 +29,8 @@ describe("FoldSection", () => {
     const content = container.querySelector(".fold-heading__content")!;
     expect(content.textContent).toBe("長い見出しに これ を含める");
     expect(content.querySelector("code")?.textContent).toBe("これ");
-    expect(content.parentElement?.classList.contains("fold-toggle")).toBe(true);
+    expect(content.parentElement?.tagName).toBe("H2");
+    expect(content.parentElement?.querySelector(".fold-toggle")).not.toBeNull();
   });
 
   it("responds to global fold-all commands", () => {

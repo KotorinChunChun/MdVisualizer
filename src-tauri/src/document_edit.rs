@@ -42,7 +42,9 @@ pub fn rename_document(request: RenameDocumentRequest) -> AppResult<MarkdownLoad
     let source = PathBuf::from(&request.source_path);
     let target = PathBuf::from(&request.target_path);
     if !source.is_absolute() || !target.is_absolute() {
-        return Err(AppError::IoError("ファイル名変更には絶対パスが必要です。".into()));
+        return Err(AppError::IoError(
+            "ファイル名変更には絶対パスが必要です。".into(),
+        ));
     }
     if document_kind(&source).is_none() || document_kind(&target).is_none() {
         return Err(AppError::UnsupportedDocument(request.target_path));
@@ -55,11 +57,16 @@ pub fn rename_document(request: RenameDocumentRequest) -> AppResult<MarkdownLoad
     }
     if target.exists() {
         if !request.overwrite {
-            return Err(AppError::Conflict(format!("ファイルがすでに存在します: {}", target.display())));
+            return Err(AppError::Conflict(format!(
+                "ファイルがすでに存在します: {}",
+                target.display()
+            )));
         }
-        fs::remove_file(&target).map_err(|error| AppError::IoError(format!("既存ファイルを削除できません: {error}")))?;
+        fs::remove_file(&target)
+            .map_err(|error| AppError::IoError(format!("既存ファイルを削除できません: {error}")))?;
     }
-    fs::rename(&source, &target).map_err(|error| AppError::IoError(format!("ファイル名を変更できません: {error}")))?;
+    fs::rename(&source, &target)
+        .map_err(|error| AppError::IoError(format!("ファイル名を変更できません: {error}")))?;
     load_markdown(&target.to_string_lossy())
 }
 
@@ -71,7 +78,15 @@ struct OriginalDocument {
 
 pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
-    if !matches!(document_kind(&requested), Some(DocumentKind::Markdown | DocumentKind::Drawio | DocumentKind::Svg | DocumentKind::Mermaid)) {
+    if !matches!(
+        document_kind(&requested),
+        Some(
+            DocumentKind::Markdown
+                | DocumentKind::Drawio
+                | DocumentKind::Svg
+                | DocumentKind::Mermaid
+        )
+    ) {
         return Err(AppError::UnsupportedDocument(request.path));
     }
     if !requested.exists() {
@@ -106,7 +121,15 @@ pub fn save_markdown_with_assets(
 ) -> AppResult<MarkdownLoadResult> {
     let requested = PathBuf::from(&request.path);
     let kind = document_kind(&requested);
-    if !matches!(kind, Some(DocumentKind::Markdown | DocumentKind::Drawio | DocumentKind::Svg | DocumentKind::Mermaid)) {
+    if !matches!(
+        kind,
+        Some(
+            DocumentKind::Markdown
+                | DocumentKind::Drawio
+                | DocumentKind::Svg
+                | DocumentKind::Mermaid
+        )
+    ) {
         return Err(AppError::UnsupportedDocument(request.path));
     }
     if kind != Some(DocumentKind::Markdown) && !request.staged_asset_ids.is_empty() {
@@ -122,7 +145,9 @@ pub fn save_markdown_with_assets(
     })?;
     with_lock(&path, || {
         if kind == Some(DocumentKind::Markdown) {
-            staging.commit_with(&path, &request.staged_asset_ids, || save_locked(&path, &request))
+            staging.commit_with(&path, &request.staged_asset_ids, || {
+                save_locked(&path, &request)
+            })
         } else {
             save_locked(&path, &request)
         }
@@ -285,10 +310,14 @@ mod tests {
             source_path: source.to_string_lossy().into_owned(),
             target_path: target.to_string_lossy().into_owned(),
             overwrite: false,
-        }).unwrap();
+        })
+        .unwrap();
 
         assert!(!source.exists());
-        assert_eq!(loaded.path, target.canonicalize().unwrap().to_string_lossy());
+        assert_eq!(
+            loaded.path,
+            target.canonicalize().unwrap().to_string_lossy()
+        );
         assert_eq!(loaded.content, "# 内容\n");
     }
 
@@ -342,7 +371,8 @@ mod tests {
         fs::write(&path, "<mxfile><diagram name=\"old\"/></mxfile>").unwrap();
         let original_revision = content_revision(&fs::read(&path).unwrap());
 
-        let result = save_markdown(request(&path, "<mxfile><diagram name=\"new\"/></mxfile>")).unwrap();
+        let result =
+            save_markdown(request(&path, "<mxfile><diagram name=\"new\"/></mxfile>")).unwrap();
 
         assert_eq!(result.kind, DocumentKind::Drawio);
         assert!(result.content.contains("name=\"new\""));
@@ -356,9 +386,14 @@ mod tests {
         fs::write(&path, "\u{feff}<svg>\r\n<rect/>\r\n</svg>\r\n").unwrap();
         let staging = crate::asset_staging::AssetStagingManager::new().unwrap();
         let stale = request(&path, "<svg/>\n");
-        let saved = save_markdown_with_assets(request(&path, "<svg>\n<circle/>\n</svg>\n"), &staging).unwrap();
+        let saved =
+            save_markdown_with_assets(request(&path, "<svg>\n<circle/>\n</svg>\n"), &staging)
+                .unwrap();
         assert_eq!(saved.kind, DocumentKind::Svg);
-        assert_eq!(fs::read_to_string(&path).unwrap(), "\u{feff}<svg>\r\n<circle/>\r\n</svg>\r\n");
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            "\u{feff}<svg>\r\n<circle/>\r\n</svg>\r\n"
+        );
         assert!(matches!(save_markdown(stale), Err(AppError::Conflict(_))));
         let before = fs::read(&path).unwrap();
         let mut with_assets = request(&path, "<svg/>\n");
@@ -374,9 +409,13 @@ mod tests {
         fs::write(&path, "\u{feff}flowchart TD\r\nA-->B\r\n").unwrap();
         let staging = crate::asset_staging::AssetStagingManager::new().unwrap();
         let stale = request(&path, "flowchart TD\nA-->C\n");
-        let saved = save_markdown_with_assets(request(&path, "flowchart TD\nA-->D\n"), &staging).unwrap();
+        let saved =
+            save_markdown_with_assets(request(&path, "flowchart TD\nA-->D\n"), &staging).unwrap();
         assert_eq!(saved.kind, DocumentKind::Mermaid);
-        assert_eq!(fs::read_to_string(&path).unwrap(), "\u{feff}flowchart TD\r\nA-->D\r\n");
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            "\u{feff}flowchart TD\r\nA-->D\r\n"
+        );
         let before = fs::read(&path).unwrap();
         assert!(matches!(save_markdown(stale), Err(AppError::Conflict(_))));
         assert_eq!(fs::read(&path).unwrap(), before);

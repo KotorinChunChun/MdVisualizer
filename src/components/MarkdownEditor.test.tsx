@@ -65,6 +65,49 @@ describe("MarkdownEditor", () => {
     expect(ref.current?.contains(document.activeElement)).toBe(true);
   });
 
+  it("restores the cursor for the same viewStateKey after a saved generation recreates the editor", async () => {
+    const first = createRef<MarkdownEditorHandle>();
+    const { rerender } = render(<MarkdownEditor ref={first} documentId="tab-1:1" viewStateKey="C:\\docs\\note.md" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    act(() => first.current?.focusLine(3));
+    expect(first.current?.snapshot()?.from).toBe(8);
+
+    const second = createRef<MarkdownEditorHandle>();
+    rerender(<MarkdownEditor ref={second} documentId="tab-1:2" viewStateKey="C:\\docs\\note.md" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    await waitFor(() => expect(second.current?.snapshot()?.from).toBe(8));
+  });
+
+  it("keeps an unaffected long-code fold and both scroll axes when a save adds lines before it", async () => {
+    const lines = ["```text", ...Array.from({ length: 10 }, (_, index) => `line ${index + 1}`), "```"];
+    const value = lines.join("\n");
+    const { container, rerender } = render(<MarkdownEditor documentId="tab-fold:1" viewStateKey="C:\\docs\\fold.md" value={value} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    await waitFor(() => expect(container.querySelector(".cm-foldPlaceholder")).toBeTruthy());
+    const scroller = container.querySelector<HTMLElement>(".cm-scroller")!;
+    scroller.scrollTop = 48;
+    scroller.scrollLeft = 24;
+
+    rerender(<MarkdownEditor documentId="tab-fold:2" viewStateKey="C:\\docs\\fold.md" value={`before\n${value}`} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+
+    await waitFor(() => expect(container.querySelector(".cm-foldPlaceholder")).toBeTruthy());
+    const restoredScroller = container.querySelector<HTMLElement>(".cm-scroller")!;
+    await waitFor(() => expect(restoredScroller.scrollTop).toBe(48));
+    expect(restoredScroller.scrollLeft).toBe(24);
+  });
+
+  it("keeps an unaffected fold and both scroll axes on an external reload without recreating the editor", async () => {
+    const value = ["```text", ...Array.from({ length: 10 }, (_, index) => `line ${index + 1}`), "```"].join("\n");
+    const { container, rerender } = render(<MarkdownEditor documentId="tab-reload:1" value={value} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    await waitFor(() => expect(container.querySelector(".cm-foldPlaceholder")).toBeTruthy());
+    const scroller = container.querySelector<HTMLElement>(".cm-scroller")!;
+    scroller.scrollTop = 39;
+    scroller.scrollLeft = 17;
+
+    rerender(<MarkdownEditor documentId="tab-reload:1" value={`external\n${value}`} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+
+    await waitFor(() => expect(container.querySelector(".cm-foldPlaceholder")).toBeTruthy());
+    await waitFor(() => expect(scroller.scrollTop).toBe(39));
+    expect(scroller.scrollLeft).toBe(17);
+  });
+
   it("reports pure Edit-pane scrolling separately from cursor movement", () => {
     const onScrollLine = vi.fn();
     const { container } = render(<MarkdownEditor documentId="tab-1:1" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} onScrollLine={onScrollLine} />);
@@ -92,6 +135,24 @@ describe("MarkdownEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "太字" }));
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith("**太字**# Test"));
+  });
+
+  it("labels the compact fold action and places the horizontal rule before Mermaid", () => {
+    render(<MarkdownEditor documentId="tab-1:1" value="# Test" dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    const labels = [...screen.getByRole("toolbar", { name: "Markdown書式" }).querySelectorAll("button")].map((button) => button.textContent);
+    expect(labels.indexOf("―")).toBeLessThan(labels.indexOf("+Mermaid"));
+    expect(screen.getByRole("button", { name: "折畳" }).getAttribute("title")).toBe("H2以下と長いコードを折畳");
+  });
+
+  it("折畳でもH1本文と短いコードを残し、H2本文と規定行数のコードを隠す", async () => {
+    const value = ["# H1", "H1本文", "", "```txt", "短いコード", "```", "", "## H2", "H2本文", "", "# 次のH1", "```txt", ...Array.from({ length: 10 }, (_, i) => `長いコード${i}`), "```"].join("\n");
+    const { container } = render(<MarkdownEditor documentId="fold-heading:1" value={value} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "展開" }));
+    fireEvent.click(screen.getByRole("button", { name: "折畳" }));
+    await waitFor(() => expect(container.querySelector(".cm-content")?.textContent).not.toContain("H2本文"));
+    expect(container.querySelector(".cm-content")?.textContent).toContain("H1本文");
+    expect(container.querySelector(".cm-content")?.textContent).toContain("短いコード");
+    expect(container.querySelector(".cm-content")?.textContent).not.toContain("長いコード0");
   });
 
   it("disables block insertion buttons while the cursor is inside a table", async () => {

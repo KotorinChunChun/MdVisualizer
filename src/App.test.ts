@@ -6,9 +6,9 @@ import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, fo
 
 describe("application window title", () => {
   it("uses the active tab filename followed by the application name", () => {
-    expect(applicationWindowTitle({ path: "C:\\docs\\sample.md" })).toBe("sample.md - MarkdownViewer");
-    expect(applicationWindowTitle({ kind: "settings", path: "__settings__" })).toBe("設定 - MarkdownViewer");
-    expect(applicationWindowTitle(null)).toBe("MarkdownViewer");
+    expect(applicationWindowTitle({ path: "C:\\docs\\sample.md" })).toBe("sample.md - MdVisualizer");
+    expect(applicationWindowTitle({ kind: "settings", path: "__settings__" })).toBe("設定 - MdVisualizer");
+    expect(applicationWindowTitle(null)).toBe("MdVisualizer");
   });
 });
 

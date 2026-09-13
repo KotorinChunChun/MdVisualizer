@@ -15,7 +15,7 @@ describe("PreviewContextMenu", () => {
     const onResult = vi.fn();
     const props = { x: 10, y: 20, plainText: "表示内容", markdownText: "**表示内容**", canEdit: true, onEdit: vi.fn(), onSelectLine: vi.fn(), onSelectAll: vi.fn(), onResult, onError: vi.fn(), onDismiss: vi.fn() };
     const { rerender } = render(<PreviewContextMenu {...props} />);
-    fireEvent.click(screen.getByRole("menuitem", { name: "コピー" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "マークダウンでコピー" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("**表示内容**"));
 
     rerender(<PreviewContextMenu {...props} />);

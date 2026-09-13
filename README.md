@@ -1,17 +1,19 @@
-# MarkdownViewer
+# MdVisualizer
 
 Windows向けのMarkdownビューア／エディターです。複数の文書をタブで開き、ローカルMarkdownの編集・安全な保存に加えて、画像、Mermaid、draw.io、コード、対話型CSV／TSV表を表示できます。
 
-デスクトップ版では、任意導入のCodex CLIを利用した[文章の相談・書き換え](docs/ui/codex.md)も利用できます。既定は無効で、差分を採用した場合だけ編集中の本文へ反映します。SPFxには含みません。
+デスクトップ版では、任意導入のCodex CLIを利用した[文章・画像・図の相談と編集](docs/ui/codex.md)も利用できます。スキルの追加や対象別メニュー設定は[Codexスキルの設定](docs/ui/codex-skills.md)を参照してください。既定は無効で、差分を採用した場合だけ編集中の本文へ反映します。SPFxには含みません。
 
 デスクトップ版に加えて、同じMarkdown処理を共有するSharePoint Framework版を本リポジトリからビルドできます。自分でビルド・改造する場合は[開発者ガイド](docs/DEVELOPERS_GUIDE.md)と[ビルド・検証コマンド](docs/BUILD_COMMANDS.md)を参照してください。
 
 ## beta版ダウンロード
 
-[MarkdownViewer v0.0.7-beta ダウンロード](https://excel-chunchun.sakura.ne.jp/download/MakdownViewer.html)から、
-初回インストール用のApp Installer、MSIX、自己署名証明書を取得できます。自己署名証明書を
+MdVisualizer v0.0.16-betaは公開準備中です。[配布ページ](https://excel-chunchun.sakura.ne.jp/download/MdVisualizer.html)で準備状況と旧版v0.0.15のダウンロードをご案内しています。
+公開後は初回インストール用のApp Installer、MSIX、自己署名証明書を取得できます。自己署名証明書を
 「信頼されたユーザー」へ登録してからApp Installerを開いてください。導入後はアプリ起動時に
 betaチャネルの更新を確認します。
+
+v0.0.16から名称と内部識別子を変更し、旧MarkdownViewerとは別アプリとして導入します。旧版の設定・認証情報を自動移行せず、新版で設定とサインインを行います。旧版の保存領域は削除しません。
 
 ## 起動
 
@@ -33,7 +35,7 @@ cargo --version
 PowerShell の実行ポリシーによって `npm.ps1` がブロックされる環境では、`npm` の代わりに `npm.cmd` を使用します。
 
 ```powershell
-Set-Location C:\develop\MarkdownViewer
+Set-Location C:\develop\MdVisualizer
 npm.cmd install
 ```
 
@@ -42,7 +44,7 @@ npm.cmd install
 開発時は次でサンプルを開きます。
 
 ```powershell
-npm.cmd run tauri -- dev -- -- C:\develop\MarkdownViewer\samples\sample.md
+npm.cmd run tauri -- dev -- -- C:\develop\MdVisualizer\samples\sample.md
 ```
 
 または、Markdown ファイルを引数に渡します。
@@ -51,9 +53,9 @@ npm.cmd run tauri -- dev -- -- C:\develop\MarkdownViewer\samples\sample.md
 npm.cmd run tauri -- dev -- -- C:\Project\README.md C:\Project\design.markdown
 ```
 
-開発中のアプリは `http://localhost:1420` のViteサーバーを表示します。起動したPowerShellを終了するとサーバーも停止するため、アプリには接続拒否画面が表示されます。`src-tauri\target\debug\markdown-viewer.exe` を単独で起動するのではなく、上記コマンドから起動してください。
+開発中のアプリは `http://localhost:1420` のViteサーバーを表示します。起動したPowerShellを終了するとサーバーも停止するため、アプリには接続拒否画面が表示されます。`src-tauri\target\debug\mdvisualizer.exe` を単独で起動するのではなく、上記コマンドから起動してください。
 
-リリース版は `.md`、`.markdown`、`.svg`、`.mmd`、`.mermaid` の関連付けを登録します。ファイルをダブルクリックすると、Markdown、SVG、Mermaid文書として開きます。
+リリース版は `.md`、`.markdown`、`.svg`、`.mmd`、`.mermaid`、`.drawio`、`.tsv` の関連付けを登録します。WindowsでMdVisualizerを開くアプリに選ぶと、対応する文書として開きます。MSIXでは形式別アイコンを登録します。
 
 ### SharePoint Markdown（spmd）
 
@@ -63,9 +65,9 @@ npm.cmd run tauri -- dev -- -- C:\Project\README.md C:\Project\design.markdown
 spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/README.md
 ```
 
-アプリケーションIDとマルチテナント設定はMarkdownViewerに組み込み済みです。利用者がMicrosoft EntraのテナントIDやアプリケーションIDを設定する必要はありません。
+アプリケーションIDとマルチテナント設定はMdVisualizerに組み込み済みです。利用者がMicrosoft EntraのテナントIDやアプリケーションIDを設定する必要はありません。
 
-初回アクセス時は既定ブラウザーにMicrosoftのサインインページを開き、MarkdownViewerに表示されたデバイスコードを入力して、所属組織のMicrosoftアカウントで認証します。外部テナントのユーザーも利用できますが、所属組織の同意ポリシーによっては管理者による承認が必要です。アクセストークンはアプリのプロセス内だけに保持し、更新トークンはWindows資格情報マネージャーへ保存します。
+初回アクセス時は既定ブラウザーにMicrosoftのサインインページを開き、MdVisualizerに表示されたデバイスコードを入力して、所属組織のMicrosoftアカウントで認証します。外部テナントのユーザーも利用できますが、所属組織の同意ポリシーによっては管理者による承認が必要です。アクセストークンはアプリのプロセス内だけに保持し、更新トークンはWindows資格情報マネージャーへ保存します。
 
 `spmd:` URIにはアクセストークン、共有トークン、クエリ文字列を含めないでください。SharePoint文書では再読み込み、印刷、別窓、同じSharePoint内の相対Markdownリンクを使用できます。同じサイトかつ同じドキュメントライブラリ内の相対PNG／SVGは認証付きで表示でき、拡大表示の「画像編集」から元画像へ保存できます。SharePoint Markdown本文、ローカルファイル監視、診断、外部エディターは対象外です。
 
@@ -88,7 +90,7 @@ pwsh -NoProfile -File .\scripts\install-msix.ps1 -TrustDevelopmentCertificate
 
 #### 開発PCの共通署名
 
-この署名証明書はMarkdownViewer専用ではなく、開発PCで作成するStore外MSIX全体に使う
+この署名証明書はMdVisualizer専用ではなく、開発PCで作成するStore外MSIX全体に使う
 `KotorinChunChun`共通署名です。Publisherは`CN=KotorinChunChun`、秘密鍵は各PCの
 `CurrentUser\My`に保持し、共通設定`%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json`の
 拇印で証明書を選択します。PFXをリポジトリや各アプリへコピーしません。
@@ -109,11 +111,11 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\import-msix-signing-bundle.ps1 `
   -TemplateDirectory C:\develop\default\dev\templates
 ```
 
-移植後のMarkdownViewerの署名は、リポジトリルートで次を実行します。テスト、Releaseビルド、MSIX署名、
+移植後のMdVisualizerの署名は、リポジトリルートで次を実行します。テスト、Releaseビルド、MSIX署名、
 beta用App Installer生成まで行います。
 
 ```powershell
-pwsh -NoProfile -File .\scripts\publish-release-MarkdownViewer-all.ps1 `
+pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer-all.ps1 `
   -Mode Build -Channel beta -ReleaseIntentConfirmed
 ```
 
@@ -137,8 +139,8 @@ TrustedPeopleへの登録、インストール、公開は別途明示した場�
 
 ```powershell
 pwsh -NoProfile -File .\scripts\install-msix.ps1 `
-  -MsixPath .\release\msix\MarkdownViewer_<バージョン>_x64.msix `
-  -CertificatePath .\release\msix\MarkdownViewer.cer `
+  -MsixPath .\release\msix\MdVisualizer_<バージョン>_x64.msix `
+  -CertificatePath .\release\msix\MdVisualizer.cer `
   -TrustDevelopmentCertificate
 ```
 
@@ -260,7 +262,7 @@ release EXEで10,000行のMarkdownを5回起動した測定では、起動時間
 
 ## セキュリティとデータ
 
-Markdown 内の HTML は許可リストで処理し、イベント属性・任意 style・危険な URL スキームを除去します。外部リンクは HTTP(S) と `mailto:` のみを OS へ渡します。`spmd:`はMarkdownViewer内の文書移動としてだけ処理し、SharePoint Onlineのホスト、`/sites/`または`/teams/`パス、Markdown拡張子をRust側でも検証します。
+Markdown 内の HTML は許可リストで処理し、イベント属性・任意 style・危険な URL スキームを除去します。外部リンクは HTTP(S) と `mailto:` のみを OS へ渡します。`spmd:`はMdVisualizer内の文書移動としてだけ処理し、SharePoint Onlineのホスト、`/sites/`または`/teams/`パス、Markdown拡張子をRust側でも検証します。
 
 PowerShellコードは`powershell`、`pwsh`、`ps1`と明示されたフェンスだけが対象です。コードと作業フォルダーを表示する確認操作なしには実行せず、Markdown所在フォルダー固定、非対話、30秒、入力256KiB、出力1MiBの上限をbackendでも検証します。
 

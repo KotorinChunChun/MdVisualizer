@@ -1,10 +1,16 @@
-import { Children, createContext, type ReactElement, type ReactNode, useContext, useEffect, useState } from "react";
+import { Children, createContext, isValidElement, type ReactElement, type ReactNode, useContext, useEffect, useState } from "react";
 import { collapsedForFoldCommand, FOLD_COMMAND_EVENT, type FoldCommand, type FoldCommandName } from "../lib/foldSections";
 
 const FoldHeadingContext = createContext(false);
 
 export function useIsFoldHeading(): boolean {
   return useContext(FoldHeadingContext);
+}
+
+function accessibleText(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(accessibleText).join("");
+  return isValidElement<{ children?: ReactNode }>(node) ? accessibleText(node.props.children) : "";
 }
 
 interface FoldSectionProps {
@@ -61,14 +67,13 @@ export function FoldSection({ children, foldId = "", collapsed: controlledCollap
         <button
           type="button"
           className="fold-toggle"
+          aria-label={`${collapsed ? "見出しを展開" : "見出しを折りたたむ"}: ${accessibleText(heading?.props.children)}`}
           aria-expanded={!collapsed}
           onClick={() => { onManualOverride?.(foldId); setCollapsed(!collapsed); }}
         >
           <span aria-hidden="true" className="fold-chevron">{collapsed ? "▶" : "▼"}</span>
-          <span className="fold-heading__content">
-            <FoldHeadingContext.Provider value>{heading?.props.children}</FoldHeadingContext.Provider>
-          </span>
         </button>
+        <span className="fold-heading__content"><FoldHeadingContext.Provider value>{heading?.props.children}</FoldHeadingContext.Provider></span>
       </HeadingTag>
       <div hidden={collapsed} className="fold-content">{content}</div>
     </section>

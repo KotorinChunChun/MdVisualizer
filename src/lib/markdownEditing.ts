@@ -24,4 +24,4 @@ export {
   type MarkdownListLine,
   type MarkdownHeadingBlock,
   type StructuredListKind,
-} from "@markdown-viewer/markdown-core";
+} from "@mdvisualizer/markdown-core";

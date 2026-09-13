@@ -4,7 +4,7 @@ import {
   isShortcutKeySource,
   normalizeShortcutKeyToken,
   parseShortcutKeySequence,
-} from "@markdown-viewer/markdown-core";
+} from "@mdvisualizer/markdown-core";
 
 describe("shortcut key rendering", () => {
   it("normalizes the requested modifier names", () => {
@@ -36,13 +36,24 @@ describe("shortcut key rendering", () => {
   });
 
   it("accepts symbol keys and Japanese operation names after a leading modifier", () => {
-    for (const source of ["Ctrl+.", "Ctrl+[", "Ctrl+]", "Ctrl+マウスホイール", "Alt+←", "Windows++", "Ctrl+,"]) {
+    for (const source of ["Ctrl+.", "Ctrl+[", "Ctrl+]", "Ctrl+マウスホイール", "Alt+←", "Windows++", "Ctrl++", "Ctrl+,"]) {
       expect(isShortcutKeySource(source), source).toBe(true);
     }
     expect(parseShortcutKeySequence("Ctrl+マウスホイール")?.label).toBe("Ctrl + マウスホイール");
     expect(parseShortcutKeySequence("Alt+←")?.groups[0].tokens[1]).toEqual({ label: "←", kind: "key" });
     expect(parseShortcutKeySequence("Windows++")?.groups[0].tokens[1]).toEqual({ label: "+", kind: "key" });
+    expect(parseShortcutKeySequence("Ctrl++")?.label).toBe("Ctrl + +");
     expect(parseShortcutKeySequence("Ctrl+C → Ctrl+V")?.separators).toEqual(["→"]);
+  });
+
+  it("gives inline key labels and plus separators independent visual space", () => {
+    const svg = buildShortcutKeySvg("Ctrl+X", { variant: "inline" });
+    const keyFaces = [...svg.matchAll(/class="shortcut-key-svg__face" x="([^"]+)"[^>]*width="([^"]+)"/g)]
+      .map((match) => ({ x: Number(match[1]), width: Number(match[2]) }));
+    expect(svg.match(/class="shortcut-key-svg__label"[^>]*font-size="([^"]+)"/)?.[1]).toBe("24");
+    expect(svg.match(/class="shortcut-key-svg__separator"[^>]*font-size="([^"]+)"[^>]*>\+<\/text>/)?.[1]).toBe("24");
+    expect(keyFaces).toHaveLength(2);
+    expect(keyFaces[1].x - (keyFaces[0].x + keyFaces[0].width)).toBeGreaterThanOrEqual(24 * 0.75 + 16);
   });
 
   it("builds accessible SVG for inline and block variants", () => {
