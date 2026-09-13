@@ -288,6 +288,7 @@ pub fn run() {
             codex::codex_set_log_limit,
             codex_sessions::load_codex_sessions,
             codex_sessions::upsert_codex_session,
+            codex_sessions::delete_codex_session,
             codex_sessions::set_codex_session_retention,
             codex_skills::codex_list_skills,
             codex_skills::codex_save_skill,
