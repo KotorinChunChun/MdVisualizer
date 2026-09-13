@@ -96,7 +96,8 @@ function rewriteEdges(model,nextEdges,removed=new Set()){
  const newEdges=nextEdges.filter(e=>!touched.has(e.line));if(newEdges.length)changes.push({from:model.source.length,to:model.source.length,text:nl+newEdges.map(e=>'    '+edgeCode(model.type,e)).join(nl)});
  return patch(model.source,changes);
 }
-export function deleteNodes(source,ids){
+export function deleteNodes(source,ids){const result=deleteNodesRaw(source,ids);if(!ids.length||parseModel(source).type!=='flowchart')return result;const nl=eol(source);return result.split(/\r?\n/).filter(line=>line.trim()).join(nl)+(source.endsWith(nl)?nl:'');}
+function deleteNodesRaw(source,ids){
  const m=parseModel(source),removed=new Set(ids),nl=eol(source);if(!ids.length)return source;
  if(hierarchy.includes(m.type)){const ls=source.split('\n');for(const n of m.nodes.filter(n=>removed.has(n.id)).sort((a,b)=>b.line-a.line)){const children=m.nodes.filter(c=>c.line>n.line&&c.line<=n.subtreeEnd);const childIndent=children.length?Math.min(...children.map(c=>c.indent)):n.indent+2;for(let i=n.line;i<n.subtreeEnd;i++)if(ls[i].trim())ls[i]=ls[i].slice(Math.max(0,childIndent-n.indent));ls[n.line-1]='';}let result=ls.filter((l,i)=>i===0||l.trim()).join('\n');if(['mindmap','ishikawa'].includes(m.type)){const rows=result.split('\n');if(rows.length>2){const firstIndent=rows[1].match(/^\s*/)[0].length;for(let i=2;i<rows.length;i++){const indent=rows[i].match(/^\s*/)[0].length;if(indent<=firstIndent){for(let j=i;j<rows.length;j++)rows[j]='  '+rows[j];break;}}result=rows.join('\n');}}return result;}
  if(!m.edges.length&&!flowTypes.includes(m.type)){const ranges=m.nodes.filter(n=>removed.has(n.id)).map(n=>({from:m.lines[n.line-1].from,to:n.blockTo??m.lines[n.line-1].to,text:''}));let result=patch(source,ranges);if(m.type==='venn')result=result.split('\n').filter(l=>!/^\s*union\b/.test(l)||!ids.some(id=>new RegExp(`\\b${escapeRE(id)}\\b`).test(l))).join('\n');if(m.type==='packet'){let at=0;result=result.split('\n').map(l=>l.replace(/^(\s*)(\d+)(?:-(\d+))?\s*:/,(_,space,a,b)=>{const width=Number(b??a)-Number(a);const first=at;at+=width+1;return `${space}${first}${width?'-'+(at-1):''}:`;})).join('\n');}if(m.type==='gitGraph'&&!/^\s*commit\b/m.test(result.split(/\bbranch\b/)[0]))result=result.replace(/^\s*merge\s+.*$/gm,'');return result;}
@@ -211,7 +212,7 @@ export function renameFlowIds(source,rows){
  const items=[...m.nodes,...m.groups].filter((n,i,a)=>a.findIndex(x=>x.id===n.id)===i),map=new Map(rows.map(r=>[r.id,r.next]));
  if(rows.length!==items.length||map.size!==items.length||items.some(n=>!map.has(n.id)))throw Error('変数一覧に漏れまたは重複があります');
  const reserved=new Set(['end','subgraph','flowchart','graph','direction','style','class','classDef','click','linkStyle','default']);
- for(const next of map.values())if(!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(next)||reserved.has(next))throw Error('使用できない変数名です: '+next);
+ for(const [old,next] of map)if(next!==old&&(!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(next)||reserved.has(next)))throw Error('使用できない変数名です: '+next);
  if(new Set(map.values()).size!==map.size)throw Error('変更後の変数名が重複しています');
  const changes=[],seen=new Set(),add=(from,to,id)=>{if(!map.has(id)||seen.has(from))return;seen.add(from);changes.push({from,to,text:map.get(id)});};
  for(const n of m.nodes)for(const r of n.refs)add(r.from,r.from+n.id.length,n.id);
