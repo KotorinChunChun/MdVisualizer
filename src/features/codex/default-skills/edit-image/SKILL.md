@@ -3,7 +3,7 @@ name: edit-image
 description: 利用者の任意の指示に沿ってPNG画像を編集する
 metadata:
   mdvisualizer:
-    label: Codexに画像の編集を依頼
+    label: AIに画像の編集を依頼
     enabled: true
     mode: selection
     inputs: [image]

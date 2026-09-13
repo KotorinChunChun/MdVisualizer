@@ -22,8 +22,8 @@ async function send() {
   await waitFor(() => expect(screen.getByRole("button", { name: "送信（Ctrl+Enter）" })).not.toBeDisabled());
   fireEvent.click(screen.getByRole("button", { name: "送信（Ctrl+Enter）" }));
 }
-async function openDiagram(action = "Codexで見た目を改善") {
-  fireEvent.click(screen.getByRole("button", { name: "Codexに図の編集を依頼" }));
+async function openDiagram(action = "AIで見た目を改善") {
+  fireEvent.click(screen.getByRole("button", { name: "AIに図の編集を依頼" }));
   fireEvent.click(await screen.findByRole("menuitem", { name: action }));
   fireEvent.click(screen.getByRole("menuitem", { name: "新しい会話を開始" }));
 }
@@ -44,7 +44,7 @@ describe("図メニューのCodex連携", () => {
     vi.mocked(generateCodex).mockResolvedValue({ answer: "作成しました", replacement: xml });
     const save = vi.fn().mockResolvedValue(true);
     render(<DiagramCodexAction kind="drawio" source="" onSave={save} />);
-    await openDiagram("Codexに図の編集を依頼");
+    await openDiagram("AIに図の編集を依頼");
     await screen.findByLabelText("指示");
     await waitFor(() => expect(screen.getByLabelText("指示")).not.toBeDisabled());
     fireEvent.change(screen.getByLabelText("指示"), { target: { value: "APIの構成図を描いて" } });
@@ -80,7 +80,7 @@ describe("図メニューのCodex連携", () => {
     render(<DiagramCodexAction kind="svg" source={source} onSave={save} />);
     await openDiagram(); await send();
     await waitFor(() => expect(generateCodex).toHaveBeenCalled());
-    fireEvent.click(screen.getByLabelText("Codexパネルを閉じる"));
+    fireEvent.click(screen.getByLabelText("AIパネルを閉じる"));
     await act(async () => { resolve({ answer: "遅い応答", replacement }); });
     expect(cancelCodex).toHaveBeenCalled(); expect(save).not.toHaveBeenCalled();
   });
@@ -90,8 +90,8 @@ describe("図メニューのCodex連携", () => {
     vi.mocked(saveMarkdown).mockResolvedValue({ status: "conflict", latest: { ...document, revision: "r2" } });
     render(<FileSvgCodexAction path={document.path} />);
     expect(loadMarkdown).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("Codexに図の編集を依頼"));
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Codexで見た目を改善" }));
+    fireEvent.click(screen.getByText("AIに図の編集を依頼"));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "AIで見た目を改善" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "現在の会話に追加" }));
     await send(); await screen.findByText("採用");
     expect(saveMarkdown).not.toHaveBeenCalled();

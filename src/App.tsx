@@ -230,6 +230,7 @@ export function App() {
     setFoldStates,
     externalApps,
     presentationLineThreshold,
+    codeBlockFoldMinLines,
     imageA4TargetWidth,
     imageEqualPadding,
     clipboardImage,
@@ -2308,7 +2309,7 @@ export function App() {
             <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
             <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
           </div>
-          <button type="button" style={{ marginLeft: 8 }} aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>
+          <button type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>
         </div>
         {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>
@@ -2333,7 +2334,7 @@ export function App() {
         <button ref={codexButtonRef} className="codex-toolbar-action" type="button" disabled={printing} aria-expanded={codexOpen} onClick={() => {
           if (!codexOpen && canEditActive && editorMode === "preview") changeEditorMode("split");
           setCodexOpen(!codexOpen);
-        }}>Codex</button>
+        }}>AI</button>
       </div>}
 
       <div className="ai-document-layout">
@@ -2383,6 +2384,8 @@ export function App() {
           onCodexConsult={!printing && !activeTab.saving ? (target) => { setCodexTarget(target); setCodexOpen(true); } : undefined}
           ref={editorRef}
           documentId={`${activeTab.id}:${activeTab.generation}`}
+          viewStateKey={activeTab.path}
+          codeBlockFoldMinLines={codeBlockFoldMinLines}
           value={activeTab.draft}
           dirty={activeTab.dirty}
           saving={activeTab.saving}
@@ -2419,6 +2422,7 @@ export function App() {
           <SettingsPanel
             apps={externalApps}
             presentationLineThreshold={presentationLineThreshold}
+            codeBlockFoldMinLines={codeBlockFoldMinLines}
             imageA4TargetWidth={imageA4TargetWidth}
             imageEqualPadding={imageEqualPadding}
             clipboardImage={clipboardImage}
@@ -2501,7 +2505,7 @@ export function App() {
               setCodexOpen(true);
             } : undefined}
             onCodexConsult={canEditActive && !printing && !activeTab.saving ? (target) => {
-              setCodexTarget(target);
+              setCodexTarget({ ...target, documentId: `${activeTab.id}:${activeTab.generation}` });
               if (editorMode === "preview") changeEditorMode("split");
               setCodexOpen(true);
             } : undefined}
@@ -2556,15 +2560,15 @@ export function App() {
         documentPath={activeTab?.document?.path ?? ""}
         baseDir={activeTab?.document?.base_dir ?? ""}
         imageTarget={codexImageTarget?.documentId === activeTab?.id ? codexImageTarget : null}
-        consultationTarget={codexTarget?.documentId === activeTab?.id ? codexTarget : null}
+        consultationTarget={activeTab && codexTarget?.documentId === `${activeTab.id}:${activeTab.generation}` ? codexTarget : null}
         stagedImages={Object.fromEntries((activeTab?.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
         documentText={activeTab?.draft ?? ""}
         available={Boolean(canEditActive && editorMode !== "preview" && !activeTab?.saving)}
-        getSnapshot={() => documentDiff && activeTab ? { documentId: activeTab.id, content: activeTab.draft, from: 0, to: activeTab.draft.length } : editorRef.current?.snapshot() ?? null}
+        getSnapshot={() => documentDiff && activeTab ? { documentId: `${activeTab.id}:${activeTab.generation}`, content: activeTab.draft, from: 0, to: activeTab.draft.length } : editorRef.current?.snapshot() ?? null}
         applyProposal={(base, replacement) => {
           if (!canEditActive || activeTab?.saving) return false;
           if (documentDiff && activeTab) {
-            if (base.documentId !== activeTab.id || base.content !== activeTab.draft || base.from < 0 || base.to > base.content.length) return false;
+            if (base.documentId !== `${activeTab.id}:${activeTab.generation}` || base.content !== activeTab.draft || base.from < 0 || base.to > base.content.length) return false;
             dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content: `${base.content.slice(0, base.from)}${replacement.replace(/\r\n?|\n/g, "\n")}${base.content.slice(base.to)}` });
             return true;
           }

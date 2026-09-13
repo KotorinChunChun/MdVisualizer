@@ -50,6 +50,13 @@ describe("useApplicationSettings print migration", () => {
     expect(result.current.printStyle).toMatchObject({ foldMode: "all", showTitle: true, showFilename: true, showDate: true });
   });
 
+  it("コード折畳の行数設定を再読込する", async () => {
+    mocks.loadSettingsStatus.mockResolvedValue({ settings: { codeBlockFoldMinLines: 24 }, recoveredFiles: [] });
+    const setToast = vi.fn();
+    const { result } = renderHook(() => useApplicationSettings(setToast));
+    await waitFor(() => expect(result.current.codeBlockFoldMinLines).toBe(24));
+  });
+
   it("applies normalized print CSS variables without changing document view state", async () => {
     const setToast = vi.fn();
     const { result } = renderHook(() => useApplicationSettings(setToast));

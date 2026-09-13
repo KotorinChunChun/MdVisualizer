@@ -11,8 +11,8 @@ export function CodexSkillSettings() {
   async function run(action: () => Promise<unknown>) { setBusy(true); setError(""); try { await action(); setStatus("設定を反映しました。"); } catch (e) { setError(String(e)); } finally { setBusy(false); } }
   function setDraft(next: string) { setSource(next); if (selected) setDrafts((current) => ({ ...current, [selected]: next })); }
   function update(patch: Partial<typeof skill.config>) { setDraft(updateSkillConfig(skill, { ...skill.config, ...patch })); }
-  return <section className="codex-skill-settings" aria-label="Codexのスキルとメニュー"><h2>Codex — スキルとメニュー</h2>
-    <p>スキルを選び、対象と表示場所を設定してください。本文はCodexに送るプロンプトです。</p><code>{skillDirectory()}</code>
+  return <section className="codex-skill-settings" aria-label="AIのスキルとメニュー"><h2>AI — スキルとメニュー</h2>
+    <p>スキルを選び、対象と表示場所を設定してください。本文はAIに送るプロンプトです。</p><code>{skillDirectory()}</code>
     <div><button type="button" onClick={() => void run(() => invoke("codex_open_skills_folder"))}>フォルダーを開く</button><button type="button" onClick={() => void run(reloadSkills)}>再読み込み</button><button type="button" onClick={() => { const id = `custom-${Date.now()}`; setSelected(id); setSource(`---\nname: ${id}\ndescription: 新しいスキル\n---\n\n対象について日本語で回答してください。\n`); }}>スキルを追加</button></div>
     <div className="codex-skill-settings__columns"><aside><input aria-label="スキルを検索" value={search} onChange={(e) => setSearch(e.target.value)} />{skills.filter(s => `${s.name} ${s.description}`.includes(search)).map(s => <button key={s.id} type="button" aria-pressed={s.id === selected} onClick={() => { setSelected(s.id); setSource(drafts[s.id] ?? s.source); setStatus(""); }}>{s.config.label}{s.error ? "（エラー）" : !s.config.enabled ? "（無効・未設定）" : ""}</button>)}</aside>
     {selected && <fieldset disabled={busy}><legend>{selected}</legend><label>表示名<input value={skill.config.label} onChange={e => update({ label: e.target.value })}/></label><label><input type="checkbox" checked={skill.config.enabled} onChange={e => update({ enabled: e.target.checked })}/>有効</label>

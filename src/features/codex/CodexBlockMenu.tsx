@@ -22,11 +22,11 @@ export function CodexBlockMenu({ target, onConsult }: { target: CodexTarget; onC
     setPosition(undefined); setSelected(null);
   }
   return <>
-    <button type="button" className="diagram-action-button" ref={trigger} aria-label="Codexブロック操作" aria-haspopup="menu" aria-expanded={!!position} onPointerDown={event => event.stopPropagation()} onClick={() => {
+    <button type="button" className="diagram-action-button" ref={trigger} aria-label="AIブロック操作" aria-haspopup="menu" aria-expanded={!!position} onPointerDown={event => event.stopPropagation()} onClick={() => {
       const rect = trigger.current?.getBoundingClientRect();
       setSelected(null); setPosition(position ? undefined : rect ? { top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) } : undefined);
-    }}>Codex</button>
-    {position && createPortal(<div className="responsive-toolbar__menu" role="menu" aria-label="Codexブロック操作" style={position} onPointerDown={event => event.stopPropagation()}>
+    }}>AI</button>
+    {position && createPortal(<div className="responsive-toolbar__menu" role="menu" aria-label="AIブロック操作" style={position} onPointerDown={event => event.stopPropagation()}>
       {selected ? <><button type="button" role="menuitem" onClick={() => choose("add")}>現在の会話に追加</button><button type="button" role="menuitem" onClick={() => choose("new")}>新しい会話を開始</button></> : actions.map(skill => <button type="button" role="menuitem" key={skill.id} onClick={() => setSelected(skill)}>{skill.config.label}</button>)}
     </div>, document.body)}
   </>;

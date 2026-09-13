@@ -32,9 +32,9 @@ for (const text of Object.values(pkg.scripts)) {
   for (const match of text.matchAll(/\.\/scripts\/([^ ]+\.ps1)/g)) assert.ok(fs.existsSync(path.join(root, 'scripts', match[1])), match[1]);
 }
 const page = read('packaging/site/MdVisualizer.html');
-assert.ok(page.includes('v0.0.16 ベータ版'));
+assert.ok(page.includes(`v${pkg.version} ベータ版`));
 assert.doesNotMatch(page, /0\.0\.15|旧版|MarkdownViewer|公開準備中/);
-assert.ok(page.includes('MdVisualizer_0.0.16.0_x64.msix'));
+assert.ok(page.includes(`MdVisualizer_${pkg.version}.0_x64.msix`));
 assert.ok(page.includes('href="./beta/MdVisualizer.appinstaller'));
 assert.ok(!page.includes(pkg.repository)); // 非公開リポジトリを公開サイトに案内しない。
 assert.match(read('packaging/site/.htaccess'), /RedirectMatch 301/);
@@ -48,7 +48,7 @@ for (const file of ['packaging/site/index.html', 'packaging/site/MdVisualizer.ht
     if (target === './assets/httpselector-icon.png' || target === './HttpSelector.html' || target.startsWith('./ScriptSync/')) continue;
     if (/^(?:https?:|mailto:)/.test(target)) continue;
     if (/\/(?:beta|stable)\//.test(target)) {
-      assert.ok(['MdVisualizer.appinstaller', 'MdVisualizer_0.0.16.0_x64.msix', 'MdVisualizer.cer'].includes(path.basename(target)), target);
+      assert.ok(['MdVisualizer.appinstaller', `MdVisualizer_${pkg.version}.0_x64.msix`, `MdVisualizer_${pkg.version}_x64_portable.zip`, 'MdVisualizer.cer'].includes(path.basename(target)), target);
       continue;
     }
     assert.ok(fs.existsSync(path.resolve(root, path.dirname(file), target)), `${file}: ${target}`);

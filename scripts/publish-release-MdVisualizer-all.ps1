@@ -113,6 +113,7 @@ function Invoke-BuildRelease {
     & (Join-Path $PSScriptRoot "package-MdVisualizer-appinstaller.ps1") `
         -Channel $SelectedChannel `
         -ConfigPath $configuration.ConfigPath
+    & (Join-Path $PSScriptRoot "package-MdVisualizer-portable.ps1") -ReleaseIntentConfirmed
 }
 
 function Invoke-StageRelease {
@@ -128,6 +129,9 @@ function Invoke-StageRelease {
     & (Join-Path $PSScriptRoot "verify-msix-release.ps1") `
         -Channel $SelectedChannel `
         -ConfigPath $configuration.ConfigPath
+    $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $SelectedChannel
+    $portableName = "MdVisualizer_$($artifacts.ApplicationVersion)_x64_portable.zip"
+    Copy-Item -LiteralPath (Join-Path $projectRoot "release/$portableName") -Destination (Join-Path $artifacts.Channel.SiteDirectory $portableName) -Force
 }
 
 function Invoke-PublishRelease {
@@ -145,15 +149,26 @@ function Invoke-PublishRelease {
     & (Join-Path $PSScriptRoot "verify-msix-release.ps1") `
         -Channel $SelectedChannel `
         -ConfigPath $configuration.ConfigPath
-    Invoke-CheckedExternalCommand `
-        -FilePath $resolvedPython `
-        -ArgumentList @($configuration.FtpUploadScriptPath, "--dry-run", $configuration.SiteDirectory) `
-        -WorkingDirectory $configuration.WebsiteProjectDirectory
+    # 配布ルート全体を送ると他製品の未公開ファイルも公開されるため、製品の正本と成果物に限定する。
+    $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $SelectedChannel
+    $publishFiles = @(
+        Get-ChildItem -LiteralPath $configuration.SiteSourceDirectory -File -Recurse -Force | ForEach-Object {
+            $relativePath = [IO.Path]::GetRelativePath($configuration.SiteSourceDirectory, $_.FullName)
+            if ($relativePath -ne 'index.html') { Join-Path $configuration.SiteDirectory $relativePath }
+        }
+        $artifacts.StagedPackagePath
+        $artifacts.StagedCertificatePath
+        $artifacts.StagedAppInstallerPath
+        Join-Path $artifacts.Channel.SiteDirectory "MdVisualizer_$($artifacts.ApplicationVersion)_x64_portable.zip"
+    )
+    foreach ($publishFile in $publishFiles) {
+        if (!(Test-Path -LiteralPath $publishFile -PathType Leaf)) { throw "公開対象がありません: $publishFile" }
+        Invoke-CheckedExternalCommand -FilePath $resolvedPython -ArgumentList @($configuration.FtpUploadScriptPath, "--dry-run", $publishFile) -WorkingDirectory $configuration.WebsiteProjectDirectory
+    }
     Write-Host "FTP dry-run passed. Starting explicitly confirmed publication..."
-    Invoke-CheckedExternalCommand `
-        -FilePath $resolvedPython `
-        -ArgumentList @($configuration.FtpUploadScriptPath, $configuration.SiteDirectory) `
-        -WorkingDirectory $configuration.WebsiteProjectDirectory
+    foreach ($publishFile in $publishFiles) {
+        Invoke-CheckedExternalCommand -FilePath $resolvedPython -ArgumentList @($configuration.FtpUploadScriptPath, $publishFile) -WorkingDirectory $configuration.WebsiteProjectDirectory
+    }
     & (Join-Path $PSScriptRoot "verify-published-msix-release.ps1") `
         -Channel $SelectedChannel `
         -ConfigPath $configuration.ConfigPath

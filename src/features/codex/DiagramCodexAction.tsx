@@ -31,8 +31,8 @@ export function DiagramCodexAction({ kind, source, onSave, label, theme = "dark"
   function start(action: "add" | "new") { setConversationAction(action); setMenuOpen(false); setOpen(true); }
   if (!available.length) return null;
   return <>
-    <button ref={trigger} className="diagram-action-button codex-diagram-action" type="button" aria-haspopup="menu" aria-expanded={menuOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => { const bounds = trigger.current?.getBoundingClientRect(); if (bounds) setMenuPosition({ top: bounds.bottom + 4, right: Math.max(8, window.innerWidth - bounds.right) }); setSkillId(undefined); setMenuOpen((value) => !value); }}>Codexに図の編集を依頼</button>
-    {menuOpen && menuPosition && createPortal(<div className="responsive-toolbar__menu" role="menu" aria-label="図のCodex操作" style={menuPosition} onPointerDown={(event) => event.stopPropagation()}>
+    <button ref={trigger} className="diagram-action-button codex-diagram-action" type="button" aria-haspopup="menu" aria-expanded={menuOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => { const bounds = trigger.current?.getBoundingClientRect(); if (bounds) setMenuPosition({ top: bounds.bottom + 4, right: Math.max(8, window.innerWidth - bounds.right) }); setSkillId(undefined); setMenuOpen((value) => !value); }}>AIに図の編集を依頼</button>
+    {menuOpen && menuPosition && createPortal(<div className="responsive-toolbar__menu" role="menu" aria-label="図のAI操作" style={menuPosition} onPointerDown={(event) => event.stopPropagation()}>
       {skillId ? <><button type="button" role="menuitem" onClick={() => start("add")}>現在の会話に追加</button><button type="button" role="menuitem" onClick={() => start("new")}>新しい会話を開始</button><button type="button" role="menuitem" onClick={() => setSkillId(undefined)}>戻る</button></> : available.map((skill) => <button key={skill.id} type="button" role="menuitem" onClick={() => setSkillId(skill.id)}>{skill.config.label}</button>)}
     </div>, document.body)}
     {open && createPortal(<DiagramCodexDialog kind={kind} source={source} onSave={onSave} label={label ?? kind} theme={theme} onClose={() => setOpen(false)} initialSkillId={skillId} initialConversationAction={conversationAction} renderedSvg={renderedSvg} />, document.body)}
@@ -47,7 +47,7 @@ export function DiagramCodexDialog({ kind, source, onSave, label, theme, onClose
   const id = useRef(crypto.randomUUID());
   const latest = useRef({ source, onSave });
   latest.current = { source, onSave };
-  return <div ref={ref} role="dialog" aria-modal="true" aria-label={`Codexで${kind === "svg" ? "SVG" : kind === "mermaid" ? "Mermaid" : "draw.io"}を編集`} className="codex-diagram-dialog" onKeyDown={(event) => event.stopPropagation()}>
+  return <div ref={ref} role="dialog" aria-modal="true" aria-label={`AIで${kind === "svg" ? "SVG" : kind === "mermaid" ? "Mermaid" : "draw.io"}を編集`} className="codex-diagram-dialog" onKeyDown={(event) => event.stopPropagation()}>
     <CodexPanel open onClose={onClose} documentName={label} documentPath={documentPath} documentText={source} available diagramKind={kind} initialSkillId={initialSkillId} initialConversationAction={initialConversationAction} renderedSvg={renderedSvg}
       getSnapshot={() => ({ documentId: id.current, content: latest.current.source, from: 0, to: latest.current.source.length })}
       applyProposal={() => false}

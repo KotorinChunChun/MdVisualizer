@@ -16,6 +16,8 @@ export interface CodexConversationMessage {
   role: CodexConversationRole;
   text: string;
   attachmentIds: string[];
+  /** 送信時点の表示名。添付を後で改名しても履歴の識別名を変えない。 */
+  attachmentLabels?: Record<string, string>;
   timestamp: string;
 }
 
@@ -26,6 +28,15 @@ export interface CodexConversationDraft {
   attachmentIds: string[];
   /** 会話内で対象本文を識別する表示名。旧会話では未設定のまま扱う。 */
   targetLabel?: string;
+  /** 複数の次回送信対象。targetSnapshot は旧会話との互換性のため残す。 */
+  textTargets?: CodexConversationTextTarget[];
+}
+
+export interface CodexConversationTextTarget {
+  id: string;
+  label: string;
+  snapshot: EditorSnapshot;
+  addedAt: string;
 }
 
 export interface CodexConversation {

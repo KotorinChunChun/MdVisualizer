@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CodexImageEdit } from "./CodexImageEdit";
@@ -104,6 +104,28 @@ describe("CodexImageEdit", () => {
     expect(onGenerated).toHaveBeenCalledTimes(1);
     expect(onGenerated).toHaveBeenCalledWith("青くする");
     expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("初回のAI利用同意が拒否された画像編集は送信しない", async () => {
+    const onRequestAuthorization = vi.fn(async () => false);
+    render(<CodexImageEdit {...baseProps()} onRequestAuthorization={onRequestAuthorization} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "編集指示" }), { target: { value: "青くする" } });
+    fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
+    await waitFor(() => expect(onRequestAuthorization).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(invoke)).not.toHaveBeenCalledWith("codex_edit_image", expect.anything());
+    expect(screen.getByRole("textbox", { name: "編集指示" })).toHaveValue("青くする");
+  });
+
+  it("同意待ち中に対象画像が変わった場合は古い画像を送信しない", async () => {
+    let authorize!: (value: boolean) => void;
+    const onRequestAuthorization = vi.fn(() => new Promise<boolean>(resolve => { authorize = resolve; }));
+    const view = render(<CodexImageEdit {...baseProps("a.png")} onRequestAuthorization={onRequestAuthorization} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "編集指示" }), { target: { value: "青くする" } });
+    fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
+    await waitFor(() => expect(onRequestAuthorization).toHaveBeenCalledTimes(1));
+    view.rerender(<CodexImageEdit {...baseProps("b.png")} onRequestAuthorization={onRequestAuthorization} />);
+    await act(async () => { authorize(true); });
+    expect(vi.mocked(invoke)).not.toHaveBeenCalledWith("codex_edit_image", expect.anything());
   });
 
   it("送信中は状態表示と停止を表示し、停止後の結果を無視する", async () => {

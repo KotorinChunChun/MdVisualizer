@@ -240,6 +240,8 @@ Diff画面:
 ## 12. Keyboard・アクセシビリティ
 
 - native button/input/selectを使用し、div role buttonを増やさない。
+- ボタンの見た目は共通CSSまたは用途別の共通classで定義し、`<button>`にインラインstyleを指定しない。文書ツールバーは`document-action-button`を使用する。
+- `npm test`の前に`test:button-style-rules`を実行し、hover・focus・disabledの共通状態、文書ツールバー規則、ボタンへのインラインstyleを検査する。
 - tab順は画面の読み順と一致させ、正の`tabIndex`を使わない。
 - modal/drawerは共通focus trap、初期focus、Esc、起点復帰を使用する。
 - side panelのtabはarrow key、内容は通常Tabで移動する。
@@ -278,10 +280,16 @@ toastだけで重要状態を伝えない。競合・offline・未適用AI提案
 - beginner scenario「開く→検索→編集→保存」を5操作群以内で完了する。
 - advanced scenario「診断→該当箇所→Diff→外部図編集」をkeyboard中心で完了する。
 - 同じ操作名と保存意味がdesktop/SPFxで一致する。
-- GUI変更の実画面確認は当該PCでは行わず、別PCまたは専用runnerで証跡保存する。
+- GUI変更の実画面確認は最新のAGENTS.mdの方針に従い、テスト文書で実施して証跡を保存する。
 
 ## 16. 将来拡張案
 
 - 利用状況telemetryは採用しない方針のため、改善調査は任意のユーザーテストとissue templateで行う。
 - command paletteは内部registryの有効性を確認後に別途採否を決める。
 - 高コントラスト専用theme、音声読み上げ最適化、組織brand themeを検討する。
+
+## コード編集画面の表示状態（v0.0.17-beta）
+
+保存・再読込・同じ文書の再表示では、アプリを開いている間の縦横スクロール・選択範囲・折畳をファイルパス単位で復元する。本文変更と重なる折畳は安全のため展開する。アプリ再起動後は既定の折畳を適用する。
+
+コードブロックは本文10行以上を初期状態および「折畳」で折りたたみ、設定で1〜100000行へ変更できる。Base64は行数によらず折りたたむ。「折畳」はH2以下を対象とし、H1を新しく折りたたまない。

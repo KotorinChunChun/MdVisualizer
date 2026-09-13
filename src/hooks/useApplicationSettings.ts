@@ -6,6 +6,7 @@ import { applySyntaxHighlightSettings, DEFAULT_SYNTAX_HIGHLIGHT_SETTINGS, normal
 import { normalizeDocumentViewModes, type ViewMode } from "../lib/viewMode";
 import { normalizeZoom } from "../lib/zoom";
 import type { ToastState } from "../types/app";
+import { DEFAULT_CODE_BLOCK_FOLD_MIN_LINES, normalizeCodeBlockFoldMinLines } from "../lib/editorPreferences";
 import {
   DEFAULT_EXTERNAL_APPS,
   DEFAULT_CLIPBOARD_IMAGE_SETTINGS,
@@ -34,6 +35,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
   const [foldStates, setFoldStates] = useState<Record<string, Record<string, boolean>>>({});
   const [externalApps, setExternalApps] = useState<ExternalAppConfig[]>(DEFAULT_EXTERNAL_APPS);
   const [presentationLineThreshold, setPresentationLineThreshold] = useState(DEFAULT_PRESENTATION_LINE_THRESHOLD);
+  const [codeBlockFoldMinLines, setCodeBlockFoldMinLines] = useState(DEFAULT_CODE_BLOCK_FOLD_MIN_LINES);
   const [imageA4TargetWidth, setImageA4TargetWidth] = useState(DEFAULT_IMAGE_A4_TARGET_WIDTH);
   const [imageEqualPadding, setImageEqualPadding] = useState(DEFAULT_IMAGE_EQUAL_PADDING);
   const [clipboardImage, setClipboardImage] = useState<ClipboardImageSettings>(DEFAULT_CLIPBOARD_IMAGE_SETTINGS);
@@ -144,6 +146,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
       const normalizedMarkdownStyle = normalizeMarkdownStyleSettings(settings.markdownStyle);
       setExternalApps(apps);
       setPresentationLineThreshold(lineThreshold);
+      setCodeBlockFoldMinLines(normalizeCodeBlockFoldMinLines(settings.codeBlockFoldMinLines));
       setImageA4TargetWidth(a4TargetWidth);
       setImageEqualPadding(equalPadding);
       setClipboardImage(normalizedClipboardImage);
@@ -216,6 +219,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
     nextMarkdownStyle: MarkdownStyleSettings,
     nextClipboardImage: ClipboardImageSettings,
     nextEmbeddedPathStyle: EmbeddedPathStyle,
+    nextCodeBlockFoldMinLines: number = DEFAULT_CODE_BLOCK_FOLD_MIN_LINES,
   ) => {
     try {
       const previousById = new Map(externalApps.map((app) => [app.id, app]));
@@ -229,7 +233,9 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
       const normalizedClipboardImage = normalizeClipboardImageSettings(nextClipboardImage);
       const normalizedEmbeddedPathStyle = normalizeEmbeddedPathStyle(nextEmbeddedPathStyle);
       const styleFile = await saveMarkdownStyle(generateMarkdownStyleCss(normalizedMarkdownStyle));
-      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, markdownStyle: normalizedMarkdownStyle, clipboardImage: normalizedClipboardImage, embeddedPathStyle: normalizedEmbeddedPathStyle });
+      const foldMinLines = normalizeCodeBlockFoldMinLines(nextCodeBlockFoldMinLines);
+      await saveSettings({ syntaxHighlight: normalizedSyntaxHighlight, printStyle: normalizedPrintStyle, markdownStyle: normalizedMarkdownStyle, clipboardImage: normalizedClipboardImage, embeddedPathStyle: normalizedEmbeddedPathStyle, codeBlockFoldMinLines: foldMinLines });
+      setCodeBlockFoldMinLines(foldMinLines);
       setExternalApps(normalizeExternalApps(saved.externalApps));
       setPresentationLineThreshold(lineThreshold);
       setImageA4TargetWidth(a4TargetWidth);
@@ -266,6 +272,7 @@ export function useApplicationSettings(setToast: Dispatch<SetStateAction<ToastSt
     setFoldStates,
     externalApps,
     presentationLineThreshold,
+    codeBlockFoldMinLines,
     imageA4TargetWidth,
     imageEqualPadding,
     clipboardImage,

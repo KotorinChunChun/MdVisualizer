@@ -207,9 +207,9 @@ async fn bounded_read(reader: impl AsyncRead + Unpin) -> Result<Vec<u8>, String>
         .take((OUTPUT_LIMIT + 1) as u64)
         .read_to_end(&mut bytes)
         .await
-        .map_err(|_| "Codex出力を読み込めません。")?;
+        .map_err(|_| "AI出力を読み込めません。")?;
     if bytes.len() > OUTPUT_LIMIT {
-        return Err("Codex出力が大きすぎます。".into());
+        return Err("AI出力が大きすぎます。".into());
     }
     Ok(bytes)
 }
@@ -219,7 +219,7 @@ fn generated_root() -> Result<PathBuf, String> {
         .or_else(|| dirs::home_dir().map(|path| path.join(".codex")))
         .map(|path| path.join("generated_images"))
         .and_then(|p| p.canonicalize().ok())
-        .ok_or_else(|| "Codex画像出力フォルダーを確認できません。".into())
+        .ok_or_else(|| "AI画像出力フォルダーを確認できません。".into())
 }
 fn strings(value: &Value, found: &mut Vec<String>) {
     match value {
@@ -230,7 +230,7 @@ fn strings(value: &Value, found: &mut Vec<String>) {
     }
 }
 fn output_png(stdout: &[u8], root: &Path, started: SystemTime) -> Result<Vec<u8>, String> {
-    let text = std::str::from_utf8(stdout).map_err(|_| "Codex出力の文字コードが不正です。")?;
+    let text = std::str::from_utf8(stdout).map_err(|_| "AI出力の文字コードが不正です。")?;
     let mut candidates = Vec::new();
     for line in text.lines() {
         let Ok(event) = serde_json::from_str::<Value>(line) else {
@@ -275,7 +275,7 @@ fn output_png(stdout: &[u8], root: &Path, started: SystemTime) -> Result<Vec<u8>
             return Ok(bytes);
         }
     }
-    Err("Codexが新しいPNG画像を返しませんでした。".into())
+    Err("AIが新しいPNG画像を返しませんでした。".into())
 }
 
 #[tauri::command]
@@ -293,7 +293,7 @@ pub async fn codex_edit_image(
     }
     let settings = crate::commands::load_settings(app)?;
     if settings["codex"]["enabled"] != true {
-        return Err("設定でCodex連携を有効にしてください。".into());
+        return Err("設定でAI連携を有効にしてください。".into());
     }
     let image = decode_png(&request.image)?;
     let started = SystemTime::now();
@@ -307,8 +307,8 @@ pub async fn codex_edit_image(
         for feature in ["shell_tool", "unified_exec", "apps", "plugins", "hooks", "multi_agent"] { command.args(["--disable", feature]); }
         command.arg("-").stdin(std::process::Stdio::piped()).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::piped()).kill_on_drop(true);
         #[cfg(windows)] command.creation_flags(0x08000000);
-        let mut child = command.spawn().map_err(|_| "Codex CLIを起動できません。")?; let mut stdin = child.stdin.take().ok_or("CLI入力を取得できません。")?; let stdout = child.stdout.take().ok_or("CLI出力を取得できません。")?; let stderr = child.stderr.take().ok_or("CLIエラー出力を取得できません。")?;
-        let execution = async { stdin.write_all(prompt.as_bytes()).await.map_err(|_| "CLIへ送信できません。".to_string())?; drop(stdin); let (out, _, status) = tokio::try_join!(bounded_read(stdout), bounded_read(stderr), async { child.wait().await.map_err(|_| "CLIの終了待機に失敗しました。".to_string()) })?; if !status.success() { return Err("Codexの画像編集に失敗しました。".into()); } output_png(&out, &generated_root()?, started) };
+        let mut child = command.spawn().map_err(|_| "AI連携用のCodex CLIを起動できません。")?; let mut stdin = child.stdin.take().ok_or("CLI入力を取得できません。")?; let stdout = child.stdout.take().ok_or("CLI出力を取得できません。")?; let stderr = child.stderr.take().ok_or("CLIエラー出力を取得できません。")?;
+        let execution = async { stdin.write_all(prompt.as_bytes()).await.map_err(|_| "CLIへ送信できません。".to_string())?; drop(stdin); let (out, _, status) = tokio::try_join!(bounded_read(stdout), bounded_read(stderr), async { child.wait().await.map_err(|_| "CLIの終了待機に失敗しました。".to_string()) })?; if !status.success() { return Err("AIによる画像編集に失敗しました。".into()); } output_png(&out, &generated_root()?, started) };
         tokio::select! { result = execution => result, _ = async { while !cancel.load(Ordering::SeqCst) { tokio::time::sleep(Duration::from_millis(50)).await; } } => Err("停止しました。".into()), _ = tokio::time::sleep(Duration::from_secs(300)) => Err("画像編集がタイムアウトしました。".into()) }
     }.await;
     runs.finish(&owner);

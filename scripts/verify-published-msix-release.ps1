@@ -96,6 +96,18 @@ try {
     if ($remoteCertificateHash -ne $localCertificateHash) {
         throw "Published CER hash does not match the staged release."
     }
+    $portableName = "MdVisualizer_$($artifacts.ApplicationVersion)_x64_portable.zip"
+    $portableUri = $artifacts.Channel.BaseUri + $portableName
+    $portableResponse = $httpClient.GetAsync($portableUri).GetAwaiter().GetResult()
+    try {
+        $portableResponse.EnsureSuccessStatusCode() | Out-Null
+        if ($portableResponse.Content.Headers.ContentType.MediaType -notin @('application/zip', 'application/x-zip-compressed')) { throw '公開ZIPのMIMEが不正です。' }
+        $portableBytes = $portableResponse.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+        if ($portableResponse.Content.Headers.ContentLength -ne $portableBytes.Length) { throw '公開ZIPのContent-Lengthが一致しません。' }
+        $portableHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($portableBytes))
+        if ($portableHash -ne (Get-FileHash (Join-Path $artifacts.Channel.SiteDirectory $portableName) -Algorithm SHA256).Hash) { throw '公開ZIPのハッシュが一致しません。' }
+        Write-Host "Portable ZIP HTTP/MIME/Length/SHA256 OK: $portableUri $portableHash"
+    } finally { $portableResponse.Dispose() }
 
     $appInstallerText = [System.Text.Encoding]::UTF8.GetString($remoteAppInstallerBytes)
     [xml]$publishedAppInstaller = $appInstallerText

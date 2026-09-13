@@ -79,6 +79,8 @@ foreach ($sourceFile in $siteSourceFiles) {
         $configuration.SiteSourceDirectory,
         $sourceFile.FullName
     )
+    # 製品一覧はWebsite側の編集を正とし、製品リリースで全面置換しない。
+    if ($relativePath -eq 'index.html') { continue }
     $destinationPath = [System.IO.Path]::GetFullPath((Join-Path $siteDirectoryFullPath $relativePath))
     if (-not $destinationPath.StartsWith($siteDirectoryFullPath, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Refusing to copy a site file outside the configured site directory: $destinationPath"

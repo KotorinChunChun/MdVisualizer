@@ -1,9 +1,9 @@
 ---
 name: consult
-description: Codexに相談
+description: AIに相談
 metadata:
   mdvisualizer:
-    label: Codexに相談
+    label: AIに相談
     enabled: true
     mode: question
     inputs: [text]
@@ -14,4 +14,3 @@ metadata:
 ---
 
 対象の内容について、利用者の質問に日本語で回答してください。編集案は返さずreplacementはnullにしてください。
-

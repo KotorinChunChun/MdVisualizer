@@ -24,3 +24,4 @@
 `build-*`、`stage-*`、`verify-*`、`install-*`、`Invoke-*`、`*-smoke.mjs`は、起動用エントリポイントから呼び出す補助、成果物生成、検証、またはテスト実装であり、通常のアプリ起動用ではない。
 
 ローカル配布物生成は`package-MdVisualizer-msix.ps1`と`package-MdVisualizer-appinstaller.ps1`を正規名とする。旧`build-msix.ps1`と`build-appinstaller.ps1`は互換転送だけを行い、外部公開は行わない。
+`package-MdVisualizer-portable.ps1 -ReleaseIntentConfirmed`はproduction実行ファイルの版を確認してZIPを生成し、収録ファイルとハッシュを検証する。公開入口は配布ルート全体を送らず、本製品のサイト正本・MSIX・CER・App Installer・ZIPだけを送信する。
