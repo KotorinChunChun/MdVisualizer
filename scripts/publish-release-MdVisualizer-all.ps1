@@ -126,12 +126,12 @@ function Invoke-StageRelease {
     & (Join-Path $PSScriptRoot "stage-msix-release.ps1") `
         -Channel $SelectedChannel `
         -ConfigPath $configuration.ConfigPath
-    & (Join-Path $PSScriptRoot "verify-msix-release.ps1") `
-        -Channel $SelectedChannel `
-        -ConfigPath $configuration.ConfigPath
     $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $SelectedChannel
     $portableName = "MdVisualizer_$($artifacts.ApplicationVersion)_x64_portable.zip"
     Copy-Item -LiteralPath (Join-Path $projectRoot "release/$portableName") -Destination (Join-Path $artifacts.Channel.SiteDirectory $portableName) -Force
+    & (Join-Path $PSScriptRoot "verify-msix-release.ps1") `
+        -Channel $SelectedChannel `
+        -ConfigPath $configuration.ConfigPath
 }
 
 function Invoke-PublishRelease {
