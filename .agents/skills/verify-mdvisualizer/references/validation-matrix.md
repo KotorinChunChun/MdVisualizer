@@ -37,7 +37,7 @@ npm.cmd run build:spfx:local
 - `npm.cmd run build`は共有core、TypeScript型検査、Vite production buildを含む。
 - `build:spfx:local`は`build-release-MdVisualizer-spfx.ps1`を使う。SPFx uploadを検証コマンドの一部にしない。
 - `npm.cmd run tauri build`は重いdesktop成果物生成である。要求や受入条件に含まれる場合だけ追加し、MSIX生成とは分ける。
-- GUIを行わない当該PCでは`npm.cmd run debug:smoke`を実行しない。状態API、WebView、PDF、画面captureが必要な項目は専用runnerへ残す。
+- GUI検証は最新の`AGENTS.md`に従う。当該PCでは2026-09-13に禁止が解除されたため、未保存文書の保護を確認して実画面テストを実施できる。
 
 ## 不具合別の追加観点
 

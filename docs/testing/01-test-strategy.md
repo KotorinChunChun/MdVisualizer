@@ -24,7 +24,7 @@
 | Security | XSS、SVG、path、redirect、secret、CLI | corpus test、dependency audit | PR/nightly |
 | Performance | 起動、検索、描画、DB、同期、AI stream | benchmark script、Playwright trace | nightly/beta前 |
 
-当該PCではDesktop E2EとUI受入を実施しない。内部PDFテストはGUIやOSプリンターを使わずに実行する。手順とCubePDFを使う手動受入との境界は[内部PDFによる印刷受入](03-internal-pdf.md)を参照する。
+当該PCでは2026-09-13のユーザー指示によりDesktop E2EとUI受入を実施できる。操作範囲と未保存文書の保護は最新のAGENTS.mdに従う。内部PDFテストはGUIやOSプリンターを使わずに実行する。手順とCubePDFを使う手動受入との境界は[内部PDFによる印刷受入](03-internal-pdf.md)を参照する。
 
 ## 3. ツール選定
 
