@@ -159,6 +159,7 @@ export function groupNodes(source,ids,label='グループ'){
  else if(m.type==='c4'){head=`System_Boundary(${id}, "${label.replaceAll('"','')}") {`;tail='}';}
  else if(hierarchy.includes(m.type)||['gantt','timeline','journey'].includes(m.type)){const min=Math.min(...chosen.map(n=>n.line)),max=Math.max(...chosen.map(n=>n.line));const ls=source.split('\n');if(hierarchy.includes(m.type)){const indent=Math.min(...chosen.map(n=>n.indent||0));for(let i=min-1;i<max;i++)ls[i]='  '+ls[i];ls.splice(min-1,0,' '.repeat(indent)+(m.type==='treemap'?`"${label}"`:m.type==='kanban'||m.type==='treeView'?`${id}[${label}]`:label));}else ls.splice(min-1,0,'    section '+label);return ls.join('\n');}
  else throw Error('このグループ構文はコードから編集してください');
+ if(m.type==='flowchart')return relocateFlowNodes(source+nl+'    '+head+nl+'    '+tail,ids,id);
  if(flowTypes.includes(m.type)){
   ensureNetwork(m);let normalized=rewriteEdges(m,m.edges);const fresh=parseModel(normalized),moves=[],defs=[];
   for(const n of fresh.nodes.filter(n=>ids.includes(n.id))){if(n.defined){defs.push(normalized.slice(n.from,n.to));moves.push({from:n.from,to:n.to,text:n.id});}else defs.push(n.id);}
@@ -168,6 +169,7 @@ export function groupNodes(source,ids,label='グループ'){
 }
 export function ungroup(source,groupId){const m=parseModel(source),g=m.groups.find(g=>g.id===groupId);if(!g)throw Error('解除するグループを選択してください');if(g.architecture){return patch(source,[{from:g.from,to:g.headerTo,text:''}]).replace(new RegExp(`\\s+in\\s+${escapeRE(g.id)}(?=\\s*(?:\\n|$))`,'g'),'');}if(g.hierarchy)return deleteNodes(source,[g.id]);if(g.section)return patch(source,[{from:g.from,to:g.headerTo,text:''}]);if(g.to===undefined)throw Error('グループの終端を確認してください');return patch(source,[{from:g.from,to:g.headerTo,text:''},{from:g.footerFrom,to:g.to,text:''}]);}
 export function moveIntoGroup(source,ids,target){
+ if(parseModel(source).type==='flowchart')return relocateFlowNodes(source,ids,target);
  const m=parseModel(source);if(!flowTypes.includes(m.type)&&m.type!=='architecture')throw Error('この図種のグループ移動は項目の記法から行ってください');
  if(m.type==='architecture'){return patch(source,m.nodes.filter(n=>ids.includes(n.id)).map(n=>({from:n.from,to:n.to,text:source.slice(n.from,n.to).replace(/\s+in\s+\w+\s*$/,'')+(target?' in '+target:'')})));}
  ensureNetwork(m);let changes=[],defs=[];const group=m.groups.find(g=>g.id===target);if(target&&!group)throw Error('移動先グループがありません');
@@ -185,3 +187,36 @@ export function editGroup(source,id,label,parentId,direction){const m=parseModel
 export function addComment(source,ids,text,note=false){const m=parseModel(source),n=m.nodes.find(n=>ids.includes(n.id)),nl=eol(source);let insertion=text.split(/\r?\n/).map(t=>'%% '+t).join(nl);if(note&&n){if(m.type==='sequence')insertion=`Note over ${n.id}: ${text.replaceAll('\n','<br/>')}`;else if(m.type==='state')insertion=`note right of ${n.id}\n${text}\nend note`;else if(m.type==='class')insertion=`note for ${n.id} "${text.replaceAll('"','').replaceAll('\n','\\n')}"`;}
  const pos=n?m.lines[n.line-1].to:source.length;return patch(source,[{from:pos,to:pos,text:nl+'    '+insertion}]);}
 export function selectedIds(model,from,to){return model.nodes.filter(n=>n.refs.some(r=>from===to?r.from<=from&&from<=r.to:r.from<to&&r.to>from)).map(n=>n.id);}
+
+// 接続行をグループの外へ分離し、所属をノード定義の位置だけで管理する。
+export function relocateFlowNodes(source,ids,target){
+ const m=parseModel(source);ensureNetwork(m);const group=m.groups.find(g=>g.id===target);if(target&&!group)throw Error('移動先グループがありません');
+ const chosen=m.nodes.filter(n=>ids.includes(n.id));if(chosen.length!==new Set(ids).size)throw Error('移動するノードが見つかりません');
+ const changes=[],edgeLines=new Set(m.edges.map(e=>e.line));
+ for(const line of m.lines){if(!edgeLines.has(line.line))continue;const defs=m.nodes.filter(n=>n.line===line.line&&!ids.includes(n.id)).map(n=>source.slice(n.from,n.to));const comment=line.text.match(/\s*%%.*$/)?.[0]||'';changes.push({from:line.from,to:line.to,text:defs.map(d=>'    '+d).join('\n')+comment});}
+ for(const n of chosen)for(const r of n.refs)if(!edgeLines.has(r.line))changes.push({from:r.from,to:r.to,text:''});
+ const defs=chosen.map(n=>n.defined?source.slice(n.from,n.to):n.id),pos=group?group.footerFrom:source.length;
+ if(pos===undefined)throw Error('グループの終端が不明です');
+ changes.push({from:pos,to:pos,text:'\n'+defs.map(d=>'    '+d).join('\n')+'\n'});
+ let result=patch(source,changes);if(m.edges.length)result+='\n'+m.edges.map(e=>'    '+edgeCode(m.type,e)).join('\n');return result;
+}
+export function addFlowNode(source,label,from,mode='branch',target){
+ const m=parseModel(source);ensureNetwork(m);const outgoing=m.edges.filter(e=>e.from===from);let result=addNode(source,label).source;const id=parseModel(result).nodes.find(n=>!m.nodes.some(old=>old.id===n.id))?.id;
+ if(!id)throw Error('追加したノードを確認できません');
+ if(from){if(mode==='insert'&&outgoing.length){const e=outgoing.find(e=>e.id===target)||outgoing[0];result=updateEdge(result,e.id,{to:id});result=connect(result,id,e.to,e.arrow,'');}else result=connect(result,from,id);const parent=m.nodes.find(n=>n.id===from)?.group;if(parent)result=moveIntoGroup(result,[id],parent);}
+ return {source:result,id};
+}
+export function renameFlowIds(source,rows){
+ const m=parseModel(source);if(m.type!=='flowchart')throw Error('変数名の一括変更はフローチャートで利用できます');ensureNetwork(m);
+ const items=[...m.nodes,...m.groups].filter((n,i,a)=>a.findIndex(x=>x.id===n.id)===i),map=new Map(rows.map(r=>[r.id,r.next]));
+ if(rows.length!==items.length||map.size!==items.length||items.some(n=>!map.has(n.id)))throw Error('変数一覧に漏れまたは重複があります');
+ const reserved=new Set(['end','subgraph','flowchart','graph','direction','style','class','classDef','click','linkStyle','default']);
+ for(const next of map.values())if(!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(next)||reserved.has(next))throw Error('使用できない変数名です: '+next);
+ if(new Set(map.values()).size!==map.size)throw Error('変更後の変数名が重複しています');
+ const changes=[],seen=new Set(),add=(from,to,id)=>{if(!map.has(id)||seen.has(from))return;seen.add(from);changes.push({from,to,text:map.get(id)});};
+ for(const n of m.nodes)for(const r of n.refs)add(r.from,r.from+n.id.length,n.id);
+ for(const g of m.groups){const line=m.lines[g.line-1],offset=line.text.indexOf(g.id,line.text.indexOf('subgraph')+8);add(line.from+offset,line.from+offset+g.id.length,g.id);}
+ // IDを取る命令の引数だけを変更し、ラベル・コメント・URL・classDefを保持する。
+ for(const l of m.lines){const match=/^(\s*)(style|class|click)\s+([\p{L}\p{N}_,-]+)/u.exec(l.text);if(match){const start=l.from+match[0].length-match[3].length;for(const token of match[3].matchAll(/[\p{L}\p{N}_-]+/gu))add(start+token.index,start+token.index+token[0].length,token[0]);}}
+ const result=patch(source,changes),after=parseModel(result);if(items.some(n=>![...after.nodes,...after.groups].some(a=>a.id===map.get(n.id))))throw Error('変更後の変数一覧を確認できません');return result;
+}

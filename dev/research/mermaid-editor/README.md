@@ -75,3 +75,9 @@ node .\dev\research\mermaid-editor\boundaries.test.mjs
 ```
 
 試験結果・スクリーンショットはtest-resultsへ出力します（Git対象外）。同梱ライブラリの著作権・ライセンスは[vendor/THIRD-PARTY-NOTICES.md](vendor/THIRD-PARTY-NOTICES.md)とlicenses以下に保存しています。
+
+### 同名ノードとグループの操作
+表示名が同じでも内部IDで区別します。プレビューの「変数名を表示」でノード・グループのIDを表示できます。「置換」は現在のID、キャプション、変更後IDの表を開き、重複・漏れ・無効文字を検証して一括変更します（フローチャート）。
+プラスは接続先がある場合「接続の間に差し込む」「枝分かれとして追加」を選べます。複数の接続先では差し込み対象も選択します。
+グループの見出し／背景へノードをドラッグすると所属を移動できます。右クリックの「グループに追加」はID付き一覧から移動先を選択し、「上のグループから除く」は直上のグループから外します。
+同名データの回帰サンプルは samples/duplicate-labels.mmd、試験は identity.test.mjs と identity-ui.test.mjs です。
