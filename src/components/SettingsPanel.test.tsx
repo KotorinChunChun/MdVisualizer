@@ -4,6 +4,16 @@ import { DEFAULT_EXTERNAL_APPS } from "../types/settings";
 import { SettingsPanel } from "./SettingsPanel";
 
 describe("SettingsPanel", () => {
+  it("コード折畳の既定10行を変更して保存する", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    const input = screen.getByLabelText("コードブロックを折りたたむ最小行数") as HTMLInputElement;
+    expect(input.value).toBe("10");
+    fireEvent.change(input, { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][9]).toBe(25);
+  });
   afterEach(cleanup);
 
   it("edits placement and saves a normalized draft", async () => {

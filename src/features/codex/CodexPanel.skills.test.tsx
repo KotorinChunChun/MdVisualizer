@@ -45,7 +45,7 @@ function mount(skillId: string, action: "add" | "new" = "new", extra: Record<str
   return render(<CodexPanel open onClose={vi.fn()} documentName="diagram.md" documentText={snapshot.content} available consultationTarget={target(skillId, action)} getSnapshot={() => snapshot} applyProposal={vi.fn(() => true)} {...extra} />);
 }
 async function send() {
-  await screen.findByLabelText("添付画像");
+  await screen.findByLabelText("追加した画像");
   fireEvent.click(await screen.findByRole("button", { name: "送信（Ctrl+Enter）" }));
   await waitFor(() => expect(generateCodex).toHaveBeenCalled());
 }
@@ -84,7 +84,7 @@ describe("CodexPanel の既定スキル入力", () => {
 
   it("PNG edit-image は画像を自動読込し、画像編集ウィジェットだけを表示する", async () => {
     render(<CodexPanel open onClose={vi.fn()} documentName="image.md" documentText="![x](image.png)" available consultationTarget={{ documentId: "png", content: "![x](image.png)", from: 0, to: 15, imageSource: "image.png", skillId: "edit-image", conversationAction: "new" }} getSnapshot={() => ({ documentId: "png", content: "![x](image.png)", from: 0, to: 15 })} applyProposal={vi.fn(() => true)} />);
-    expect(await screen.findByLabelText("Codexで画像を編集")).toBeVisible();
+    expect(await screen.findByLabelText("AIで画像を編集")).toBeVisible();
     expect(screen.queryByLabelText("指示")).not.toBeInTheDocument();
   });
 
@@ -101,13 +101,13 @@ describe("CodexPanel の既定スキル入力", () => {
   it("PNG生成成功後に入力添付を外して履歴へ残し、採用比較は維持する", async () => {
     render(<CodexPanel open onClose={vi.fn()} documentName="image.md" documentText="![x](image.png)" available consultationTarget={{ documentId: "png", content: "![x](image.png)", from: 0, to: 15, imageSource: "image.png", skillId: "edit-image", conversationAction: "new" }} getSnapshot={() => ({ documentId: "png", content: "![x](image.png)", from: 0, to: 15 })} applyProposal={vi.fn(() => true)} />);
     const instruction = await screen.findByRole("textbox", { name: "編集指示" });
-    fireEvent.change(instruction, { target: { value: "添付ファイル1を青くして" } });
+    fireEvent.change(instruction, { target: { value: "画像1を青くして" } });
     fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
     await screen.findByText("変更後");
     expect(instruction).toHaveValue("");
-    expect(screen.queryByLabelText("添付画像")).not.toBeInTheDocument();
-    expect(screen.getByRole("log")).toHaveTextContent("添付ファイル1");
+    expect(screen.queryByLabelText("追加した画像")).not.toBeInTheDocument();
+    expect(screen.getByRole("log")).toHaveTextContent("画像1");
     expect(screen.getByRole("button", { name: "この画像を採用" })).toBeVisible();
-    expect(invoke).toHaveBeenCalledWith("codex_edit_image", expect.objectContaining({ request: expect.objectContaining({ instruction: expect.stringContaining("今回の画像は添付ファイル1") }) }));
+    expect(invoke).toHaveBeenCalledWith("codex_edit_image", expect.objectContaining({ request: expect.objectContaining({ instruction: expect.stringContaining("今回の画像は画像1") }) }));
   });
 });

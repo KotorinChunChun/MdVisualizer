@@ -106,6 +106,15 @@ Assert-BlockedBeforeWork `
     -ReleaseIntentConfirmed
 Assert-BlockedBeforeWork -Mode Full -ExpectedMessage "ReleaseIntentConfirmed"
 
+$portableBlocked = $false
+try { & (Join-Path $PSScriptRoot 'package-MdVisualizer-portable.ps1') }
+catch { $portableBlocked = $_.Exception.Message.Contains('ReleaseIntentConfirmed') }
+if (!$portableBlocked) { throw 'ポータブル版の無承認生成を防げませんでした。' }
+$publishSource = Get-Content -LiteralPath $orchestratorPath -Raw
+if ($publishSource -match '@\(\$configuration.FtpUploadScriptPath,\s*(?:"--dry-run",\s*)?\$configuration.SiteDirectory\)') {
+    throw '配布ルート全体を送信する呼び出しは禁止です。製品ファイル一覧を使用してください。'
+}
+
 $releaseFingerprintAfter = Get-DirectoryFingerprint -Path $releaseDirectory
 $websiteFingerprintAfter = Get-DirectoryFingerprint -Path $websiteDownloadDirectory
 if ($releaseFingerprintBefore -ne $releaseFingerprintAfter) {

@@ -3,7 +3,7 @@ import type { EditorWorkspaceMode } from "../state/tabsReducer";
 import type { DocumentDiffTarget } from "../lib/documentDiffTarget";
 import { rowDecision } from "../lib/documentMerge";
 import { useDocumentMerge } from "../hooks/useDocumentMerge";
-import { DiffCodeEditor, DIFF_LINE_HEIGHT, type DiffColumn } from "./DiffCodeEditor";
+import { DiffCodeEditor, type DiffColumn } from "./DiffCodeEditor";
 import { MarkdownPreview } from "./MarkdownPreview";
 import "../styles/document-diff.css";
 export type { DocumentDiffTarget } from "../lib/documentDiffTarget";
@@ -57,18 +57,17 @@ export function DocumentDiffWorkspace({ target, editorMode, theme, onEditingChan
     scrollTop.current = position;
   }, [merge.rows.length, workspace.mode]);
   const actions = (side: "storage" | "local") => <div className="diff-row-actions" aria-label={`${side === "storage" ? "ストレージ" : "自分"}側の行採用`}>
-    <div className="diff-row-actions__content" style={{ height: merge.rows.length * DIFF_LINE_HEIGHT }}>
+    <div className="diff-row-actions__content">
       {merge.rows.map((row, index) => {
-        if (!row.changed || (row.storage?.text === row.local?.text && row.result?.text === row.storage?.text)) return null;
+        if (!row.changed || (row.storage?.text === row.local?.text && row.result?.text === row.storage?.text)) return <div key={row.id} className="diff-row-actions__row" />;
         const decision = rowDecision(row, merge.decisions);
         const state = decision === "unresolved" ? "未選択" : decision === "storage" ? "ストレージ側" : decision === "local" ? "自分側" : decision === "manual" ? "手動編集" : "一致";
         const label = `${side === "storage" ? "ストレージ" : "自分"}側の${row[side] ? `${row[side]!.line}行目` : "削除"}を採用（対応行${index + 1}・${state}）`;
-        return <button key={row.id} type="button" data-row-id={row.id} data-choice={side} data-status={decision}
-          style={{ top: index * DIFF_LINE_HEIGHT }} title={label} aria-label={label} aria-pressed={decision === side}
-          disabled={saving || blocked || !onEditingChange} onFocus={() => setActiveRow(row.id)} onMouseEnter={() => setActiveRow(row.id)}
-          onClick={() => merge.adopt(row.id, side, row.fingerprint)}>
+        return <div key={row.id} className="diff-row-actions__row"><button type="button" data-row-id={row.id} data-choice={side} data-status={decision}
+          title={label} aria-label={label} aria-pressed={decision === side} disabled={saving || blocked || !onEditingChange}
+          onFocus={() => setActiveRow(row.id)} onMouseEnter={() => setActiveRow(row.id)} onClick={() => merge.adopt(row.id, side, row.fingerprint)}>
           <span>{side === "storage" ? "→" : "←"}</span><small>{decision === side ? "✓" : decision === "manual" ? "M" : decision === "unresolved" ? "?" : ""}</small>
-        </button>;
+        </button></div>;
       })}
     </div>
   </div>;

@@ -39,8 +39,8 @@ export function FileSvgCodexAction({ path, onSaved, kind = "svg", children }: { 
   }
   return <div data-codex-file={children ? "true" : undefined} onContextMenuCapture={children ? (event) => { event.preventDefault(); event.stopPropagation(); showMenu("contextMenu", event.clientX, event.clientY); } : undefined}>
     {children}
-    {!children && <button type="button" className="diagram-action-button codex-diagram-action" disabled={loading} onClick={(event) => showMenu("blockMenu", event.clientX, event.clientY)}>{loading ? `${kind}読込中…` : "Codexに図の編集を依頼"}</button>}
-    {menu && createPortal(<div role="menu" aria-label="図のCodex操作" className="responsive-toolbar__menu" style={{ left: menu.x, top: menu.y }} onPointerDown={(event) => event.stopPropagation()}>
+    {!children && <button type="button" className="diagram-action-button codex-diagram-action" disabled={loading} onClick={(event) => showMenu("blockMenu", event.clientX, event.clientY)}>{loading ? `${kind}読込中…` : "AIに図の編集を依頼"}</button>}
+    {menu && createPortal(<div role="menu" aria-label="図のAI操作" className="responsive-toolbar__menu" style={{ left: menu.x, top: menu.y }} onPointerDown={(event) => event.stopPropagation()}>
       {!skillId ? available.map((skill) => <button key={skill.id} autoFocus={skill === available[0]} type="button" role="menuitem" onClick={() => setSkillId(skill.id)}>{skill.config.label}</button>) : <>
         <button autoFocus type="button" role="menuitem" onClick={() => { setConversationAction("add"); setMenu(null); void open(); }}>現在の会話に追加</button>
         <button type="button" role="menuitem" onClick={() => { setConversationAction("new"); setMenu(null); void open(); }}>新しい会話を開始</button>

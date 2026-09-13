@@ -1,6 +1,7 @@
 AddType application/msix .msix
 AddType application/appinstaller .appinstaller
 AddType application/pkix-cert .cer
+AddType application/zip .zip
 
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"

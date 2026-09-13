@@ -1,17 +1,19 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./codexImageEdit.css";
 
 export type ImageSaveMode = "overwrite" | "new" | "archive";
 export interface CodexImageEditResult { base64: string; mediaType: "image/png"; filename: string }
 
-export function CodexImageEdit({ documentPath, source, originalBase64, initialInstruction = "", instruction: suppliedInstruction, onInstructionChange, onReferenceChange, onGenerated, onBusyChange, disabled = false }: {
+export function CodexImageEdit({ documentPath, source, originalBase64, initialInstruction = "", instruction: suppliedInstruction, onInstructionChange, onReferenceChange, onGenerated, onBusyChange, onRequestAuthorization, disabled = false, actionFooter }: {
   documentPath: string; source: string; originalBase64: string; initialInstruction?: string;
   onReferenceChange: (source: string, newSource: string) => boolean | Promise<boolean>;
   instruction?: string; onInstructionChange?: (value: string) => void;
   onGenerated?: (instruction: string) => void;
   onBusyChange?: (busy: boolean) => void;
+  onRequestAuthorization?: () => Promise<boolean>;
   disabled?: boolean;
+  actionFooter?: ReactNode;
 }) {
   const [localInstruction, setLocalInstruction] = useState("");
   const instruction = suppliedInstruction ?? localInstruction;
@@ -40,9 +42,12 @@ export function CodexImageEdit({ documentPath, source, originalBase64, initialIn
   }, [source, originalBase64]);
 
   async function edit() {
-    if (!instruction.trim() || busy || disabled) return;
-    const id = crypto.randomUUID();
     const token = generation.current;
+    if (!instruction.trim() || busy || disabled || active.current) return;
+    if (onRequestAuthorization && !await onRequestAuthorization()) return;
+    // 同意ダイアログ中に対象画像が切り替わった場合、古い画像では実行しない。
+    if (token !== generation.current || disabled || busy || active.current) return;
+    const id = crypto.randomUUID();
     active.current = id;
     setBusy(true); setError("");
     try {
@@ -102,12 +107,13 @@ export function CodexImageEdit({ documentPath, source, originalBase64, initialIn
     } finally { if (token === generation.current) { setBusy(false); setSaving(false); } }
   }
 
-  return <section className="codex-image-edit" aria-label="Codexで画像を編集">
+  return <section className="codex-image-edit" aria-label="AIで画像を編集">
     <div className="codex-image-edit__prompt">
       <label>編集指示<textarea rows={7} value={instruction} disabled={busy || disabled} onChange={event => setInstruction(event.target.value)} onKeyDown={handleInstructionKeyDown} placeholder="例: 背景を白にして文字を読みやすくしてください" /></label>
       <div className="codex-image-edit__send-actions">
         <button type="button" aria-label="画像編集を依頼" disabled={disabled || busy || !instruction.trim()} onClick={() => void edit()}>{busy ? saving ? "保存中…" : "送信中…" : "送信"}<small>（Ctrl+Enter）</small></button>
         <button type="button" disabled={!busy || saving} onClick={stop}>停止</button>
+        {actionFooter}
       </div>
     </div>
     {busy && <div className="codex-image-edit__sending" role="status"><span className="codex-image-edit__spinner" aria-hidden="true" />{saving ? "画像を保存中…" : "送信中・画像生成を待っています…"}</div>}

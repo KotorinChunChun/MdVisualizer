@@ -26,7 +26,7 @@ export function CodexProposalReview({ original, value, onChange, renderPreview, 
   const update = (next: string) => { stable.current = editProposalStableState(stable.current, next); onChange(next); };
   const adopt = (id: string, side: "original" | "proposal") => { stable.current = adoptProposalStableRow(stable.current, id, side); onChange(proposalStableValue(stable.current)); };
   const hasPreview = Boolean(renderPreview);
-  return <section ref={focus} className="codex-proposal-review" aria-label="Codex変更案の確認">
+  return <section ref={focus} className="codex-proposal-review" aria-label="AI変更案の確認">
     <header className="codex-proposal-review__header"><strong>変更案の確認</strong><button type="button" onClick={onClose} disabled={busy} aria-label="変更案の確認を閉じる">×</button></header>
     {hasPreview && <div className="codex-proposal-review__tools"><button type="button" aria-pressed={layout === "horizontal"} onClick={() => setLayout("horizontal")}>左右配置</button><button type="button" aria-pressed={layout === "vertical"} onClick={() => setLayout("vertical")}>上下配置</button><button type="button" aria-expanded={codeOpen} onClick={() => setCodeOpen((open) => !open)}>{codeOpen ? "コード差分を隠す" : "コード差分を表示"}</button></div>}
     <div className={`codex-proposal-review__body${hasPreview && codeOpen ? " codex-proposal-review__body--split" : ""}`}>

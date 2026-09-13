@@ -11,25 +11,57 @@ import { diagramInstruction, validateDiagramForAdoption, type CodexDiagramKind }
 import { loadTranscriptionImage, transcriptionImages } from "./imageTranscription";
 import { canApplyProposal, DEFAULT_CODEX_OPTIONS, normalizeCodexOptions, requestBytes, type CodexLogData, type EditorSnapshot } from "./model";
 import { CodexMarkdownPreview, diagramImage } from "./preview";
-import { DEFAULT_CODEX_SESSION_RETENTION_DAYS, deleteCodexSession, loadCodexSessions, setCodexSessionRetention, upsertCodexSession, type CodexConversation, type CodexConversationAttachment } from "./sessions";
+import { DEFAULT_CODEX_SESSION_RETENTION_DAYS, deleteCodexSession, loadCodexSessions, setCodexSessionRetention, upsertCodexSession, type CodexConversation, type CodexConversationAttachment, type CodexConversationTextTarget } from "./sessions";
 import { scopeRequest, type CodexEditMode, type CodexTarget } from "./scope";
 import { useCodexSkills } from "./skills";
 type Proposal = {
     base: EditorSnapshot;
     original: string;
     value: string;
+    /** 複数の指定場所編集では、採用時にこの範囲外が不変か再検査する。 */
+    allowedRanges?: Array<{ from: number; to: number }>;
 };
 const iso = () => new Date().toISOString();
 function fresh(documentId: string, documentPath: string, title: string): CodexConversation {
     const time = iso();
-    return { id: crypto.randomUUID(), title: title || "無題の会話", documentId, documentPath, messages: [], attachments: [], nextTextTargetNumber: 1, draft: { instruction: "", targetSnapshot: null, editMode: "document", attachmentIds: [] }, createdAt: time, updatedAt: time, lastMessageAt: null };
+    return { id: crypto.randomUUID(), title: title || "無題の会話", documentId: documentId || undefined, documentPath, messages: [], attachments: [], nextTextTargetNumber: 1, draft: { instruction: "", targetSnapshot: null, editMode: "document", attachmentIds: [] }, createdAt: time, updatedAt: time, lastMessageAt: null };
 }
 function withTextTarget(value: CodexConversation, snapshot: EditorSnapshot): CodexConversation {
     const number = value.nextTextTargetNumber ?? 1;
-    return { ...value, nextTextTargetNumber: number + 1, updatedAt: iso(), draft: { ...value.draft, targetLabel: `対象テキスト${number}`, targetSnapshot: snapshot } };
+    const item: CodexConversationTextTarget = { id: crypto.randomUUID(), label: `テキスト${number}`, snapshot, addedAt: iso() };
+    return { ...value, documentId: snapshot.documentId, nextTextTargetNumber: number + 1, updatedAt: iso(), draft: { ...value.draft, targetLabel: undefined, targetSnapshot: null, textTargets: [...textTargets(value.draft), item] } };
+}
+function textTargets(draft: CodexConversation["draft"]): CodexConversationTextTarget[] {
+    if (draft.textTargets) return draft.textTargets;
+    return draft.targetSnapshot ? [{ id: "legacy-text-target", label: draft.targetLabel ?? "テキスト1", snapshot: draft.targetSnapshot, addedAt: "1970-01-01T00:00:00.000Z" }] : [];
 }
 function hasConversationContent(value: CodexConversation) {
-    return value.messages.length > 0 || !!value.draft.instruction.trim() || !!value.draft.targetSnapshot || value.draft.attachmentIds.length > 0;
+    return value.messages.length > 0 || !!value.draft.instruction.trim() || textTargets(value.draft).length > 0 || value.draft.attachmentIds.length > 0;
+}
+export function replacementMatchesTargetRanges(original: string, replacement: string, ranges: Array<{ from: number; to: number }>) {
+    const ordered = [...ranges].sort((left, right) => left.from - right.from).reduce<Array<{ from: number; to: number }>>((merged, range) => {
+        const previous = merged[merged.length - 1];
+        if (previous && range.from <= previous.to) previous.to = Math.max(previous.to, range.to);
+        else merged.push({ ...range });
+        return merged;
+    }, []);
+    let originalCursor = 0, replacementCursor = 0;
+    for (const range of ordered) {
+        if (range.from < originalCursor || range.to < range.from || range.to > original.length) return false;
+        const unchanged = original.slice(originalCursor, range.from);
+        if (originalCursor === 0) {
+            if (!replacement.startsWith(unchanged, replacementCursor)) return false;
+            replacementCursor += unchanged.length;
+        } else {
+            const index = replacement.indexOf(unchanged, replacementCursor);
+            if (index < replacementCursor) return false;
+            replacementCursor = index + unchanged.length;
+        }
+        originalCursor = range.to;
+    }
+    const suffix = original.slice(originalCursor);
+    const suffixStart = replacement.length - suffix.length;
+    return suffixStart >= replacementCursor && replacement.endsWith(suffix);
 }
 function selectionKey(target: CodexTarget | null | undefined, action: "add" | "new" | undefined) {
     if (!target)
@@ -99,6 +131,7 @@ export function CodexPanel(props: {
     const input = useRef<HTMLTextAreaElement | null>(null);
     const fileInput = useRef<HTMLInputElement | null>(null);
     const targetKey = useRef("");
+    const authorization = useRef<Promise<boolean> | null>(null);
     const skills = useCodexSkills();
     const selectedSkill = skills.find((skill) => skill.id === (selected?.skillId ?? initialSkillId));
     const effectiveDiagramKind: CodexDiagramKind | undefined = diagramKind ?? (selected?.targetKind === "mermaid" || selected?.targetKind === "drawio" || selected?.targetKind === "svg" ? selected.targetKind : undefined);
@@ -119,8 +152,8 @@ export function CodexPanel(props: {
                     setSessions(store.sessions);
                     setRetention(store.retentionDays);
                 }
-            }).catch(() => { if (mounted.current)
-                setError("会話履歴を保存できません。"); });
+            }).catch((cause) => { if (mounted.current)
+                setError(`会話履歴を保存できません。${String(cause)}`); });
         };
         if (saveTimer.current)
             clearTimeout(saveTimer.current);
@@ -152,7 +185,7 @@ export function CodexPanel(props: {
     useEffect(() => {
         mounted.current = true;
         let stopped = false;
-        void Promise.all([loadSettings().catch((): Record<string, unknown> => ({})), loadCodexSessions().catch(() => ({ sessions: [], retentionDays: DEFAULT_CODEX_SESSION_RETENTION_DAYS })), listCodexLogs().catch(() => ({ entries: [], limit: 20 }))]).then(([settings, store, log]) => {
+        void Promise.all([loadSettings().catch((): Record<string, unknown> => ({})), loadCodexSessions().catch(() => ({ sessions: [], retentionDays: DEFAULT_CODEX_SESSION_RETENTION_DAYS })), listCodexLogs().catch(() => ({ entries: [], limit: 20 }))]).then(async ([settings, store, log]) => {
             if (stopped)
                 return;
             const value = normalizeCodexOptions(settings.codex);
@@ -163,8 +196,7 @@ export function CodexPanel(props: {
             setRetention(store.retentionDays);
             setLogs(log);
             sessionsLoaded.current = true;
-            setReady(true);
-            setSessionsReady(true);
+            if (!stopped) { setReady(true); setSessionsReady(true); }
         });
         return () => { stopped = true; mounted.current = false; if (saveTimer.current)
             clearTimeout(saveTimer.current); if (sessionsLoaded.current && (hasConversationContent(conversationRef.current) || knownSessionIds.current.has(conversationRef.current.id)))
@@ -176,8 +208,9 @@ export function CodexPanel(props: {
         const snapshot = getSnapshot();
         const previous = documentPath ? sessions.filter((item) => item.documentPath === documentPath).sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0] : undefined;
         if (previous && previous.id !== conversationId.current) {
-            const compatible = !previous.draft.targetSnapshot || previous.draft.targetSnapshot.content === snapshot?.content;
-            replaceConversation({ ...previous, documentId: snapshot?.documentId ?? previous.documentId, draft: { ...previous.draft, targetSnapshot: compatible && previous.draft.targetSnapshot && snapshot ? { ...previous.draft.targetSnapshot, documentId: snapshot.documentId } : null } });
+            const targets = textTargets(previous.draft);
+            const compatible = targets.every(item => item.snapshot.content === snapshot?.content);
+            replaceConversation({ ...previous, documentId: snapshot?.documentId ?? previous.documentId, draft: { ...previous.draft, targetSnapshot: null, targetLabel: undefined, textTargets: compatible && snapshot ? targets.map(item => ({ ...item, snapshot: { ...item.snapshot, documentId: snapshot.documentId } })) : [] } });
         }
         else if (!previous && conversationRef.current.documentPath !== documentPath)
             replaceConversation(fresh(snapshot?.documentId ?? "", documentPath, documentName));
@@ -211,11 +244,10 @@ export function CodexPanel(props: {
             const code = raw.replace(/^\s*(?:`{3,}|~{3,})[^\n]*\n/, "").replace(/\n(?:`{3,}|~{3,})\s*$/, "");
             const image = loaded ?? await (effectiveDiagramKind && !selected?.imageSource ? diagramImage(diagramKind ? documentText : code, effectiveDiagramKind, selected?.renderedSvg ?? renderedSvg) : loadTranscriptionImage(documentPath, stagedImages[source] ?? source));
             if (!mounted.current || conversationRef.current.id !== owner) return null;
-            const prior = conversationRef.current.attachments.find((item) => item.base64 === image.base64);
-            if (prior)
-                return prior.id;
+            const pending = conversationRef.current.attachments.find(item => item.base64 === image.base64 && conversationRef.current.draft.attachmentIds.includes(item.id));
+            if (pending) return pending.id;
             const mime = "mime" in image && typeof image.mime === "string" ? image.mime : "image/png";
-            const item: CodexConversationAttachment = { id: crypto.randomUUID(), label: `添付ファイル${conversationRef.current.attachments.length + 1}`, base64: image.base64, mime, name: loaded?.name ?? source, addedAt: iso() };
+            const item: CodexConversationAttachment = { id: crypto.randomUUID(), label: `画像${conversationRef.current.attachments.length + 1}`, base64: image.base64, mime, name: loaded?.name ?? source, addedAt: iso() };
             replaceConversation({ ...conversationRef.current, attachments: [...conversationRef.current.attachments, item], updatedAt: iso() });
             return item.id;
         }
@@ -266,15 +298,48 @@ export function CodexPanel(props: {
             return { ...next, draft: { ...next.draft, editMode: value.draft.editMode === "question" ? "question" : snapshot.from === snapshot.to ? "document" : "selection" } };
         });
     }
+    async function requestAiAuthorization() {
+        if (!ready || saving) return false;
+        if (options.tool !== "codex-cli") {
+            setError("選択したAIツールは未実装です。送信できません。");
+            return false;
+        }
+        if (savedOptions.enabled && !settingsDirty) return true;
+        if (authorization.current) return await authorization.current;
+        const alreadyAuthorized = savedOptions.enabled;
+        if (!alreadyAuthorized && !window.confirm("AIへの送信にはサブスクリプションのクレジットを消費します。送信を有効にしますか？")) return false;
+        const work = (async () => {
+            setSaving(true);
+            try {
+                const value = { ...options, enabled: true };
+                await saveSettings({ codex: value });
+                if (!mounted.current) return false;
+                setOptions(value);
+                setSavedOptions(value);
+                return true;
+            } catch (cause) {
+                if (mounted.current) setError(`AI設定を保存できません。${String(cause)}`);
+                return false;
+            } finally {
+                if (mounted.current) setSaving(false);
+            }
+        })();
+        authorization.current = work;
+        try { return await work; }
+        finally { if (authorization.current === work) authorization.current = null; }
+    }
     async function send() {
         const session = conversationRef.current;
-        if (imageEditAction || active.current || busy || preparingImage || applying || !savedOptions.enabled || settingsDirty || !available || !session.draft.instruction.trim()) return;
+        const sessionId = session.id;
+        if (!ready || imageEditAction || active.current || busy || preparingImage || applying || saving || !available || !session.draft.instruction.trim()) return;
+        if (!(savedOptions.enabled && !settingsDirty) && !await requestAiAuthorization()) return;
+        if (!mounted.current || conversationRef.current.id !== sessionId || active.current || busy || applying) return;
         const snapshot = getSnapshot();
         if (!snapshot) return setError("編集画面を開いてから送信してください。");
-        const target = session.draft.targetSnapshot;
-        if (target && (target.documentId !== snapshot.documentId || !canApplyProposal(snapshot, target))) return setError("対象本文が変わりました。取り込み直してください。");
+        const targets = textTargets(session.draft);
+        if (targets.some(item => item.snapshot.documentId !== snapshot.documentId || !canApplyProposal(snapshot, item.snapshot))) return setError("対象本文が変わりました。取り込み直してください。");
         if (session.lastMessageAt && Date.now() - Date.parse(session.lastMessageAt) > 60 * 60 * 1000 && !window.confirm("最終会話から1時間以上経過しています。キャッシュを利用できない可能性があり、入力の再処理による利用量・コストが増える場合があります。続けて送信しますか？")) return;
-        const id = crypto.randomUUID(), sessionId = session.id;
+        const id = crypto.randomUUID();
         active.current = id; setBusy(true); setError(""); setProposal(null);
         try {
             const ids = [...session.draft.attachmentIds];
@@ -282,23 +347,30 @@ export function CodexPanel(props: {
             const requested = session.draft.instruction.trim();
             const prompt = selectedSkill?.prompt ?? "";
             const instructionText = prompt && !requested.startsWith(prompt) ? `${prompt}\n\n追加指示: ${requested}` : requested;
-            const scoped = scopeRequest(snapshot, target, mode, instructionText);
+            // 非連続の複数対象を個別範囲へ順に適用すると位置ずれで範囲外を壊し得る。
+            // 複数時は文書全体の提案だけを採用確認へ渡し、現在本文との一致も確認する。
+            const target = targets.length === 1 ? targets[0].snapshot : null;
+            const multipleSelection = targets.length > 1 && mode === "selection";
+            const multiQuestion = targets.length > 1 && mode === "question";
+            const effectiveMode: CodexEditMode = targets.length > 1 && mode !== "question" ? "document" : mode;
+            const scoped = scopeRequest(snapshot, target, effectiveMode, instructionText);
             const historicalIds = session.messages.flatMap(message => message.attachmentIds);
             const attachments = conversationRef.current.attachments.filter(item => ids.includes(item.id) || historicalIds.includes(item.id));
             if (selectedSkill?.config.inputs.includes("image") && !attachments.length) throw new Error("このスキルには画像が必要です。画像を追加してください。");
             const labels = attachments.map((item, index) => `${index + 1}枚目=${item.label}`).join("、");
-            const text = selectedSkill?.config.inputs.includes("text") === false || (!target && mode === "question") ? "" : scoped.text;
-            const targetLabel = target ? session.draft.targetLabel ?? "対象テキスト1" : `対象テキスト${session.nextTextTargetNumber ?? 1}`;
-            const instruction = `${scoped.instruction}${text ? target ? `\n今回の${targetLabel}: 文字位置${target.from}〜${target.to}。${mode === "document" ? "入力本文は文書全体です。" : "入力本文がこの対象です。"}` : `\n入力本文全体を${targetLabel}として参照してください。` : ""}${!diagramKind && effectiveDiagramKind && /^\s*(?:`{3,}|~{3,})/.test(scoped.text) ? "\n対象はMarkdownの図コードブロックです。replacementには元と同じ言語のコードフェンスを含む対象全体を返してください。" : ""}${labels ? `\n\n添付画像の順序: ${labels}\n今回の添付: ${ids.map(imageId => attachments.find(item => item.id === imageId)?.label).join("、") || "なし（過去の添付は履歴の参照用です）"}` : ""}`;
-            const history = session.messages.map(({ role, text: message, attachmentIds }) => ({ role, text: message + (attachmentIds.length ? `\n添付: ${attachmentIds.map(imageId => session.attachments.find(item => item.id === imageId)?.label ?? "画像データなし").join("、")}` : "") }));
+            // 複数対象の質問は、選択外の本文を送らず、名前ごとの抜粋だけを渡す。
+            const text = selectedSkill?.config.inputs.includes("text") === false ? "" : multiQuestion ? targets.map(item => `${item.label}:\n${item.snapshot.content.slice(item.snapshot.from, item.snapshot.to)}`).join("\n\n") : (!target && mode === "question") ? "" : scoped.text;
+            const targetDescription = targets.length ? targets.map(item => `${item.label}: 文字位置${item.snapshot.from}〜${item.snapshot.to}`).join("、") : "";
+            const instruction = `${scoped.instruction}${text ? targetDescription ? `\n今回の対象: ${targetDescription}。${multiQuestion ? "入力本文は追加した対象だけです。" : targets.length > 1 || effectiveMode === "document" ? "入力本文は文書全体です。" : "入力本文がこの対象です。"}${multipleSelection ? "指定した位置以外は変更しないでください。" : ""}` : "\n入力本文全体を参照してください。" : ""}${!diagramKind && effectiveDiagramKind && /^\s*(?:`{3,}|~{3,})/.test(scoped.text) ? "\n対象はMarkdownの図コードブロックです。replacementには元と同じ言語のコードフェンスを含む対象全体を返してください。" : ""}${labels ? `\n\n添付画像の順序: ${labels}\n今回の添付: ${ids.map(imageId => attachments.find(item => item.id === imageId)?.label).join("、") || "なし（過去の添付は履歴の参照用です）"}` : ""}`;
+            const history = session.messages.map(({ role, text: message, attachmentIds, attachmentLabels }) => ({ role, text: message + (attachmentIds.length ? `\n添付: ${attachmentIds.map(imageId => attachmentLabels?.[imageId] ?? session.attachments.find(item => item.id === imageId)?.label ?? "画像データなし").join("、")}` : "") }));
             if (history.length > 40 || requestBytes(instruction, text, history) > 120000) throw new Error("送信量が上限を超えています。新しい会話を開始してください。");
-            const user = { role: "user" as const, text: requested + (text ? `\n\n${mode === "document" && target ? `文書全体（${targetLabel}は文字位置${target.from}〜${target.to}）` : targetLabel}:\n${text}` : ""), attachmentIds: ids, timestamp: iso() };
+            const user = { role: "user" as const, text: requested + (text ? `\n\n${targets.length ? `${multiQuestion ? "対象テキスト" : targets.length > 1 || effectiveMode === "document" ? "文書全体" : targets[0].label}（${targetDescription}）` : "文書全体"}:\n${text}` : ""), attachmentIds: ids, attachmentLabels: Object.fromEntries(ids.map(imageId => [imageId, conversationRef.current.attachments.find(item => item.id === imageId)?.label ?? "画像データなし"])), timestamp: iso() };
             const reply = await generateCodex({ id, instruction: diagramKind ? diagramInstruction(diagramKind, instruction) : instruction, text, history, ...(attachments.length ? { images: attachments.map(item => ({ base64: item.base64 })) } : {}) });
             if (!mounted.current || active.current !== id || conversationId.current !== sessionId) return;
             const time = iso();
-            updateConversation(value => value.id !== sessionId ? value : { ...value, nextTextTargetNumber: !target && text ? (session.nextTextTargetNumber ?? 1) + 1 : value.nextTextTargetNumber, messages: [...value.messages, user, { role: "assistant", text: reply.answer + (reply.replacement === null ? "" : `\n\n変更案:\n${reply.replacement}`), attachmentIds: [], timestamp: time }], draft: { ...value.draft, instruction: "", attachmentIds: [], targetSnapshot: null, targetLabel: undefined, editMode: "question" }, lastMessageAt: time, updatedAt: time, contextTokens: reply.inputTokens ?? value.contextTokens });
+            updateConversation(value => value.id !== sessionId ? value : { ...value, messages: [...value.messages, user, { role: "assistant", text: reply.answer + (reply.replacement === null ? "" : `\n\n変更案:\n${reply.replacement}`), attachmentIds: [], timestamp: time }], draft: { ...value.draft, instruction: "", attachmentIds: [], targetSnapshot: null, targetLabel: undefined, textTargets: [], editMode: "question" }, lastMessageAt: time, updatedAt: time, contextTokens: reply.inputTokens ?? value.contextTokens });
             setSelectedImageId(undefined); setIgnoredTarget(suppliedTarget ?? null);
-            if (mode !== "question" && reply.replacement !== null) setProposal({ base: scoped.base, original: scoped.text, value: reply.replacement });
+            if (mode !== "question" && reply.replacement !== null) setProposal({ base: scoped.base, original: scoped.text, value: reply.replacement, ...(multipleSelection ? { allowedRanges: targets.map(item => ({ from: item.snapshot.from, to: item.snapshot.to })) } : {}) });
             void listCodexLogs().then(setLogs).catch(() => {});
         } catch (cause) { if (mounted.current && active.current === id) setError(String(cause)); }
         finally { if (active.current === id) { active.current = null; setBusy(false); } }
@@ -311,6 +383,8 @@ export function CodexPanel(props: {
         try {
             if (diagramKind)
                 await validateDiagramForAdoption(diagramKind, value);
+            if (proposal.allowedRanges && !replacementMatchesTargetRanges(proposal.original, value, proposal.allowedRanges))
+                throw new Error("指定場所のみ編集では、指定した範囲外を変更する提案は採用できません。");
             if (!canApplyProposal(getSnapshot(), proposal.base))
                 throw new Error("生成後に本文や文書が変わりました。最新の本文で生成し直してください。");
             const accepted = applyProposalAsync ? await applyProposalAsync(proposal.base, value) : applyProposal(proposal.base, value);
@@ -327,27 +401,28 @@ export function CodexPanel(props: {
         }
     }
     const editing = selected?.imageSource ? conversation.attachments.find((item) => item.id === selectedImageId) : undefined;
-    const textTarget = conversation.draft.targetSnapshot;
-    return <aside hidden={!open} className="codex-panel" style={{ "--codex-panel-width": `${width}px` } as React.CSSProperties} aria-label="Codex文章アシスタント" onKeyDown={event => {
+    const currentTextTargets = textTargets(conversation.draft);
+    const permissionControl = <select className="codex-panel__edit-permission" aria-label="編集の許可" disabled={busy} value={mode === "selection" && !currentTextTargets.length ? "document" : mode} onChange={event => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, editMode: event.target.value as CodexEditMode } }))}><option value="question">質問のみ</option>{currentTextTargets.length > 0 && <option value="selection">指定場所のみ編集</option>}<option value="document">全文から編集</option></select>;
+    return <aside hidden={!open} className="codex-panel" style={{ "--codex-panel-width": `${width}px` } as React.CSSProperties} aria-label="AI文章アシスタント" onKeyDown={event => {
         if (event.key !== "Escape") return;
         event.preventDefault(); event.stopPropagation();
         if (applyingRef.current) return;
         if (proposal) setProposal(null); else if (historyOpen) setHistoryOpen(false); else if (logsOpen) setLogsOpen(false); else { stop(); onClose(); }
     }}>
-    <div className="codex-panel__resize" role="separator" tabIndex={0} aria-label="Codexパネルの幅を変更" aria-orientation="vertical" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}
+    <div className="codex-panel__resize" role="separator" tabIndex={0} aria-label="AIパネルの幅を変更" aria-orientation="vertical" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}
       onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}
       onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}
       onKeyDown={event => { if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === "ArrowLeft" ? 20 : -20)))); } }} />
     <header inert={!!proposal || historyOpen || logsOpen}><button type="button" onClick={newConversation}>新しい会話を開始</button><div><button type="button" onClick={() => { if (busy)
-        stop(); setHistoryOpen(true); }}>会話履歴（{sessions.length}）</button><button type="button" onClick={() => void listCodexLogs().then((data) => { setLogs(data); setLogsOpen(true); }).catch((cause) => setError(String(cause)))}>通信記録（{logs.entries.length}）</button><button type="button" onClick={onClose} aria-label="Codexパネルを閉じる">×</button></div></header>
+        stop(); setHistoryOpen(true); }}>会話履歴（{sessions.length}）</button><button type="button" onClick={() => void listCodexLogs().then((data) => { setLogs(data); setLogsOpen(true); }).catch((cause) => setError(String(cause)))}>通信記録（{logs.entries.length}）</button><button type="button" onClick={onClose} aria-label="AIパネルを閉じる">×</button></div></header>
     <div ref={body} className="codex-panel__body" inert={!!proposal || historyOpen || logsOpen} style={{ "--codex-chat-ratio": `${chatRatio}%` } as React.CSSProperties}>
       <section className="codex-panel__conversation">
         <h2>会話ログ</h2>
         <div ref={chat} className="codex-panel__chat" role="log" aria-label="会話ログ" aria-busy={busy}>
           {conversation.messages.length === 0 && <p className="codex-panel__empty">ここに会話が表示されます。</p>}
           {conversation.messages.map((message, index) => <section className={`codex-message codex-message--${message.role}`} key={`${message.timestamp}-${index}`}>
-            <strong>{message.role === "user" ? "あなた" : "Codex"}</strong><pre>{message.text}</pre>
-            {message.attachmentIds.map(id => { const attachment = conversation.attachments.find(item => item.id === id); return attachment ? <button key={id} type="button" className="codex-message__image" onClick={() => { saveConversation(conversationRef.current, true); setSessions(current => [conversationRef.current, ...current.filter(item => item.id !== conversationRef.current.id)]); setHistoryOpen(true); }}><img src={`data:${attachment.mime};base64,${attachment.base64}`} alt={`${attachment.label}のサムネイル`} />{attachment.label}</button> : <small key={id}>画像データなし</small>; })}
+            <strong>{message.role === "user" ? "あなた" : "AI"}</strong><pre>{message.text}</pre>
+            {message.attachmentIds.map(id => { const attachment = conversation.attachments.find(item => item.id === id); const label = message.attachmentLabels?.[id] ?? attachment?.label ?? "画像データなし"; return attachment ? <button key={id} type="button" className="codex-message__image" onClick={() => { saveConversation(conversationRef.current, true); setSessions(current => [conversationRef.current, ...current.filter(item => item.id !== conversationRef.current.id)]); setHistoryOpen(true); }}><img src={`data:${attachment.mime};base64,${attachment.base64}`} alt={`${label}のサムネイル`} />{label}</button> : <small key={id}>{label}</small>; })}
           </section>)}
         </div>
       </section>
@@ -356,18 +431,18 @@ export function CodexPanel(props: {
         onPointerMove={event => { if (event.buttons !== 1 || !event.currentTarget.hasPointerCapture?.(event.pointerId)) return; const bounds = body.current?.getBoundingClientRect(); if (bounds?.height) setChatRatio(Math.max(20, Math.min(75, (event.clientY - bounds.top) / bounds.height * 100))); }}
         onKeyDown={event => { if (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "Home" || event.key === "End") { event.preventDefault(); setChatRatio(value => event.key === "Home" ? 20 : event.key === "End" ? 75 : Math.max(20, Math.min(75, value + (event.key === "ArrowUp" ? -5 : 5)))); } }} />
       <section className="codex-panel__composer" aria-label="次回送信する内容">
-        {busy && <div className="codex-panel__sending" role="status"><span className="codex-panel__spinner" aria-hidden="true" />送信中・Codexの回答を待っています…</div>}
+        {busy && <div className="codex-panel__sending" role="status"><span className="codex-panel__spinner" aria-hidden="true" />送信中・AIの回答を待っています…</div>}
         {!imageEditAction && <div className="codex-panel__prompt">
-          <label>指示文<textarea aria-label="指示" ref={input} value={conversation.draft.instruction} rows={7} disabled={busy || applying || !savedOptions.enabled}
-            placeholder="例: 添付ファイル1を見ながら、対象テキスト1について説明してください。"
+          <label>指示文<textarea aria-label="指示" ref={input} value={conversation.draft.instruction} rows={7} disabled={busy || applying || saving || !ready}
+            placeholder="例: 画像1を見ながら、テキスト1について説明してください。"
             onChange={event => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, instruction: event.target.value } }))}
             onKeyDown={event => { if (!event.nativeEvent.isComposing && event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); void send(); } }} />
           </label>
-          <div className="codex-panel__send-actions"><button type="button" aria-label="送信（Ctrl+Enter）" disabled={!savedOptions.enabled || busy || preparingImage || applying || !available || !conversation.draft.instruction.trim() || settingsDirty} onClick={() => void send()}>{busy ? "送信中…" : "送信"}<small>（Ctrl+Enter）</small></button><button type="button" disabled={!busy} onClick={stop}>停止</button></div>
+          <div className="codex-panel__send-actions"><button type="button" aria-label="送信（Ctrl+Enter）" disabled={!ready || options.tool !== "codex-cli" || busy || preparingImage || applying || saving || !available || !conversation.draft.instruction.trim()} onClick={() => void send()}>{busy ? "送信中…" : "送信"}<small>（Ctrl+Enter）</small></button><button type="button" disabled={!busy} onClick={stop}>停止</button>{permissionControl}</div>
         </div>}
-        {editing && !effectiveDiagramKind && selectedSkill?.config.mode === "selection" && editing.mime === "image/png" && <CodexImageEdit documentPath={documentPath} source={selected!.imageSource!} originalBase64={editing.base64} disabled={!savedOptions.enabled || settingsDirty || !ready} initialInstruction={`${selectedSkill.prompt}\n今回の画像は${editing.label}です。`} instruction={conversation.draft.instruction} onBusyChange={setImageBusy} onGenerated={instruction => {
+        {editing && !effectiveDiagramKind && selectedSkill?.config.mode === "selection" && editing.mime === "image/png" && <CodexImageEdit actionFooter={permissionControl} documentPath={documentPath} source={selected!.imageSource!} originalBase64={editing.base64} disabled={!ready || options.tool !== "codex-cli" || saving} onRequestAuthorization={requestAiAuthorization} initialInstruction={`${selectedSkill.prompt}\n今回の画像は${editing.label}です。`} instruction={conversation.draft.instruction} onBusyChange={setImageBusy} onGenerated={instruction => {
             const time = iso();
-            updateConversation(value => ({ ...value, messages: [...value.messages, { role: "user", text: instruction, attachmentIds: [editing.id], timestamp: time }, { role: "assistant", text: "画像を生成しました。変更前後を確認して採用できます。", attachmentIds: [], timestamp: time }], draft: { ...value.draft, instruction: "", attachmentIds: [], targetSnapshot: null, targetLabel: undefined }, lastMessageAt: time, updatedAt: time }));
+            updateConversation(value => ({ ...value, messages: [...value.messages, { role: "user", text: instruction, attachmentIds: [editing.id], timestamp: time }, { role: "assistant", text: "画像を生成しました。変更前後を確認して採用できます。", attachmentIds: [], timestamp: time }], draft: { ...value.draft, instruction: "", attachmentIds: [], targetSnapshot: null, targetLabel: undefined, textTargets: [] }, lastMessageAt: time, updatedAt: time }));
         }} onInstructionChange={instruction => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, instruction } }))} onReferenceChange={async (source, replacement) => {
             const snapshot = getSnapshot();
             if (!snapshot || !selected || !canApplyProposal(snapshot, selected)) return false;
@@ -377,38 +452,42 @@ export function CodexPanel(props: {
             return applyProposal({ ...snapshot, from: 0, to: snapshot.content.length }, changed);
         }}/>}
         <fieldset className="codex-panel__tool" disabled={!ready || busy || imageBusy || saving}>
-          <label>ツール<select aria-label="ツール" value="codex-cli" onChange={() => {}}><option value="codex-cli">Codex CLI</option></select></label>
-          <label>モデル<input list={modelsId} value={options.model} onChange={event => setOptions({ ...options, model: event.target.value })}/><datalist id={modelsId}>{[...new Set([savedOptions.model, DEFAULT_CODEX_OPTIONS.model, "gpt-5.6-terra", "gpt-6-astra"])].map(model => <option key={model} value={model} />)}</datalist></label>
-          <div className="codex-panel__tool-actions"><label><input type="checkbox" checked={options.enabled} onChange={event => setOptions({ ...options, enabled: event.target.checked })}/>Codex CLIを有効にする</label>
+          <div className="codex-panel__tool-fields">
+            <label>ツール<select aria-label="ツール" value={options.tool} onChange={event => setOptions({ ...options, tool: event.target.value as typeof options.tool, enabled: false })}>
+              <option value="codex-cli">Codex CLI</option><option value="chatgpt-api">ChatGPT API（未実装）</option><option value="claude-cli">Claude CLI（未実装）</option><option value="claude-api">Claude API（未実装）</option><option value="copilot-cli">Copilot CLI（未実装）</option><option value="copilot-chat-cli">Copilot Chat CLI（未実装）</option>
+            </select></label>
+            <label>モデル<input list={modelsId} value={options.model} onChange={event => setOptions({ ...options, model: event.target.value })}/><datalist id={modelsId}>{[...new Set([savedOptions.model, DEFAULT_CODEX_OPTIONS.model, "gpt-5.6-terra", "gpt-6-astra"])].map(model => <option key={model} value={model} />)}</datalist></label>
+          </div>
+          <div className="codex-panel__tool-actions">{options.tool !== "codex-cli" && <small role="status">選択したAIツールは未実装です。送信できません。</small>}
             {settingsDirty && <button type="button" onClick={() => void (async () => { setSaving(true); try { const value = normalizeCodexOptions(options); await saveSettings({ codex: value }); setSavedOptions(value); } catch (cause) { setError(String(cause)); } finally { setSaving(false); } })()}>設定を保存</button>}
           </div>
         </fieldset>
         <section className="codex-panel__scope" aria-label="今回の対象" inert={imageBusy || !sessionsReady}>
-          <strong>次回送信する対象・添付</strong>
+          <div className="codex-panel__scope-heading"><strong>次回送信する対象・添付</strong><span className="codex-panel__hint" tabIndex={0} aria-label="対象と添付の説明">i<span role="tooltip">次回の送信に追加する資料です。送信成功後は履歴に残り、この一覧から外れます。</span></span></div>
           <div className="codex-panel__actions">
-            <button type="button" disabled={busy} onClick={captureText}>対象テキストを取り込む</button>
+            <button type="button" disabled={busy} onClick={captureText}>選択テキストを追加</button>
+          </div>
+          {currentTextTargets.length > 0 && <ul className="codex-panel__text-targets" aria-label="追加したテキスト">{currentTextTargets.map((item, index) => <li key={item.id}><input aria-label={`${item.label}の名前`} value={item.label} disabled={busy} onChange={event => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, textTargets: textTargets(value.draft).map(target => target.id === item.id ? { ...target, label: event.target.value } : target) } }))} onBlur={() => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, textTargets: textTargets(value.draft).map(target => target.id === item.id && !target.label.trim() ? { ...target, label: `テキスト${index + 1}` } : target) } }))}/><small>{item.snapshot.content.slice(item.snapshot.from, item.snapshot.to)}</small><button type="button" disabled={busy} onClick={() => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, textTargets: textTargets(value.draft).filter(target => target.id !== item.id), targetSnapshot: null, targetLabel: undefined, editMode: textTargets(value.draft).length === 1 && value.draft.editMode === "selection" ? "question" : value.draft.editMode } }))}>外す</button></li>)}</ul>}
+          <div className="codex-panel__actions">
             <button type="button" disabled={busy || preparingImage} onClick={() => fileInput.current?.click()}>画像ファイルを追加</button>
             <input ref={fileInput} className="codex-panel__file-input" hidden type="file" accept="image/png" aria-label="添付するPNG画像" onChange={event => void addFile(event)}/>
             {selected?.imageSource && <button type="button" disabled={busy} onClick={() => void addSelectedImage()}>現在の画像を追加</button>}
           </div>
-          {textTarget && <div className="codex-panel__text-target"><strong>{conversation.draft.targetLabel ?? "対象テキスト1"}</strong><small>{textTarget.content.slice(textTarget.from, textTarget.to)}</small><button type="button" disabled={busy} onClick={() => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, targetSnapshot: null, targetLabel: undefined, editMode: value.draft.editMode === "selection" ? "question" : value.draft.editMode } }))}>対象テキストを外す</button></div>}
-          {conversation.draft.attachmentIds.length > 0 && <ul aria-label="添付画像">{conversation.draft.attachmentIds.map(id => { const attachment = conversation.attachments.find(item => item.id === id); return attachment && <li key={id}><img src={`data:${attachment.mime};base64,${attachment.base64}`} alt={`${attachment.label}のサムネイル`}/><strong>{attachment.label}</strong><small>{attachment.name}</small><button type="button" disabled={busy} onClick={() => { updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, attachmentIds: value.draft.attachmentIds.filter(valueId => valueId !== id) } })); if (selectedImageId === id) setSelectedImageId(undefined); }}>対象から外す</button></li>; })}</ul>}
-          {!textTarget && conversation.draft.attachmentIds.length === 0 && <p>対象・添付は未登録です。</p>}
-          <small>送信が成功した対象は会話ログに残り、ここから外れます。</small>
+          {conversation.draft.attachmentIds.length > 0 && <ul aria-label="追加した画像">{conversation.draft.attachmentIds.map((id, index) => { const attachment = conversation.attachments.find(item => item.id === id); return attachment && <li key={id}><img src={`data:${attachment.mime};base64,${attachment.base64}`} alt={`${attachment.label}のサムネイル`}/><input aria-label={`${attachment.label}の名前`} value={attachment.label} disabled={busy} onChange={event => updateConversation(value => ({ ...value, updatedAt: iso(), attachments: value.attachments.map(image => image.id === id ? { ...image, label: event.target.value } : image) }))} onBlur={() => updateConversation(value => ({ ...value, updatedAt: iso(), attachments: value.attachments.map(image => image.id === id && !image.label.trim() ? { ...image, label: `画像${index + 1}` } : image) }))}/><small>{attachment.name}</small><button type="button" disabled={busy} onClick={() => { updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, attachmentIds: value.draft.attachmentIds.filter(valueId => valueId !== id) } })); if (selectedImageId === id) setSelectedImageId(undefined); }}>外す</button></li>; })}</ul>}
+          {!currentTextTargets.length && conversation.draft.attachmentIds.length === 0 && <p>対象・添付は未登録です。</p>}
         </section>
-        <label>編集の許可<select aria-label="編集の許可" disabled={busy} value={mode === "selection" && !textTarget ? "document" : mode} onChange={event => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, editMode: event.target.value as CodexEditMode } }))}><option value="question">質問のみ</option>{textTarget && (textTarget.from > 0 || textTarget.to < textTarget.content.length) && <option value="selection">指定場所のみ編集</option>}{textTarget && mode === "selection" && textTarget.from === 0 && textTarget.to === textTarget.content.length && <option value="selection">指定場所のみ編集</option>}<option value="document">{textTarget && (textTarget.from > 0 || textTarget.to < textTarget.content.length) ? "指定場所以外の編集を認める" : "文書全体を編集"}</option></select></label>
-        {mode === "document" && <small>文書全体を送信して編集を依頼します。</small>}
         {preparingImage && <p role="status">画像を準備しています…</p>}
         {error && !proposal && <p role="alert">{error}</p>}
       </section>
     </div>
-    {proposal && <div className="codex-proposal-preview" role="dialog" aria-modal="true" aria-label="Codex変更案のプレビュー"><CodexProposalReview original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value) => <CodexMarkdownPreview source={value} baseDir={baseDir}/>} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onAccept={accept} onReject={() => setProposal(null)} onClose={() => setProposal(null)} busy={applying} error={error}/></div>}
+    {proposal && <div className="codex-proposal-preview" role="dialog" aria-modal="true" aria-label="AI変更案のプレビュー"><CodexProposalReview original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value) => <CodexMarkdownPreview source={value} baseDir={baseDir}/>} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onAccept={accept} onReject={() => setProposal(null)} onClose={() => setProposal(null)} busy={applying} error={error}/></div>}
     {historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {
         stop();
         saveConversation(conversationRef.current, true);
         setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);
         const snapshot = getSnapshot();
-        replaceConversation(item.documentPath === documentPath && item.draft.targetSnapshot && snapshot && item.draft.targetSnapshot.content === snapshot.content ? { ...item, draft: { ...item.draft, targetSnapshot: { ...item.draft.targetSnapshot, documentId: snapshot.documentId } } } : item);
+        const targets = textTargets(item.draft);
+        replaceConversation(item.documentPath === documentPath && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);
     } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? "", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}
     {logsOpen && <CodexLogViewer data={logs} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}
   </aside>;

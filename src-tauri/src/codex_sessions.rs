@@ -3,7 +3,7 @@ use crate::file_lock::{atomic_write, with_lock};
 use base64::Engine;
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
@@ -68,6 +68,8 @@ pub struct CodexConversationMessage {
     pub text: String,
     #[serde(default)]
     pub attachment_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub attachment_labels: HashMap<String, String>,
     pub timestamp: String,
 }
 
@@ -93,6 +95,17 @@ pub struct CodexConversationDraft {
     pub attachment_ids: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target_label: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub text_targets: Vec<CodexConversationTextTarget>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexConversationTextTarget {
+    pub id: String,
+    pub label: String,
+    pub snapshot: CodexDraftSnapshot,
+    pub added_at: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -108,7 +121,7 @@ fn sessions_path(app: &AppHandle) -> Result<PathBuf, String> {
     app.path()
         .app_data_dir()
         .map(|directory| directory.join(SESSIONS_FILENAME))
-        .map_err(|error| format!("Codex会話履歴の保存先を取得できません: {error}"))
+        .map_err(|error| format!("AI会話履歴の保存先を取得できません: {error}"))
 }
 
 /// 通信ログも会話履歴と同じ保持期間に従う。未送信の下書きは通信ログからは復元しない。
@@ -130,18 +143,18 @@ fn load_from(path: &Path) -> Result<CodexSessionStore, String> {
         return Ok(CodexSessionStore::default());
     }
     let bytes =
-        std::fs::read(path).map_err(|error| format!("Codex会話履歴を読み込めません: {error}"))?;
+        std::fs::read(path).map_err(|error| format!("AI会話履歴を読み込めません: {error}"))?;
     if bytes.len() > MAX_SESSION_BYTES {
-        return Err("Codex会話履歴のサイズが上限を超えています。".into());
+        return Err("AI会話履歴のサイズが上限を超えています。".into());
     }
-    serde_json::from_slice(&bytes).map_err(|_| "Codex会話履歴の形式が不正です。".into())
+    serde_json::from_slice(&bytes).map_err(|_| "AI会話履歴の形式が不正です。".into())
 }
 
 fn persist(path: &Path, store: &CodexSessionStore) -> Result<(), String> {
     let content = serde_json::to_vec(store)
-        .map_err(|_| "Codex会話履歴を保存用に変換できません。".to_string())?;
+        .map_err(|_| "AI会話履歴を保存用に変換できません。".to_string())?;
     if content.len() > MAX_SESSION_BYTES {
-        return Err("Codex会話履歴のサイズが上限を超えています。画像を減らしてください。".into());
+        return Err("AI会話履歴のサイズが上限を超えています。画像を減らしてください。".into());
     }
     atomic_write(path, &content).map_err(|error| error.to_string())
 }
@@ -155,6 +168,12 @@ fn valid_id(value: &str) -> bool {
 
 fn valid_text(value: &str, maximum: usize) -> bool {
     value.len() <= maximum && !value.contains('\0')
+}
+
+fn valid_document_id(value: &str) -> bool {
+    // フロントエンドのタブID:世代。保存先のパスには使用しない。
+    (1..=200).contains(&value.len())
+        && value.bytes().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b':'))
 }
 
 fn valid_path(value: &str) -> bool {
@@ -172,7 +191,7 @@ fn valid_path(value: &str) -> bool {
 fn parse_time(value: &str) -> Result<DateTime<Utc>, String> {
     DateTime::parse_from_rfc3339(value)
         .map(|time| time.with_timezone(&Utc))
-        .map_err(|_| "Codex会話履歴の日時が不正です。".into())
+        .map_err(|_| "AI会話履歴の日時が不正です。".into())
 }
 
 fn validate_conversation(conversation: &CodexConversation) -> Result<(), String> {
@@ -183,7 +202,7 @@ fn validate_conversation(conversation: &CodexConversation) -> Result<(), String>
         || !conversation
             .document_id
             .as_deref()
-            .map_or(true, |value| valid_id(value))
+            .map_or(true, valid_document_id)
         || !conversation
             .document_path
             .as_deref()
@@ -261,6 +280,7 @@ fn validate_conversation(conversation: &CodexConversation) -> Result<(), String>
                 .attachment_ids
                 .iter()
                 .all(|id| attachment_ids.contains(id.as_str()))
+            || !message.attachment_labels.iter().all(|(id, label)| attachment_ids.contains(id.as_str()) && valid_text(label, 200))
         {
             return Err("会話メッセージが不正です。".into());
         }
@@ -275,13 +295,27 @@ fn validate_conversation(conversation: &CodexConversation) -> Result<(), String>
         return Err("下書きの添付画像参照が不正です。".into());
     }
     if let Some(snapshot) = &conversation.draft.target_snapshot {
-        if !valid_id(&snapshot.document_id)
+        if !valid_document_id(&snapshot.document_id)
             || !valid_text(&snapshot.content, MAX_TEXT_LENGTH)
             || snapshot.from > snapshot.to
             || snapshot.to > snapshot.content.len()
         {
             return Err("下書きの対象範囲が不正です。".into());
         }
+    }
+    if conversation.draft.text_targets.len() > MAX_ATTACHMENTS
+        || conversation.draft.text_targets.iter().any(|target| {
+            !valid_id(&target.id)
+                || !valid_text(&target.label, 200)
+                || !valid_document_id(&target.snapshot.document_id)
+                || !valid_text(&target.snapshot.content, MAX_TEXT_LENGTH)
+                || target.snapshot.from > target.snapshot.to
+                || target.snapshot.to > target.snapshot.content.len()
+                || parse_time(&target.added_at).is_err()
+        })
+        || conversation.draft.text_targets.iter().map(|target| &target.id).collect::<HashSet<_>>().len() != conversation.draft.text_targets.len()
+    {
+        return Err("下書きの対象本文が不正です。".into());
     }
     Ok(())
 }
@@ -421,6 +455,7 @@ mod tests {
                 role: "user".into(),
                 text: "質問".into(),
                 attachment_ids: vec![],
+                attachment_labels: HashMap::new(),
                 timestamp: updated_at.into(),
             }],
             attachments: vec![],
@@ -430,6 +465,7 @@ mod tests {
                 edit_mode: "question".into(),
                 attachment_ids: vec![],
                 target_label: Some("対象テキスト1".into()),
+                text_targets: vec![],
             },
             created_at: updated_at.into(),
             updated_at: updated_at.into(),
@@ -495,6 +531,28 @@ mod tests {
         let restored_legacy: CodexSessionStore = serde_json::from_value(legacy).unwrap();
         assert_eq!(restored_legacy.sessions[0].draft.target_label, None);
         assert_eq!(restored_legacy.sessions[0].next_text_target_number, None);
+        assert!(restored_legacy.sessions[0].draft.text_targets.is_empty());
+        assert!(restored_legacy.sessions[0].messages[0].attachment_labels.is_empty());
+    }
+    #[test]
+    fn preserves_named_text_targets_and_rejects_duplicate_ids() {
+        let mut value = session("2026-09-13T00:00:00Z");
+        value.document_id = Some("tab-1:3".into());
+        value.draft.text_targets = vec![CodexConversationTextTarget {
+            id: "text-1".into(), label: "要約する段落".into(),
+            snapshot: CodexDraftSnapshot { document_id: "tab-1:3".into(), content: "本文abc".into(), from: 0, to: 2 },
+            added_at: "2026-09-13T00:00:00Z".into(),
+        }];
+        assert!(validate_conversation(&value).is_ok());
+        let restored: CodexConversation = serde_json::from_slice(&serde_json::to_vec(&value).unwrap()).unwrap();
+        assert_eq!(restored.draft.text_targets[0].label, "要約する段落");
+        assert_eq!(restored.draft.text_targets[0].snapshot.to, 2);
+        assert_eq!(restored.document_id.as_deref(), Some("tab-1:3"));
+        let mut invalid = value.clone();
+        invalid.draft.text_targets[0].snapshot.document_id = "../other".into();
+        assert!(validate_conversation(&invalid).is_err());
+        value.draft.text_targets.push(value.draft.text_targets[0].clone());
+        assert!(validate_conversation(&value).is_err());
     }
     #[test]
     fn delayed_autosave_cannot_restore_expired_or_newer_conversations() {

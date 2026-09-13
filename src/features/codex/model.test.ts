@@ -3,9 +3,11 @@ import { canApplyProposal, normalizeCodexOptions, requestBytes } from "./model";
 import { buildProposalDiff } from "./proposalDiff";
 describe("Codexの設定と変更案", () => {
   const base = { documentId: "a:1", content: "前\n文章\n後", from: 2, to: 4 };
-  it("既定は無効かつLuna、文字列のtrueは無効", () => {
-    expect(normalizeCodexOptions(null)).toEqual({ enabled: false, model: "gpt-5.6-luna" });
+  it("既定は無効かつLunaで、明示的な同意だけを有効として扱う", () => {
+    expect(normalizeCodexOptions(null)).toEqual({ enabled: false, model: "gpt-5.6-luna", tool: "codex-cli" });
     expect(normalizeCodexOptions({ enabled: "true" }).enabled).toBe(false);
+    expect(normalizeCodexOptions({ enabled: true }).enabled).toBe(true);
+    expect(normalizeCodexOptions({ enabled: true, tool: "claude-cli" }).enabled).toBe(false);
   });
   it("カーソル移動は許容し、別文書・世代・本文変更・不正範囲は拒否", () => {
     expect(canApplyProposal({ ...base, from: 0, to: 0 }, base)).toBe(true);

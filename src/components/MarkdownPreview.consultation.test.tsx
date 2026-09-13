@@ -20,11 +20,11 @@ describe("MarkdownPreview consultation context menu", () => {
     render(<MarkdownPreview content={content} baseDir="" imageVersions={{}} tabId="a" onCodexConsult={consult} />);
     fireEvent.contextMenu(screen.getByText("Mermaidの図"), { clientX: 20, clientY: 20 });
 
-    expect(screen.getByRole("menuitem", { name: "Codexで画像を解説" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "Codexで見た目を改善" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "AIで画像を解説" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "AIで見た目を改善" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "画像から文字起こし" })).toBeNull();
-    expect(screen.queryByRole("menuitem", { name: "Codexで文字起こし（表）" })).toBeNull();
-    const target = chooseSkill("Codexで画像を解説", consult);
+    expect(screen.queryByRole("menuitem", { name: "AIで文字起こし（表）" })).toBeNull();
+    const target = chooseSkill("AIで画像を解説", consult);
     expect(target.targetKind).toBe("mermaid");
     expect(target.renderedSvg).toContain("<svg");
     expect(content.slice(target.from, target.to)).toBe("```mermaid\nflowchart TD\nA-->B\n```");
@@ -36,10 +36,10 @@ describe("MarkdownPreview consultation context menu", () => {
     render(<MarkdownPreview content={content} baseDir="C:/docs" documentPath="C:/docs/a.md" imageVersions={{}} tabId="a" onCodexConsult={consult} />);
     fireEvent.contextMenu(screen.getByText("draw.ioの図"), { clientX: 20, clientY: 20 });
 
-    expect(screen.getByRole("menuitem", { name: "Codexで画像を解説" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "Codexで見た目を改善" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "AIで画像を解説" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "AIで見た目を改善" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "画像から文字起こし" })).toBeNull();
-    const target = chooseSkill("Codexで見た目を改善", consult);
+    const target = chooseSkill("AIで見た目を改善", consult);
     expect(target.targetKind).toBe("drawio");
     expect(target.renderedSvg).toContain("<svg");
   });
@@ -50,10 +50,10 @@ describe("MarkdownPreview consultation context menu", () => {
     render(<MarkdownPreview content={content} baseDir="" documentPath="C:/docs/a.md" imageVersions={{}} tabId="a" onCodexConsult={consult} />);
     fireEvent.contextMenu(screen.getByRole("img", { name: "インラインSVG" }), { clientX: 20, clientY: 20 });
 
-    expect(screen.getByRole("menuitem", { name: "Codexで画像を解説" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "Codexで見た目を改善" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "AIで画像を解説" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "AIで見た目を改善" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "画像から文字起こし" })).toBeNull();
-    const target = chooseSkill("Codexで画像を解説", consult);
+    const target = chooseSkill("AIで画像を解説", consult);
     expect(target.targetKind).toBe("svg");
     expect(target.renderedSvg).toContain("<svg");
   });
@@ -72,7 +72,7 @@ describe("MarkdownPreview consultation context menu", () => {
     selection.addRange(range);
     fireEvent.contextMenu(screen.getByText("二行目"), { clientX: 20, clientY: 20 });
 
-    const target = chooseSkill("Codexに相談", consult);
+    const target = chooseSkill("AIに相談", consult);
     expect(content.slice(target.from, target.to)).toBe("一行目\n\n二行目\n\n三行目");
     expect(target.targetKind).toBe("text");
   });

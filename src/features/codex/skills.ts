@@ -17,6 +17,9 @@ export interface CodexSkill { id: string; name: string; description: string; sou
 export interface SkillFile { id: string; source: string }
 export interface SkillFiles { directory: string; files: SkillFile[] }
 export const DEFAULT_SKILL_FILES: SkillFile[] = [consult, edit, explain, transcribe, table, improve, diagram, imageEdit].map((source) => ({ id: String(parse(source.split(/^---\s*$/m)[1]).name), source }));
+function displaySkillLabel(label: string): string {
+  return label.replace(/Codex(?! CLI)/g, "AI");
+}
 export function parseSkill(file: SkillFile): CodexSkill {
   const blank: SkillConfig = { label: file.id, enabled: false, targets: [], inputs: ["text"], mode: "question", contextMenu: false, blockMenu: false, order: 100 };
   try {
@@ -27,7 +30,8 @@ export function parseSkill(file: SkillFile): CodexSkill {
     const c = data.metadata?.mdvisualizer;
     const validTargets = (value: unknown) => value === undefined || (Array.isArray(value) && value.every((v: unknown) => SKILL_TARGETS.includes(v as SkillTarget)));
     if (c && (typeof c !== "object" || !validTargets(c.targets) || !validTargets(c.contextTargets) || !validTargets(c.blockTargets) || (c.inputs !== undefined && (!Array.isArray(c.inputs) || c.inputs.some((v: unknown) => v !== "text" && v !== "image"))))) throw new Error("対象または入力の属性が不正です。");
-    return { ...file, name: data.name, description: data.description, prompt: match[2].trim(), config: { ...blank, label: typeof c?.label === "string" ? c.label : data.description, enabled: c?.enabled === true, targets: c?.targets ?? [], inputs: c?.inputs ?? ["text"], mode: c?.mode === "selection" ? "selection" : "question", contextMenu: c?.contextMenu === true, blockMenu: c?.blockMenu === true, contextTargets: c?.contextTargets, blockTargets: c?.blockTargets, order: Number.isFinite(c?.order) ? c.order : 100 } };
+    const label = typeof c?.label === "string" ? c.label : data.description;
+    return { ...file, name: data.name, description: data.description, prompt: match[2].trim(), config: { ...blank, label: displaySkillLabel(label), enabled: c?.enabled === true, targets: c?.targets ?? [], inputs: c?.inputs ?? ["text"], mode: c?.mode === "selection" ? "selection" : "question", contextMenu: c?.contextMenu === true, blockMenu: c?.blockMenu === true, contextTargets: c?.contextTargets, blockTargets: c?.blockTargets, order: Number.isFinite(c?.order) ? c.order : 100 } };
   } catch (e) { return { ...file, name: file.id, description: "読み込みエラー", prompt: "", config: blank, error: String(e) }; }
 }
 export function updateSkillConfig(skill: CodexSkill, config: SkillConfig): string {

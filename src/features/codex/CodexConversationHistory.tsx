@@ -49,7 +49,7 @@ export function CodexConversationHistory({ sessions, selectedId, retentionDays, 
       setDeletingId(null);
     }
   };
-  return <section className="codex-conversation-history" aria-label="Codex会話履歴">
+  return <section className="codex-conversation-history" aria-label="AI会話履歴">
     <header><div><strong>会話履歴</strong><p>会話を開いただけでは最終会話日時は変わりません。</p></div><button type="button" onClick={onClose} aria-label="会話履歴を閉じる">×</button></header>
     <div className="codex-conversation-history__content">
       <nav aria-label="保存した会話">
@@ -73,11 +73,12 @@ export function CodexConversationHistory({ sessions, selectedId, retentionDays, 
           {deleteError && <p className="codex-conversation-history__delete-error" role="alert">会話を削除できませんでした: {deleteError}</p>}
           {!isConversationRecent(selected) && selected.lastMessageAt && <p className="codex-conversation-history__cache-note">最終会話から1時間以上経過しています。キャッシュを利用できない可能性があり、入力の再処理による利用量・コストが増える場合があります。</p>}
           <div className="codex-conversation-history__messages" role="log">
-            {selected.messages.map((message, index) => <article key={`${message.timestamp}-${index}`} className={`codex-message codex-message--${message.role}`}><strong>{message.role === "user" ? "あなた" : "Codex"}</strong><time>{formatDate(message.timestamp)}</time><pre>{message.text}</pre>{message.attachmentIds.map((id) => {
+          {selected.messages.map((message, index) => <article key={`${message.timestamp}-${index}`} className={`codex-message codex-message--${message.role}`}><strong>{message.role === "user" ? "あなた" : "AI"}</strong><time>{formatDate(message.timestamp)}</time><pre>{message.text}</pre>{message.attachmentIds.map((id) => {
               const attachment = selected.attachments.find((candidate) => candidate.id === id);
               if (!attachment) return null;
               const source = `data:${attachment.mime};base64,${attachment.base64}`;
-              return <button key={id} className="codex-conversation-history__attachment" type="button" onClick={() => setImage({ source, label: attachment.label })}><img src={source} alt={`${attachment.label}のサムネイル`} /><span>{attachment.label}</span></button>;
+              const label = message.attachmentLabels?.[id] ?? attachment.label;
+              return <button key={id} className="codex-conversation-history__attachment" type="button" onClick={() => setImage({ source, label })}><img src={source} alt={`${label}のサムネイル`} /><span>{label}</span></button>;
             })}</article>)}
           </div>
         </>}

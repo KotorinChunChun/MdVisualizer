@@ -254,7 +254,7 @@ fn find_codex_executable_with(
             return Ok(executable);
         }
     }
-    Err("Codex CLIを見つけられません。Codexを導入後、PATHを更新してMdVisualizerを再起動してください。".into())
+    Err("AI連携用のCodex CLIを見つけられません。Codex CLIを導入後、PATHを更新してMdVisualizerを再起動してください。".into())
 }
 
 pub(crate) fn find_codex_executable() -> Result<PathBuf, String> {
@@ -289,7 +289,7 @@ fn parse_reply_detail(bytes: &[u8]) -> Result<ParsedReply, String> {
             }
             Some("turn.failed" | "error") => {
                 return Err(
-                    "Codexが生成に失敗しました。認証状態・利用上限・モデル名を確認してください。"
+                    "AIの生成に失敗しました。認証状態・利用上限・モデル名を確認してください。"
                         .into(),
                 )
             }
@@ -429,7 +429,7 @@ async fn run_cli(
     #[cfg(windows)]
     command.creation_flags(0x08000000);
     let mut child = command.spawn().map_err(|_| {
-        "Codex CLIを起動できません。Codexを再インストールするか、PATHを更新してMdVisualizerを再起動してください。"
+        "AI連携用のCodex CLIを起動できません。Codex CLIを再インストールするか、PATHを更新してMdVisualizerを再起動してください。"
     })?;
     let mut stdin = child.stdin.take().ok_or("CLI入力を取得できません。")?;
     let stdout = child.stdout.take().ok_or("CLI出力を取得できません。")?;
@@ -455,7 +455,7 @@ async fn run_cli(
         let (_, out, _, status) =
             tokio::try_join!(write, bounded_read(stdout), bounded_read(stderr), wait)?;
         if !status.success() {
-            return Err("Codexの実行に失敗しました。CLI 0.153.4以降・codex login・モデル名・利用上限を確認してください。".into());
+            return Err("AIの実行に失敗しました。Codex CLI 0.153.4以降・codex login・モデル名・利用上限を確認してください。".into());
         }
         let parsed = parse_reply_detail(&out)?;
         let response_raw = String::from_utf8(out).map_err(|_| "CLI出力の文字コードが不正です。")?;
@@ -493,7 +493,7 @@ fn log_path(app: &AppHandle) -> Result<PathBuf, String> {
     app.path()
         .app_data_dir()
         .map(|path| path.join(LOG_FILENAME))
-        .map_err(|error| format!("Codexログの保存先を取得できません: {error}"))
+        .map_err(|error| format!("AI通信記録の保存先を取得できません: {error}"))
 }
 
 fn normalize_log_limit(limit: usize) -> usize {
@@ -518,13 +518,13 @@ fn load_logs_from(path: &Path, retention_days: u16) -> Result<CodexLogData, Stri
         return Ok(CodexLogData { entries: Vec::new(), limit: DEFAULT_LOG_LIMIT });
     }
     let bytes =
-        std::fs::read(path).map_err(|error| format!("Codexログを読み込めません: {error}"))?;
+        std::fs::read(path).map_err(|error| format!("AI通信記録を読み込めません: {error}"))?;
     let mut data: CodexLogData = serde_json::from_slice(&bytes).or_else(|_| {
         serde_json::from_slice::<Vec<CodexLogEntry>>(&bytes).map(|entries| CodexLogData {
             entries,
             limit: DEFAULT_LOG_LIMIT,
         })
-    }).map_err(|_| "Codexログの形式が不正です。".to_string())?;
+    }).map_err(|_| "AI通信記録の形式が不正です。".to_string())?;
     data.limit = normalize_log_limit(data.limit);
     apply_log_retention(&mut data, retention_days, Utc::now());
     Ok(data)
@@ -536,7 +536,7 @@ fn append_log(path: &Path, entry: CodexLogEntry, retention_days: u16) -> Result<
         if retention_days != 0 { data.entries.insert(0, entry); }
         apply_log_retention(&mut data, retention_days, Utc::now());
         let content = serde_json::to_vec(&data).map_err(|error| {
-            crate::errors::AppError::IoError(format!("Codexログを整形できません: {error}"))
+            crate::errors::AppError::IoError(format!("AI通信記録を整形できません: {error}"))
         })?;
         atomic_write(path, &content)
     })
@@ -549,7 +549,7 @@ fn set_log_limit(path: &Path, limit: usize, retention_days: u16) -> Result<Codex
         data.limit = normalize_log_limit(limit);
         apply_log_retention(&mut data, retention_days, Utc::now());
         let content = serde_json::to_vec(&data).map_err(|error| {
-            crate::errors::AppError::IoError(format!("Codexログを整形できません: {error}"))
+            crate::errors::AppError::IoError(format!("AI通信記録を整形できません: {error}"))
         })?;
         atomic_write(path, &content)?;
         Ok(data)
@@ -564,7 +564,7 @@ pub fn purge_logs_for_retention(app: &AppHandle, retention_days: u16) -> Result<
     with_lock(&path, || {
         let mut data = load_logs_from(&path, retention_days).map_err(crate::errors::AppError::IoError)?;
         apply_log_retention(&mut data, retention_days, Utc::now());
-        let content = serde_json::to_vec(&data).map_err(|error| crate::errors::AppError::IoError(format!("Codexログを整形できません: {error}")))?;
+        let content = serde_json::to_vec(&data).map_err(|error| crate::errors::AppError::IoError(format!("AI通信記録を整形できません: {error}")))?;
         atomic_write(&path, &content)
     }).map_err(|error| error.to_string())
 }
@@ -580,7 +580,7 @@ pub async fn codex_generate(
     let settings = crate::commands::load_settings(app.clone())?;
     let options = &settings["codex"];
     if options["enabled"] != true {
-        return Err("設定でCodex連携を有効にしてください。".into());
+        return Err("設定でAI連携を有効にしてください。".into());
     }
     let exe = find_codex_executable()?;
     let model = options["model"].as_str().unwrap_or("gpt-5.6-luna");

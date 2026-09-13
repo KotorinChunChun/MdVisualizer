@@ -25,4 +25,13 @@ describe("Codex skill metadata", () => {
     expect(visibleSkills([skill], "svg", "contextMenu")).toHaveLength(1);
     expect(visibleSkills([skill], "mermaid", "contextMenu")).toHaveLength(0);
   });
+
+  it("shows old Codex labels as AI without altering the saved source or Codex CLI", () => {
+    const source = "---\nname: legacy\ndescription: Codex CLIを使う\nmetadata:\n  mdvisualizer:\n    label: Codexに相談（Codex CLI）\n---\n\nCodexのまま保存する本文";
+    const skill = parseSkill({ id: "legacy", source });
+
+    expect(skill.config.label).toBe("AIに相談（Codex CLI）");
+    expect(skill.source).toBe(source);
+    expect(skill.prompt).toBe("Codexのまま保存する本文");
+  });
 });
