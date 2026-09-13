@@ -240,7 +240,8 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
     if (consumeResizeClick()) { e.preventDefault(); e.stopPropagation(); return; }
     if (!onPreviewTextEdit) { openMedia(e); return; }
     e.preventDefault(); e.stopPropagation();
-    previewClickTimer.current = setTimeout(() => { previewClickTimer.current = null; openMedia(e); }, 220);
+    if (previewClickTimer.current) clearTimeout(previewClickTimer.current);
+    previewClickTimer.current = setTimeout(() => { previewClickTimer.current = null; openMedia(e); }, 300);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {

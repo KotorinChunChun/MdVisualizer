@@ -71,4 +71,18 @@ describe("MarkdownPreview direct text editing", () => {
       expect(open).toHaveBeenCalledOnce();
     } finally { vi.useRealTimers(); }
   });
+  it("cancels both pending image clicks when editing ALT", () => {
+    vi.useFakeTimers();
+    try {
+      const open = vi.fn();
+      render(<MarkdownPreview content="![写真](photo.png)" baseDir="C:/docs" imageVersions={{}} onTextEdit={vi.fn()} onMediaOpen={open} />);
+      const image = screen.getByRole("button", { name: "写真" });
+      fireEvent.click(image, { detail: 1 });
+      fireEvent.click(image, { detail: 2 });
+      fireEvent.doubleClick(image);
+      vi.advanceTimersByTime(400);
+      expect(open).not.toHaveBeenCalled();
+      expect(screen.getByRole("textbox", { name: "プレビューのテキストを編集" })).toBeTruthy();
+    } finally { vi.useRealTimers(); }
+  });
 });
