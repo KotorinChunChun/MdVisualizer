@@ -32,6 +32,6 @@ description: MdVisualizerのproduction検証、SPFx sppkg、ポータブルZIP�
 4. sppkgを既存サイトコレクションApp Catalogへ上書きアップロードして検証する。全サイト展開は明示された場合だけ行う。
 5. ZIP、MSIX、App Installer、CER、配布記事をbeta公開先へステージし、Website対象差分だけをコミットする。
 6. 明示された既存公開先へアップロードし、HTTP、MIME、Content-Length、表示版、リンク、取得物ハッシュ、App Catalog状態を確認する。
-7. `dev/vX.Y.Z-imp.md`とtaskへ、版、署名、ハッシュ、公開先、各段階の成否、未実施GUI受入、コミットを記録する。
+7. `dev/history/vX.Y.Z/vX.Y.Z-imp.md`とtaskへ、版、署名、ハッシュ、公開先、各段階の成否、未実施GUI受入、コミットを記録する。
 
 PowerShellは必ず`pwsh`で実行する。秘密値、PFX、token、FTP資格情報を表示・記録しない。ローカル生成だけで製品リリース完了としない。

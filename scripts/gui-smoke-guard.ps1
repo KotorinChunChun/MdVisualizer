@@ -2,19 +2,23 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$MarkdownPath,
     [string]$ApplicationPath = "$PSScriptRoot\..\src-tauri\target\release\mdvisualizer.exe",
-    [string]$OutputDirectory = "C:\tmp\mdvisualizer-gui",
+    [string]$OutputDirectory,
+    [string]$TargetVersion = $env:MDVISUALIZER_VERSION,
     [string]$UiaDumpPath = "C:\tmp\mdvisualizer-uia\target\debug\uia_dump.exe",
     [int]$RemoteDebuggingPort = 0
 )
 
 $ErrorActionPreference = "Stop"
+Import-Module (Join-Path $PSScriptRoot 'VersionLogPath.psm1') -Force
+$logProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$resolvedLogDirectory = Get-VersionLogDirectory -ProjectRoot $logProjectRoot -Scenario 'gui-smoke' -TargetVersion $TargetVersion -OutputDirectory $OutputDirectory
 
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
 
 $appPath = (Resolve-Path $ApplicationPath).Path
 $documentPath = (Resolve-Path $MarkdownPath).Path
-$runDirectory = Join-Path $OutputDirectory (Get-Date -Format "yyyyMMdd-HHmmss")
+$runDirectory = $resolvedLogDirectory
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 
 $previousWebViewArguments = $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS

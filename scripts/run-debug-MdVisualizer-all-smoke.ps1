@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string[]]$FallbackMarkdownPaths = @("$PSScriptRoot\..\samples\v0.0.10-editing.md"),
-    [string]$OutputDirectory = (Join-Path ([IO.Path]::GetTempPath()) "mdvisualizer-debug-smoke"),
+    [string]$OutputDirectory,
+    [string]$TargetVersion = $env:MDVISUALIZER_VERSION,
     [int]$RemoteDebuggingPort = 9333,
     [switch]$AllSamples,
     [switch]$SkipBuild,
@@ -9,11 +10,14 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+Import-Module (Join-Path $PSScriptRoot 'VersionLogPath.psm1') -Force
+$logProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$resolvedLogDirectory = Get-VersionLogDirectory -ProjectRoot $logProjectRoot -Scenario 'debug-smoke' -TargetVersion $TargetVersion -OutputDirectory $OutputDirectory
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $debugExecutable = Join-Path $projectRoot "src-tauri\target\debug\mdvisualizer.exe"
 $analyzer = Join-Path $PSScriptRoot "debug-preview-smoke.mjs"
 $sampleAnalyzer = Join-Path $PSScriptRoot "debug-sample-suite.mjs"
-$runDirectory = Join-Path $OutputDirectory (Get-Date -Format "yyyyMMdd-HHmmss")
+$runDirectory = $resolvedLogDirectory
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 
 function Get-MdVisualizerProcesses {

@@ -1,7 +1,9 @@
+import { fileURLToPath } from 'node:url';
+import { versionLogDirectory } from './version-log-path.mjs';
 import { mkdir, writeFile } from "node:fs/promises";
 
 const port = Number(process.argv[2] ?? 9222);
-const outputDirectory = process.argv[3] ?? "C:/tmp/mdvisualizer-theme";
+const outputDirectory = versionLogDirectory(fileURLToPath(new URL('../', import.meta.url)), 'theme', process.env.MDVISUALIZER_VERSION, process.argv[3]);
 await mkdir(outputDirectory, { recursive: true });
 
 const targets = await fetch(`http://127.0.0.1:${port}/json`).then((response) => response.json());

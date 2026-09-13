@@ -1,0 +1,13 @@
+import {testOutputDirectory,testOutputUrl} from './test-output.mjs';
+import {chromium} from 'playwright-core';
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+const browser=await chromium.launch({channel:'msedge',headless:true});const context=await browser.newContext();const page=await context.newPage(),requests=[];page.on('request',r=>requests.push(r.url()));
+const rendererSource=await readFile(new URL('./renderer.js',import.meta.url),'utf8');
+await page.route('**/renderer.js',route=>route.fulfill({contentType:'text/javascript',body:rendererSource.replace("const {id,code,recover}=e.data;","const {id,code,recover}=e.data; if(code.includes('TIMEOUT_FIXTURE')) { const until=Date.now()+12000; while(Date.now()<until) {} }")}));
+await page.goto('http://127.0.0.1:4178');await page.waitForFunction(()=>window.mermaidStudio&&!window.mermaidStudio.locked);
+const start=Date.now();const result=await page.evaluate(()=>window.mermaidStudio.renderer.render('flowchart TD\n A-->B\n %% TIMEOUT_FIXTURE'));const elapsed=Date.now()-start;assert(result.error.includes('10秒'));assert(elapsed<11500,`タイムアウト応答 ${elapsed}ms`);
+const recovered=await page.evaluate(()=>window.mermaidStudio.renderer.render('flowchart TD\n A-->B'));assert(recovered.svg,JSON.stringify(recovered));
+assert(requests.every(url=>/^http:\/\/(127\.0\.0\.1|(?:[a-z0-9-]+\.)?localhost):4178\//.test(url)),requests.join('\n'));
+const traversal=await fetch('http://127.0.0.1:4178/%2e%2e%2f%2e%2e%2fpackage.json');assert([403,404].includes(traversal.status));
+await writeFile(testOutputUrl('boundaries.json'),JSON.stringify({timeoutMs:elapsed,timeoutRecovered:true,externalRequests:0,traversalStatus:traversal.status},null,2));console.log(`タイムアウト ${elapsed}ms、描画再開、外部通信なし、配信範囲制限: 成功`);await browser.close();

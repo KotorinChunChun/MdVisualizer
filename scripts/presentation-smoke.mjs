@@ -1,7 +1,9 @@
+import { fileURLToPath } from 'node:url';
+import { versionLogDirectory } from './version-log-path.mjs';
 import { mkdir, writeFile } from "node:fs/promises";
 
 const port = Number(process.argv[2] ?? 9334);
-const outputDirectory = process.argv[3] ?? "C:/develop/MdVisualizer/tmp/presentation-evidence";
+const outputDirectory = versionLogDirectory(fileURLToPath(new URL('../', import.meta.url)), 'presentation', process.env.MDVISUALIZER_VERSION, process.argv[3]);
 await mkdir(outputDirectory, { recursive: true });
 const targets = await fetch(`http://127.0.0.1:${port}/json`).then((response) => response.json());
 const target = targets.find((candidate) => candidate.type === "page" && candidate.url.includes("tauri.localhost"));

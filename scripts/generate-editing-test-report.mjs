@@ -1,9 +1,16 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createServer } from "vite";
+import { versionLogDirectory } from "./version-log-path.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
-const outputPath = resolve(projectRoot, "dev", "editing-test-cases-report.html");
+const args = process.argv.slice(2);
+if (args.length && (args.length !== 2 || args[0] !== '--version')) {
+  throw new Error('使用方法: npm run report:editing -- --version v0.0.18');
+}
+const outputDirectory = versionLogDirectory(projectRoot, 'editing', args[1]);
+const outputPath = resolve(outputDirectory, 'editing-test-cases-report.html');
+await mkdir(outputDirectory, { recursive: true });
 const vite = await createServer({
   root: projectRoot,
   appType: "custom",

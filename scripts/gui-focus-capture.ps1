@@ -1,9 +1,13 @@
 param(
-    [string]$OutputDirectory = "C:\tmp\mdvisualizer-gui",
+    [string]$OutputDirectory,
+    [string]$TargetVersion = $env:MDVISUALIZER_VERSION,
     [string]$UiaFocusPath = "C:\tmp\mdvisualizer-uia\target\debug\uia_focus.exe"
 )
 
 $ErrorActionPreference = "Stop"
+Import-Module (Join-Path $PSScriptRoot 'VersionLogPath.psm1') -Force
+$logProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$resolvedLogDirectory = Get-VersionLogDirectory -ProjectRoot $logProjectRoot -Scenario 'gui-focus' -TargetVersion $TargetVersion -OutputDirectory $OutputDirectory
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -31,7 +35,7 @@ $width = $rect.Right - $rect.Left
 $height = $rect.Bottom - $rect.Top
 $bitmap = New-Object System.Drawing.Bitmap $width, $height
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-$runDirectory = Join-Path $OutputDirectory (Get-Date -Format "yyyyMMdd-HHmmss")
+$runDirectory = $resolvedLogDirectory
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 $screenshot = Join-Path $runDirectory "mdvisualizer.png"
 try {

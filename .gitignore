@@ -5,7 +5,7 @@
 /release/
 /dev/private/
 /dev/temp/
-/dev/test-videos/
+/dev/history/*/logs/
 /.pnpm-store/
 
 # ビルド成果物・中間生成物
