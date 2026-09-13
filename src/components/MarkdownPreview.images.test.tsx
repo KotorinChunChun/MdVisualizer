@@ -19,12 +19,12 @@ describe("MarkdownPreview image navigation anchors", () => {
     expect(within(menu).getByRole("menuitem", { name: "AIで文字起こし（表）" })).toBeTruthy();
 
     fireEvent.click(within(menu).getByRole("menuitem", { name: "AIで画像を解説" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "現在の会話に追加" }));
+
     expect(consult).toHaveBeenCalledWith(expect.objectContaining({
       from: content.indexOf("![two]"),
       targetKind: "image",
       skillId: "explain-image",
-      conversationAction: "add",
+      conversationAction: "new",
     }));
   });
   it("renders the same occurrence IDs produced by the gallery parser", () => {

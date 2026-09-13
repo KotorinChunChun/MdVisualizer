@@ -1,14 +1,15 @@
-import { useEffect, useState, type MouseEvent } from "react";
+import { Fragment, useEffect, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { targetAtLine, type CodexTarget } from "./scope";
 import { sourceRangeForLines } from "./scope";
 import { useCodexSkills, visibleSkills, type SkillTarget } from "./skills";
+import { previewClipboardData } from "../../lib/previewClipboard";
 
-export interface EditorContextAction { label: string; disabled?: boolean; run: (target: CodexTarget) => void | Promise<void> }
+export interface EditorContextAction { label: string; group?: string; disabled?: boolean; run: (target: CodexTarget) => void | Promise<void> }
 
 export function useConsultationMenu(content: string, documentId: string, onConsult?: (target: CodexTarget) => void, capture?: (event: MouseEvent<HTMLDivElement>) => CodexTarget | null, editorActions?: EditorContextAction[]) {
   const skills = useCodexSkills();
-  const [menu, setMenu] = useState<{ x: number; y: number; target: CodexTarget; options: ReturnType<typeof visibleSkills>; selectedSkill?: ReturnType<typeof visibleSkills>[number] } | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number; target: CodexTarget; plainText?: string; markdownText?: string; options: ReturnType<typeof visibleSkills>; selectedSkill?: ReturnType<typeof visibleSkills>[number] } | null>(null);
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
@@ -20,6 +21,7 @@ export function useConsultationMenu(content: string, documentId: string, onConsu
     onContextMenuCapture: (event: MouseEvent<HTMLDivElement>) => {
       if ((!onConsult && !editorActions?.length) || !(event.target instanceof Element)) return;
       if (event.target.closest("[data-codex-file]")) return;
+      if (!capture && event.target.closest("input, textarea, [contenteditable=true], .table-editor-overlay")) return;
       if (capture) {
         const target = capture(event);
         if (!target) return;
@@ -51,22 +53,27 @@ export function useConsultationMenu(content: string, documentId: string, onConsu
           const toLine = Number((selection.focusNode.parentElement?.closest("[data-source-line]") as HTMLElement | null)?.dataset.sourceLine);
           return Number.isFinite(fromLine) && Number.isFinite(toLine) && fromLine !== toLine ? sourceRangeForLines(content, fromLine, toLine) : null;
         })() : null;
-      const range = selectionRange ?? targetAtLine(content, Number(anchor.dataset.sourceLine), selectedText, isImage);
+      const range = selectionRange ?? targetAtLine(content, Number(anchor.dataset.sourceLine), selectedText, isImage) ?? targetAtLine(content, Number(anchor.dataset.sourceLine), "", isImage);
       if (!range) return;
       if (isImage && "imageSource" in range && typeof range.imageSource === "string" && range.imageSource.split(/[?#]/)[0].toLowerCase().endsWith(".svg")) targetKind = "svg";
       event.preventDefault(); event.stopPropagation();
       const svg = eventElement.closest("svg")?.outerHTML
         ?? inlineSvgContainer?.querySelector("svg")?.outerHTML
         ?? eventElement.closest(".drawio-block, .mermaid-container, .code-block")?.querySelector("svg")?.outerHTML;
-      setMenu({ x: Math.min(event.clientX, window.innerWidth - 280), y: Math.min(event.clientY, window.innerHeight - 160), target: { documentId, content, ...range, targetKind, renderedSvg: svg, ...(isImage && "imageSource" in range ? {} : {}) }, options: visibleSkills(skills, targetKind, "contextMenu") });
+      setMenu({ ...previewClipboardData(event.currentTarget, content, eventElement), x: Math.min(event.clientX, window.innerWidth - 280), y: Math.min(event.clientY, window.innerHeight - 320), target: { documentId, content, ...range, targetKind, renderedSvg: svg }, options: visibleSkills(skills, targetKind, "contextMenu") });
     },
     menu: menu && createPortal(<div role="menu" aria-label="対象部分の操作" className="responsive-toolbar__menu" style={{ left: Math.max(0, menu.x), top: Math.max(0, menu.y) }} onPointerDown={(event) => event.stopPropagation()}>
-      {!menu.selectedSkill && editorActions?.map(action => <button key={action.label} type="button" role="menuitem" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button>)}
-      {!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type="button" role="menuitem" autoFocus={skill === menu.options[0]} onClick={() => setMenu({ ...menu, selectedSkill: skill })}>{skill.config.label}</button>) : <>
-        <button type="button" role="menuitem" autoFocus onClick={() => { onConsult?.({ ...menu.target, skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: "add" }); setMenu(null); }}>現在の会話に追加</button>
-        <button type="button" role="menuitem" onClick={() => { onConsult?.({ ...menu.target, skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: "new" }); setMenu(null); }}>新しい会話を開始</button>
+      {!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role="separator" />}<button type="button" role="menuitem" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}
+      {!menu.selectedSkill && !editorActions && <><button type="button" role="menuitem" onClick={() => { void navigator.clipboard.writeText(menu.plainText ?? ""); setMenu(null); }}>プレーンテキストでコピー</button><button type="button" role="menuitem" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>マークダウンでコピー</button></>}
+      {!menu.selectedSkill && menu.options.length > 0 && <div role="separator" />}
+      {!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type="button" role="menuitem" autoFocus={skill === menu.options[0]} onClick={() => {
+        if (["image", "svg", "mermaid", "drawio"].includes(menu.target.targetKind ?? "")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: "new" }); setMenu(null); }
+        else setMenu({ ...menu, selectedSkill: skill });
+      }}>{skill.config.label}</button>) : <>
+        <button type="button" role="menuitem" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: "add" }); setMenu(null); }}>現在の会話に追加</button>
+        <button type="button" role="menuitem" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: "new" }); setMenu(null); }}>新しい会話を開始</button>
       </>}
-      {!editorActions && <button type="button" role="menuitem" onClick={() => { void navigator.clipboard.writeText(menu.target.content.slice(menu.target.from, menu.target.to)).catch(() => {}); setMenu(null); }}>コピー</button>}
+      {!menu.selectedSkill && ["image", "svg", "mermaid", "drawio"].includes(menu.target.targetKind ?? "") && <><div role="separator" /><button type="button" role="menuitem" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: "add" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}
     </div>, document.body),
   };
 }

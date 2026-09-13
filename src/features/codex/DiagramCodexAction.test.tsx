@@ -25,7 +25,7 @@ async function send() {
 async function openDiagram(action = "AIで見た目を改善") {
   fireEvent.click(screen.getByRole("button", { name: "AIに図の編集を依頼" }));
   fireEvent.click(await screen.findByRole("menuitem", { name: action }));
-  fireEvent.click(screen.getByRole("menuitem", { name: "新しい会話を開始" }));
+
 }
 describe("図メニューのCodex連携", () => {
   it("対象SVGだけを送り、サニタイズ済みのプレビューを採用してから反映する", async () => {
@@ -92,7 +92,7 @@ describe("図メニューのCodex連携", () => {
     expect(loadMarkdown).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText("AIに図の編集を依頼"));
     fireEvent.click(await screen.findByRole("menuitem", { name: "AIで見た目を改善" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "現在の会話に追加" }));
+
     await send(); await screen.findByText("採用");
     expect(saveMarkdown).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText("採用"));

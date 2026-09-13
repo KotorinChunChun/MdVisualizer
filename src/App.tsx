@@ -68,7 +68,9 @@ import { saveUntitledDocument } from "./lib/untitledDocument";
 import { drawioExternalReference, markdownLineEnding, type DrawioStorageConversionContext } from "./lib/drawioStorage";
 import { mermaidExternalReference, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
-import { markdownForPreviewRange } from "./lib/previewContext";
+
+import { previewClipboardData } from "./lib/previewClipboard";
+import { PreviewEditHistory, replaceDocumentText } from "./lib/documentTextEdit";
 import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } from "./lib/sourceNavigation";
 import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
@@ -194,6 +196,8 @@ export function App() {
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const [codexOpen, setCodexOpen] = useState(false);
+  const [codexMaximized, setCodexMaximized] = useState(false);
+  const previewEditHistory = useRef(new PreviewEditHistory());
   const [codexTarget, setCodexTarget] = useState<CodexTarget | null>(null);
   const [codexImageTarget, setCodexImageTarget] = useState<{ documentId: string; offset: number } | null>(null);
   const codexButtonRef = useRef<HTMLButtonElement>(null);
@@ -1220,17 +1224,14 @@ export function App() {
     const blocks = previewSourceBlocks(root);
     const sourceLines = blocks.map((block) => Number(block.dataset.sourceLine));
     const clickedLine = previewSourceLineAtNode(target, root) ?? sourceLines[0] ?? 1;
-    const clickedBlock = blocks.find((block) => Number(block.dataset.sourceLine) === clickedLine);
-    const selection = window.getSelection();
-    const selectedRange = previewSelectionSourceRange(selection, root, sourceLines, clickedLine);
+
     const rowElement = targetElement?.closest<HTMLTableRowElement>("tr") ?? null;
     const tableRow = rowElement && root.contains(rowElement) ? rowElement : null;
     setPreviewContext({
       x: event.clientX,
       y: event.clientY,
       line: clickedLine,
-      plainText: selectedRange.inside ? selection!.toString().trim() : clickedBlock?.textContent?.trim() ?? "",
-      markdownText: markdownForPreviewRange(previewContent, sourceLines, selectedRange.firstLine, selectedRange.lastLine),
+      ...previewClipboardData(root, previewContent, targetElement),
       rowElement: tableRow,
       rowTsv: tableRow ? [...tableRow.querySelectorAll("th, td")].map((cell) => cell.textContent?.trim() ?? "").join("\t") : "",
     });
@@ -2332,12 +2333,11 @@ export function App() {
         />
         {autoReload === "manual" && activeTab?.externalChanged && <button type="button" className="pending-reload" onClick={reload}>変更あり: 再読込</button>}
         <button ref={codexButtonRef} className="codex-toolbar-action" type="button" disabled={printing} aria-expanded={codexOpen} onClick={() => {
-          if (!codexOpen && canEditActive && editorMode === "preview") changeEditorMode("split");
           setCodexOpen(!codexOpen);
         }}>AI</button>
       </div>}
 
-      <div className="ai-document-layout">
+      <div className={`ai-document-layout${codexOpen && codexMaximized ? " ai-document-layout--maximized" : ""}`}>
       <div className={`document-workspace editor-workspace-${editorMode}`}>
       {documentDiff && activeTab?.document?.kind === "markdown" && documentSourceIdentity(documentDiff.path) === documentSourceIdentity(activeTab.path) ? <DocumentDiffWorkspace
         key={activeTab.id}
@@ -2488,6 +2488,22 @@ export function App() {
           <MarkdownPreview
             content={previewContent}
             baseDir={activeTab.document.base_dir}
+            onTextEdit={canEditActive && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
+              const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
+              if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation || tab.saving) return false;
+              const documentId = `${tab.id}:${tab.generation}`;
+              const content = replaceDocumentText({ documentId, content: tab.draft, from: 0, to: tab.draft.length }, { documentId, content: baseContent, from, to }, replacement);
+              if (content === null) return false;
+              previewEditHistory.current.record(documentId, tab.draft, content);
+              dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+              return true;
+            } : undefined}
+            onTextUndo={canEditActive && !printing ? redo => {
+              const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
+              if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation || tab.saving) return;
+              const content = previewEditHistory.current.restore(`${tab.id}:${tab.generation}`, tab.draft, redo);
+              if (content !== null) dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+            } : undefined}
             imageVersions={imageVersions}
             contentRef={markdownRef}
             theme={printing ? "light" : theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
@@ -2501,12 +2517,10 @@ export function App() {
             onImageDisplaySizeChange={handleImageDisplaySizeChange}
             onCodexImageSelect={canEditActive && !printing && !activeTab.saving ? (offset) => {
               setCodexImageTarget({ documentId: activeTab.id, offset });
-              if (editorMode === "preview") changeEditorMode("split");
               setCodexOpen(true);
             } : undefined}
             onCodexConsult={canEditActive && !printing && !activeTab.saving ? (target) => {
               setCodexTarget({ ...target, documentId: `${activeTab.id}:${activeTab.generation}` });
-              if (editorMode === "preview") changeEditorMode("split");
               setCodexOpen(true);
             } : undefined}
             searchExpandedIds={searchExpandedIds}
@@ -2555,6 +2569,8 @@ export function App() {
       {codexOpen && <CodexPanel
         key={`${activeTab?.id ?? "none"}:${activeTab?.generation ?? 0}`}
         open={codexOpen}
+        maximized={codexMaximized}
+        onToggleMaximized={() => setCodexMaximized(value => !value)}
         onClose={() => { setCodexOpen(false); codexButtonRef.current?.focus(); }}
         documentName={activeTab?.path.split(/[\\/]/).pop() ?? ""}
         documentPath={activeTab?.document?.path ?? ""}
@@ -2563,13 +2579,21 @@ export function App() {
         consultationTarget={activeTab && codexTarget?.documentId === `${activeTab.id}:${activeTab.generation}` ? codexTarget : null}
         stagedImages={Object.fromEntries((activeTab?.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
         documentText={activeTab?.draft ?? ""}
-        available={Boolean(canEditActive && editorMode !== "preview" && !activeTab?.saving)}
-        getSnapshot={() => documentDiff && activeTab ? { documentId: `${activeTab.id}:${activeTab.generation}`, content: activeTab.draft, from: 0, to: activeTab.draft.length } : editorRef.current?.snapshot() ?? null}
+        available={Boolean(canEditActive && !activeTab?.saving)}
+        getSnapshot={() => {
+          const tab = tabsStateRef.current.tabs.find(item => item.id === tabsStateRef.current.activeId);
+          if (!tab || tab.saving) return null;
+          return !documentDiff && editorMode !== "preview" ? editorRef.current?.snapshot() ?? null : { documentId: `${tab.id}:${tab.generation}`, content: tab.draft, from: 0, to: tab.draft.length };
+        }}
         applyProposal={(base, replacement) => {
           if (!canEditActive || activeTab?.saving) return false;
-          if (documentDiff && activeTab) {
-            if (base.documentId !== `${activeTab.id}:${activeTab.generation}` || base.content !== activeTab.draft || base.from < 0 || base.to > base.content.length) return false;
-            dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content: `${base.content.slice(0, base.from)}${replacement.replace(/\r\n?|\n/g, "\n")}${base.content.slice(base.to)}` });
+          if (documentDiff || editorMode === "preview") {
+            const tab = tabsStateRef.current.tabs.find(item => item.id === tabsStateRef.current.activeId);
+            if (!tab || tab.saving) return false;
+            const content = replaceDocumentText({ documentId: `${tab.id}:${tab.generation}`, content: tab.draft, from: 0, to: tab.draft.length }, base, replacement);
+            if (content === null) return false;
+            previewEditHistory.current.record(`${tab.id}:${tab.generation}`, tab.draft, content);
+            dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
             return true;
           }
           return Boolean(editorRef.current?.applyProposal(base, replacement));

@@ -98,6 +98,25 @@ describe("CodexPanel の既定スキル入力", () => {
     await screen.findByLabelText("指示");
     expect(screen.queryByText("前の質問")).not.toBeInTheDocument();
   });
+  it("図ダイアログのスキルなしaddは直近会話を保って画像だけを追加する", async () => {
+    const saved: CodexConversation = { id: "saved", title: "前の会話", documentId: "old", documentPath: "", messages: [{ role: "user", text: "前の質問", attachmentIds: [], timestamp: "2026-09-13T00:00:00Z" }], attachments: [], draft: { instruction: "続き", targetSnapshot: null, editMode: "question", attachmentIds: [] }, createdAt: "2026-09-13T00:00:00Z", updatedAt: "2026-09-13T00:00:00Z", lastMessageAt: "2026-09-13T00:00:00Z" };
+    store.sessions = [saved];
+    render(<CodexPanel open onClose={vi.fn()} documentName="diagram.md" documentText={snapshot.content} available diagramKind="mermaid" initialConversationAction="add" getSnapshot={() => snapshot} applyProposal={vi.fn(() => true)} />);
+    expect(await screen.findByText("前の質問")).toBeVisible();
+    expect(screen.getByLabelText("指示")).toHaveValue("続き");
+    await screen.findByLabelText("追加した画像");
+    expect(screen.queryByDisplayValue("テキスト1")).not.toBeInTheDocument();
+  });
+  it("同じ図とスキルでも操作IDが変われば新しい会話を作る", async () => {
+    const firstTarget = { ...target("improve-diagram"), requestId: "first" };
+    const view = render(<CodexPanel open onClose={vi.fn()} documentName="diagram.md" documentText={snapshot.content} available consultationTarget={firstTarget} getSnapshot={() => snapshot} applyProposal={vi.fn(() => true)} />);
+    await send();
+    expect(screen.getByText("回答")).toBeVisible();
+    const secondTarget = { ...target("improve-diagram"), requestId: "second" };
+    view.rerender(<CodexPanel open onClose={vi.fn()} documentName="diagram.md" documentText={snapshot.content} available consultationTarget={secondTarget} getSnapshot={() => snapshot} applyProposal={vi.fn(() => true)} />);
+    await waitFor(() => expect(screen.queryByText("回答")).not.toBeInTheDocument());
+    expect((screen.getByLabelText("指示") as HTMLTextAreaElement).value).toContain("添付");
+  });
   it("PNG生成成功後に入力添付を外して履歴へ残し、採用比較は維持する", async () => {
     render(<CodexPanel open onClose={vi.fn()} documentName="image.md" documentText="![x](image.png)" available consultationTarget={{ documentId: "png", content: "![x](image.png)", from: 0, to: 15, imageSource: "image.png", skillId: "edit-image", conversationAction: "new" }} getSnapshot={() => ({ documentId: "png", content: "![x](image.png)", from: 0, to: 15 })} applyProposal={vi.fn(() => true)} />);
     const instruction = await screen.findByRole("textbox", { name: "編集指示" });

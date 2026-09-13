@@ -44,7 +44,10 @@ import { codeFencePathDecoration, removeFilenameExtension, splitFenceLanguagePat
 import type { TextStorageConversionContext } from "../lib/textStorage";
 import { ShortcutKeySvg } from "./ShortcutKeySvg";
 import { isShortcutKeySource } from "@mdvisualizer/markdown-core";
+import { copyPreviewSelection } from "../lib/previewClipboard";
 import { calculateTableAggregates, isTableAggregateResultCell, type TableAggregationResult } from "../lib/tableAggregation";
+import { bindRenderedPreviewInlineEditLeaves, collectPreviewInlineEditLeaves, escapePreviewInlineReplacement, type PreviewInlineEditLeaf } from "../lib/previewInlineEdit";
+import { PreviewInlineEditor } from "./PreviewInlineEditor";
 
 type MarkdownNode = {
   type?: string;
@@ -116,6 +119,9 @@ interface MarkdownPreviewProps {
   onStagedTextAssetChange?: (filename: string, text: string) => boolean | void | Promise<boolean | void>;
   diffChangedLines?: ReadonlySet<number>;
   staticMode?: boolean;
+  renderSvgFences?: boolean;
+  onTextEdit?: (baseContent: string, from: number, to: number, replacement: string) => boolean;
+  onTextUndo?: (redo: boolean) => void;
 }
 
 export interface ExternalFileRenameContext {
@@ -211,12 +217,43 @@ interface MarkdownRenderContextValue {
   onExternalTableChange?: (context: ExternalTableChangeContext) => boolean | void | Promise<boolean | void>;
   onStagedTextAssetChange?: (filename: string, text: string) => boolean | void | Promise<boolean | void>;
   staticMode: boolean;
+  renderSvgFences: boolean;
+  inlineEditLeaves: Map<string, PreviewInlineEditLeaf>;
+  onTextEdit?: (baseContent: string, from: number, to: number, replacement: string) => boolean;
+  onTextUndo?: (redo: boolean) => void;
 }
 
 const MarkdownRenderContext = React.createContext<MarkdownRenderContextValue | null>(null);
 const EMPTY_FOLD_STATE: Record<string, boolean> = {};
 const EMPTY_IMAGE_DISPLAY_SIZES: Record<string, ImageSize> = {};
 const EMPTY_SEARCH_EXPANDED_IDS: string[] = [];
+
+type InlineHastNode = { type?: string; tagName?: string; value?: string; properties?: Record<string, unknown>; position?: { start?: { offset?: number } }; children?: InlineHastNode[] };
+function rehypePreviewInlineEdit(options: { bindings: Map<number, string> }) {
+  return (tree: InlineHastNode) => {
+    const visit = (node: InlineHastNode, blocked = false, parent?: InlineHastNode) => {
+      const tag = node.tagName?.toLowerCase();
+      const nextBlocked = blocked || tag === "pre" || tag === "svg" || tag === "style";
+      if (node.type === "text" && !nextBlocked && typeof node.value === "string" && node.value.length > 0) {
+        const id = options.bindings.get(node.position?.start?.offset ?? -1);
+        if (id) {
+          if (parent?.tagName?.toLowerCase() === "code") {
+            parent.properties = { ...parent.properties, "data-preview-inline-edit-id": id };
+            return;
+          }
+          const wrapper: InlineHastNode = { type: "element", tagName: "span", properties: { "data-preview-inline-edit-id": id, className: ["preview-inline-editable"] }, children: [{ ...node }] };
+          Object.assign(node, wrapper);
+          return;
+        }
+      } else if (node.type === "element" && tag === "img" && !nextBlocked) {
+        const id = options.bindings.get(node.position?.start?.offset ?? -1);
+        if (id) node.properties = { ...node.properties, "data-preview-inline-edit-id": id };
+      }
+      node.children?.forEach(child => visit(child, nextBlocked, node));
+    };
+    visit(tree);
+  };
+}
 
 function codeFenceAstStart(occurrence: CodeFenceOccurrence): number {
   const start = occurrence.bodyStart - occurrence.opening.length;
@@ -241,22 +278,45 @@ const MarkdownSection: NonNullable<Components["section"]> = ({ node, children })
   return <FoldSection foldId={foldId} collapsed={context.foldState[foldId]} onCollapsedChange={context.onFoldChange} forceExpanded={context.searchExpandedIds.includes(foldId)} onManualOverride={context.onSearchFoldManualOverride}>{children}</FoldSection>;
 };
 
+const MarkdownSpan: NonNullable<Components["span"]> = ({ node, children, ...props }) => {
+  const context = useMarkdownRenderContext();
+  const id = String(node?.properties?.["data-preview-inline-edit-id"] ?? "");
+  const leaf = context.inlineEditLeaves.get(id);
+  const [editing, setEditing] = React.useState<{ baseContent: string; leaf: PreviewInlineEditLeaf } | null>(null);
+  if (editing) return <PreviewInlineEditor leaf={editing.leaf} onCancel={() => setEditing(null)} onCommit={(value) => {
+    try { return context.onTextEdit?.(editing.baseContent, editing.leaf.from, editing.leaf.to, escapePreviewInlineReplacement(value, editing.leaf.kind)) ?? false; }
+    catch (error) { return error instanceof Error ? error.message : String(error); }
+  }} />;
+  if (!leaf || !context.onTextEdit || context.staticMode || context.presentationMode) return <span {...props}>{children}</span>;
+  return <span {...props} onDoubleClick={(event) => { event.preventDefault(); event.stopPropagation(); setEditing({ baseContent: context.content, leaf }); }}>{children}</span>;
+};
+
 const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, children, ...props }) => {
   const context = useMarkdownRenderContext();
+  const inlineEditId = String(node?.properties?.["data-preview-inline-edit-id"] ?? "");
+  const inlineEditLeaf = context.inlineEditLeaves.get(inlineEditId);
+  const [inlineEditing, setInlineEditing] = React.useState<{ baseContent: string; leaf: PreviewInlineEditLeaf } | null>(null);
   const language = className?.match(/language-([\w-]+)/)?.[1]?.toLowerCase();
   if (context.staticMode && language) {
     return <code className={className} {...props}>{children}</code>;
   }
   const source = String(children ?? "");
+  if (!language && inlineEditing) return <PreviewInlineEditor leaf={inlineEditing.leaf} onCancel={() => setInlineEditing(null)} onCommit={(value) => {
+    try { return context.onTextEdit?.(inlineEditing.baseContent, inlineEditing.leaf.from, inlineEditing.leaf.to, escapePreviewInlineReplacement(value, "inline-code")) ?? false; }
+    catch (error) { return error instanceof Error ? error.message : String(error); }
+  }} />;
+  const wrapInlineEdit = (rendered: React.ReactNode) => inlineEditLeaf && context.onTextEdit && !context.staticMode && !context.presentationMode
+    ? <span className="preview-inline-editable" onDoubleClick={(event) => { event.preventDefault(); event.stopPropagation(); setInlineEditing({ baseContent: context.content, leaf: inlineEditLeaf }); }}>{rendered}</span>
+    : <>{rendered}</>;
   if (!language && isShortcutKeySource(source)) {
-    return <ShortcutKeySvg source={source} variant="inline" />;
+    return wrapInlineEdit(<ShortcutKeySvg source={source} variant="inline" />);
   }
   if (!language) {
     const colorCode = /^#[0-9a-fA-F]{6}$/.test(source);
-    return <code className={[className, "markdown-inline-code", colorCode ? "markdown-inline-code--color" : ""].filter(Boolean).join(" ")} {...props}>
+    return wrapInlineEdit(<code className={[className, "markdown-inline-code", colorCode ? "markdown-inline-code--color" : ""].filter(Boolean).join(" ")} {...props}>
       {colorCode && <span className="markdown-inline-code__color-swatch" style={{ backgroundColor: source }} aria-hidden="true" />}
       {children}
-    </code>;
+    </code>);
   }
   if (language === "drawio") {
     const sourceOffset = node?.position?.start.offset;
@@ -328,6 +388,13 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
         ? () => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: mermaidSource, relativePath: decoration.relativePath, alt: decoration.alt })
         : undefined}
     />;
+  }
+  if (language === "svg" && context.renderSvgFences) {
+    try {
+      return <div className="markdown-svg-fence-preview" role="img" aria-label="SVG図のプレビュー" dangerouslySetInnerHTML={{ __html: sanitizeSvgXml(String(children ?? "").replace(/\n$/, "")) }} />;
+    } catch {
+      return <div className="image-error-fallback" role="alert">⚠️ SVGを表示できません</div>;
+    }
   }
   if (className?.includes("language-")) {
     const sourceOffset = node?.position?.start.offset;
@@ -420,26 +487,38 @@ const MarkdownTable: NonNullable<Components["table"]> = ({ node, children, ...pr
 
 const MarkdownLink: NonNullable<Components["a"]> = ({ href, children, ...props }) => {
   const context = useMarkdownRenderContext();
-  return <a {...props} href={href} onClick={(event) => {
-    event.preventDefault();
+  const clickTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => { if (clickTimer.current) clearTimeout(clickTimer.current); }, []);
+  const follow = (ctrlKey: boolean) => {
     if (!href) return;
     const documentTarget = resolveSharePointDocumentPath(href, context.sourcePath ?? context.documentPath) ?? resolveLocalDocumentPath(href, context.baseDir);
     if (documentTarget) {
-      if (event.ctrlKey) context.onOpenDocumentWindow?.(documentTarget);
+      if (ctrlKey) context.onOpenDocumentWindow?.(documentTarget);
       else context.onOpenDocument?.(documentTarget);
       return;
     }
     if (href.startsWith("#")) {
-      const target = document.getElementById(decodeURIComponent(href.slice(1)));
-      target?.scrollIntoView({ block: "start" });
+      document.getElementById(decodeURIComponent(href.slice(1)))?.scrollIntoView({ block: "start" });
       return;
     }
     const browserTarget = resolveSharePointBrowserUrl(href, context.sourcePath ?? context.documentPath) ?? href;
     void openExternalUrl(browserTarget).catch((error) => context.onError?.(String(error)));
+  };
+  const deferForInlineEdit = Boolean(context.onTextEdit && !context.staticMode && !context.presentationMode);
+  return <a {...props} href={href} onClick={(event) => {
+    event.preventDefault();
+    const ctrlKey = event.ctrlKey;
+    if (!deferForInlineEdit) { follow(ctrlKey); return; }
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => { clickTimer.current = null; follow(ctrlKey); }, 300);
+  }} onDoubleClickCapture={() => {
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    clickTimer.current = null;
   }}>{children}</a>;
 };
-
 const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
+  const [editingAlt, setEditingAlt] = React.useState<{ baseContent: string; leaf: PreviewInlineEditLeaf } | null>(null);
+
   const context = useMarkdownRenderContext();
   const headingMode = useIsFoldHeading();
   const isObsidianImage = node?.properties?.["data-obsidian-image"] === "true";
@@ -544,6 +623,10 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
     assetKind,
     storage: source.toLowerCase().startsWith("data:") ? "embedded" : "external",
   } : undefined;
+  const inlineEditId = String(node?.properties?.["data-preview-inline-edit-id"] ?? "");
+  const inlineEditLeaf = context.inlineEditLeaves.get(inlineEditId);
+
+  if (editingAlt && context.onTextEdit) return <PreviewInlineEditor leaf={editingAlt.leaf} onCancel={() => setEditingAlt(null)} onCommit={(value) => context.onTextEdit?.(editingAlt.baseContent, editingAlt.leaf.from, editingAlt.leaf.to, escapePreviewInlineReplacement(value, "image-alt")) ?? false} />;
   return <ImageRenderer
     src={src}
     alt={alt}
@@ -567,6 +650,7 @@ const MarkdownImage: NonNullable<Components["img"]> = ({ node, src, alt }) => {
       ? (filename) => context.onExternalFileRename?.({ documentPath: conversionContext.documentPath, filePath: resolveLocalImagePath(source, context.baseDir)!, source }, filename)
       : undefined}
     onError={context.onError}
+    onPreviewTextEdit={inlineEditLeaf && context.onTextEdit && !context.staticMode && !context.presentationMode ? () => setEditingAlt({ baseContent: context.content, leaf: inlineEditLeaf }) : undefined}
   />;
 };
 
@@ -614,6 +698,7 @@ const markdownComponents: Components = {
   a: MarkdownLink,
   img: MarkdownImage,
   svg: MarkdownSvg as Components["svg"],
+  span: MarkdownSpan,
   ol: MarkdownOrderedList,
   ul: MarkdownUnorderedList,
 };
@@ -660,6 +745,9 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   onStagedTextAssetChange,
   diffChangedLines,
   staticMode = false,
+  renderSvgFences = false,
+  onTextEdit,
+  onTextUndo,
 }) => {
   const renderedContent = React.useMemo(() => normalizeStructuredListIndentationForRendering(content), [content]);
   const mermaidFenceOffsets = React.useMemo(() => collectMermaidFenceOffsets(content), [content]);
@@ -668,6 +756,9 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     [mermaidFenceOffsets],
   );
   const editableOccurrences = React.useMemo(() => collectEditableMarkdownOccurrences(content), [content]);
+  const inlineEditLeaves = React.useMemo(() => onTextEdit ? collectPreviewInlineEditLeaves(content) : [], [content, onTextEdit]);
+  const inlineEditLeavesById = React.useMemo(() => new Map(inlineEditLeaves.map(leaf => [leaf.id, leaf])), [inlineEditLeaves]);
+  const inlineEditBindings = React.useMemo(() => new Map(onTextEdit ? bindRenderedPreviewInlineEditLeaves(content, renderedContent).map(binding => [binding.renderedFrom, binding.id]) : []), [content, renderedContent, onTextEdit]);
   const codeFenceByOffset = React.useMemo(() => {
     const map = new Map<number, CodeFenceOccurrence>();
     editableOccurrences
@@ -727,18 +818,24 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     onExternalTableChange,
     onStagedTextAssetChange,
     staticMode,
+    renderSvgFences,
+    inlineEditLeaves: inlineEditLeavesById,
+    onTextEdit,
+    onTextUndo,
   }), [
     onCodexConsult, baseDir, codeFenceByOffset, content, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
     onCodeFenceBodyChange,
     onInlineSvgChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onExternalTableChange, onImageDisplaySizeChange, onCodexImageSelect, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
-    onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, searchExpandedIds, sourceLineOffset, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, stagedTableSources, staticMode, tabId, tableByOffset, theme, windowId,
+    onSearchFoldManualOverride, onStagedTextAssetChange, presentationMode, renderSvgFences, searchExpandedIds, sourceLineOffset, sourcePath, stagedAssetPreviews, stagedDrawioSources, stagedMermaidSources, stagedTableSources, staticMode, tabId, tableByOffset, theme, windowId, inlineEditLeavesById, onTextEdit, onTextUndo,
   ]);
 
-  const consultation = useConsultationMenu(content.replace(/\r\n?/g, "\n"), tabId ?? "", onCodexConsult);
+  const consultation = useConsultationMenu(content, tabId ?? "", onCodexConsult);
   return (
     <MarkdownRenderContext.Provider value={renderContext}>
-      <div className="markdown-body" ref={contentRef} onContextMenuCapture={consultation.onContextMenuCapture}>
+      <div className="markdown-body" ref={contentRef} tabIndex={onTextUndo ? -1 : undefined} onCopy={event => copyPreviewSelection(event, content)} onContextMenuCapture={consultation.onContextMenuCapture} onKeyDown={(event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && onTextUndo) { event.preventDefault(); onTextUndo(event.shiftKey); }
+      }}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkObsidianImages]}
           rehypePlugins={[
@@ -747,6 +844,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
             [rehypeBlockAnchors, { lineOffset: sourceLineOffset }],
             [rehypeSanitize, markdownSanitizeSchema],
             [rehypeDiffLines, { changedLines: [...(diffChangedLines ?? [])] }],
+            ...(onTextEdit ? [[rehypePreviewInlineEdit, { bindings: inlineEditBindings }] as never] : []),
           ]}
           components={markdownComponents}
           urlTransform={markdownUrlTransform}

@@ -6,6 +6,7 @@ import { CodexPanel, replacementMatchesTargetRanges } from "./CodexPanel";
 import { loadSettings, saveSettings } from "../../lib/commands";
 import type { CodexReply, EditorSnapshot } from "./model";
 import type { CodexConversation } from "./sessions";
+import { upsertCodexSession } from "./sessions";
 const sessionMock = vi.hoisted(() => ({ sessions: [] as CodexConversation[], retentionDays: 30 }));
 vi.mock("./api", () => ({
     generateCodex: vi.fn(),
@@ -57,10 +58,12 @@ function mount(options: {
         conversationAction?: "add" | "new";
     };
     documentPath?: string;
+    maximized?: boolean;
+    onToggleMaximized?: () => void;
 } = {}) {
     let current = options.current ?? snapshot;
     const apply = options.apply ?? vi.fn().mockReturnValue(true);
-    const view = render(<CodexPanel open onClose={vi.fn()} documentName="test.md" documentText={current.content} documentPath={options.documentPath} available consultationTarget={options.target} getSnapshot={() => current} applyProposal={apply}/>);
+    const view = render(<CodexPanel open onClose={vi.fn()} documentName="test.md" documentText={current.content} documentPath={options.documentPath} available consultationTarget={options.target} maximized={options.maximized} onToggleMaximized={options.onToggleMaximized} getSnapshot={() => current} applyProposal={apply}/>);
     return { ...view, apply, setSnapshot: (next: EditorSnapshot) => { current = next; } };
 }
 async function send(text = "短くして") {
@@ -285,6 +288,15 @@ describe("Codexパネル", () => {
         expect(screen.queryByText("遅い回答")).not.toBeInTheDocument();
         view.unmount();
     });
+    it("最大化トグルは会話を初期化せず、状態を親へ通知する", async () => {
+        const onToggleMaximized = vi.fn();
+        mount({ onToggleMaximized });
+        const instruction = await screen.findByLabelText("指示");
+        fireEvent.change(instruction, { target: { value: "保持する下書き" } });
+        fireEvent.click(screen.getByRole("button", { name: "AIパネルを最大化" }));
+        expect(onToggleMaximized).toHaveBeenCalledOnce();
+        expect(instruction).toHaveValue("保持する下書き");
+    });
     it("文書に紐付く下書きを保存し、次の起動で復元する", async () => {
         const first = mount({ documentPath: "C:/docs/test.md" });
         await send("再起動後にも残す");
@@ -328,6 +340,26 @@ describe("Codexパネル", () => {
         view.unmount();
         await act(async () => {});
         expect(sessionMock.sessions[0].draft.instruction).toBe("");
+    });
+    it("保存エラーは最後の入力を空にして保存不要になれば解除する", async () => {
+        vi.mocked(upsertCodexSession).mockRejectedValueOnce(new Error("保存領域が不足しています"));
+        mount();
+        const instruction = await screen.findByLabelText("指示");
+        fireEvent.change(instruction, { target: { value: "保存に失敗する下書き" } });
+        await screen.findByRole("alert");
+        fireEvent.change(instruction, { target: { value: "" } });
+        await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    });
+    it("空にした後に古い保存失敗が届いても警告を表示しない", async () => {
+        let rejectSave!: (cause: Error) => void;
+        vi.mocked(upsertCodexSession).mockImplementationOnce(() => new Promise((_, reject) => { rejectSave = reject; }));
+        mount();
+        const instruction = await screen.findByLabelText("指示");
+        fireEvent.change(instruction, { target: { value: "遅延保存" } });
+        await waitFor(() => expect(vi.mocked(upsertCodexSession)).toHaveBeenCalled());
+        fireEvent.change(instruction, { target: { value: "" } });
+        await act(async () => rejectSave(new Error("遅れて失敗")));
+        await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     });
     it("送信後の次の質問は過去画像を新しい添付として登録し直さない", async () => {
         vi.mocked(generateCodex).mockResolvedValue({ answer: "画像を説明しました", replacement: null });

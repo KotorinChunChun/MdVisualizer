@@ -480,12 +480,12 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     contextSelection.current = range === selected ? { from: selected.from, to: selected.to } : { from: pos, to: pos };
     return { documentId, content: view.state.sliceDoc(), from: range.from, to: range.to };
   }, [
-    { label: "元に戻す", disabled: saving, run: () => { if (viewRef.current) { undo(viewRef.current); viewRef.current.focus(); } } },
-    { label: "やり直す", disabled: saving, run: () => { if (viewRef.current) { redo(viewRef.current); viewRef.current.focus(); } } },
-    { label: "切り取り", disabled: saving, run: target => editContext(target, "cut") },
-    { label: "コピー", run: target => editContext(target, "copy") },
-    { label: "貼り付け", disabled: saving, run: target => editContext(target, "paste") },
-    { label: "すべて選択", run: () => { if (viewRef.current) { selectAll(viewRef.current); viewRef.current.focus(); } } },
+    { label: "元に戻す", group: "history", disabled: saving, run: () => { if (viewRef.current) { undo(viewRef.current); viewRef.current.focus(); } } },
+    { label: "やり直す", group: "history", disabled: saving, run: () => { if (viewRef.current) { redo(viewRef.current); viewRef.current.focus(); } } },
+    { label: "切り取り", group: "clipboard", disabled: saving, run: target => editContext(target, "cut") },
+    { label: "コピー", group: "clipboard", run: target => editContext(target, "copy") },
+    { label: "貼り付け", group: "clipboard", disabled: saving, run: target => editContext(target, "paste") },
+    { label: "すべて選択", group: "selection", run: () => { if (viewRef.current) { selectAll(viewRef.current); viewRef.current.focus(); } } },
   ]);
   return <section className={`markdown-editor${compact ? " markdown-editor--compact" : ""}`} aria-label="Markdown編集">
     <div className="markdown-editor__toolbar" role="toolbar" aria-label="Markdown書式">

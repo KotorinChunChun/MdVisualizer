@@ -9,7 +9,7 @@ afterEach(cleanup);
 
 function chooseSkill(label: string, consult: ReturnType<typeof vi.fn>) {
   fireEvent.click(screen.getByRole("menuitem", { name: label }));
-  fireEvent.click(screen.getByRole("menuitem", { name: "現在の会話に追加" }));
+  const add = screen.queryByRole("menuitem", { name: "現在の会話に追加" }); if (add) fireEvent.click(add);
   return consult.mock.calls[consult.mock.calls.length - 1]?.[0];
 }
 

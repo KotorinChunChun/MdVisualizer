@@ -357,7 +357,7 @@ body {
 
 .fold-section { margin: 0; }
 .fold-section > .fold-heading { margin-top: 1.5em; }
-.fold-toggle { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; color: inherit; font: inherit; text-align: left; background: transparent; border: 0; cursor: pointer; }
+.fold-toggle { display: inline-flex; align-items: center; gap: 8px; width: auto; margin-right: 8px; padding: 0; color: inherit; font: inherit; text-align: left; background: transparent; border: 0; cursor: pointer; }
 .fold-toggle:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; border-radius: 3px; }
 .fold-chevron { flex: 0 0 1em; width: 1em; color: var(--text-muted); font-size: 0.7em; }
 .fold-heading__content { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
@@ -894,3 +894,5 @@ body {
 .code-block__header .code-block__heading,
 .data-grid-toolbar .responsive-toolbar__label { font-size: 12px; font-weight: 600; }
 .responsive-toolbar select { min-height: 30px; padding: 3px 6px; font-size: 12px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; }
+
+.editor-mode-controls > .document-action-button[aria-pressed="true"] { color: #fff; background: var(--accent-color); border-color: var(--accent-color); font-weight: 600; }

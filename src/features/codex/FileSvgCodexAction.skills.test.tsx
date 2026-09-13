@@ -19,7 +19,7 @@ describe("FileSvgCodexAction skill placement", () => {
     render(<FileSvgCodexAction path="C:/docs/a.svg" />);
     fireEvent.click(screen.getByRole("button", { name: "AIに図の編集を依頼" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "ブロック編集" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "新しい会話を開始" }));
+
     await screen.findByRole("dialog");
     expect(screen.getByRole("dialog")).toHaveTextContent("block-skill:new");
     fireEvent.click(screen.getByRole("button", { name: "採用テスト" }));
@@ -29,8 +29,8 @@ describe("FileSvgCodexAction skill placement", () => {
     const wrapper = render(<FileSvgCodexAction path="C:/docs/a.svg"><span>図</span></FileSvgCodexAction>);
     fireEvent.contextMenu(wrapper.container.querySelector("div")!, { clientX: 10, clientY: 10 });
     fireEvent.click(screen.getByRole("menuitem", { name: "右クリック相談" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "現在の会話に追加" }));
+
     await screen.findByRole("dialog");
-    expect(screen.getByRole("dialog")).toHaveTextContent("context-skill:add");
+    expect(screen.getByRole("dialog")).toHaveTextContent("context-skill:new");
   });
 });

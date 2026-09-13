@@ -53,7 +53,7 @@ describe("shortcut key rendering", () => {
     expect(svg.match(/class="shortcut-key-svg__label"[^>]*font-size="([^"]+)"/)?.[1]).toBe("24");
     expect(svg.match(/class="shortcut-key-svg__separator"[^>]*font-size="([^"]+)"[^>]*>\+<\/text>/)?.[1]).toBe("24");
     expect(keyFaces).toHaveLength(2);
-    expect(keyFaces[1].x - (keyFaces[0].x + keyFaces[0].width)).toBeGreaterThanOrEqual(12);
+    expect(keyFaces[1].x - (keyFaces[0].x + keyFaces[0].width)).toBeGreaterThanOrEqual(24 * 0.75 + 16);
   });
 
   it("builds accessible SVG for inline and block variants", () => {

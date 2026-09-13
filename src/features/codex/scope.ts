@@ -6,6 +6,8 @@ import type { SkillTarget } from "./skills";
 
 export type CodexEditMode = "question" | "selection" | "document";
 export interface CodexTarget extends EditorSnapshot {
+  /** 同じ対象への再操作も新しい会話として扱うための、操作単位の識別子。 */
+  requestId?: string;
   imageSource?: string;
   label?: string;
   skillId?: string;

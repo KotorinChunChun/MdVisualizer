@@ -41,10 +41,9 @@ export function FileSvgCodexAction({ path, onSaved, kind = "svg", children }: { 
     {children}
     {!children && <button type="button" className="diagram-action-button codex-diagram-action" disabled={loading} onClick={(event) => showMenu("blockMenu", event.clientX, event.clientY)}>{loading ? `${kind}読込中…` : "AIに図の編集を依頼"}</button>}
     {menu && createPortal(<div role="menu" aria-label="図のAI操作" className="responsive-toolbar__menu" style={{ left: menu.x, top: menu.y }} onPointerDown={(event) => event.stopPropagation()}>
-      {!skillId ? available.map((skill) => <button key={skill.id} autoFocus={skill === available[0]} type="button" role="menuitem" onClick={() => setSkillId(skill.id)}>{skill.config.label}</button>) : <>
-        <button autoFocus type="button" role="menuitem" onClick={() => { setConversationAction("add"); setMenu(null); void open(); }}>現在の会話に追加</button>
-        <button type="button" role="menuitem" onClick={() => { setConversationAction("new"); setMenu(null); void open(); }}>新しい会話を開始</button>
-      </>}
+      {available.map((skill) => <button key={skill.id} autoFocus={skill === available[0]} type="button" role="menuitem" onClick={() => { setSkillId(skill.id); setConversationAction("new"); setMenu(null); void open(); }}>{skill.config.label}</button>)}
+      <div role="separator" />
+      <button type="button" role="menuitem" onClick={() => { setSkillId(undefined); setConversationAction("add"); setMenu(null); void open(); }}>この画像をAIの送信対象に追加</button>
     </div>, document.body)}
     {error && <span role="alert">{error}</span>}
     {loaded && createPortal(<DiagramCodexDialog documentPath={path} kind={kind} source={loaded.content} label={path.split(/[\\/]/).pop() ?? kind} theme="dark" initialSkillId={skillId} initialConversationAction={conversationAction} onClose={() => { setLoaded(null); setSkillId(undefined); setConversationAction(undefined); }} onSave={async (content) => {

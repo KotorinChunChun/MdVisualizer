@@ -33,7 +33,9 @@ export function DiagramCodexAction({ kind, source, onSave, label, theme = "dark"
   return <>
     <button ref={trigger} className="diagram-action-button codex-diagram-action" type="button" aria-haspopup="menu" aria-expanded={menuOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => { const bounds = trigger.current?.getBoundingClientRect(); if (bounds) setMenuPosition({ top: bounds.bottom + 4, right: Math.max(8, window.innerWidth - bounds.right) }); setSkillId(undefined); setMenuOpen((value) => !value); }}>AIに図の編集を依頼</button>
     {menuOpen && menuPosition && createPortal(<div className="responsive-toolbar__menu" role="menu" aria-label="図のAI操作" style={menuPosition} onPointerDown={(event) => event.stopPropagation()}>
-      {skillId ? <><button type="button" role="menuitem" onClick={() => start("add")}>現在の会話に追加</button><button type="button" role="menuitem" onClick={() => start("new")}>新しい会話を開始</button><button type="button" role="menuitem" onClick={() => setSkillId(undefined)}>戻る</button></> : available.map((skill) => <button key={skill.id} type="button" role="menuitem" onClick={() => setSkillId(skill.id)}>{skill.config.label}</button>)}
+      {available.map((skill) => <button key={skill.id} type="button" role="menuitem" onClick={() => { setSkillId(skill.id); start("new"); }}>{skill.config.label}</button>)}
+      <div role="separator" />
+      <button type="button" role="menuitem" onClick={() => { setSkillId(undefined); start("add"); }}>この画像をAIの送信対象に追加</button>
     </div>, document.body)}
     {open && createPortal(<DiagramCodexDialog kind={kind} source={source} onSave={onSave} label={label ?? kind} theme={theme} onClose={() => setOpen(false)} initialSkillId={skillId} initialConversationAction={conversationAction} renderedSvg={renderedSvg} />, document.body)}
   </>;
