@@ -1,0 +1,73 @@
+# 同梱ライブラリ
+
+ビルドで取り込んだ依存とライセンス。元の著作権表示をlicenses以下に保存する。
+
+| パッケージ | 版 | ライセンス |
+|---|---|---|
+| @braintree/sanitize-url | 7.1.2 | MIT |
+| @codemirror/commands | 6.10.4 | MIT |
+| @codemirror/language | 6.12.4 | MIT |
+| @codemirror/state | 6.7.1 | MIT |
+| @codemirror/view | 6.43.8 | MIT |
+| @iconify/utils | 3.1.4 | MIT |
+| @lezer/common | 1.5.2 | MIT |
+| @lezer/highlight | 1.2.3 | MIT |
+| @marijn/find-cluster-break | 1.0.3 | MIT |
+| @mermaid-js/parser | 1.2.0 | MIT |
+| @upsetjs/venn.js | 2.0.0 | MIT |
+| cose-base | 1.0.3 | MIT |
+| crelt | 1.0.7 | MIT |
+| cytoscape | 3.34.0 | MIT |
+| cytoscape-cose-bilkent | 4.1.0 | MIT |
+| cytoscape-fcose | 2.2.0 | MIT |
+| d3 | 7.9.0 | ISC |
+| d3-array | 3.2.4 | ISC |
+| d3-axis | 3.0.0 | ISC |
+| d3-brush | 3.0.0 | ISC |
+| d3-chord | 3.0.1 | ISC |
+| d3-color | 3.1.0 | ISC |
+| d3-contour | 4.0.2 | ISC |
+| d3-delaunay | 6.0.4 | ISC |
+| d3-dispatch | 3.0.1 | ISC |
+| d3-drag | 3.0.0 | ISC |
+| d3-dsv | 3.0.1 | ISC |
+| d3-ease | 3.0.1 | BSD-3-Clause |
+| d3-fetch | 3.0.1 | ISC |
+| d3-force | 3.0.0 | ISC |
+| d3-format | 3.1.2 | ISC |
+| d3-geo | 3.1.1 | ISC |
+| d3-hierarchy | 3.1.2 | ISC |
+| d3-interpolate | 3.0.1 | ISC |
+| d3-path | 3.1.0 | ISC |
+| d3-polygon | 3.0.1 | ISC |
+| d3-quadtree | 3.0.1 | ISC |
+| d3-random | 3.0.1 | ISC |
+| d3-sankey | 0.12.3 | BSD-3-Clause |
+| d3-scale | 4.0.2 | ISC |
+| d3-scale-chromatic | 3.1.0 | ISC |
+| d3-selection | 3.0.0 | ISC |
+| d3-shape | 3.2.0 | ISC |
+| d3-time | 3.1.0 | ISC |
+| d3-time-format | 4.1.0 | ISC |
+| d3-timer | 3.0.1 | ISC |
+| d3-transition | 3.0.1 | ISC |
+| d3-zoom | 3.0.0 | ISC |
+| dagre-d3-es | 7.0.14 | MIT |
+| dayjs | 1.11.21 | MIT |
+| delaunator | 5.1.0 | ISC |
+| dompurify | 3.4.13 | (MPL-2.0 OR Apache-2.0) |
+| es-toolkit | 1.50.0 | MIT |
+| internmap | 2.0.3 | ISC |
+| katex | 0.16.47 | MIT |
+| khroma | 2.1.0 | undefined |
+| layout-base | 1.0.2 | MIT |
+| lodash-es | 4.18.1 | MIT |
+| marked | 16.4.2 | MIT |
+| mermaid | 11.16.1 | MIT |
+| robust-predicates | 3.0.3 | Unlicense |
+| roughjs | 4.6.6 | MIT |
+| style-mod | 4.1.3 | MIT |
+| stylis | 4.4.0 | MIT |
+| ts-dedent | 2.3.0 | MIT |
+| uuid | 14.0.1 | MIT |
+| w3c-keyname | 2.2.8 | MIT |
