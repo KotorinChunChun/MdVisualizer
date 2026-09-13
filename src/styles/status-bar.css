@@ -55,13 +55,13 @@
 }
 
 .status-bar__controls select {
-  min-height: 22px;
+  min-height: 24px;
   max-width: 116px;
   padding: 1px 3px;
   color: var(--text-primary);
   background: var(--btn-bg);
   border: 1px solid var(--border-color);
-  border-radius: 3px;
+  border-radius: 4px;
   font: inherit;
 }
 .status-bar__icon-button { width: 28px; min-width: 28px; height: 24px; padding: 1px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font: inherit; font-weight: 700; }

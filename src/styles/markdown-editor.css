@@ -23,6 +23,9 @@
 .markdown-editor__toolbar button {
   min-width: 30px;
   min-height: 30px;
+  font-family: inherit;
+  font-size: var(--toolbar-control-font-size, 13px);
+  line-height: var(--toolbar-control-line-height, 20px);
   padding: 3px 8px;
   white-space: nowrap;
   color: var(--text-primary);

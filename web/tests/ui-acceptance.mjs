@@ -29,6 +29,26 @@ try {
  await studio.locator('#form-content button[type=submit]').tap();
  await page.locator('.mermaid-editor-modal').getByRole('button',{name:'反映',exact:true}).tap();
  await page.locator('.mermaid-block').getByText('タッチ変更済み',{exact:true}).waitFor({timeout:15000});
+ const tocToggle=page.locator('article .document-toc-toggle');
+ assert.equal(await tocToggle.count(),1);
+ const tocBounds=await tocToggle.boundingBox(),previewBounds=await page.locator('article.markdown-body').boundingBox();
+ assert.ok(tocBounds&&previewBounds&&tocBounds.x+tocBounds.width<=previewBounds.x+previewBounds.width&&tocBounds.y>=previewBounds.y);
+ await tocToggle.tap();
+ await page.getByRole('navigation',{name:'文書全体の目次'}).getByRole('button',{name:'タッチ編集確認',exact:true}).tap();
+ await page.locator('article .document-toc-toggle').getAttribute('aria-expanded').then(value=>assert.equal(value,'false'));
+ await page.locator('.web-app>nav select').first().selectOption('source');
+ assert.equal(await tocToggle.isVisible(),false);
+ await page.setViewportSize({width:1280,height:800});
+ await page.locator('.web-app>nav select').first().selectOption('split');
+ assert.equal(await tocToggle.count(),1);assert.equal(await tocToggle.isVisible(),true);
+ const desktopTocBounds=await tocToggle.boundingBox(),desktopPreviewBounds=await page.locator('article.markdown-body').boundingBox();
+ assert.ok(desktopTocBounds&&desktopPreviewBounds&&desktopTocBounds.x+desktopTocBounds.width<=desktopPreviewBounds.x+desktopPreviewBounds.width&&desktopTocBounds.y>=desktopPreviewBounds.y);
+ const controlHeights=await page.locator('.web-app>header button,.web-app>nav button,.web-app>nav select').evaluateAll(nodes=>nodes.map(node=>Math.round(node.getBoundingClientRect().height)));
+ assert.ok(controlHeights.every(height=>height>=36));
+ const paragraphWidth=await page.locator('article .markdown-body p').first().evaluate(node=>({width:node.getBoundingClientRect().width,parent:(node.parentElement?.getBoundingClientRect().width??0)}));
+ assert.ok(paragraphWidth.width>=paragraphWidth.parent-4,JSON.stringify(paragraphWidth));
+ await page.setViewportSize({width:390,height:844});
+ await page.locator('.web-app>nav select').first().selectOption('source');
  await page.screenshot({path:path.join(out,'touch-preview.png'),fullPage:true});
  assert.equal(await page.getByRole('button',{name:/PowerShell|フォルダーを開く|AIに図の編集/}).count(),0);
  const rows=Array.from({length:125},(_,i)=>`| 項目${i+1} | ${i+1} |`).join('\n');
@@ -50,6 +70,6 @@ try {
  await page.waitForTimeout(900);
  assert.notEqual(await readDraft(),null);
  assert.deepEqual(errors,[]);
- await writeFile(path.join(out,'result.json'),JSON.stringify({passed:['本文編集','タッチ表編集','タッチMermaidノード編集','除外機能非表示','ソース表示から全文126行の印刷呼出','下書き手動削除後の再保存抑止と次編集の再開'],print,viewport:390,physicalDevice:false,errors},null,2));
+ await writeFile(path.join(out,'result.json'),JSON.stringify({passed:['本文編集','タッチ表編集','タッチMermaidノード編集','390/1280の目次一つと右上配置・見出しjump','ソースで目次非表示','ボタン高さ統一と段落幅100%','除外機能非表示','ソース表示から全文126行の印刷呼出','下書き手動削除後の再保存抑止と次編集の再開'],print,viewport:390,physicalDevice:false,errors},null,2));
  console.log('PASS: 390px touch editing, table, Mermaid, full print snapshot, draft deletion');
 } catch(e){await page.screenshot({path:path.join(out,'failure.png'),fullPage:true});await writeFile(path.join(out,'failure.txt'),String(e));throw e;}finally{await browser.close();}

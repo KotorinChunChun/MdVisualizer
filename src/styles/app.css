@@ -24,6 +24,9 @@
   --code-block-color: #eceff4;
   --table-header-bg: #242933;
   --table-header-color: #eceff4;
+  --toolbar-control-height: 30px;
+  --toolbar-control-font-size: 13px;
+  --toolbar-control-line-height: 20px;
 }
 
 * {
@@ -166,13 +169,13 @@ body {
 .diagnostics-panel li button { display: grid; width: 100%; gap: .12rem; padding: .45rem; color: var(--text-primary); text-align: left; background: transparent; border: 1px solid var(--border-color); border-radius: .35rem; cursor: pointer; }.diagnostics-panel small { color: var(--text-muted); }.diagnostic-error { border-left: 4px solid var(--error-color) !important; }.diagnostic-warning { border-left: 4px solid #f59e0b !important; }
 .pending-reload { padding: 2px 6px; color: #1f2937; background: #fbbf24; border: 0; border-radius: 3px; cursor: pointer; }
 .external-actions { display: inline-flex; gap: 4px; }
-.external-actions button { padding: 2px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 3px; cursor: pointer; }
+.external-actions button { padding: 2px 6px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
 .external-more { position: relative; }
 .external-more__menu { position: absolute; z-index: 50; top: calc(100% + 4px); right: 0; display: grid; min-width: max-content; padding: 4px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 8px 24px #0008; }
 .external-more__menu button { text-align: left; white-space: nowrap; }
 .document-action-button,
 .document-actions button,
-.codex-toolbar-action { padding: 2px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 3px; cursor: pointer; }
+.codex-toolbar-action { padding: 2px 8px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
 .editor-mode-controls > .document-action-button { margin-left: 8px; }
 .editor-mode-segments { display: inline-flex; align-items: stretch; isolation: isolate; }
 .editor-mode-segments button { position: relative; min-height: 26px; margin-left: -1px; padding: 2px 10px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 0; cursor: pointer; transition: color .15s ease, background-color .15s ease, border-color .15s ease; }
@@ -899,3 +902,23 @@ body {
 .responsive-toolbar select { min-height: 30px; padding: 3px 6px; font-size: 12px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; }
 
 .editor-mode-controls > .document-action-button[aria-pressed="true"] { color: #fff; background: var(--accent-color); border-color: var(--accent-color); font-weight: 600; }
+
+/* 文字種によるnormal行高の差をなくし、同じ操作列の実寸を揃える。 */
+.view-controls .document-actions button,
+.view-controls .document-action-button,
+.view-controls .editor-mode-segments button,
+.view-controls .external-actions button,
+.view-controls .codex-toolbar-action,
+.view-controls select,
+.responsive-toolbar .diagram-action-button,
+.responsive-toolbar .block-copy-menu,
+.responsive-toolbar .code-copy,
+.responsive-toolbar .code-run,
+.responsive-toolbar .code-storage,
+.responsive-toolbar .code-wrap,
+.responsive-toolbar select {
+  min-height: var(--toolbar-control-height);
+  font-family: inherit;
+  font-size: var(--toolbar-control-font-size);
+  line-height: var(--toolbar-control-line-height);
+}
