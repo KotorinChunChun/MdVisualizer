@@ -1,0 +1,65 @@
+import {parseModel,updateNode,deleteNodes,connect,updateEdge,moveIntoGroup,editGroup,renameFlowIds,edgeCode,patch,rewriteEdges} from './core.js';
+
+function flow(source){const m=parseModel(source);if(m.type!=='flowchart'||!m.safe)throw Error('この操作は基本記法のフローチャートで利用できます');return m;}
+function definition(m,n){return n.defined?m.source.slice(n.from,n.to)+(m.source.slice(n.to).match(/^:::[\w-]+/)?.[0]||''):`${n.id}["${n.label.replaceAll('"','#quot;')}"]`;}
+export function copyFlow(source,ids=[],groupId){
+ const m=flow(source),group=m.groups.find(g=>g.id===groupId);
+ const groups=group?m.groups.filter(g=>g.from>=group.from&&g.to<=group.to):[];
+ const chosen=m.nodes.filter(n=>group?group.members.includes(n.id):ids.includes(n.id));
+ if(!chosen.length)throw Error('コピーするノードまたはグループを選択してください');
+ const selected=new Set(chosen.map(n=>n.id)),groupIds=new Set(groups.map(g=>g.id)),lines=['flowchart LR'];
+ const emit=parent=>{for(const n of chosen.filter(n=>(groupIds.has(n.group)?n.group:undefined)===parent))lines.push('    '+definition(m,n));for(const g of groups.filter(g=>(groupIds.has(g.parent)?g.parent:undefined)===parent)){lines.push(source.slice(g.from,g.headerTo));const dir=ownDirection(m,g);if(dir)lines.push('    direction '+dir);emit(g.id);lines.push('    end');}};
+ emit(undefined);
+ const copiedEdges=m.edges.filter(e=>selected.has(e.from)&&selected.has(e.to));for(const e of copiedEdges)lines.push('    '+edgeCode(m.type,e));const styles=edgeStyles(m);copiedEdges.forEach((e,i)=>{const style=styles[m.edges.indexOf(e)];if(style)lines.push('    linkStyle '+i+' '+style);});
+ const classes=new Set();for(const n of chosen)for(const ref of n.refs){const name=source.slice(ref.to).match(/^:::([\w-]+)/)?.[1];if(name){classes.add(name);lines.push('    class '+n.id+' '+name);}}for(const l of m.lines){const style=/^\s*(style|class)\s+([^\s]+)\s+(.+)$/.exec(l.text);if(style){const targets=style[2].split(',').filter(id=>selected.has(id)||groupIds.has(id));if(targets.length){lines.push(`    ${style[1]} ${targets.join(',')} ${style[3]}`);if(style[1]==='class')style[3].split(',').forEach(c=>classes.add(c.trim()));}}}
+ for(const l of m.lines){const def=/^\s*classDef\s+(\S+)\s/.exec(l.text);if(def&&classes.has(def[1]))lines.push(l.text);}return lines.join('\n');
+}
+export function pasteFlow(source,clipboard,anchor,before=false){
+ clipboard=uniqueClasses(source,clipboard);const m=flow(source),copied=flow(clipboard),all=[...copied.nodes,...copied.groups].filter((n,i,a)=>a.findIndex(x=>x.id===n.id)===i),used=new Set([...m.nodes,...m.groups].map(n=>n.id));
+ const rows=all.map(n=>{const prefix=copied.groups.some(g=>g.id===n.id)?'G':'N';let i=1;while(used.has(prefix+i)||new RegExp(`\\b${prefix}${i}\\b`).test(source))i++;const next=prefix+i;used.add(next);return {id:n.id,next};});
+ const renamed=renameFlowIds(clipboard,rows),next=flow(renamed);let result=source+'\n'+renamed.split('\n').slice(1).map(l=>l.replace(/^(\s*linkStyle\s+)([\d,]+)/,(_,head,ids)=>head+ids.split(',').map(i=>Number(i)+m.edges.length).join(','))).join('\n');
+ const entries=next.nodes.filter(n=>!next.edges.some(e=>e.to===n.id)),exits=next.nodes.filter(n=>!next.edges.some(e=>e.from===n.id));
+ if(anchor){if(!m.nodes.some(n=>n.id===anchor))throw Error('貼り付け先がありません');const incoming=entries.length?entries:[next.nodes[0]],outgoing=m.edges.filter(e=>e.from===anchor);
+  if(before){const previous=m.edges.filter(e=>e.to===anchor);for(const e of previous){result=updateEdge(result,e.id,{to:incoming[0].id});for(const n of incoming.slice(1))result=connect(result,e.from,n.id,e.arrow,e.label);}for(const n of exits.length?exits:[next.nodes.at(-1)])result=connect(result,n.id,anchor);}
+  else if(outgoing.length===1){result=updateEdge(result,outgoing[0].id,{to:incoming[0].id});for(const n of incoming.slice(1))result=connect(result,anchor,n.id);for(const n of exits.length?exits:[next.nodes.at(-1)])result=connect(result,n.id,outgoing[0].to,outgoing[0].arrow);}
+  else for(const n of incoming)result=connect(result,anchor,n.id);
+  const parent=m.nodes.find(n=>n.id===anchor).group;
+  if(parent){const loose=next.nodes.filter(n=>!n.group).map(n=>n.id);if(loose.length)result=moveIntoGroup(result,loose,parent);for(const g of next.groups.filter(g=>!g.parent))result=editGroup(result,g.id,g.label.replace(/^"|"$/g,''),parent);}
+ }
+ return result;
+}
+function edgeStyles(m){const styles=m.edges.map(()=>({}));for(const line of m.lines){const match=/^\s*linkStyle\s+(default|[\d,]+)\s+(.+)$/.exec(line.text);if(!match)continue;const ids=match[1]==='default'?m.edges.map((_,i)=>i):match[1].split(',').map(Number);for(const i of ids)if(styles[i])for(const part of match[2].split(',')){const at=part.indexOf(':');if(at>0)styles[i][part.slice(0,at).trim()]=part.slice(at+1).trim();}}return styles.map(style=>Object.entries(style).map(([k,v])=>k+':'+v).join(','));}
+export function moveToRoot(source,ids){const m=flow(source);if(!ids.length)return source;const keep=copyFlow(source,ids),styles=edgeStyles(m);let result=(deleteNodes(source,ids)+'\n'+keep.split('\n').slice(1).filter(l=>!/^\s*(classDef|linkStyle)\s/.test(l)).join('\n')).split('\n').filter(l=>!/^\s*linkStyle\s/.test(l)).join('\n');const next=flow(result);next.edges.forEach((e,i)=>{let old=m.edges.findIndex(x=>x.from===e.from&&x.to===e.to);if(old<0)old=m.edges.findIndex(x=>x.from===e.from&&ids.includes(x.to));if(styles[old])result+='\n    linkStyle '+i+' '+styles[old];});return result;}
+export function nodeColors(source,id){const colors={fill:'#e8efff',stroke:'#334155',color:'#172033'};for(const l of source.split('\n')){const m=/^\s*style\s+(\S+)\s+(.+)$/.exec(l);if(m&&m[1].split(',').includes(id))for(const part of m[2].split(',')){const [key,value]=part.split(':');if(key in colors&&/^#[\da-f]{6}$/i.test(value))colors[key]=value;}}return colors;}
+export function styleNode(source,id,values){flow(source);const props=[];for(const [key,value] of Object.entries(values)){if(!['fill','stroke','color'].includes(key))continue;if(!/^#[\da-f]{6}$/i.test(value))throw Error('色の形式が不正です');props.push(key+':'+value);}return props.length?source+`\n    style ${id} ${props.join(',')}`:source;}
+export function styleEdge(source,edgeId,stroke,color){const m=flow(source),index=m.edges.findIndex(e=>e.id===edgeId);if(index<0)throw Error('接続がありません');for(const v of [stroke,color])if(!/^#[\da-f]{6}$/i.test(v))throw Error('色の形式が不正です');return source+`\n    linkStyle ${index} stroke:${stroke},color:${color}`;}
+export function diagramDirection(source,nodeId){const m=parseModel(source),n=m.nodes.find(n=>n.id===nodeId);let g=m.groups.find(g=>g.id===n?.group);while(g){const dir=ownDirection(m,g);if(dir)return dir;g=m.groups.find(x=>x.id===g.parent);}return source.match(/(?:flowchart|graph)\s+(LR|RL|TD|TB|BT)\b/)?.[1]||'TD';}
+const initPattern=/%%\{\s*init\s*:\s*([\s\S]*?)\}%%/;
+export function themeConfig(source){const match=source.match(initPattern);if(!match)return {};try{return JSON.parse(match[1]);}catch{throw Error('既存のinit設定がJSON形式ではありません。コード側で設定を確認してください');}}
+export function setTheme(source,theme,variables={}){if(!['default','neutral','dark','forest','base'].includes(theme))throw Error('不明なテーマです');if(/^---\s*\n/.test(source))throw Error('YAML設定のテーマはコード側で変更してください');const config=themeConfig(source);config.theme=theme;config.themeVariables={...config.themeVariables,...variables};if(theme!=='base')for(const key of ['primaryColor','primaryBorderColor','primaryTextColor','lineColor','background'])delete config.themeVariables[key];const directive='%%{init: '+JSON.stringify(config)+'}%%';return initPattern.test(source)?source.replace(initPattern,directive):directive+'\n'+source;}
+
+function uniqueClasses(source,fragment){const classes=[...fragment.matchAll(/^\s*classDef\s+(\w+)\s/gm)].map(m=>m[1]);let i=1;for(const name of classes){while(new RegExp('\\bCopyClass'+i+'\\b').test(source+fragment))i++;const next='CopyClass'+i++;fragment=fragment.split('\n').map(line=>line.replace(/^(\s*classDef\s+)(\w+)/,(_,head,id)=>head+(id===name?next:id)).replace(/^(\s*class\s+\S+\s+)(.*)/,(_,head,list)=>head+list.split(',').map(id=>id.trim()===name?next:id).join(','))).join('\n');const changes=[];for(const n of flow(fragment).nodes)for(const ref of n.refs){const match=fragment.slice(ref.to).match(/^:::(\w+)/);if(match?.[1]===name)changes.push({from:ref.to+3,to:ref.to+3+name.length,text:next});}fragment=patch(fragment,changes);}return fragment;}
+
+function ownDirection(model,group){for(const line of model.lines){if(line.from<=group.headerTo||line.from>=group.footerFrom)continue;if(model.groups.some(child=>child.id!==group.id&&child.from>group.from&&child.to<group.to&&line.from>=child.from&&line.from<=child.to))continue;const match=/^\s*direction\s+(LR|RL|TD|TB|BT)\s*$/.exec(line.text);if(match)return match[1];}}
+
+export function resetItemColor(source,id,property){
+ flow(source);if(!['fill','stroke','color'].includes(property))throw Error('不明な色の設定です');
+ const strip=text=>text.split(',').filter(p=>p.split(':')[0].trim()!==property).join(',');
+ const lines=source.split('\n'),result=[],variants=new Map();
+ const variant=name=>{if(variants.has(name))return variants.get(name);const def=lines.find(l=>new RegExp('^\\s*classDef\\s+'+name+'\\s+').test(l));if(!def)return name;const props=def.replace(/^\s*classDef\s+\S+\s+/,'');if(strip(props)===props)return name;let i=1;while(source.includes('DefaultColor'+i)||[...variants.values()].includes('DefaultColor'+i))i++;const next='DefaultColor'+i;variants.set(name,next);result.push('    classDef '+next+' '+(strip(props)||'opacity:1'));return next;};
+ for(const line of lines){const m=/^(\s*)(style|class)\s+(\S+)\s+(.+)$/.exec(line);if(m&&m[3].split(',').includes(id)){const others=m[3].split(',').filter(x=>x!==id);if(others.length)result.push(`${m[1]}${m[2]} ${others.join(',')} ${m[4]}`);const props=m[2]==='style'?strip(m[4]):m[4].split(',').map(n=>variant(n.trim())).join(',');if(props)result.push(`${m[1]}${m[2]} ${id} ${props}`);}else result.push(line);}
+ let output=result.join('\n');const m=flow(output),n=m.nodes.find(n=>n.id===id),changes=[];for(const ref of n?.refs||[]){const cls=output.slice(ref.to).match(/^:::(\w+)/);if(cls){const next=variant(cls[1]);if(next!==cls[1])changes.push({from:ref.to+3,to:ref.to+3+cls[1].length,text:next});}}
+ // inline class用の派生定義は末尾に追加する。
+ const definitions=result.slice(output.split('\n').length);output=patch(output,changes);if(definitions.length)output+='\n'+definitions.join('\n');return output;
+}
+export function transferFlow(source,id,target,after=false){
+ const original=flow(source);if(id===target)return source;if(!original.nodes.some(n=>n.id===target))throw Error('移動先がありません');
+ let result=moveToRoot(source,[id]),m=flow(result);const edges=m.edges.map(e=>after&&e.from===target?{...e,from:id}:!after&&e.to===target?{...e,to:id}:e);
+ edges.push({from:after?target:id,to:after?id:target,arrow:'-->',label:'',line:-1});result=rewriteEdges(m,edges);const parent=original.nodes.find(n=>n.id===target).group;if(parent)result=moveIntoGroup(result,[id],parent);return result;
+}
+
+// 同じ経路は祖先・子孫関係で判定する。兄弟の枝と独立したツリーは確認対象。
+export function sameFlowPath(source,id,target){const m=flow(source);const reaches=(from,to)=>{const seen=new Set(),queue=[from];while(queue.length){const n=queue.pop();if(n===to)return true;if(seen.has(n))continue;seen.add(n);queue.push(...m.edges.filter(e=>e.from===n).map(e=>e.to));}return false;};return reaches(id,target)||reaches(target,id);}
+export function itemColorOverrides(source,id){const m=flow(source),classes=new Set(),props={};for(const n of m.nodes.filter(n=>n.id===id))for(const ref of n.refs){const name=source.slice(ref.to).match(/^:::([\w-]+)/)?.[1];if(name)classes.add(name);}for(const l of m.lines){const a=/^\s*class\s+(\S+)\s+(.+)$/.exec(l.text);if(a&&a[1].split(',').includes(id))a[2].split(',').forEach(x=>classes.add(x.trim()));}const read=s=>{for(const part of s.split(',')){const at=part.indexOf(':');if(at>0){const k=part.slice(0,at).trim();if(['fill','stroke','color'].includes(k))props[k]=part.slice(at+1).trim();}}};for(const l of m.lines){const a=/^\s*classDef\s+(\S+)\s+(.+)$/.exec(l.text);if(a&&a[1].split(',').some(x=>classes.has(x)))read(a[2]);}for(const l of m.lines){const a=/^\s*style\s+(\S+)\s+(.+)$/.exec(l.text);if(a&&a[1].split(',').includes(id))read(a[2]);}return props;}
+
+export function pasteNodeFormat(source,ids,format){flow(source);for(const id of ids){const n=flow(source).nodes.find(n=>n.id===id);if(!n)throw Error('書式の貼り付け先がありません');source=updateNode(source,id,{label:n.label,shape:format.shape});for(const prop of ['fill','stroke','color']){source=resetItemColor(source,id,prop);if(format.overrides[prop]!==undefined)source=styleNode(source,id,{[prop]:format.colors[prop]});}}return source;}
