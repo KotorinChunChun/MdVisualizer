@@ -141,16 +141,17 @@ export function buildShortcutKeySvg(source: string, options: ShortcutKeySvgOptio
   const parsed = parseShortcutKeySequence(source) ?? fallbackSequence(source);
   const keyHeight = inline ? 29 : 44;
   const keyDepth = inline ? 3 : 5;
-  const fontSize = inline ? 12 : 17;
+  const fontSize = inline ? 24 : 17;
   const keyPadding = inline ? 8 : 13;
-  const keyGap = inline ? 4 : 7;
+  // Keep the plus sign in its own visual slot with room on both sides.
+  const keyGap = inline ? 12 : 7;
   const groupPadding = inline ? 5 : 8;
   const outerPadding = inline ? 2 : 4;
   const separatorGap = inline ? 7 : 12;
   const radius = inline ? 5 : 8;
   const groupHeight = keyHeight + keyDepth + groupPadding * 2;
   const keyY = outerPadding + groupPadding;
-  const separatorFontSize = fontSize + (inline ? 1 : 3);
+  const separatorFontSize = fontSize + (inline ? 0 : 3);
   const groups = parsed.groups.map(group => {
     const tokenWidths = group.tokens.map(token => estimateLabelWidth(token.label, fontSize, keyPadding));
     const keysWidth = tokenWidths.reduce((total, width) => total + width, 0) + Math.max(0, tokenWidths.length - 1) * keyGap;

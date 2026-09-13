@@ -502,7 +502,7 @@ body {
 .code-block > pre.code-block__pre--wrapped code { overflow-x: hidden; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
 .shortcut-key-render { display: inline-block; vertical-align: -0.3em; max-width: 100%; line-height: 0; }
 .shortcut-key-svg { display: block; overflow: visible; max-width: 100%; color: var(--text-primary); }
-.shortcut-key-svg--inline { width: auto; height: 1.65em; }
+.shortcut-key-svg--inline { width: auto; height: 1.65em; min-height: 1.65em; }
 .shortcut-key-svg__group { fill: var(--shortcut-key-group-bg, var(--accent-color, #314867)); opacity: 0.92; }
 .shortcut-key-svg__edge { fill: var(--shortcut-key-edge, #a9b2ba); }
 .shortcut-key-svg__face { fill: var(--shortcut-key-face, #fff); stroke: var(--shortcut-key-border, #bcc4cc); stroke-width: 1; }
