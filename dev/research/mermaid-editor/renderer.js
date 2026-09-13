@@ -1,11 +1,11 @@
 import mermaid from './vendor/mermaid.js';
-mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'default',fontFamily:'Segoe UI, Meiryo, sans-serif',flowchart:{htmlLabels:false},maxTextSize:150000});
+const initialize=()=>mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'default',fontFamily:'Segoe UI, Meiryo, sans-serif',flowchart:{htmlLabels:false},maxTextSize:150000});
 let serial=0;const namespace='mm'+crypto.randomUUID().replaceAll('-','');
 const parentOrigin=new URL(document.referrer).origin;
 if(!['localhost','127.0.0.1'].includes(new URL(parentOrigin).hostname))throw Error('ローカルの編集画面から開いてください');
 addEventListener('message',async e=>{
  if(e.source!==parent||e.origin!==parentOrigin||e.data?.kind!=='render')return;
- const {id,code,recover}=e.data;const start=performance.now(),original=code.split('\n'),work=[...original],excluded=[],diagnostics=[];
+ initialize();const {id,code,recover}=e.data;const start=performance.now(),original=code.split('\n'),work=[...original],excluded=[],diagnostics=[];
  const send=payload=>parent.postMessage({kind:'render-result',id,...payload},parentOrigin);
  for(let attempts=0;attempts<Math.min(original.length+2,100)&&performance.now()-start<9500;attempts++){
   try{let input=work.join('\n');const labels=new Map();if(/^\s*sankey-beta/.test(input)){input=input.split('\n').map(l=>l.replace(/^\s*("(?:[^"]|"")*"|[^,]+),("(?:[^"]|"")*"|[^,]+),\s*([\d.]+)\s*$/,(_,a,b,v)=>{const key=s=>{s=s.replace(/^"|"$/g,'').replaceAll('""','"');if(!labels.has(s))labels.set(s,'MMNODE'+labels.size+'END');return labels.get(s);};return key(a)+','+key(b)+','+v;})).filter(l=>l.trim()).join('\n');}const result=await mermaid.render(namespace+(++serial),input);let svg=result.svg;for(const [label,id] of labels)svg=svg.replaceAll(id,label.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])));send({svg,excluded,diagnostics});document.body.replaceChildren();return;}
