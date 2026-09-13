@@ -32,7 +32,7 @@ describe("画像の解説挿入", () => {
     expect(() => imageInsertion("変更" + content, target, "解説")).toThrow();
   });
   it("埋め込み画像はファイルアクセスなしに添付する", async () => {
-    expect(await loadTranscriptionImage("", "data:image/png;base64,YQ==")).toEqual({ base64: "YQ==" });
+    expect(await loadTranscriptionImage("", "data:image/png;base64,YQ==")).toEqual({ base64: "YQ==", mime: "image/png" });
     expect(readDocumentAsset).not.toHaveBeenCalled();
   });
   it.each(["https://example.com/a.png", "file:///C:/a.png", "javascript:alert(1)", "data:image/svg+xml;base64,YQ==", "\\\\server\\a.png"])("許可しない参照は読み込まない: %s", async (source) => {

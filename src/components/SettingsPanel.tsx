@@ -14,6 +14,7 @@ import {
   type MarkdownStyleSettings,
 } from "../lib/markdownStyle";
 import "../styles/settings.css";
+import { CodexSkillSettings } from "../features/codex/CodexSkillSettings";
 
 export function SettingsPanel({
   apps,
@@ -118,6 +119,7 @@ export function SettingsPanel({
       <button type="button" className="settings-save" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
     </header>
     {error && <p role="alert" className="settings-error">{error}</p>}
+    <CodexSkillSettings />
     <fieldset className="settings-section embedded-path-settings">
       <legend>外部ファイルパスの埋め込み表現</legend>
       <label>表現方式

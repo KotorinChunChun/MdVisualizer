@@ -18,6 +18,7 @@ export function CodexLogViewer({ data, onClose, onLimitChange }: { data: CodexLo
     if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); }
   }}>
     <header><strong>Codex通信ログ</strong><button type="button" onClick={onClose} aria-label="Codex通信ログを閉じる">×</button></header>
+    <p>この通信記録には画像データがありません。添付画像を含む会話の確認・再開は「会話履歴」を開いてください。</p>
     <div className="codex-log-viewer__content">
       <nav aria-label="Codex通信ログ一覧">
         <div className="codex-log-viewer__list">{data.entries.length === 0 ? <p>保存済みのログはありません。</p> : data.entries.map((entry, index) => <button key={entry.id} type="button" className={entry.id === selectedId ? "is-selected" : ""} aria-pressed={entry.id === selectedId} onClick={() => setSelectedId(entry.id)}>

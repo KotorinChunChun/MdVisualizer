@@ -17,6 +17,7 @@ interface CodeBlockProps {
   storage?: "embedded" | "external";
   onStorageConvert?: () => boolean | void | Promise<boolean | void>;
   onCodexSave?: DiagramSave;
+  codexMenu?: React.ReactNode;
 }
 
 type LanguageModule = { default: LanguageFn };
@@ -70,7 +71,7 @@ export function syntaxHighlightLanguageName(language: string | undefined): strin
   return normalized ? languageNames[normalized] ?? normalized : undefined;
 }
 
-export function CodeBlock({ className, children, onHighlightComplete, headingTitle, documentPath, storage, onStorageConvert, onCodexSave }: CodeBlockProps) {
+export function CodeBlock({ className, children, onHighlightComplete, headingTitle, documentPath, storage, onStorageConvert, onCodexSave, codexMenu }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [wrapLines, setWrapLines] = useState(false);
   const [html, setHtml] = useState("");
@@ -165,6 +166,7 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
   if (shortcutKeyBlock) {
     return <div className="code-block shortcut-key-block">
       <ResponsiveToolbar threeStage className="code-block__header" ariaLabel="ショートカット表示操作" label={<span className="code-block__language">キーボードショートカット</span>} items={[
+        ...(codexMenu ? [{ id: "codex", node: codexMenu }] : []),
         { id: "copy", node: <button type="button" className="code-copy" onClick={(event) => void copy(event.currentTarget)}>{copied ? "Copied" : "Copy"}</button> },
         { id: "view", node: <><button type="button" aria-pressed={shortcutDisplay === "preview"} onClick={() => setShortcutDisplay("preview")}>プレビュー</button><button type="button" aria-pressed={shortcutDisplay === "code"} onClick={() => setShortcutDisplay("code")}>コード</button></>, compactNode: <select aria-label="ショートカットの表示内容" value={shortcutDisplay} onChange={(event) => setShortcutDisplay(event.target.value)}><option value="preview">プレビュー</option><option value="code">コード</option></select> },
       ]} />
@@ -177,6 +179,7 @@ export function CodeBlock({ className, children, onHighlightComplete, headingTit
   return <div className="code-block">
     <ResponsiveToolbar threeStage itemsClassName="code-actions" className="code-block__header" ariaLabel="コードブロック操作" label={<>{languageName && <span className="code-block__language">{languageName}</span>}
       {normalizedHeadingTitle && <strong className="code-block__heading">{normalizedHeadingTitle}</strong>}</>} items={Children.toArray((<>
+      {codexMenu}
         {rawLanguage === "svg" && onCodexSave && <DiagramCodexAction kind="svg" source={source} onSave={onCodexSave} label={headingTitle ?? "SVG"} />}
         {storage && onStorageConvert && <button type="button" className="code-storage" disabled={convertingStorage} onClick={() => {
           setConvertingStorage(true);

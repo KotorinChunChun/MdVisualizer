@@ -62,7 +62,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   previewSrc,
   onExternalRename,
   onError,
-  onCodexSelect,
+  onCodexSelect: _onCodexSelect,
   codexSvgEditable = false,
 }) => {
   const [loadError, setLoadError] = useState(false);
@@ -275,7 +275,6 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         )}
       </span>
       {!headingMode && alt.trim() && <span className="inline-image-resize__caption">{alt}</span>}
-      {!headingMode && !presentationMode && onCodexSelect && <button type="button" onClick={onCodexSelect}>Codexで画像を解説・文字起こし</button>}
       {!headingMode && !presentationMode && codexSvgEditable && !isRemote && !previewSrc && /\.svg$/i.test(src) && <FileSvgCodexAction path={fullPath} onSaved={() => setCodexVersion((value) => value + 1)} />}
     </span>
   );

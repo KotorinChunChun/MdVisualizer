@@ -15,11 +15,11 @@ describe("button interaction styles", () => {
   });
 
   it("shares one action-button shape between Mermaid and draw.io", () => {
-    expect(appCss).toContain(".diagram-action-button { min-height: 30px;");
+    expect(appCss).toContain(".code-copy, .code-run, .code-storage, .code-wrap, .diagram-action-button, .block-copy-menu { min-height: 30px;");
   });
 
   it("shares the code action button shape with storage conversion", () => {
-    expect(appCss).toContain(".code-copy, .code-run, .code-storage, .code-wrap { padding: 3px 8px;");
+    expect(appCss).toContain(".code-copy, .code-run, .code-storage, .code-wrap, .diagram-action-button, .block-copy-menu { min-height: 30px; padding: 4px 9px;");
   });
 
   it("gives ordinary code blocks a diagram-like title bar and body", () => {

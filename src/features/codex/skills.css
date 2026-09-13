@@ -1,0 +1,7 @@
+.codex-skill-settings { border-top:1px solid var(--border-color,#777); padding:16px 0; }
+.codex-skill-settings__columns { display:grid; grid-template-columns:minmax(160px,1fr) minmax(240px,3fr); gap:16px; }
+.codex-skill-settings__columns aside { display:flex; flex-direction:column; gap:6px; }
+.codex-skill-settings label { display:block; margin:8px 0; }
+.codex-skill-settings textarea { width:100%; box-sizing:border-box; font-family:monospace; }
+.codex-skill-settings code { overflow-wrap:anywhere; }
+@media(max-width:600px) { .codex-skill-settings__columns { grid-template-columns:1fr; } }

@@ -1,274 +1,351 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { loadSettings, saveSettings } from "../../lib/commands";
-import { cancelCodex, generateCodex, listCodexLogs, setCodexLogLimit } from "./api";
-import { canApplyProposal, DEFAULT_CODEX_OPTIONS, normalizeCodexOptions, requestBytes, type ChatMessage, type CodexLogData, type EditorSnapshot } from "./model";
-import { CodexLogViewer } from "./CodexLogViewer";
-import { buildProposalDiff } from "./proposalDiff";
-import "./codex.css";
-import { IMAGE_INSTRUCTION, imageInsertion, loadTranscriptionImage, transcriptionImages } from "./imageTranscription";
 import { resolveImageSrc } from "../../lib/path";
-import { diagramInstruction, validateDiagramReplacement, type CodexDiagramKind } from "./diagram";
+import { replaceImageOccurrenceSource } from "../../lib/assetConversion";
+import { cancelCodex, generateCodex, listCodexLogs, setCodexLogLimit } from "./api";
+import { CodexConversationHistory } from "./CodexConversationHistory";
+import { CodexImageEdit } from "./CodexImageEdit";
+import { CodexLogViewer } from "./CodexLogViewer";
+import { CodexProposalReview } from "./CodexProposalReview";
+import "./codex.css";
+import { diagramInstruction, validateDiagramForAdoption, type CodexDiagramKind } from "./diagram";
+import { loadTranscriptionImage, transcriptionImages } from "./imageTranscription";
+import { canApplyProposal, DEFAULT_CODEX_OPTIONS, normalizeCodexOptions, requestBytes, type CodexLogData, type EditorSnapshot } from "./model";
+import { CodexMarkdownPreview, diagramImage } from "./preview";
+import { DEFAULT_CODEX_SESSION_RETENTION_DAYS, loadCodexSessions, setCodexSessionRetention, upsertCodexSession, type CodexConversation, type CodexConversationAttachment } from "./sessions";
 import { scopeRequest, type CodexEditMode, type CodexTarget } from "./scope";
-
-export function CodexPanel({ open: visible, onClose, documentName, documentText, documentPath = "", baseDir = "", imageTarget, consultationTarget, stagedImages = {}, available, getSnapshot, applyProposal, applyProposalAsync, diagramKind, renderProposal }: {
-  open: boolean; onClose: () => void; documentName: string; documentText: string; available: boolean;
-  documentPath?: string; baseDir?: string;
-  imageTarget?: { offset: number } | null; stagedImages?: Record<string, string>;
-  consultationTarget?: CodexTarget | null;
-  getSnapshot: () => EditorSnapshot | null;
-  applyProposal: (base: EditorSnapshot, replacement: string) => boolean;
-  applyProposalAsync?: (base: EditorSnapshot, replacement: string) => Promise<boolean>;
-  diagramKind?: CodexDiagramKind;
-  renderProposal?: (replacement: string) => React.ReactNode;
+import { useCodexSkills } from "./skills";
+type Proposal = {
+    base: EditorSnapshot;
+    original: string;
+    value: string;
+};
+const iso = () => new Date().toISOString();
+function fresh(documentId: string, documentPath: string, title: string): CodexConversation {
+    const time = iso();
+    return { id: crypto.randomUUID(), title: title || "無題の会話", documentId, documentPath, messages: [], attachments: [], draft: { instruction: "", targetSnapshot: null, editMode: "document", attachmentIds: [] }, createdAt: time, updatedAt: time, lastMessageAt: null };
+}
+function selectionKey(target: CodexTarget | null | undefined, action: "add" | "new" | undefined) {
+    if (!target)
+        return "";
+    return [target.documentId, target.from, target.to, target.imageSource ?? "", target.skillId ?? "", target.editMode ?? "", action ?? ""].join("\u0000");
+}
+export function CodexPanel(props: {
+    open: boolean;
+    onClose: () => void;
+    documentName: string;
+    documentText: string;
+    available: boolean;
+    documentPath?: string;
+    baseDir?: string;
+    imageTarget?: {
+        documentId: string;
+        offset: number;
+    } | null;
+    consultationTarget?: CodexTarget | null;
+    stagedImages?: Record<string, string>;
+    getSnapshot: () => EditorSnapshot | null;
+    applyProposal: (base: EditorSnapshot, replacement: string) => boolean;
+    applyProposalAsync?: (base: EditorSnapshot, replacement: string) => Promise<boolean>;
+    diagramKind?: CodexDiagramKind;
+    renderProposal?: (replacement: string) => React.ReactNode;
+    initialSkillId?: string;
+    initialConversationAction?: "add" | "new";
+    renderedSvg?: string;
 }) {
-  const [options, setOptions] = useState(DEFAULT_CODEX_OPTIONS);
-  const [savedOptions, setSavedOptions] = useState(DEFAULT_CODEX_OPTIONS);
-  const [ready, setReady] = useState(false);
-  const [savingOptions, setSavingOptions] = useState(false);
-  const [instruction, setInstruction] = useState("");
-  const [imageId, setImageId] = useState("");
-  const images = useMemo(() => transcriptionImages(documentText), [documentText]);
-  const selectedImage = images.find((image) => image.id === imageId);
-  useEffect(() => { if (imageTarget) setImageId(images.find((image) => image.start === imageTarget.offset)?.id ?? ""); }, [imageTarget]);
-  const [history, setHistory] = useState<ChatMessage[]>([]);
-  const [selection, setSelection] = useState<EditorSnapshot | null>(null);
-  const [editMode, setEditMode] = useState<CodexEditMode>("selection");
-  const [consultationImage, setConsultationImage] = useState<string | undefined>();
-  useEffect(() => {
-    if (!consultationTarget) return;
-    if (active.current) { cancelled.current = true; void cancelCodex(active.current).catch(() => {}); }
-    setSelection(consultationTarget); setEditMode("question"); setHistory([]); setProposal(null); setPreviewOpen(false);
-    setConsultationImage(consultationTarget.imageSource);
-  }, [consultationTarget]);
-  const [proposal, setProposal] = useState<{ base: EditorSnapshot; replacement: string } | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [logsOpen, setLogsOpen] = useState(false);
-  const [logs, setLogs] = useState<CodexLogData>({ entries: [], limit: 20 });
-  const [width, setWidth] = useState(420);
-  const [busy, setBusy] = useState(false);
-  const [applying, setApplying] = useState(false);
-  const applyingRef = useRef(false);
-  const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
-  const active = useRef<string | null>(null);
-  const cancelled = useRef(false);
-  const mounted = useRef(false);
-  const latest = useRef({ available, applyProposal, getSnapshot });
-  latest.current = { available, applyProposal, getSnapshot };
-  const input = useRef<HTMLTextAreaElement>(null);
-  const log = useRef<HTMLDivElement>(null);
-  const preview = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!previewOpen) return;
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    preview.current?.focus();
-    return () => { if (previous?.isConnected) previous.focus(); };
-  }, [previewOpen]);
-  useEffect(() => {
-    mounted.current = true;
-    let disposed = false;
-    void loadSettings().then((settings) => {
-      if (disposed) return;
-      const value = normalizeCodexOptions(settings.codex);
-      setOptions(value); setSavedOptions(value); setReady(true);
-    }).catch(() => { if (!disposed) setError("設定を読み込めません。パネルを開き直してください。"); });
-    void refreshLogs();
-    return () => { disposed = true; mounted.current = false; if (active.current) void cancelCodex(active.current).catch(() => {}); };
-  }, []);
-  useEffect(() => { if (visible && savedOptions.enabled) input.current?.focus(); }, [visible, savedOptions.enabled]);
-  useEffect(() => { if (log.current) log.current.scrollTop = log.current.scrollHeight; }, [history, busy]);
-  useEffect(() => { if (!status) return; const timer = window.setTimeout(() => setStatus(""), 4000); return () => window.clearTimeout(timer); }, [status]);
-  const diff = useMemo(() => proposal ? buildProposalDiff(proposal.base.content.slice(proposal.base.from, proposal.base.to), proposal.replacement) : [], [proposal]);
-  const settingsDirty = JSON.stringify(options) !== JSON.stringify(savedOptions);
-
-  async function refreshLogs() {
-    try { setLogs(await listCodexLogs()); }
-    catch { if (mounted.current) setError("Codex通信ログを読み込めません。"); }
-  }
-  async function showLogs() {
-    await refreshLogs();
-    if (mounted.current) setLogsOpen(true);
-  }
-  async function changeLogLimit(limit: number) {
-    try { setLogs(await setCodexLogLimit(limit)); }
-    catch { if (mounted.current) setError("Codex通信ログの最大件数を保存できません。"); }
-  }
-
-  async function persistOptions() {
-    setSavingOptions(true); setError("");
-    try {
-      const value = normalizeCodexOptions(options);
-      if (!/^[a-zA-Z0-9._-]{1,100}$/.test(value.model)) throw new Error("モデル名を確認してください。");
-      await saveSettings({ codex: value });
-      if (!mounted.current) return;
-      setOptions(value); setSavedOptions(value); setStatus(value.enabled ? "Codex連携を有効にしました。" : "Codex連携を無効にしました。");
-      if (!value.enabled) { setHistory([]); setProposal(null); setPreviewOpen(false); setSelection(null); }
-    } catch (cause) { if (mounted.current) setError(String(cause)); }
-    finally { if (mounted.current) setSavingOptions(false); }
-  }
-  function captureSelection() {
-    const snapshot = getSnapshot();
-    if (!snapshot || snapshot.from === snapshot.to) { setError("エディタで対象の文章を選択してから取り込んでください。"); return; }
-    setSelection(snapshot); setConsultationImage(undefined); setHistory([]); setProposal(null); setPreviewOpen(false); setError("");
-  }
-  async function stop() {
-    cancelled.current = true;
-    setProposal(null); setPreviewOpen(false); setStatus("停止中…");
-    if (active.current) {
-      try { await cancelCodex(active.current); }
-      catch { if (mounted.current) setError("停止要求を送れませんでした。応答は採用せず、タイムアウトを待ちます。"); }
-    }
-  }
-  async function send() {
-    if (active.current || applyingRef.current || !savedOptions.enabled || settingsDirty || !available || !instruction.trim()) return;
+    const { open, onClose, documentName, documentText, available, documentPath = "", baseDir = "", consultationTarget: suppliedTarget, stagedImages = {}, getSnapshot, applyProposal, applyProposalAsync, diagramKind, renderProposal, initialSkillId, initialConversationAction, renderedSvg } = props;
     const current = getSnapshot();
-    if (!current) { setError("編集画面を開いてから送信してください。"); return; }
-    if (selection && !canApplyProposal(current, selection)) { setError("選択後に本文が変わりました。選択範囲を取り込み直してください。"); return; }
-    const scoped = scopeRequest(current, selection, editMode, instruction.trim());
-    const { base, text } = scoped;
-    if (history.length > 40 || requestBytes(instruction, text, history) > 120000) { setError("送信量が上限を超えています。選択範囲を縮めるか会話をクリアしてください。"); return; }
-    const id = crypto.randomUUID();
-    active.current = id; cancelled.current = false;
-    setBusy(true); setError(""); setProposal(null); setPreviewOpen(false); setStatus("Codexが回答を生成しています…");
-    const user: ChatMessage = { role: "user", text: instruction.trim() };
-    try {
-      const image = consultationImage ? await loadTranscriptionImage(documentPath, stagedImages[consultationImage] ?? consultationImage) : undefined;
-      if (!mounted.current || cancelled.current) return;
-      const reply = await generateCodex({ id, instruction: diagramKind ? diagramInstruction(diagramKind, scoped.instruction) : scoped.instruction, text, history, ...(image ? { image } : {}) });
-      if (!mounted.current || cancelled.current) return;
-      // 変更案も会話に含めることで「もう少し短く」などの継続指示を可能にする。
-      setHistory((old) => [...old, user, { role: "assistant", text: reply.answer + (reply.replacement !== null ? `\n\n変更案:\n${reply.replacement}` : "") }]);
-      setInstruction("");
-      if (editMode !== "question" && reply.replacement !== null) { setProposal({ base, replacement: (diagramKind ? validateDiagramReplacement(diagramKind, reply.replacement) : reply.replacement).replace(/\r\n?|\n/g, "\n") }); setPreviewOpen(true); }
-      void refreshLogs();
-      setStatus(reply.replacement === null || editMode === "question" ? "回答を受信しました。" : "変更案を受信しました。差分を確認して採用できます。");
-    } catch (cause) { if (mounted.current && !cancelled.current) setError(String(cause)); }
-    finally {
-      active.current = null;
-      if (mounted.current) { setBusy(false); if (cancelled.current) setStatus("停止しました。変更案は破棄しました。"); }
+    const [ignoredTarget, setIgnoredTarget] = useState<CodexTarget | null>(null);
+    const selected: CodexTarget | null | undefined = suppliedTarget ? (ignoredTarget === suppliedTarget ? null : suppliedTarget) : (diagramKind && initialSkillId && current ? { ...current, from: 0, to: current.content.length, targetKind: diagramKind, skillId: initialSkillId, conversationAction: initialConversationAction } : null);
+    const [options, setOptions] = useState(DEFAULT_CODEX_OPTIONS);
+    const [savedOptions, setSavedOptions] = useState(DEFAULT_CODEX_OPTIONS);
+    const [ready, setReady] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const initial = useRef(fresh("", "", documentName));
+    const [conversation, setConversation] = useState(initial.current);
+    const conversationRef = useRef(initial.current);
+    const conversationId = useRef(initial.current.id);
+    const [sessions, setSessions] = useState<CodexConversation[]>([]);
+    const [retention, setRetention] = useState(DEFAULT_CODEX_SESSION_RETENTION_DAYS);
+    const [sessionsReady, setSessionsReady] = useState(false);
+    const sessionsLoaded = useRef(false);
+    const [logs, setLogs] = useState<CodexLogData>({ entries: [], limit: 20 });
+    const [historyOpen, setHistoryOpen] = useState(false);
+    const [logsOpen, setLogsOpen] = useState(false);
+    const [proposal, setProposal] = useState<Proposal | null>(null);
+    const [busy, setBusy] = useState(false);
+    const [applying, setApplying] = useState(false);
+    const applyingRef = useRef(false);
+    const [width, setWidth] = useState(420);
+    const [preparingImage, setPreparingImage] = useState(false);
+    const [selectedImageId, setSelectedImageId] = useState<string>();
+    const [error, setError] = useState("");
+    const active = useRef<string | null>(null);
+    const mounted = useRef(false);
+    const saveTimer = useRef<number | undefined>(undefined);
+    const saveQueue = useRef(Promise.resolve());
+    const input = useRef<HTMLTextAreaElement | null>(null);
+    const fileInput = useRef<HTMLInputElement | null>(null);
+    const targetKey = useRef("");
+    const skills = useCodexSkills();
+    const selectedSkill = skills.find((skill) => skill.id === (selected?.skillId ?? initialSkillId));
+    const effectiveDiagramKind: CodexDiagramKind | undefined = diagramKind ?? (selected?.targetKind === "mermaid" || selected?.targetKind === "drawio" || selected?.targetKind === "svg" ? selected.targetKind : undefined);
+    const incomingKey = selectionKey(selected, selected?.conversationAction ?? initialConversationAction);
+    const imageEditAction = !!selected?.imageSource && !effectiveDiagramKind && selectedSkill?.config.mode === "selection";
+    const imageOccurrence = useMemo(() => transcriptionImages(documentText).find((image) => image.source === selected?.imageSource), [documentText, selected?.imageSource]);
+    const mode: CodexEditMode = conversation.draft.editMode;
+    const settingsDirty = JSON.stringify(options) !== JSON.stringify(savedOptions);
+    const replaceConversation = (next: CodexConversation) => { conversationRef.current = next; conversationId.current = next.id; setConversation(next); };
+    const updateConversation = (change: (value: CodexConversation) => CodexConversation) => { const next = change(conversationRef.current); replaceConversation(next); return next; };
+    const saveConversation = (value: CodexConversation, immediate = false) => {
+        if (!sessionsReady)
+            return;
+        const work = () => {
+            saveQueue.current = saveQueue.current.then(async () => {
+                const store = await upsertCodexSession(value);
+                if (mounted.current) {
+                    setSessions(store.sessions);
+                    setRetention(store.retentionDays);
+                }
+            }).catch(() => { if (mounted.current)
+                setError("会話履歴を保存できません。"); });
+        };
+        if (saveTimer.current)
+            clearTimeout(saveTimer.current);
+        if (immediate)
+            work();
+        else
+            saveTimer.current = window.setTimeout(work, 300);
+    };
+    const stop = () => { const id = active.current; active.current = null; setBusy(false); if (id)
+        void cancelCodex(id).catch(() => { }); };
+    useEffect(() => { saveConversation(conversation); }, [conversation]);
+    useEffect(() => {
+        mounted.current = true;
+        let stopped = false;
+        void Promise.all([loadSettings().catch((): Record<string, unknown> => ({})), loadCodexSessions().catch(() => ({ sessions: [], retentionDays: DEFAULT_CODEX_SESSION_RETENTION_DAYS })), listCodexLogs().catch(() => ({ entries: [], limit: 20 }))]).then(([settings, store, log]) => {
+            if (stopped)
+                return;
+            const value = normalizeCodexOptions(settings.codex);
+            setOptions(value);
+            setSavedOptions(value);
+            setSessions(store.sessions);
+            setRetention(store.retentionDays);
+            setLogs(log);
+            sessionsLoaded.current = true;
+            setReady(true);
+            setSessionsReady(true);
+        });
+        return () => { stopped = true; mounted.current = false; if (saveTimer.current)
+            clearTimeout(saveTimer.current); if (sessionsLoaded.current)
+            saveQueue.current = saveQueue.current.then(() => upsertCodexSession(conversationRef.current)).then(() => {}).catch(() => { }); stop(); };
+    }, []);
+    useEffect(() => {
+        if (!sessionsReady)
+            return;
+        const snapshot = getSnapshot();
+        const previous = documentPath ? sessions.filter((item) => item.documentPath === documentPath).sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0] : undefined;
+        if (previous && previous.id !== conversationId.current) {
+            const compatible = !previous.draft.targetSnapshot || previous.draft.targetSnapshot.content === snapshot?.content;
+            replaceConversation({ ...previous, documentId: snapshot?.documentId ?? previous.documentId, draft: { ...previous.draft, targetSnapshot: compatible && previous.draft.targetSnapshot && snapshot ? { ...previous.draft.targetSnapshot, documentId: snapshot.documentId } : null } });
+        }
+        else if (!previous && conversationRef.current.documentPath !== documentPath)
+            replaceConversation(fresh(snapshot?.documentId ?? "", documentPath, documentName));
+    }, [documentName, documentPath, sessionsReady]);
+    useEffect(() => { if (open && savedOptions.enabled)
+        input.current?.focus(); }, [open, savedOptions.enabled]);
+    useEffect(() => {
+        if (!sessionsReady || (selected?.skillId && !selectedSkill))
+            return;
+        const action = selected?.conversationAction ?? initialConversationAction;
+        const key = selectionKey(selected, action);
+        if (!key || targetKey.current === key || !selected)
+            return;
+        targetKey.current = key;
+        if (busy)
+            stop();
+        const resumed = action === "add" && !documentPath ? [...sessions].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0] : undefined;
+        if (action === "new") saveConversation(conversationRef.current, true);
+        const base = action === "new" ? fresh(selected.documentId, documentPath, documentName) : resumed ?? conversationRef.current;
+        replaceConversation({ ...base, updatedAt: iso(), draft: { ...base.draft, instruction: base.draft.instruction || (imageEditAction ? "" : selectedSkill?.prompt || "対象について説明してください。"), targetSnapshot: selected.imageSource ? base.draft.targetSnapshot : { documentId: selected.documentId, content: selected.content, from: selected.from, to: selected.to }, editMode: selected.editMode ?? selectedSkill?.config.mode ?? (selected.imageSource ? "question" : base.draft.editMode) } });
+    }, [documentName, documentPath, initialConversationAction, selected, selectedSkill?.config.mode, sessions, sessionsReady]);
+    async function addImage(source: string, loaded?: {
+        base64: string;
+        mime: string;
+        name: string;
+    }) {
+        try {
+            const owner = conversationRef.current.id;
+            const raw = selected ? selected.content.slice(selected.from, selected.to) : documentText;
+            const code = raw.replace(/^\s*(?:`{3,}|~{3,})[^\n]*\n/, "").replace(/\n(?:`{3,}|~{3,})\s*$/, "");
+            const image = loaded ?? await (effectiveDiagramKind && !selected?.imageSource ? diagramImage(diagramKind ? documentText : code, effectiveDiagramKind, selected?.renderedSvg ?? renderedSvg) : loadTranscriptionImage(documentPath, stagedImages[source] ?? source));
+            if (!mounted.current || conversationRef.current.id !== owner) return null;
+            const prior = conversationRef.current.attachments.find((item) => item.base64 === image.base64);
+            if (prior)
+                return prior.id;
+            const mime = "mime" in image && typeof image.mime === "string" ? image.mime : "image/png";
+            const item: CodexConversationAttachment = { id: crypto.randomUUID(), label: `画像${conversationRef.current.attachments.length + 1}`, base64: image.base64, mime, name: loaded?.name ?? source, addedAt: iso() };
+            replaceConversation({ ...conversationRef.current, attachments: [...conversationRef.current.attachments, item], updatedAt: iso() });
+            return item.id;
+        }
+        catch (cause) {
+            setError(String(cause));
+            return null;
+        }
     }
-  }
-  async function transcribeImage() {
-    if (active.current || editMode === "question" || !savedOptions.enabled || settingsDirty || !available || !selectedImage) return;
-    const current = getSnapshot();
-    if (!current || current.content.replace(/\r\n?/g, "\n") !== documentText.replace(/\r\n?/g, "\n")) { setError("本文が変わりました。画像を選択し直してください。"); return; }
-    // CodeMirrorはLFへ正規化するため、表示元のCRLFオフセットをそのまま使わない。
-    const target = transcriptionImages(current.content)[images.indexOf(selectedImage)];
-    if (!target || target.source !== selectedImage.source) { setError("画像を選択し直してください。"); return; }
-    const id = crypto.randomUUID();
-    active.current = id; cancelled.current = false;
-    setBusy(true); setError(""); setProposal(null); setPreviewOpen(false);
-    setStatus("画像の解説・文字起こしを生成しています…");
-    try {
-      imageInsertion(current.content, target, "位置確認");
-      const image = await loadTranscriptionImage(documentPath, stagedImages[selectedImage.source] ?? selectedImage.source);
-      if (!mounted.current || cancelled.current) return;
-      if (image.base64.length > 14_000_000) throw new Error("画像は10MB以下にしてください。");
-      const reply = await generateCodex({ id, instruction: IMAGE_INSTRUCTION, text: "", history: [], image });
-      if (!mounted.current || cancelled.current) return;
-      const insertion = imageInsertion(current.content, target, reply.answer);
-      const base = { ...current, from: insertion.from, to: insertion.to };
-      if (!latest.current.available || !canApplyProposal(latest.current.getSnapshot(), base) || !latest.current.applyProposal(base, insertion.replacement)) throw new Error("生成中に本文や文書が変わったため挿入しませんでした。最新の画像で実行し直してください。");
-      setSelection(null); setImageId("");
-      setStatus("画像の直下に挿入しました。Ctrl+Zで戻せます。保存は通常の保存操作で行ってください。");
-      void refreshLogs();
-    } catch (cause) { if (mounted.current && !cancelled.current) setError(String(cause)); }
-    finally { active.current = null; if (mounted.current) { setBusy(false); if (cancelled.current) setStatus("停止しました。"); } }
-  }
-  async function adopt() {
-    if (!proposal || !available || busy || applyingRef.current) return;
-    applyingRef.current = true; setApplying(true); setError("");
-    try {
-      if (!canApplyProposal(latest.current.getSnapshot(), proposal.base)) throw new Error("生成後に本文や文書が変わりました。最新の本文で生成し直してください。");
-      const accepted = applyProposalAsync ? await applyProposalAsync(proposal.base, proposal.replacement) : applyProposal(proposal.base, proposal.replacement);
-      if (!accepted) throw new Error("生成後に本文や文書が変わりました。最新の本文で生成し直してください。");
-      if (!mounted.current) return;
-      setProposal(null); setPreviewOpen(false); setSelection(null); setError(""); setStatus(diagramKind ? "図に反映しました。" : "ドラフトに反映しました。Ctrl+Zで戻せます。保存は通常の保存操作で行ってください。");
-    } catch (cause) { if (mounted.current) setError(String(cause)); }
-    finally { applyingRef.current = false; if (mounted.current) setApplying(false); }
-  }
-  const capturedText = selection?.content.slice(selection.from, selection.to);
-  const sendBytes = requestBytes(instruction, editMode === "document" ? documentText : capturedText ?? documentText.replace(/\r\n?/g, "\n"), history);
-  function beginResize(event: ReactPointerEvent<HTMLDivElement>) {
-    event.preventDefault();
-    const resize = (move: PointerEvent) => setWidth(Math.max(300, Math.min(760, window.innerWidth - move.clientX)));
-    const finish = () => { window.removeEventListener("pointermove", resize); window.removeEventListener("pointerup", finish); };
-    window.addEventListener("pointermove", resize); window.addEventListener("pointerup", finish, { once: true });
-  }
-  return <aside hidden={!visible} className="codex-panel" style={{ "--codex-panel-width": `${width}px` } as React.CSSProperties} aria-label="Codex文章アシスタント" onKeyDown={(event) => {
-    if (event.key === "Escape") { event.stopPropagation(); if (applyingRef.current) return; if (busy) void stop(); onClose(); }
-  }}>
-    <div className="codex-panel__resize" role="separator" aria-label="Codexパネルの幅を変更" aria-orientation="vertical" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width} tabIndex={0} onPointerDown={beginResize} onKeyDown={(event) => {
-      if (event.key === "ArrowLeft") { event.preventDefault(); setWidth((value) => Math.min(760, value + 20)); }
-      if (event.key === "ArrowRight") { event.preventDefault(); setWidth((value) => Math.max(300, value - 20)); }
-    }} />
-    <header inert={previewOpen || logsOpen}><strong>Codex{diagramKind ? ` — ${diagramKind === "svg" ? "SVG" : diagramKind === "mermaid" ? "Mermaid" : "draw.io"}` : ""}</strong><div><button type="button" onClick={() => void showLogs()}>ログ（{logs.entries.length}）</button><button type="button" disabled={applying} onClick={() => { if (busy) void stop(); onClose(); }} aria-label="Codexパネルを閉じる">×</button></div></header>
-    <div className="codex-panel__body" inert={previewOpen || logsOpen}>
-      <details open={!savedOptions.enabled}>
-        <summary>連携設定（任意）</summary>
-        <p>利用する場合だけCodex CLIを導入し、外部ターミナルで <code>codex login</code> を実行してください。CLI 0.153.4で検証済みです。</p>
-        <fieldset disabled={!ready || busy || savingOptions}>
-          <label><input type="checkbox" checked={options.enabled} onChange={(e) => setOptions({ ...options, enabled: e.target.checked })} />Codex連携を有効にする</label>
-          <p>Codex CLIは自動検出します。PATHを優先し、公式Windowsインストーラーのユーザー領域も確認します。</p>
-          <label>モデル<input value={options.model} onChange={(e) => setOptions({ ...options, model: e.target.value })} /></label>
-          <button type="button" disabled={!settingsDirty} onClick={() => void persistOptions()}>連携設定を保存</button>
-        </fieldset>
-      </details>
-      {savedOptions.enabled && <>
-        <section className="codex-panel__scope"><strong>取り込み範囲と送信設定</strong><p>対象: {documentName || "文書なし"}<br />モデル: {savedOptions.model}<br />送信先: Codex（OpenAI）</p></section>
-        {!available && <p>ローカルMarkdownの編集画面で利用できます。保存中・差分画面では採用できません。</p>}
-        {!diagramKind && !consultationTarget && <section aria-label="画像の解説・文字起こし">
-          <label>対象画像<select value={imageId} disabled={busy || !available} onChange={(event) => setImageId(event.target.value)}>
-            <option value="">画像を選択してください</option>
-            {images.map((image) => <option key={image.id} value={image.id}>{image.sourceLine}行: {image.caption || "画像"}</option>)}
-          </select></label>
-          {selectedImage && <img className="codex-image-preview" src={stagedImages[selectedImage.source] ?? resolveImageSrc(selectedImage.source, baseDir)} alt={selectedImage.caption || "選択した画像"} />}
-          <p>選択した画像をCodexへ送信し、解説と文字起こしを画像直下のコードブロックへ挿入します。独立した行のローカル画像・埋め込み画像が対象です。</p>
-          <button type="button" disabled={busy || editMode === "question" || !available || !selectedImage || settingsDirty} onClick={() => void transcribeImage()}>解説・文字起こしを挿入</button>
-        </section>}
-        <div className="codex-panel__actions">
-          {!diagramKind && <button type="button" disabled={busy || !available} onClick={captureSelection}>選択範囲を取り込む</button>}
-          <button type="button" disabled={busy || !selection} onClick={() => { setSelection(null); setProposal(null); setPreviewOpen(false); }}>全文を対象にする</button>
-          <button type="button" disabled={busy} onClick={() => { setHistory([]); setProposal(null); setPreviewOpen(false); setError(""); setStatus("会話をクリアしました。"); }}>会話をクリア</button>
-        </div>
-        <label>編集の許可<select aria-label="編集の許可" value={editMode} disabled={busy || applying} onChange={(event) => { setEditMode(event.target.value as CodexEditMode); setHistory([]); setProposal(null); setPreviewOpen(false); }}>
-          <option value="question">質問のみ</option><option value="selection">指定場所のみ編集</option><option value="document">指定場所以外の編集を認める</option>
-        </select></label>
-        <p>{editMode === "document" ? "同じ文書の全文を送信し、文書内の変更を許可します。" : editMode === "question" ? "対象について回答します。変更案は本文へ適用しません。" : "取り込んだ対象範囲だけを置換できます。"}{consultationImage ? "画像そのものもCodexへ送信します。画像ファイルの画素編集は行いません。" : ""}</p>
-        <p>{selection ? `選択範囲 ${capturedText?.length ?? 0}文字` : "送信時の編集中の全文"}と、このパネルの会話を送信します。会話はパネルを閉じるか文書を切り替えると消えます。</p>
-        <p>本文・指示・会話: {sendBytes.toLocaleString()} / 120,000 bytes</p>
-        {selection && <details><summary>送信する選択範囲</summary><pre>{capturedText}</pre></details>}
-        <div ref={log} className="codex-panel__chat" role="log" aria-label="Codexとの会話">
-          {history.map((message, index) => <section key={index} className={`codex-message codex-message--${message.role}`}><strong>{message.role === "user" ? "あなた" : "Codex"}</strong><pre>{message.text}</pre></section>)}
-          {busy && <p>回答を待っています…</p>}
-        </div>
-        {diagramKind && <div className="codex-panel__actions"><button type="button" disabled={busy || applying} onClick={() => { setInstruction("意味や接続関係、ラベルを保ったまま、配置・余白・文字サイズ・色を整えて読みやすい図に整形してください。"); input.current?.focus(); }}>整形する</button><button type="button" disabled={busy || applying} onClick={() => { setInstruction("次の内容の図を描いてください：\n"); input.current?.focus(); }}>図を描く</button></div>}
-        <label>指示<textarea ref={input} value={instruction} rows={4} disabled={busy || applying} placeholder={diagramKind ? "例: 整形して／利用者→API→データベースの構成図を描いて" : "例: この説明を短くしてください"} onChange={(e) => setInstruction(e.target.value)} onKeyDown={(e) => {
-          if (e.nativeEvent.isComposing) return;
-          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); void send(); }
-        }} /></label>
-        <div className="codex-panel__actions">
-          <button type="button" disabled={busy || applying || !available || !instruction.trim() || settingsDirty || sendBytes > 120000 || history.length > 40} onClick={() => void send()}>送信（Ctrl+Enter）</button>
-          <button type="button" disabled={!busy} onClick={() => void stop()}>停止</button>
-        </div>
-        {proposal && <section className="codex-proposal" aria-label="AI変更案">
-          <h3>変更案を受信しました</h3><button type="button" onClick={() => setPreviewOpen(true)}>大きな画面でプレビュー</button>
-        </section>}
-      </>}
-      {settingsDirty && <p>変更した設定を保存してから送信してください。</p>}
-      {(sendBytes > 120000 || history.length > 40) && <p>送信量が上限を超えています。選択範囲を縮めるか会話をクリアしてください。</p>}
-      {error && !previewOpen && <p role="alert">{error}</p>}
-      <p role="status">{status}</p>
-    </div>
-    {proposal && previewOpen && <div ref={preview} tabIndex={-1} className="codex-proposal-preview" role="dialog" aria-modal="true" aria-label="Codex変更案のプレビュー" onKeyDown={(event) => {
-      if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); if (!applying) setPreviewOpen(false); }
+    async function addSelectedImage() {
+        if (!selected?.imageSource)
+            return;
+        const id = await addImage(selected.imageSource);
+        if (id)
+            updateConversation((value) => ({ ...value, updatedAt: iso(), draft: { ...value.draft, attachmentIds: [...new Set([...value.draft.attachmentIds, id])] } }));
+    }
+    useEffect(() => {
+        if (!sessionsReady || !selected || (!selected.imageSource && !(effectiveDiagramKind && selectedSkill?.config.inputs.includes("image")))) return;
+        let cancelled = false;
+        const owner = conversationRef.current.id;
+        setPreparingImage(true);
+        void addImage(selected.imageSource ?? `diagram:${effectiveDiagramKind}`).then(id => {
+            if (id && !cancelled && conversationRef.current.id === owner) { setSelectedImageId(id); updateConversation(value => ({ ...value, draft: { ...value.draft, attachmentIds: [...new Set([...value.draft.attachmentIds, id])] } })); }
+        }).finally(() => { if (!cancelled) setPreparingImage(false); });
+        return () => { cancelled = true; };
+    }, [sessionsReady, incomingKey, selectedSkill?.id]);
+    async function addFile(event: ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file)
+            return;
+        if (file.size > 10 * 1024 * 1024) return setError("画像は10MB以下にしてください。");
+        if (file.type !== "image/png")
+            return setError("PNG画像を選択してください。");
+        const base64 = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(reader.error ?? new Error("画像を読み込めません。")); reader.onload = () => resolve(String(reader.result).replace(/^data:[^;]+;base64,/, "")); reader.readAsDataURL(file); }).catch((cause) => { setError(String(cause)); return null; });
+        if (!base64)
+            return;
+        const id = await addImage(`file:${file.name}:${crypto.randomUUID()}`, { base64, mime: "image/png", name: file.name });
+        if (id)
+            updateConversation((value) => ({ ...value, updatedAt: iso(), draft: { ...value.draft, attachmentIds: [...new Set([...value.draft.attachmentIds, id])] } }));
+    }
+    function captureText() {
+        const snapshot = getSnapshot();
+        if (!snapshot)
+            return setError("編集画面を開いてから取り込んでください。");
+        updateConversation((value) => ({ ...value, updatedAt: iso(), draft: { ...value.draft, targetSnapshot: snapshot.from === snapshot.to ? null : snapshot, editMode: value.draft.editMode === "question" ? "question" : snapshot.from === snapshot.to ? "document" : "selection" } }));
+    }
+    async function send() {
+        const session = conversationRef.current;
+        if (imageEditAction || active.current || busy || preparingImage || applying || !savedOptions.enabled || settingsDirty || !available || !session.draft.instruction.trim()) return;
+        const snapshot = getSnapshot();
+        if (!snapshot) return setError("編集画面を開いてから送信してください。");
+        const target = session.draft.targetSnapshot;
+        if (target && (target.documentId !== snapshot.documentId || !canApplyProposal(snapshot, target))) return setError("対象本文が変わりました。取り込み直してください。");
+        if (session.lastMessageAt && Date.now() - Date.parse(session.lastMessageAt) > 60 * 60 * 1000 && !window.confirm("最終会話から1時間以上経過しています。キャッシュを利用できない可能性があり、入力の再処理による利用量・コストが増える場合があります。続けて送信しますか？")) return;
+        const id = crypto.randomUUID(), sessionId = session.id;
+        active.current = id; setBusy(true); setError(""); setProposal(null);
+        try {
+            let ids = [...session.draft.attachmentIds];
+            if (selected?.imageSource || (effectiveDiagramKind && selectedSkill?.config.inputs.includes("image"))) {
+                const imageId = await addImage(selected?.imageSource ?? `diagram:${effectiveDiagramKind}`);
+                if (!imageId) return;
+                ids = [...new Set([...ids, imageId])];
+            }
+            if (active.current !== id || conversationRef.current.id !== sessionId || !mounted.current) return;
+            const requested = session.draft.instruction.trim();
+            const prompt = selectedSkill?.prompt ?? "";
+            const instructionText = prompt && !requested.startsWith(prompt) ? `${prompt}\n\n追加指示: ${requested}` : requested;
+            const scoped = scopeRequest(snapshot, target, mode, instructionText);
+            const historicalIds = session.messages.flatMap(message => message.attachmentIds);
+            const attachments = conversationRef.current.attachments.filter(item => ids.includes(item.id) || historicalIds.includes(item.id));
+            if (selectedSkill?.config.inputs.includes("image") && !attachments.length) throw new Error("このスキルには画像が必要です。画像を追加してください。");
+            const labels = attachments.map((item, index) => `${index + 1}枚目=${item.label}`).join("、");
+            const instruction = `${scoped.instruction}${!diagramKind && effectiveDiagramKind && /^\s*(?:`{3,}|~{3,})/.test(scoped.text) ? "\n対象はMarkdownの図コードブロックです。replacementには元と同じ言語のコードフェンスを含む対象全体を返してください。" : ""}${labels ? `\n\n添付画像の順序: ${labels}` : ""}`;
+            const text = selectedSkill?.config.inputs.includes("text") === false ? "" : scoped.text;
+            const history = session.messages.map(({ role, text: message, attachmentIds }) => ({ role, text: message + (attachmentIds.length ? `\n添付: ${attachmentIds.map(imageId => session.attachments.find(item => item.id === imageId)?.label ?? "画像データなし").join("、")}` : "") }));
+            if (history.length > 40 || requestBytes(instruction, text, history) > 120000) throw new Error("送信量が上限を超えています。新しい会話を開始してください。");
+            const user = { role: "user" as const, text: requested, attachmentIds: ids, timestamp: iso() };
+            const reply = await generateCodex({ id, instruction: diagramKind ? diagramInstruction(diagramKind, instruction) : instruction, text, history, ...(attachments.length ? { images: attachments.map(item => ({ base64: item.base64 })) } : {}) });
+            if (!mounted.current || active.current !== id || conversationId.current !== sessionId) return;
+            const time = iso();
+            updateConversation(value => value.id !== sessionId ? value : { ...value, messages: [...value.messages, user, { role: "assistant", text: reply.answer + (reply.replacement === null ? "" : `\n\n変更案:\n${reply.replacement}`), attachmentIds: [], timestamp: time }], draft: { ...value.draft, instruction: "", attachmentIds: ids }, lastMessageAt: time, updatedAt: time, contextTokens: reply.inputTokens ?? value.contextTokens });
+            if (mode !== "question" && reply.replacement !== null) setProposal({ base: scoped.base, original: scoped.text, value: reply.replacement });
+            void listCodexLogs().then(setLogs).catch(() => {});
+        } catch (cause) { if (mounted.current && active.current === id) setError(String(cause)); }
+        finally { if (active.current === id) { active.current = null; setBusy(false); } }
+    }
+    async function accept(value: string) {
+        if (!proposal || applyingRef.current)
+            return;
+        applyingRef.current = true;
+        setApplying(true);
+        try {
+            if (diagramKind)
+                await validateDiagramForAdoption(diagramKind, value);
+            if (!canApplyProposal(getSnapshot(), proposal.base))
+                throw new Error("生成後に本文や文書が変わりました。最新の本文で生成し直してください。");
+            const accepted = applyProposalAsync ? await applyProposalAsync(proposal.base, value) : applyProposal(proposal.base, value);
+            if (!accepted)
+                throw new Error("生成後に本文や文書が変わりました。最新の本文で生成し直してください。");
+            setProposal(null);
+        }
+        catch (cause) {
+            setError(String(cause));
+        }
+        finally {
+            applyingRef.current = false;
+            setApplying(false);
+        }
+    }
+    const editing = selected?.imageSource ? conversation.attachments.find((item) => item.id === selectedImageId) : undefined;
+    const textTarget = conversation.draft.targetSnapshot;
+    return <aside hidden={!open} className="codex-panel" style={{ "--codex-panel-width": `${width}px` } as React.CSSProperties} aria-label="Codex文章アシスタント" onKeyDown={event => {
+        if (event.key !== "Escape") return;
+        event.preventDefault(); event.stopPropagation();
+        if (applyingRef.current) return;
+        if (proposal) setProposal(null); else if (historyOpen) setHistoryOpen(false); else if (logsOpen) setLogsOpen(false); else { stop(); onClose(); }
     }}>
-      <header><div><strong>変更案のプレビュー</strong><p>− 現在の対象 / ＋ 提案内容 / ↵ 末尾改行</p></div><button type="button" disabled={applying} onClick={() => setPreviewOpen(false)} aria-label="変更案プレビューを閉じる">×</button></header>
-      <pre className="codex-diff">{diff.map((line, index) => <span key={index} className={`codex-diff--${line.kind}`}>{line.text}{"\n"}</span>)}</pre>
-      {renderProposal?.(proposal.replacement)}
-      {error && <p role="alert">{error}</p>}
-      <footer><button type="button" disabled={busy || applying || !available} onClick={() => void adopt()}>{applying ? "反映中…" : "採用"}</button><button type="button" disabled={applying} onClick={() => { setProposal(null); setPreviewOpen(false); }}>却下</button></footer>
-    </div>}
-    {logsOpen && <CodexLogViewer data={logs} onClose={() => setLogsOpen(false)} onLimitChange={changeLogLimit} />}
+    <div className="codex-panel__resize" role="separator" tabIndex={0} aria-label="Codexパネルの幅を変更" aria-orientation="vertical" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}
+      onPointerDown={event => { event.preventDefault(); event.currentTarget.setPointerCapture?.(event.pointerId); }}
+      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}
+      onKeyDown={event => { if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === "ArrowLeft" ? 20 : -20)))); } }} />
+    <header inert={!!proposal || historyOpen || logsOpen}><strong>Codex</strong><div><button type="button" onClick={() => { if (busy)
+        stop(); setHistoryOpen(true); }}>会話履歴（{sessions.length}）</button><button type="button" onClick={() => void listCodexLogs().then((data) => { setLogs(data); setLogsOpen(true); }).catch((cause) => setError(String(cause)))}>通信記録（{logs.entries.length}）</button><button type="button" onClick={onClose} aria-label="Codexパネルを閉じる">×</button></div></header>
+    <div className="codex-panel__body" inert={!!proposal || historyOpen || logsOpen}>
+      <details open={!savedOptions.enabled}><summary>連携設定（任意）</summary><fieldset disabled={!ready || busy || saving}><label><input type="checkbox" checked={options.enabled} onChange={(event) => setOptions({ ...options, enabled: event.target.checked })}/>Codex連携を有効にする</label><label>モデル<input value={options.model} onChange={(event) => setOptions({ ...options, model: event.target.value })}/></label><button type="button" disabled={!settingsDirty} onClick={() => void (async () => { setSaving(true); try {
+        const value = normalizeCodexOptions(options);
+        await saveSettings({ codex: value });
+        setSavedOptions(value);
+    }
+    catch (cause) {
+        setError(String(cause));
+    }
+    finally {
+        setSaving(false);
+    } })()}>連携設定を保存</button></fieldset></details>
+      {savedOptions.enabled && <><section className="codex-panel__scope" aria-label="今回の対象"><strong>今回の対象</strong><p>{textTarget ? "対象テキスト" : "文書全体"}</p>{textTarget && <small>{textTarget.from}〜{textTarget.to} / {textTarget.content.slice(textTarget.from, textTarget.to)}</small>}{imageOccurrence && <img className="codex-image-preview" src={stagedImages[imageOccurrence.source] ?? resolveImageSrc(imageOccurrence.source, baseDir)} alt="現在の添付画像"/>}{conversation.draft.attachmentIds.length > 0 && <ul aria-label="添付画像">{conversation.draft.attachmentIds.map((id) => { const attachment = conversation.attachments.find((item) => item.id === id); return attachment && <li key={id}><img src={`data:${attachment.mime};base64,${attachment.base64}`} alt={`${attachment.label}のサムネイル`}/><span>{attachment.label}</span><button type="button" disabled={busy} onClick={() => updateConversation((value) => ({ ...value, updatedAt: iso(), draft: { ...value.draft, attachmentIds: value.draft.attachmentIds.filter((valueId) => valueId !== id) } }))}>対象から外す</button></li>; })}</ul>}</section>
+        <div className="codex-panel__actions"><button type="button" disabled={busy} onClick={captureText}>対象テキストを取り込む</button>{selected?.imageSource && <button type="button" disabled={busy} onClick={() => void addSelectedImage()}>現在の画像を追加</button>}<button type="button" disabled={busy} onClick={() => fileInput.current?.click()}>画像ファイルを追加</button><input ref={fileInput} hidden type="file" accept="image/png" onChange={(event) => void addFile(event)}/><button type="button" disabled={!textTarget || busy} onClick={() => updateConversation((value) => ({ ...value, updatedAt: iso(), draft: { ...value.draft, targetSnapshot: null } }))}>対象テキストを外す</button><button type="button" onClick={() => { if (busy)
+            stop(); saveConversation(conversationRef.current, true); setIgnoredTarget(suppliedTarget ?? null); setSelectedImageId(undefined); setProposal(null); replaceConversation(fresh(current?.documentId ?? "", documentPath, documentName)); }}>新しい会話を開始</button></div>
+        <label>編集の許可<select aria-label="編集の許可" value={mode === "selection" && !textTarget ? "document" : mode} onChange={(event) => updateConversation((value) => ({ ...value, updatedAt: iso(), draft: { ...value.draft, editMode: event.target.value as CodexEditMode } }))}><option value="question">質問のみ</option>{textTarget && <option value="selection">指定場所のみ編集</option>}<option value="document">{textTarget && textTarget.from !== textTarget.to ? "指定場所以外の編集を認める" : "文書全体を編集"}</option></select></label>
+        <div className="codex-panel__chat" role="log">{conversation.messages.map((message, index) => <section className={`codex-message codex-message--${message.role}`} key={`${message.timestamp}-${index}`}><strong>{message.role === "user" ? "あなた" : "Codex"}</strong><pre>{message.text}</pre>{message.attachmentIds.map((id) => { const attachment = conversation.attachments.find(item => item.id === id); return attachment ? <button key={id} type="button" className="codex-message__image" onClick={() => { saveConversation(conversationRef.current, true); setSessions(current => [conversationRef.current, ...current.filter(item => item.id !== conversationRef.current.id)]); setHistoryOpen(true); }}><img src={`data:${attachment.mime};base64,${attachment.base64}`} alt={`${attachment.label}のサムネイル`} />{attachment.label}</button> : <small key={id}>画像データなし</small>; })}</section>)}{busy && <p>回答を待っています…</p>}</div>
+        {editing && !effectiveDiagramKind && selectedSkill?.config.mode === "selection" && editing.mime === "image/png" && <CodexImageEdit documentPath={documentPath} source={selected!.imageSource!} originalBase64={editing.base64} initialInstruction={selectedSkill.prompt} instruction={conversation.draft.instruction} onInstructionChange={instruction => updateConversation(value => ({ ...value, updatedAt: iso(), draft: { ...value.draft, instruction } }))} onReferenceChange={async (source, replacement) => {
+            const snapshot = getSnapshot();
+            if (!snapshot || !selected || !canApplyProposal(snapshot, selected)) return false;
+            const occurrence = transcriptionImages(snapshot.content).find(item => item.source === source && item.start >= selected.from && item.end <= selected.to);
+            if (!occurrence) return false;
+            const changed = replaceImageOccurrenceSource(snapshot.content, occurrence, replacement);
+            return applyProposal({ ...snapshot, from: 0, to: snapshot.content.length }, changed);
+        }}/>}
+        {!imageEditAction && <><label>指示<textarea ref={input} value={conversation.draft.instruction} rows={4} disabled={busy || applying} onChange={(event) => updateConversation((value) => ({ ...value, updatedAt: iso(), draft: { ...value.draft, instruction: event.target.value } }))} onKeyDown={(event) => { if (!event.nativeEvent.isComposing && event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            void send();
+        } }}/></label><div className="codex-panel__actions"><button type="button" disabled={busy || preparingImage || applying || !available || !conversation.draft.instruction.trim() || settingsDirty} onClick={() => void send()}>送信（Ctrl+Enter）</button><button type="button" disabled={!busy} onClick={stop}>停止</button></div></>}{preparingImage && <p role="status">画像を準備しています…</p>}{error && !proposal && <p role="alert">{error}</p>}</>}
+    </div>
+    {proposal && <div className="codex-proposal-preview" role="dialog" aria-modal="true" aria-label="Codex変更案のプレビュー"><CodexProposalReview original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value) => <CodexMarkdownPreview source={value} baseDir={baseDir}/>} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onAccept={accept} onReject={() => setProposal(null)} onClose={() => setProposal(null)} busy={applying} error={error}/></div>}
+    {historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {
+        stop();
+        saveConversation(conversationRef.current, true);
+        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);
+        const snapshot = getSnapshot();
+        replaceConversation(item.documentPath === documentPath && item.draft.targetSnapshot && snapshot && item.draft.targetSnapshot.content === snapshot.content ? { ...item, draft: { ...item.draft, targetSnapshot: { ...item.draft.targetSnapshot, documentId: snapshot.documentId } } } : item);
+    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? "", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}
+    {logsOpen && <CodexLogViewer data={logs} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}
   </aside>;
 }

@@ -11,6 +11,7 @@ import { rehypeFoldSections } from "../lib/foldSections";
 import { rehypeBlockAnchors } from "../lib/blockAnchors";
 import { markdownSanitizeSchema } from "../lib/sanitizeSchema";
 import { CodeBlock } from "./CodeBlock";
+import { CodexBlockMenu } from "../features/codex/CodexBlockMenu";
 import { MermaidBlock } from "./MermaidBlock";
 import { openExternalUrl } from "../lib/commands";
 import { resolveSharePointBrowserUrl } from "../lib/sharePoint";
@@ -165,6 +166,7 @@ function rehypeDiffLines(options?: { changedLines?: number[] }) {
 }
 
 interface MarkdownRenderContextValue {
+  onCodexConsult?: (target: CodexTarget) => void;
   content: string;
   baseDir: string;
   imageVersions: Record<string, number>;
@@ -320,6 +322,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       description={decoration?.alt}
       onMediaOpen={context.onMediaOpen}
       editable={!context.staticMode && !context.presentationMode && Boolean(context.documentPath)}
+      onCodexSave={occurrence && context.documentPath && !context.staticMode && !context.presentationMode && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
       storage={occurrence ? "embedded" : undefined}
       onStorageConvert={decoration && context.documentPath && context.onMermaidStorageConvert
         ? () => context.onMermaidStorageConvert?.({ documentPath: context.documentPath!, storage: "embedded", occurrence: decoration.occurrence, source: mermaidSource, relativePath: decoration.relativePath, alt: decoration.alt })
@@ -336,6 +339,7 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
       key={`${context.tabId}:${context.documentPath}:${occurrence?.id}`}
       className={className}
       headingTitle={headingTitle}
+      codexMenu={occurrence && context.onCodexConsult && language !== "svg" ? <CodexBlockMenu target={{ documentId: context.tabId ?? "", content: context.content.replace(/\r\n?/g,"\n"), from: context.content.slice(0,occurrence.start).replace(/\r\n?/g,"\n").length, to: context.content.slice(0,occurrence.end).replace(/\r\n?/g,"\n").length, targetKind: "code" }} onConsult={context.onCodexConsult} /> : undefined}
       documentPath={context.presentationMode ? undefined : context.documentPath}
       onCodexSave={language === "svg" && occurrence && context.documentPath && !context.staticMode && !context.presentationMode && context.onCodeFenceBodyChange ? (body) => context.onCodeFenceBodyChange?.(occurrence, body) : undefined}
       onHighlightComplete={context.onCodeHighlightComplete}
@@ -352,10 +356,15 @@ const MarkdownCode: NonNullable<Components["code"]> = ({ node, className, childr
  * default outer <pre> would create a nested <pre>, which browsers reparent
  * and makes list indentation appear to escape its parent item. */
 const MarkdownPre: NonNullable<Components["pre"]> = ({ children, ...props }) => {
+  const context = React.useContext(MarkdownRenderContext);
+  const offset = props.node?.position?.start.offset;
+  const occurrence = offset === undefined ? undefined : context?.codeFenceByOffset.get(offset);
+  const menu = occurrence && context?.onCodexConsult && !context.staticMode && !context.presentationMode
+    ? <CodexBlockMenu target={{ documentId: context.tabId ?? "", content: context.content, from: occurrence.start, to: occurrence.end, targetKind: "code" }} onConsult={context.onCodexConsult} /> : undefined;
   const child = React.Children.only(children);
   if (React.isValidElement<{ node?: { properties?: { className?: unknown } }; children?: React.ReactNode }>(child) && child.type !== "code") {
     const className = child.props.node?.properties?.className;
-    if (child.type === MarkdownCode && !className) return <div data-source-line={props.node?.position?.start.line}><CodeBlock>{child.props.children}</CodeBlock></div>;
+    if (child.type === MarkdownCode && !className) return <div data-source-line={props.node?.position?.start.line}><CodeBlock codexMenu={menu}>{child.props.children}</CodeBlock></div>;
     return <div data-source-line={props.node?.position?.start.line}>{child}</div>;
   }
   // react-markdown uses the same `code` renderer for inline and fenced code.
@@ -364,7 +373,7 @@ const MarkdownPre: NonNullable<Components["pre"]> = ({ children, ...props }) => 
   if (React.isValidElement<{ className?: string; children?: React.ReactNode }>(child)
     && child.type === "code"
     && !child.props.className?.includes("language-")) {
-    return <div data-source-line={props.node?.position?.start.line}><CodeBlock>{child.props.children}</CodeBlock></div>;
+    return <div data-source-line={props.node?.position?.start.line}><CodeBlock codexMenu={menu}>{child.props.children}</CodeBlock></div>;
   }
   return <pre {...props}>{children}</pre>;
 };
@@ -673,6 +682,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
   const inlineSvgByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is InlineSvgOccurrence => occurrence.kind === "inline-svg").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const tableByOffset = React.useMemo(() => new Map(editableOccurrences.filter((occurrence): occurrence is MarkdownTableOccurrence => occurrence.kind === "table").map((occurrence) => [occurrence.start, occurrence])), [editableOccurrences]);
   const renderContext = React.useMemo<MarkdownRenderContextValue>(() => ({
+    onCodexConsult,
     content,
     baseDir,
     imageVersions,
@@ -718,7 +728,7 @@ const MarkdownPreviewComponent: React.FC<MarkdownPreviewProps> = ({
     onStagedTextAssetChange,
     staticMode,
   }), [
-    baseDir, codeFenceByOffset, content, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
+    onCodexConsult, baseDir, codeFenceByOffset, content, documentPath, foldState, imageDisplaySizes, imageOccurrenceByOffset, imageVersions, inlineSvgByOffset, mermaidFenceOffsets,
     mermaidIndexByOffset, mermaidMode, onCodeHighlightComplete, onError, onFoldChange,
     onCodeFenceBodyChange,
     onInlineSvgChange, onMarkdownTableChange, onDrawioStorageConvert, onMermaidStorageConvert, onTableStorageConvert, onTextStorageConvert, onExternalFileRename, onExternalTableChange, onImageDisplaySizeChange, onCodexImageSelect, onMediaOpen, onOpenDocument, onOpenDocumentWindow,
