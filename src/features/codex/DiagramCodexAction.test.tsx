@@ -17,7 +17,9 @@ const replacement = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="20"/></s
 beforeEach(() => { vi.clearAllMocks(); vi.mocked(generateCodex).mockResolvedValue({ answer: "変更しました", replacement }); });
 afterEach(cleanup);
 async function send() {
+  await waitFor(() => expect(screen.getByLabelText("指示")).not.toBeDisabled());
   fireEvent.change(await screen.findByLabelText("指示"), { target: { value: "配置・余白を整えてください" } });
+  await waitFor(() => expect(screen.getByRole("button", { name: "送信（Ctrl+Enter）" })).not.toBeDisabled());
   fireEvent.click(screen.getByRole("button", { name: "送信（Ctrl+Enter）" }));
 }
 async function openDiagram(action = "Codexで見た目を改善") {
@@ -44,7 +46,9 @@ describe("図メニューのCodex連携", () => {
     render(<DiagramCodexAction kind="drawio" source="" onSave={save} />);
     await openDiagram("Codexに図の編集を依頼");
     await screen.findByLabelText("指示");
+    await waitFor(() => expect(screen.getByLabelText("指示")).not.toBeDisabled());
     fireEvent.change(screen.getByLabelText("指示"), { target: { value: "APIの構成図を描いて" } });
+    await waitFor(() => expect(screen.getByRole("button", { name: "送信（Ctrl+Enter）" })).not.toBeDisabled());
     fireEvent.keyDown(screen.getByLabelText("指示"), { key: "Enter", ctrlKey: true });
     await screen.findByText("採用");
     expect(generateCodex).toHaveBeenCalledWith(expect.objectContaining({ instruction: expect.stringContaining("APIの構成図を描いて") }));

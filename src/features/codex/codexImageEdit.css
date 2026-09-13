@@ -1,5 +1,13 @@
 .codex-image-edit { display: grid; gap: .65rem; }
-.codex-image-edit textarea { display: block; width: 100%; min-height: 5rem; box-sizing: border-box; }
+.codex-image-edit__prompt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .6rem; align-items: stretch; }
+.codex-image-edit textarea { display: block; width: 100%; min-height: 7rem; box-sizing: border-box; resize: vertical; line-height: 1.5; }
+.codex-image-edit__send-actions { display: flex; flex-direction: column; padding-top: 1.25rem; }
+.codex-image-edit__send-actions button:first-child { min-height: 4.5rem; }
+.codex-image-edit__send-actions small { display: block; white-space: nowrap; font-size: .7rem; }
+.codex-image-edit__sending { display: flex; align-items: center; gap: .5rem; padding: .45rem .6rem; border: 1px solid var(--accent-color, #64748b); }
+.codex-image-edit__spinner { display: inline-block; flex: 0 0 auto; width: 14px; height: 14px; border: 2px solid var(--border-color, #64748b); border-top-color: var(--accent-color, #2563eb); border-radius: 50%; animation: codex-image-edit-sending 1s linear infinite; }
+@keyframes codex-image-edit-sending { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .codex-image-edit__spinner { animation: none; } }
 .codex-image-edit__layout { display: flex; gap: .5rem; }
 .codex-image-edit__comparison { display: grid; gap: .5rem; height: 26rem; }
 .codex-image-edit__comparison--horizontal { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
