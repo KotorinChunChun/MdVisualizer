@@ -2,6 +2,9 @@ pub mod app_state;
 pub mod asset_staging;
 pub mod backup;
 pub mod codex;
+pub mod codex_sessions;
+pub mod codex_skills;
+pub mod codex_image_edit;
 pub mod commands;
 mod credential_store;
 pub mod document_edit;
@@ -210,6 +213,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
         .manage(codex::CodexRuns::default())
+        .manage(codex_image_edit::CodexImageRuns::default())
+        .manage(codex_image_edit::CodexImageSaveRollbacks::default())
         .on_window_event(|window, event| {
             let state = window.state::<AppState>();
             match event {
@@ -233,6 +238,13 @@ pub fn run() {
                     window
                         .state::<codex::CodexRuns>()
                         .close_window(window.label());
+                    window.state::<codex_image_edit::CodexImageRuns>().close_window(window.label());
+                    if let Err(error) = window
+                        .state::<codex_image_edit::CodexImageSaveRollbacks>()
+                        .close_window(window.label())
+                    {
+                        eprintln!("画像編集の未確定保存を復旧できませんでした: {error}");
+                    }
                     if let Ok(mut windows) = state.debug_windows.lock() {
                         windows.remove(window.label());
                     }
@@ -274,6 +286,17 @@ pub fn run() {
             codex::codex_cancel,
             codex::codex_list_logs,
             codex::codex_set_log_limit,
+            codex_sessions::load_codex_sessions,
+            codex_sessions::upsert_codex_session,
+            codex_sessions::set_codex_session_retention,
+            codex_skills::codex_list_skills,
+            codex_skills::codex_save_skill,
+            codex_skills::codex_delete_skill,
+            codex_skills::codex_open_skills_folder,
+            codex_image_edit::codex_edit_image,
+            codex_image_edit::codex_cancel_image,
+            codex_image_edit::codex_save_edited_image,
+            codex_image_edit::codex_finalize_edited_image,
             load_settings,
             load_settings_status,
             save_settings,

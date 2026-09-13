@@ -1,7 +1,7 @@
 export interface EditorSnapshot { documentId: string; content: string; from: number; to: number }
 export interface CodexOptions { enabled: boolean; model: string }
 export interface ChatMessage { role: "user" | "assistant"; text: string }
-export interface CodexReply { answer: string; replacement: string | null }
+export interface CodexReply { answer: string; replacement: string | null; inputTokens?: number }
 export interface CodexLogEntry {
   id: string;
   createdAt: string;
