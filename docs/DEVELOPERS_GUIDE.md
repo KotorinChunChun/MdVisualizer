@@ -77,6 +77,8 @@
 
 ## 導入・操作と環境構築
 
+- [ボタンの外観・配置チェック](/docs/developer/testing/04-button-layout.md)：ビルド後の実寸監査と継続的な拡張方法
+
 - [Web版と共通編集・出力](/docs/developer/web/ARCHITECTURE.md)：単一HTML生成、共有GUI、資産・文字コード・検証
 - [PHP版の運用](/docs/developer/web/PHP_OPERATIONS.md)：SSO、暗号化ZIP、非公開設定、期限管理
 

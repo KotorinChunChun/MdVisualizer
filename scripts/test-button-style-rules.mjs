@@ -16,11 +16,13 @@ async function sourceFiles(directory) {
   return nested.flat();
 }
 
-const [appStyles, appSource, files] = await Promise.all([
+const sourceDirectories = [join(root, "src"), join(root, "web", "src")];
+const [appStyles, appSource, fileSets] = await Promise.all([
   readFile(join(root, "src", "styles", "app.css"), "utf8"),
   readFile(join(root, "src", "App.tsx"), "utf8"),
-  sourceFiles(join(root, "src")),
+  Promise.all(sourceDirectories.map(sourceFiles)),
 ]);
+const files = fileSets.flat();
 
 // 全ボタンは共通の hover / focus / disabled 状態を継承し、ツールバーの例外は専用クラスで宣言する。
 for (const selector of ["button:not(:disabled)", "button:not(:disabled):hover", "button:focus-visible", "button:disabled"]) {
