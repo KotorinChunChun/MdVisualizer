@@ -50,3 +50,9 @@ tmp/
 
 # AIキャッシュ
 .claude/
+
+# 編集・出力ホストはソースからビルド時に生成
+src/generated/*.ts
+spfx/src/generated/
+web/php/app.html
+web/tests/.php-zip-fixtures/
