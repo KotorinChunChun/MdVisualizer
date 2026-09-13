@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant Client as 同じ名前
+    actor Agent as 同じ名前
+    participant Service as サービス
+    Client->>+Agent: 同じメッセージ
+    Agent-->>-Client: 同じメッセージ
+    Service->>Service: 自分への処理
+    Note over Client,Agent: 同名の参加者もIDで識別
+    loop 繰り返し
+        Client->>Service: 問い合わせ
+        Service-->>Client: 結果
+    end

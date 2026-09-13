@@ -1,0 +1,12 @@
+flowchart LR
+    subgraph G1[同じグループ]
+        C[同じ名前]
+        A[同じ名前]
+    end
+    subgraph G2[同じグループ]
+        B[同じ名前]
+    end
+    C -->|最初の接続| A
+    A -->|別の接続| B
+    C -->|同じ両端の別接続| A
+    B -->|逆向き| C
