@@ -17,7 +17,7 @@ export function parseModel(source){
  const type=diagramType(source),lines=linesOf(source),nodes=new Map(),edges=[],groups=[];let safe=true;
  const add=(id,label,line,from,to,extra={})=>{if(!id||id==='[*]')return;const old=nodes.get(id);const ref={from,to,line:line.line};if(old){old.refs.push(ref);if(extra.defined){Object.assign(old,{label,from,to,line:line.line},extra);}}else nodes.set(id,{id,label,from,to,line:line.line,refs:[ref],...extra});};
  const stack=[];
- for(const line of lines){const s=line.text.trim(),offset=line.from+line.text.indexOf(s);if(!s||s.startsWith('%%')||line.line===1)continue;
+ for(const line of lines){const s=line.text.trim(),offset=line.from+line.text.indexOf(s);if(!s||s.startsWith('%%')||line.line===1||/^(flowchart|graph)\s+(LR|RL|TD|TB|BT)\b/.test(s))continue;
   let m;
   if(type==='sequence'&&(m=/^box\s+(.+)/.exec(s))){const g={id:'box-'+line.line,label:m[1],from:line.from,headerTo:line.to,line:line.line,members:[],parent:stack.at(-1)?.id};groups.push(g);stack.push(g);continue;}
   if(type==='c4'&&(m=/^(?:System_Boundary|Container_Boundary)\((\w+),\s*"([^"]*)"\)\s*\{/.exec(s))){const g={id:m[1],label:m[2],from:line.from,headerTo:line.to,line:line.line,members:[],parent:stack.at(-1)?.id};groups.push(g);stack.push(g);continue;}

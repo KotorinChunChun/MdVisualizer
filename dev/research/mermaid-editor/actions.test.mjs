@@ -1,0 +1,12 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {parseModel} from './core.js';import {copyFlow,pasteFlow,moveToRoot,diagramDirection,styleNode,setTheme} from './flow-actions.js';
+const src='flowchart LR\n A[同じ] --> B[同じ]\n B --> C[同じ]';
+test('単一ノードの複製は別ID・同キャプションで直列に差し込む',()=>{const m=parseModel(pasteFlow(src,copyFlow(src,['B']),'A'));assert.deepEqual(m.edges.map(e=>e.from+'>'+e.to).sort(),['A>N1','B>C','N1>B']);assert.equal(m.nodes.find(n=>n.id==='N1').label,'同じ');});
+test('分岐では既存接続を保持し並列追加',()=>{const s=src+'\n A --> C',m=parseModel(pasteFlow(s,copyFlow(s,['B']),'A'));assert(m.edges.some(e=>e.from==='A'&&e.to==='B'));assert(m.edges.some(e=>e.from==='A'&&e.to==='C'));assert(m.edges.some(e=>e.from==='A'&&e.to==='N1'));});
+test('未選択では独立したルートへ複製する',()=>{const m=parseModel(pasteFlow(src,copyFlow(src,['B'])));assert.equal(m.edges.length,2);assert(m.nodes.some(n=>n.id==='N1'));});
+test('入れ子グループの複製は内部接続と名前を保持しIDを再採番',()=>{const s='flowchart TD\n subgraph G1[同じ]\n A[同じ]\n subgraph G2[同じ]\n B[同じ]\n end\n end\n A --> B';const m=parseModel(pasteFlow(s,copyFlow(s,[],'G1')));assert.equal(m.groups.length,4);assert.equal(new Set([...m.nodes,...m.groups].map(n=>n.id)).size,8);assert.equal(m.edges.length,2);assert(m.edges.some(e=>e.from==='N1'&&e.to==='N2'));});
+test('ルート移動は元経路をつなぎ直し移動ノードを切り離す',()=>{const m=parseModel(moveToRoot(src,['B']));assert.deepEqual(m.edges.map(e=>e.from+'>'+e.to),['A>C']);assert.equal(m.nodes.find(n=>n.id==='B').label,'同じ');assert.equal(m.nodes.find(n=>n.id==='B').group,undefined);});
+test('分岐合流のルート移動でも前後を再接続',()=>{const s=src+'\n D --> B\n B --> E';const m=parseModel(moveToRoot(s,['B']));assert.deepEqual(m.edges.map(e=>e.from+'>'+e.to).sort(),['A>C','A>E','D>C','D>E']);});
+test('方向・グループ方向を取得',()=>{assert.equal(diagramDirection(src,'A'),'LR');assert.equal(diagramDirection(src.replace('LR','TD'),'A'),'TD');assert.equal(diagramDirection('flowchart LR\n subgraph G1[X]\n direction TB\n A[X]\n end','A'),'TB');});
+test('テーマを保存しても図種とノードを解析できる',()=>{const s=setTheme(src,'dark'),m=parseModel(s);assert.equal(m.type,'flowchart');assert(m.safe);assert.equal(m.nodes.length,3);assert.equal((setTheme(s,'forest').match(/%%\{init/g)||[]).length,1);});
+test('線色と文字色の変更は対象ノードに限定',()=>{const s=styleNode(src,'B',{stroke:'#ff0000',color:'#123456'});assert(s.endsWith('style B stroke:#ff0000,color:#123456'));assert.throws(()=>styleNode(src,'B',{fill:'red'}));});
