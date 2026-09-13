@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="旧版MarkdownViewer v0.0.15-betaの証明書導入手順です。MdVisualizerの新版は公開準備中です。">
+    <meta name="description" content="MdVisualizerの証明書導入手順です。">
     <meta name="theme-color" content="#101820">
     <title>beta版証明書の導入手順 · MdVisualizer</title>
     <link rel="stylesheet" href="../assets/styles.css">
@@ -14,25 +14,25 @@
         <img src="../assets/mdvisualizer-icon.png" width="44" height="44" alt="">
         <span>MdVisualizer</span>
       </a>
-      <span class="channel-badge">CERTIFICATE GUIDE</span>
+
     </header>
 
     <main class="guide-main">
       <nav class="breadcrumb" aria-label="パンくずリスト"><a href="../">ダウンロードメニュー</a><span>/</span><a href="../MdVisualizer.html">MdVisualizer</a><span>/</span>証明書の導入手順</nav>
 
       <section class="guide-hero" aria-labelledby="guide-title">
-        <p class="eyebrow">ONE-TIME SETUP</p>
-        <h1 id="guide-title">旧版の証明書導入手順</h1>
+
+        <h1 id="guide-title">証明書の導入手順</h1>
         <p class="lead">
-          この手順は旧版MarkdownViewer v0.0.15-beta向けです。MdVisualizer v0.0.16は公開準備中です。旧版の初回インストールの前に、
+          初回インストールの前に、
           次の公開証明書をWindowsの「信頼されたユーザー」へ登録してください。
         </p>
-        <a class="button primary" href="../beta/MarkdownViewer.cer" download>証明書をダウンロード</a>
+        <a class="button primary" href="../beta/MdVisualizer.cer" download>証明書をダウンロード</a>
       </section>
 
       <section class="fingerprint" aria-labelledby="fingerprint-title">
         <div>
-          <p class="eyebrow">VERIFY BEFORE TRUSTING</p>
+
           <h2 id="fingerprint-title">証明書の確認情報</h2>
         </div>
         <dl>
@@ -44,26 +44,26 @@
 
       <section class="guide-steps" aria-labelledby="gui-title">
         <div class="section-heading">
-          <p class="eyebrow">WINDOWS GUI</p>
+
           <h2 id="gui-title">画面から登録する</h2>
         </div>
         <ol>
-          <li><span>1</span><div><h3>ダウンロードしたCERを開く</h3><p><code>MarkdownViewer.cer</code> をダブルクリックし、「証明書のインストール」を選びます。</p></div></li>
+          <li><span>1</span><div><h3>ダウンロードしたCERを開く</h3><p><code>MdVisualizer.cer</code> をダブルクリックし、「証明書のインストール」を選びます。</p></div></li>
           <li><span>2</span><div><h3>現在のユーザーを選ぶ</h3><p>保存場所は「現在のユーザー」を選択して「次へ」進みます。管理者権限は不要です。</p></div></li>
           <li><span>3</span><div><h3>保存先を指定する</h3><p>「証明書をすべて次のストアに配置する」を選び、「参照」から<strong>信頼されたユーザー</strong>（Trusted People）を選択します。</p></div></li>
           <li><span>4</span><div><h3>内容を確認して完了する</h3><p>発行先とThumbprintを上記と照合してから「完了」を選びます。セキュリティ警告が出た場合も、同じ発行先であることを再確認します。</p></div></li>
-          <li><span>5</span><div><h3>App Installerを開く</h3><p><a href="../beta/MarkdownViewer.appinstaller" download>MarkdownViewer.appinstaller</a> をダウンロードして開き、「インストール」を選びます。</p></div></li>
+          <li><span>5</span><div><h3>App Installerを開く</h3><p><a href="../beta/MdVisualizer.appinstaller" download>MdVisualizer.appinstaller</a> をダウンロードして開き、「インストール」を選びます。</p></div></li>
         </ol>
       </section>
 
       <section class="command-card" aria-labelledby="command-title">
         <div>
-          <p class="eyebrow">POWERSHELL</p>
+
           <h2 id="command-title">コマンドで登録する場合</h2>
           <p>CERをダウンロードしたフォルダで、次を実行します。</p>
         </div>
         <pre><code>Import-Certificate `
-  -FilePath .\MarkdownViewer.cer `
+  -FilePath .\MdVisualizer.cer `
   -CertStoreLocation Cert:\CurrentUser\TrustedPeople</code></pre>
       </section>
 
@@ -79,7 +79,7 @@
       </section>
 
       <div class="guide-actions">
-        <a class="button primary" href="../beta/MarkdownViewer.appinstaller" download>App Installerへ進む</a>
+        <a class="button primary" href="../beta/MdVisualizer.appinstaller" download>App Installerへ進む</a>
         <a class="button secondary" href="../MdVisualizer.html">MdVisualizerページへ戻る</a>
       </div>
     </main>

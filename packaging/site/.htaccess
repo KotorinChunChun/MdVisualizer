@@ -5,8 +5,8 @@ AddType application/pkix-cert .cer
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
 
-  # HTMLは再利用前にサーバーへ更新確認する
-  <FilesMatch "\.html?$">
+  # HTMLとCSSは再利用前にサーバーへ更新確認する
+  <FilesMatch "\.(html?|css)$">
     Header set Cache-Control "no-cache, max-age=0, must-revalidate"
   </FilesMatch>
 

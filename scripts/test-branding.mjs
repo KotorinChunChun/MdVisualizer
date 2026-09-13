@@ -32,10 +32,10 @@ for (const text of Object.values(pkg.scripts)) {
   for (const match of text.matchAll(/\.\/scripts\/([^ ]+\.ps1)/g)) assert.ok(fs.existsSync(path.join(root, 'scripts', match[1])), match[1]);
 }
 const page = read('packaging/site/MdVisualizer.html');
-assert.ok(page.includes('v0.0.16-betaは公開準備中'));
-assert.ok(page.includes('旧版MarkdownViewer v0.0.15-beta'));
-assert.ok(page.includes('旧版 App Installer'));
-assert.ok(!page.includes('href="./beta/MdVisualizer'));
+assert.ok(page.includes('v0.0.16 ベータ版'));
+assert.doesNotMatch(page, /0\.0\.15|旧版|MarkdownViewer|公開準備中/);
+assert.ok(page.includes('MdVisualizer_0.0.16.0_x64.msix'));
+assert.ok(page.includes('href="./beta/MdVisualizer.appinstaller'));
 assert.ok(!page.includes(pkg.repository)); // 非公開リポジトリを公開サイトに案内しない。
 assert.match(read('packaging/site/.htaccess'), /RedirectMatch 301/);
 assert.ok(read('packaging/site/MakdownViewer.html').includes('url=./MdVisualizer.html'));
@@ -45,10 +45,10 @@ for (const file of ['packaging/site/index.html', 'packaging/site/MdVisualizer.ht
   for (const match of html.matchAll(/(?:src|href)="([^"#?]+)"/g)) {
     const target = match[1];
     // 他製品のページ・画像はWebsite側が供給し、本リポジトリには含まれない。
-    if (target === './assets/httpselector-icon.png' || target === './HttpSelector.html') continue;
+    if (target === './assets/httpselector-icon.png' || target === './HttpSelector.html' || target.startsWith('./ScriptSync/')) continue;
     if (/^(?:https?:|mailto:)/.test(target)) continue;
     if (/\/(?:beta|stable)\//.test(target)) {
-      assert.ok(['MarkdownViewer.appinstaller', 'MarkdownViewer_0.0.15.0_x64.msix', 'MarkdownViewer.cer'].includes(path.basename(target)), target);
+      assert.ok(['MdVisualizer.appinstaller', 'MdVisualizer_0.0.16.0_x64.msix', 'MdVisualizer.cer'].includes(path.basename(target)), target);
       continue;
     }
     assert.ok(fs.existsSync(path.resolve(root, path.dirname(file), target)), `${file}: ${target}`);
