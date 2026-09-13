@@ -1,6 +1,6 @@
 {
   "name": "@mdvisualizer/markdown-core",
-  "version": "0.0.17",
+  "version": "0.0.17+beta.1",
   "private": true,
   "type": "module",
   "main": "lib/cjs/index.js",

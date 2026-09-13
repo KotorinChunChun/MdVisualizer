@@ -96,7 +96,7 @@ try {
     if ($remoteCertificateHash -ne $localCertificateHash) {
         throw "Published CER hash does not match the staged release."
     }
-    $portableName = "MdVisualizer_$($artifacts.ApplicationVersion)_x64_portable.zip"
+    $portableName = "MdVisualizer_$($artifacts.PackageVersion)_x64_portable.zip"
     $portableUri = $artifacts.Channel.BaseUri + $portableName
     $portableResponse = $httpClient.GetAsync($portableUri).GetAwaiter().GetResult()
     try {

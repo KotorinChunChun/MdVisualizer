@@ -109,6 +109,9 @@ function Import-ReleaseConfiguration {
 
     $requiredValues = [ordered]@{
         "application.displayName" = $configuration.application.displayName
+        "application.publicVersion" = $configuration.application.publicVersion
+        "application.packageVersion" = $configuration.application.packageVersion
+        "application.msixVersion" = $configuration.application.msixVersion
         "application.artifactBaseName" = $configuration.application.artifactBaseName
         "application.identityName" = $configuration.application.identityName
         "application.publisher" = $configuration.application.publisher
@@ -124,7 +127,8 @@ function Import-ReleaseConfiguration {
         "distribution.publicDownloadPage" = $configuration.distribution.publicDownloadPage
     }
     foreach ($entry in $requiredValues.GetEnumerator()) {
-        if ([string]::IsNullOrWhiteSpace([string]$entry.Value)) {
+        # 版情報は既存のrelease-configでもTauri設定から復元できるよう任意とする。
+        if ($entry.Key -notin @("application.publicVersion", "application.packageVersion", "application.msixVersion") -and [string]::IsNullOrWhiteSpace([string]$entry.Value)) {
             throw "Required release configuration value is empty: $($entry.Key)"
         }
     }
@@ -212,10 +216,32 @@ function Get-ConfiguredApplicationVersion {
         throw "Tauri configuration was not found: $($Configuration.TauriConfigPath)"
     }
     $tauriConfiguration = Get-Content -LiteralPath $Configuration.TauriConfigPath -Raw | ConvertFrom-Json
+    if (-not [string]::IsNullOrWhiteSpace([string]$Configuration.Raw.application.packageVersion)) {
+        return [string]$Configuration.Raw.application.packageVersion
+    }
     if ([string]::IsNullOrWhiteSpace([string]$tauriConfiguration.version)) {
         throw "Tauri application version is empty: $($Configuration.TauriConfigPath)"
     }
     return [string]$tauriConfiguration.version
+}
+
+function Get-ConfiguredPublicVersion {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Configuration)
+    $packageVersion = Get-ConfiguredApplicationVersion -Configuration $Configuration
+    if (-not [string]::IsNullOrWhiteSpace([string]$Configuration.Raw.application.publicVersion)) {
+        return [string]$Configuration.Raw.application.publicVersion
+    }
+    return $packageVersion
+}
+
+function Get-ConfiguredMsixVersion {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Configuration)
+    if (-not [string]::IsNullOrWhiteSpace([string]$Configuration.Raw.application.msixVersion)) {
+        return ConvertTo-MsixVersion -Version ([string]$Configuration.Raw.application.msixVersion)
+    }
+    return ConvertTo-MsixVersion -Version (Get-ConfiguredApplicationVersion -Configuration $Configuration)
 }
 
 function Get-ReleaseArtifacts {
@@ -232,7 +258,7 @@ function Get-ReleaseArtifacts {
     if ([string]::IsNullOrWhiteSpace($ApplicationVersion)) {
         $ApplicationVersion = Get-ConfiguredApplicationVersion -Configuration $Configuration
     }
-    $packageVersion = ConvertTo-MsixVersion -Version $ApplicationVersion
+    $packageVersion = Get-ConfiguredMsixVersion -Configuration $Configuration
     $channelConfiguration = Get-ReleaseChannel -Configuration $Configuration -Channel $Channel
     $artifactBaseName = $Configuration.Raw.application.artifactBaseName
     $architecture = $Configuration.Raw.application.architecture
@@ -242,6 +268,7 @@ function Get-ReleaseArtifacts {
 
     return [pscustomobject]@{
         ApplicationVersion = $ApplicationVersion
+        PublicVersion = Get-ConfiguredPublicVersion -Configuration $Configuration
         PackageVersion = $packageVersion
         Channel = $channelConfiguration
         PackageFileName = $packageFileName
@@ -343,6 +370,8 @@ Export-ModuleMember -Function @(
     "Import-ReleaseConfiguration",
     "Get-ReleaseChannel",
     "Get-ConfiguredApplicationVersion",
+    "Get-ConfiguredPublicVersion",
+    "Get-ConfiguredMsixVersion",
     "Get-ReleaseArtifacts",
     "Get-MsixIdentity",
     "Assert-MsixIdentityMatchesConfiguration"

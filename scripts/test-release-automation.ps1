@@ -59,6 +59,9 @@ Import-Module $releaseToolsPath -Force
 $configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
 foreach ($channel in @("beta", "stable")) {
     $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $channel
+    if ($artifacts.PublicVersion -ne "0.0.17.1 beta" -or $artifacts.ApplicationVersion -ne "0.0.17+beta.1" -or $artifacts.PackageVersion -ne "0.0.17.1") {
+        throw "公開表示版・内部版・MSIX版の対応が不正です: $($artifacts.PublicVersion) / $($artifacts.ApplicationVersion) / $($artifacts.PackageVersion)"
+    }
     if ($artifacts.CertificateFileName -ne "MdVisualizer.cer") {
         throw "The public certificate file name is not stable for ${channel}: $($artifacts.CertificateFileName)"
     }

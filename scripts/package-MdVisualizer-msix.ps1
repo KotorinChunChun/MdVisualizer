@@ -100,7 +100,13 @@ function Convert-ToMsixVersion {
 }
 
 $tauriConfig = Get-Content -LiteralPath $tauriConfigPath -Raw | ConvertFrom-Json
-$packageVersion = Convert-ToMsixVersion -Version $tauriConfig.version
+$configuredMsixVersion = [string]$releaseConfiguration.Raw.application.msixVersion
+if ([string]::IsNullOrWhiteSpace($configuredMsixVersion)) {
+    $packageVersion = Convert-ToMsixVersion -Version ([string]$tauriConfig.version)
+}
+else {
+    $packageVersion = Convert-ToMsixVersion -Version $configuredMsixVersion
+}
 $packageName = "${artifactBaseName}_${packageVersion}_${architecture}"
 $outputDirectoryFullPath = [System.IO.Path]::GetFullPath($OutputDirectory)
 $msixPath = Join-Path $outputDirectoryFullPath "${packageName}.msix"

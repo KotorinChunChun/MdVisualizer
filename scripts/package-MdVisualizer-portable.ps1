@@ -5,12 +5,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if (!$ReleaseIntentConfirmed) { throw 'ポータブル版生成には-ReleaseIntentConfirmedが必要です。' }
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$version = (Get-Content (Join-Path $projectRoot 'src-tauri/tauri.conf.json') -Raw | ConvertFrom-Json).version
+Import-Module (Join-Path $PSScriptRoot 'ReleaseTools.psm1') -Force
+$configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
+$version = Get-ConfiguredApplicationVersion -Configuration $configuration
+$artifactVersion = Get-ConfiguredMsixVersion -Configuration $configuration
 $executable = Join-Path $projectRoot 'src-tauri/target/release/mdvisualizer.exe'
 if (!(Test-Path -LiteralPath $executable -PathType Leaf)) { throw '先にproduction版をビルドしてください。' }
 $actualVersion = (Get-Item -LiteralPath $executable).VersionInfo.ProductVersion
 if (($actualVersion -split '-')[0] -ne $version) { throw "実行ファイルの版が一致しません: $actualVersion / $version" }
-$output = Join-Path $projectRoot "release/MdVisualizer_${version}_x64_portable.zip"
+$output = Join-Path $projectRoot "release/MdVisualizer_${artifactVersion}_x64_portable.zip"
 New-Item -ItemType Directory -Path (Split-Path -Parent $output) -Force | Out-Null
 # ファイル一覧を固定し、ユーザー設定、文書、秘密情報を収集しない。
 Compress-Archive -LiteralPath $executable -DestinationPath $output -Force

@@ -72,10 +72,13 @@ function Resolve-PythonExecutable {
 
 function Show-ReleasePlan {
     $applicationVersion = Get-ConfiguredApplicationVersion -Configuration $configuration
+    $publicVersion = Get-ConfiguredPublicVersion -Configuration $configuration
+    $msixVersion = Get-ConfiguredMsixVersion -Configuration $configuration
     Write-Host "Release automation plan (read-only)"
     Write-Host "Application: $($configuration.Raw.application.displayName)"
+    Write-Host "Public version: $publicVersion"
     Write-Host "Application version: $applicationVersion"
-    Write-Host "Package version: $(ConvertTo-MsixVersion -Version $applicationVersion)"
+    Write-Host "Package version: $msixVersion"
     Write-Host "Identity: $($configuration.Raw.application.identityName)"
     Write-Host "Publisher: $($configuration.Raw.application.publisher)"
     Write-Host "Certificate: $($configuration.Raw.application.certificateFriendlyName)"
@@ -127,7 +130,7 @@ function Invoke-StageRelease {
         -Channel $SelectedChannel `
         -ConfigPath $configuration.ConfigPath
     $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $SelectedChannel
-    $portableName = "MdVisualizer_$($artifacts.ApplicationVersion)_x64_portable.zip"
+    $portableName = "MdVisualizer_$($artifacts.PackageVersion)_x64_portable.zip"
     Copy-Item -LiteralPath (Join-Path $projectRoot "release/$portableName") -Destination (Join-Path $artifacts.Channel.SiteDirectory $portableName) -Force
     & (Join-Path $PSScriptRoot "verify-msix-release.ps1") `
         -Channel $SelectedChannel `
@@ -159,7 +162,7 @@ function Invoke-PublishRelease {
         $artifacts.StagedPackagePath
         $artifacts.StagedCertificatePath
         $artifacts.StagedAppInstallerPath
-        Join-Path $artifacts.Channel.SiteDirectory "MdVisualizer_$($artifacts.ApplicationVersion)_x64_portable.zip"
+        Join-Path $artifacts.Channel.SiteDirectory "MdVisualizer_$($artifacts.PackageVersion)_x64_portable.zip"
     )
     foreach ($publishFile in $publishFiles) {
         if (!(Test-Path -LiteralPath $publishFile -PathType Leaf)) { throw "公開対象がありません: $publishFile" }
