@@ -2,6 +2,8 @@
 
 この資料は、`web/php/` のPHPバックエンドと `web/php-config.example.json` を正本にした運用基準です。対象は、ブラウザーで暗号化したZIPを一時保管するWeb版です。
 
+`index.php`はSSOセッションを確認し、未認証ならサインイン画面を返します。認証済みの場合だけ生成済み`app.html`を読み出します。Apacheの`.htaccess`は`app.html`への直接アクセスを拒否するため、設置時はこのファイルも必ず配置してください。PHPの開発サーバーは`.htaccess`を解釈しません。ローカル検証用であり、そのまま公開する構成ではありません。
+
 ## さくらライトの配置
 
 本番基準は、さくらのレンタルサーバー ライト、FreeBSD、PHP 8.2系です。既存環境の基準値はPHP 8.2.32、Web公開ルートは `/home/excel-chunchun/www/` です。
@@ -34,6 +36,8 @@
 `MDVISUALIZER_CONFIG`環境変数をPHP実行環境へ設定すると、その絶対パスを設定ファイルとして使用します。未設定時はドキュメントルートの親にある`private/mdvisualizer.json`を参照します。秘密情報をURLパラメーターやHTMLへ渡しません。
 
 必要なPHP拡張は`openssl`、`curl`、`mbstring`です。`openssl`はOIDCのRSA署名検証、`curl`はGoogle/Microsoftのトークン・JWKS取得、`mbstring`は表示名の長さ制限に使います。サーバー側でZIPを復号しないため、サーバーのPHP `zip`拡張は暗号化データの検査には必須ではありません。
+
+アプリとともに`.user.ini`を配置します。32 MiBのZIPを受信するため、`post_max_size=40M`、`upload_max_filesize=32M`、`memory_limit=128M`、`max_execution_time=60`を指定し、HTTP応答へのPHP内部エラー表示を無効にします。設置先のPHP設定がこのファイルを許可・反映することを公開時に確認してください。反映されない場合は、サーバーの管理画面で同じ値を設定します。アプリ内部のZIP上限は32 MiBのままです。
 
 ## Google / MicrosoftのSSO登録
 
@@ -88,5 +92,7 @@ node web/tests/php-http-integration.mjs
 ```
 
 `php-security.php`はRSA/JWK署名検証、nonce/audience/期限、所有者分離、CSRF、暗号化ZIP検査、期限清掃を確認します。`php-http-integration.mjs`はPHP組み込みHTTPサーバーへ接続し、未認証拒否、アップロード、ダウンロード、別所有者拒否、期限切れ清掃、quota、削除を実測します。テストの一時設定・セッション・サーバーログは対象版の`dev/history/v0.0.18/logs/<実行識別子>/`へ出力します。
+
+`node web/tests/php-browser-integration.mjs`は、テスト専用セッションを使って実ブラウザーからZIPを開き、明示保管・復号取得と本文／画像復元を確認します。実Google/Microsoftログインの代用とはしません。
 
 この手順はローカル実装検証です。実際のGoogle/Microsoftアプリ登録、秘密情報の投入、さくらサーバーへのアップロード、redirect URIの到達確認、実SSOログインは別工程であり、今回の検証には含めていません。

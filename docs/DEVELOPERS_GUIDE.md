@@ -77,6 +77,9 @@
 
 ## 導入・操作と環境構築
 
+- [Web版と共通編集・出力](/docs/developer/web/ARCHITECTURE.md)：単一HTML生成、共有GUI、資産・文字コード・検証
+- [PHP版の運用](/docs/developer/web/PHP_OPERATIONS.md)：SSO、暗号化ZIP、非公開設定、期限管理
+
 - [インストール手順](/docs/user/INSTALLATION.md)
 - [利用ガイド](/docs/USERS_GUIDE.md)：対応機能、編集、検索、印刷、SharePoint、ショートカット、データ保護
 - [開発環境のセットアップ](/docs/developer/DEVELOPMENT_SETUP.md)：初回起動、MSIX作成、署名環境

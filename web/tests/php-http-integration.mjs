@@ -12,7 +12,7 @@ const sessions = resolve(root, "sessions");
 const config = resolve(root, "config.json");
 await mkdir(storage, { recursive: true });
 await mkdir(sessions, { recursive: true });
-await writeFile(config, JSON.stringify({ storage_dir: storage, max_items_per_user: 1, max_bytes_per_user: 100 * 1024 * 1024, max_bytes_total: 1024 * 1024 * 1024 }));
+await writeFile(config, JSON.stringify({ storage_dir: storage, max_items_per_user: 1, max_bytes_per_user: 100 * 1024 * 1024, max_bytes_total: 1024 * 1024 * 1024, callback_url: 'https://example.invalid/php/api.php?action=callback', providers: { google: { client_id: 'test-only', client_secret: 'test-only' }, microsoft: { client_id: 'test-only', client_secret: 'test-only' } } }));
 
 const owner = (provider, issuer, sub) => createHash("sha256").update(`${provider}\0${issuer}\0${sub}`).digest("hex");
 const userAOwner = owner("google", "accounts.google.com", "http-user-a");
@@ -64,6 +64,16 @@ async function encryptedZip() {
 
 try {
   await waitForServer();
+  const indexUrl = base.replace('api.php', 'index.php');
+  const landing = await request(indexUrl);
+  await expectStatus(landing, 200, 'anonymous visitor receives sign-in page');
+  const landingHtml = await landing.text();
+  if (!landingHtml.includes('Googleでサインイン') || !landingHtml.includes('Microsoftでサインイン') || landingHtml.includes('id="root"')) throw new Error('anonymous visitor received the editor or no sign-in links');
+  const editorPage = await request(indexUrl, {}, sessionIdA);
+  await expectStatus(editorPage, 200, 'signed-in visitor receives editor');
+  if (!(await editorPage.text()).includes('id="root"') || !editorPage.headers.get('cache-control')?.includes('no-store')) throw new Error('signed-in editor response is missing or cacheable');
+  const apacheRules = await readFile(resolve('web/php/.htaccess'), 'utf8');
+  if (!/<Files "app\.html">\s*Require all denied\s*<\/Files>/.test(apacheRules)) throw new Error('direct generated HTML must be denied by Apache');
   const anon = await request(`${base}?action=list`);
   await expectStatus(anon, 401, "unauthenticated list is rejected");
   const session = await request(`${base}?action=session`);
@@ -89,6 +99,7 @@ try {
   const expired = JSON.parse(await readFile(metadata, "utf8"));
   expired.expires = Math.floor(Date.now() / 1000) - 1;
   await writeFile(metadata, JSON.stringify(expired));
+  await request(indexUrl); // APIだけでなくアプリ入口へのアクセスでも期限切れを清掃する。
   const afterExpiry = await request(`${base}?action=list`, {}, sessionIdA);
   await expectStatus(afterExpiry, 200, "list after expiry succeeds");
   if ((await afterExpiry.json()).items.length !== 0) throw new Error("expired item remains listed");
