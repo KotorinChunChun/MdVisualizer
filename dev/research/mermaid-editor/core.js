@@ -83,7 +83,7 @@ function eol(source){return source.includes('\r\n')?'\r\n':'\n';}
 function ensureNetwork(model){if(!networkTypes.includes(model.type))throw Error('この図種には接続操作がありません');if(flowTypes.includes(model.type)&&!model.safe)throw Error('複合記法を含むため、この操作はコード側で行ってください');}
 export function edgeCode(type,e){const label=e.label||'';if(flowTypes.includes(type))return `${e.from} ${e.arrow||'-->'}${label?`|${label}|`:''} ${e.to}`;if(['sequence','state','class','er'].includes(type))return `${e.from} ${e.arrow||(type==='er'?'||--o{':type==='sequence'?'->>':'-->')} ${e.to}${label||['sequence','er'].includes(type)?' : '+(label||'接続'):''}`;if(type==='architecture')return `${e.from}:${e.fromPort||'R'} ${e.arrow||'--'} ${e.toPort||'L'}:${e.to}`;if(type==='c4')return `Rel(${e.from}, ${e.to}, "${label||'接続'}")`;if(type==='requirement')return `${e.from} - ${e.arrow||'satisfies'} -> ${e.to}`;if(type==='sankey')return `"${e.from}","${e.to}",${Number(label)||10}`;if(type==='wardley')return `"${e.from}" -> "${e.to}"`;throw Error('接続を作成できません');}
 export function connect(source,from,to,arrow,label=''){const m=parseModel(source);ensureNetwork(m);if(m.edges.some(e=>e.from===from&&e.to===to&&e.label===label))return source;return source+eol(source)+'    '+edgeCode(m.type,{from,to,arrow,label});}
-function rewriteEdges(model,nextEdges,removed=new Set()){
+export function rewriteEdges(model,nextEdges,removed=new Set()){
  const changes=[],nl=eol(model.source),touched=new Set(model.edges.map(e=>e.line));
  for(const line of model.lines){if(!touched.has(line.line))continue;
   const original=model.edges.filter(e=>e.line===line.line),replacement=nextEdges.filter(e=>e.line===line.line);

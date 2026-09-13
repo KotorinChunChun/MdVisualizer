@@ -8,3 +8,5 @@
 .disabled-field{opacity:.4}
 
 .preview-pane .pane-title{height:auto;min-height:52px;gap:12px;flex-wrap:wrap;padding-block:8px}.preview-tools{display:flex;flex-wrap:wrap;gap:6px}.preview-pane .pane-title button{font-size:13px;padding:7px 10px;font-weight:500}#form-fields:has(input[name=newId]){grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}#form-fields:has(input[name=newId])>*{grid-column:1/-1}#form-fields:has(input[name=newId])>label:first-child{grid-column:1;grid-row:1}#form-fields:has(input[name=newId])>label:nth-child(2){grid-column:2;grid-row:1}
+
+.toolbar button{font-size:13px;padding:7px 10px}.registration-preview{min-height:140px;max-height:260px;overflow:auto;border:1px solid #dce2ee;border-radius:8px;padding:12px;background:#fafbfd;display:grid;place-items:center}.registration-preview svg{max-width:100%!important;max-height:235px;height:auto}.color-field button{margin-left:auto}.color-field button.active{background:#e8efff;color:#345cc0}.color-field input[type=hidden]{display:none}

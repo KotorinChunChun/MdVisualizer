@@ -1,4 +1,4 @@
-import {parseModel,deleteNodes,connect,updateEdge,moveIntoGroup,editGroup,renameFlowIds,edgeCode,patch} from './core.js';
+import {parseModel,deleteNodes,connect,updateEdge,moveIntoGroup,editGroup,renameFlowIds,edgeCode,patch,rewriteEdges} from './core.js';
 
 function flow(source){const m=parseModel(source);if(m.type!=='flowchart'||!m.safe)throw Error('この操作は基本記法のフローチャートで利用できます');return m;}
 function definition(m,n){return n.defined?m.source.slice(n.from,n.to)+(m.source.slice(n.to).match(/^:::[\w-]+/)?.[0]||''):`${n.id}["${n.label.replaceAll('"','#quot;')}"]`;}
@@ -40,3 +40,19 @@ export function setTheme(source,theme,variables={}){if(!['default','neutral','da
 function uniqueClasses(source,fragment){const classes=[...fragment.matchAll(/^\s*classDef\s+(\w+)\s/gm)].map(m=>m[1]);let i=1;for(const name of classes){while(new RegExp('\\bCopyClass'+i+'\\b').test(source+fragment))i++;const next='CopyClass'+i++;fragment=fragment.split('\n').map(line=>line.replace(/^(\s*classDef\s+)(\w+)/,(_,head,id)=>head+(id===name?next:id)).replace(/^(\s*class\s+\S+\s+)(.*)/,(_,head,list)=>head+list.split(',').map(id=>id.trim()===name?next:id).join(','))).join('\n');const changes=[];for(const n of flow(fragment).nodes)for(const ref of n.refs){const match=fragment.slice(ref.to).match(/^:::(\w+)/);if(match?.[1]===name)changes.push({from:ref.to+3,to:ref.to+3+name.length,text:next});}fragment=patch(fragment,changes);}return fragment;}
 
 function ownDirection(model,group){for(const line of model.lines){if(line.from<=group.headerTo||line.from>=group.footerFrom)continue;if(model.groups.some(child=>child.id!==group.id&&child.from>group.from&&child.to<group.to&&line.from>=child.from&&line.from<=child.to))continue;const match=/^\s*direction\s+(LR|RL|TD|TB|BT)\s*$/.exec(line.text);if(match)return match[1];}}
+
+export function resetItemColor(source,id,property){
+ flow(source);if(!['fill','stroke','color'].includes(property))throw Error('不明な色の設定です');
+ const strip=text=>text.split(',').filter(p=>p.split(':')[0].trim()!==property).join(',');
+ const lines=source.split('\n'),result=[],variants=new Map();
+ const variant=name=>{if(variants.has(name))return variants.get(name);const def=lines.find(l=>new RegExp('^\\s*classDef\\s+'+name+'\\s+').test(l));if(!def)return name;const props=def.replace(/^\s*classDef\s+\S+\s+/,'');if(strip(props)===props)return name;let i=1;while(source.includes('DefaultColor'+i)||[...variants.values()].includes('DefaultColor'+i))i++;const next='DefaultColor'+i;variants.set(name,next);result.push('    classDef '+next+' '+(strip(props)||'opacity:1'));return next;};
+ for(const line of lines){const m=/^(\s*)(style|class)\s+(\S+)\s+(.+)$/.exec(line);if(m&&m[3].split(',').includes(id)){const others=m[3].split(',').filter(x=>x!==id);if(others.length)result.push(`${m[1]}${m[2]} ${others.join(',')} ${m[4]}`);const props=m[2]==='style'?strip(m[4]):m[4].split(',').map(n=>variant(n.trim())).join(',');if(props)result.push(`${m[1]}${m[2]} ${id} ${props}`);}else result.push(line);}
+ let output=result.join('\n');const m=flow(output),n=m.nodes.find(n=>n.id===id),changes=[];for(const ref of n?.refs||[]){const cls=output.slice(ref.to).match(/^:::(\w+)/);if(cls){const next=variant(cls[1]);if(next!==cls[1])changes.push({from:ref.to+3,to:ref.to+3+cls[1].length,text:next});}}
+ // inline class用の派生定義は末尾に追加する。
+ const definitions=result.slice(output.split('\n').length);output=patch(output,changes);if(definitions.length)output+='\n'+definitions.join('\n');return output;
+}
+export function transferFlow(source,id,target,after=false){
+ const original=flow(source);if(id===target)return source;if(!original.nodes.some(n=>n.id===target))throw Error('移動先がありません');
+ let result=moveToRoot(source,[id]),m=flow(result);const edges=m.edges.map(e=>after&&e.from===target?{...e,from:id}:!after&&e.to===target?{...e,to:id}:e);
+ edges.push({from:after?target:id,to:after?id:target,arrow:'-->',label:'',line:-1});result=rewriteEdges(m,edges);const parent=original.nodes.find(n=>n.id===target).group;if(parent)result=moveIntoGroup(result,[id],parent);return result;
+}
