@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./codexImageEdit.css";
 
 export type ImageSaveMode = "overwrite" | "new" | "archive";
 export interface CodexImageEditResult { base64: string; mediaType: "image/png"; filename: string }
 
-export function CodexImageEdit({ documentPath, source, originalBase64, initialInstruction = "", instruction: suppliedInstruction, onInstructionChange, onReferenceChange }: {
+export function CodexImageEdit({ documentPath, source, originalBase64, initialInstruction = "", instruction: suppliedInstruction, onInstructionChange, onReferenceChange, onGenerated, onBusyChange, disabled = false }: {
   documentPath: string; source: string; originalBase64: string; initialInstruction?: string;
   onReferenceChange: (source: string, newSource: string) => boolean | Promise<boolean>;
   instruction?: string; onInstructionChange?: (value: string) => void;
+  onGenerated?: (instruction: string) => void;
+  onBusyChange?: (busy: boolean) => void;
+  disabled?: boolean;
 }) {
   const [localInstruction, setLocalInstruction] = useState("");
   const instruction = suppliedInstruction ?? localInstruction;
@@ -16,6 +19,7 @@ export function CodexImageEdit({ documentPath, source, originalBase64, initialIn
   const [result, setResult] = useState<CodexImageEditResult | null>(null);
   const [layout, setLayout] = useState<"horizontal" | "vertical">("horizontal");
   const [busy, setBusy] = useState(false);
+  useEffect(() => { onBusyChange?.(busy); return () => onBusyChange?.(false); }, [busy, onBusyChange]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [mode, setMode] = useState<ImageSaveMode>("new");
@@ -36,7 +40,7 @@ export function CodexImageEdit({ documentPath, source, originalBase64, initialIn
   }, [source, originalBase64]);
 
   async function edit() {
-    if (!instruction.trim() || busy) return;
+    if (!instruction.trim() || busy || disabled) return;
     const id = crypto.randomUUID();
     const token = generation.current;
     active.current = id;
@@ -45,9 +49,29 @@ export function CodexImageEdit({ documentPath, source, originalBase64, initialIn
       const value = await invoke<CodexImageEditResult>("codex_edit_image", {
         request: { id, instruction: [initialInstruction, instruction].filter(Boolean).join("\n\n"), documentPath, source, image: { base64: originalBase64 } },
       });
-      if (token === generation.current && active.current === id) { setResult(value); setFilename(value.filename); }
+      if (token === generation.current && active.current === id) {
+        setResult(value); setFilename(value.filename);
+        onGenerated?.(instruction);
+      }
     } catch (cause) { if (token === generation.current) setError(String(cause)); }
     finally { if (active.current === id) { active.current = null; setBusy(false); } }
+  }
+
+  function stop() {
+    const id = active.current;
+    if (!id) return;
+    active.current = null;
+    generation.current++;
+    setBusy(false);
+    setSaving(false);
+    void invoke("codex_cancel_image", { id }).catch(cause => setError(String(cause)));
+  }
+
+  function handleInstructionKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (!event.nativeEvent.isComposing && event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      void edit();
+    }
   }
 
   async function save() {
@@ -79,9 +103,14 @@ export function CodexImageEdit({ documentPath, source, originalBase64, initialIn
   }
 
   return <section className="codex-image-edit" aria-label="Codexで画像を編集">
-    <label>編集指示<textarea value={instruction} disabled={busy} onChange={event => setInstruction(event.target.value)} placeholder="例: 背景を白にして文字を読みやすくしてください" /></label>
-    <button type="button" disabled={busy || !instruction.trim()} onClick={() => void edit()}>{busy ? saving ? "画像を保存中…" : "画像を編集中…" : "画像編集を依頼"}</button>
-    {busy && !saving && <button type="button" onClick={() => { if (active.current) void invoke("codex_cancel_image", { id: active.current }).catch(cause => setError(String(cause))); }}>停止</button>}
+    <div className="codex-image-edit__prompt">
+      <label>編集指示<textarea rows={7} value={instruction} disabled={busy || disabled} onChange={event => setInstruction(event.target.value)} onKeyDown={handleInstructionKeyDown} placeholder="例: 背景を白にして文字を読みやすくしてください" /></label>
+      <div className="codex-image-edit__send-actions">
+        <button type="button" aria-label="画像編集を依頼" disabled={disabled || busy || !instruction.trim()} onClick={() => void edit()}>{busy ? saving ? "保存中…" : "送信中…" : "送信"}<small>（Ctrl+Enter）</small></button>
+        <button type="button" disabled={!busy || saving} onClick={stop}>停止</button>
+      </div>
+    </div>
+    {busy && <div className="codex-image-edit__sending" role="status"><span className="codex-image-edit__spinner" aria-hidden="true" />{saving ? "画像を保存中…" : "送信中・画像生成を待っています…"}</div>}
     {result && <>
       <div className="codex-image-edit__layout"><button type="button" aria-pressed={layout === "horizontal"} onClick={() => setLayout("horizontal")}>左右配置</button><button type="button" aria-pressed={layout === "vertical"} onClick={() => setLayout("vertical")}>上下配置</button></div>
       <div className={`codex-image-edit__comparison codex-image-edit__comparison--${layout}`}><figure><figcaption>変更前</figcaption><img src={original} alt="変更前の画像" /></figure><figure><figcaption>変更後</figcaption><img src={`data:image/png;base64,${result.base64}`} alt="変更後の画像" /></figure></div>

@@ -2,10 +2,31 @@
 .ai-document-layout > .document-workspace { flex: 1; min-width: 0; }
 .codex-panel { --codex-panel-width: 420px; position: relative; flex: 0 0 var(--codex-panel-width); min-width: 300px; max-width: min(760px, calc(100vw - 260px)); min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-primary); font-size: .9rem; }
 .codex-panel[hidden] { display: none; }
-.codex-panel > header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border-color); }
+.codex-panel > header { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--border-color); }
 .codex-panel__resize { position: absolute; z-index: 2; top: 0; bottom: 0; left: -5px; width: 9px; cursor: col-resize; touch-action: none; }
 .codex-panel__resize:focus-visible { outline: 2px solid var(--accent-color); outline-offset: -2px; }
-.codex-panel__body { overflow: auto; padding: 12px; min-height: 0; }
+.codex-panel__body { display: grid; flex: 1; grid-template-rows: minmax(70px, var(--codex-chat-ratio, 45%)) 9px minmax(0, 1fr); overflow: hidden; padding: 0 12px 12px; min-height: 0; }
+.codex-panel__conversation { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.codex-panel__conversation h2 { flex: 0 0 auto; font-size: .95rem; margin: 10px 0 6px; }
+.codex-panel__empty { color: var(--text-secondary); }
+.codex-panel__chat-resize { height: 9px; cursor: row-resize; touch-action: none; background: linear-gradient(transparent 3px, var(--border-color) 3px, var(--border-color) 6px, transparent 6px); }
+.codex-panel__chat-resize:hover { background-color: var(--btn-hover); }
+.codex-panel__composer { min-height: 0; overflow: auto; padding: 8px 2px 2px; }
+.codex-panel__prompt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
+.codex-panel__prompt textarea { min-height: 154px; resize: vertical; line-height: 1.5; }
+.codex-panel__send-actions { display: flex; flex-direction: column; padding-top: 20px; }
+.codex-panel__send-actions small { display: block; white-space: nowrap; font-size: .7rem; }
+.codex-panel__send-actions button:first-child { min-height: 60px; }
+.codex-panel select { width: 100%; min-width: 0; padding: 6px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; }
+.codex-panel .codex-panel__tool { margin: 10px 0; gap: 6px; }
+.codex-panel__tool > label { display: grid; grid-template-columns: 4em minmax(0, 1fr); align-items: center; gap: 6px; }
+.codex-panel__tool-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.codex-panel .codex-panel__file-input { display: none !important; }
+.codex-panel__text-target { margin-top: 8px; }
+.codex-panel .codex-panel__sending { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; margin: 0 0 8px; border: 1px solid var(--accent-color); background: var(--panel-bg); }
+.codex-panel__spinner { display: inline-block; flex: 0 0 auto; width: 14px; height: 14px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: codex-sending 1s linear infinite; }
+@keyframes codex-sending { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .codex-panel__spinner { animation: none; } }
 .codex-panel details { margin: 8px 0; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: color-mix(in srgb, var(--bg-color) 72%, var(--panel-bg)); }
 .codex-panel details > summary { cursor: pointer; font-weight: 600; }
 .codex-panel details > :not(summary) { margin-left: 8px; }
@@ -18,7 +39,8 @@
 .codex-panel pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; font-size: .85rem; }
 .codex-panel p { overflow-wrap: anywhere; line-height: 1.5; }
 .codex-panel__actions { display: flex; flex-wrap: wrap; }
-.codex-panel__chat { max-height: 340px; overflow: auto; }
+.codex-panel__chat { flex: 1; min-height: 0; overflow: auto; }
+.codex-panel__chat .codex-message pre { max-height: none; overflow: visible; }
 .codex-panel__scope { margin: 10px 0; padding: 10px; border-left: 3px solid var(--accent-color); border-radius: 5px; background: color-mix(in srgb, var(--accent-color) 8%, var(--bg-color)); }
 .codex-panel__scope p { margin: 5px 0 0; }
 .codex-panel__scope ul { display: flex; gap: .5rem; flex-wrap: wrap; list-style: none; margin: .5rem 0; padding: 0; }

@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cancelCodex, generateCodex, listCodexLogs, setCodexLogLimit } from "./api";
@@ -31,6 +31,10 @@ vi.mock("./sessions", async (importOriginal) => {
                 sessionMock.sessions = [];
             return { sessions: sessionMock.sessions, retentionDays };
         }),
+        deleteCodexSession: vi.fn(async (id: string) => {
+            sessionMock.sessions = sessionMock.sessions.filter(item => item.id !== id);
+            return { sessions: sessionMock.sessions, retentionDays: sessionMock.retentionDays };
+        }),
     };
 });
 vi.mock("./imageTranscription", () => ({
@@ -61,6 +65,7 @@ function mount(options: {
 }
 async function send(text = "短くして") {
     await screen.findByLabelText("指示");
+    await waitFor(() => expect(screen.getByLabelText("指示")).not.toBeDisabled());
     fireEvent.change(screen.getByLabelText("指示"), { target: { value: text } });
     fireEvent.click(screen.getByRole("button", { name: "送信（Ctrl+Enter）" }));
 }
@@ -76,6 +81,51 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe("Codexパネル", () => {
+    it("指示の直後にツールとモデルを置き、対象欄はその下、ファイル入力は隠す", async () => {
+        mount();
+        const prompt = await screen.findByLabelText("指示");
+        const tool = screen.getByLabelText("ツール");
+        const model = screen.getByLabelText("モデル");
+        const scope = screen.getByLabelText("今回の対象");
+        expect(prompt.compareDocumentPosition(tool) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(tool.compareDocumentPosition(model) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(model.compareDocumentPosition(scope) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(screen.getByLabelText("添付するPNG画像")).toHaveAttribute("hidden");
+        expect(screen.getByRole("heading", { name: "会話ログ" })).toBeVisible();
+        expect(prompt).toHaveAttribute("rows", "7");
+        const separator = screen.getByRole("separator", { name: "会話ログと指示文の高さを変更" });
+        fireEvent.keyDown(separator, { key: "ArrowDown" });
+        expect(separator).toHaveAttribute("aria-valuenow", "50");
+        fireEvent.keyDown(separator, { key: "Home" });
+        expect(separator).toHaveAttribute("aria-valuenow", "20");
+    });
+    it("送信済み対象テキストを履歴に残し、次の取り込みに別の番号を付ける", async () => {
+        vi.mocked(generateCodex).mockResolvedValue({ answer: "説明しました", replacement: null });
+        mount({ target: { ...snapshot, editMode: "question" } });
+        await send("対象テキスト1を説明して");
+        await waitFor(() => expect(screen.getByLabelText("指示")).toHaveValue(""));
+        expect(screen.getByRole("log")).toHaveTextContent("対象テキスト1: 未保存");
+        expect(within(screen.getByLabelText("今回の対象")).queryByText("対象テキスト1")).not.toBeInTheDocument();
+        expect(vi.mocked(generateCodex).mock.calls[0][0].instruction).toContain("今回の対象テキスト1");
+        fireEvent.click(screen.getByRole("button", { name: "対象テキストを取り込む" }));
+        expect(within(screen.getByLabelText("今回の対象")).getByText("対象テキスト2")).toBeVisible();
+        await send("対象テキスト2について");
+        await waitFor(() => expect(generateCodex).toHaveBeenCalledTimes(2));
+        expect(vi.mocked(generateCodex).mock.calls[1][0].history[0].text).toContain("対象テキスト1:\n未保存");
+    });
+    it("停止時は送信中表示を解除し下書きと対象を保持する", async () => {
+        let resolve!: (reply: CodexReply) => void;
+        vi.mocked(generateCodex).mockImplementation(() => new Promise(done => { resolve = done; }));
+        mount({ target: { ...snapshot, editMode: "question" } });
+        await send("途中で止める");
+        expect(screen.getByRole("status")).toHaveTextContent("送信中");
+        fireEvent.click(screen.getByRole("button", { name: "停止" }));
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(screen.getByLabelText("指示")).toHaveValue("途中で止める");
+        expect(screen.getByText("対象テキスト1")).toBeVisible();
+        await act(async () => resolve({ answer: "遅延回答", replacement: null }));
+        expect(screen.getByRole("log")).not.toHaveTextContent("遅延回答");
+    });
     it("テキストを取り込むと選択範囲だけを許可し、選択を解除すると全体へ戻す", async () => {
         const view = mount();
         fireEvent.click(await screen.findByRole("button", { name: "対象テキストを取り込む" }));
@@ -101,18 +151,19 @@ describe("Codexパネル", () => {
         mount({ target: { ...snapshot, imageSource: "image.png", editMode: "question" } });
         await screen.findByLabelText("指示");
         fireEvent.click(screen.getByRole("button", { name: "現在の画像を追加" }));
-        await waitFor(() => expect(screen.getByLabelText("添付画像")).toHaveTextContent("画像1"));
+        await waitFor(() => expect(screen.getByLabelText("添付画像")).toHaveTextContent("添付ファイル1"));
         await send("画像を説明して");
-        await waitFor(() => expect(generateCodex).toHaveBeenCalledWith(expect.objectContaining({ images: [{ base64: "aW1hZ2U=" }], instruction: expect.stringContaining("1枚目=画像1") })));
-        expect(screen.getByRole("log")).toHaveTextContent("画像1");
+        await waitFor(() => expect(generateCodex).toHaveBeenCalledWith(expect.objectContaining({ images: [{ base64: "aW1hZ2U=" }], instruction: expect.stringContaining("1枚目=添付ファイル1") })));
+        expect(screen.getByRole("log")).toHaveTextContent("添付ファイル1");
     });
-    it("成功時は指示だけを消し、対象テキストと画像は残す", async () => {
+    it("成功時は指示と対象を入力側から外し、画像を履歴に残す", async () => {
         mount({ target: { ...snapshot, imageSource: "image.png", editMode: "question" } });
         fireEvent.click(await screen.findByRole("button", { name: "現在の画像を追加" }));
         await waitFor(() => expect(screen.getByLabelText("添付画像")).toBeInTheDocument());
         await send("説明して");
         await waitFor(() => expect(screen.getByLabelText("指示")).toHaveValue(""));
-        expect(screen.getByLabelText("添付画像")).toHaveTextContent("画像1");
+        expect(screen.queryByLabelText("添付画像")).not.toBeInTheDocument();
+        expect(screen.getByRole("log")).toHaveTextContent("添付ファイル1");
     });
     it("送信失敗時は下書きと対象を保持する", async () => {
         vi.mocked(generateCodex).mockRejectedValue("CLI未導入");
@@ -120,7 +171,7 @@ describe("Codexパネル", () => {
         await send();
         await screen.findByRole("alert");
         expect(screen.getByLabelText("指示")).toHaveValue("短くして");
-        expect(screen.getByText("対象テキスト")).toBeVisible();
+        expect(screen.getByText("対象テキスト1")).toBeVisible();
     });
     it("変更案は採用確認を経て本文へ反映する", async () => {
         const { apply } = mount();
@@ -164,5 +215,45 @@ describe("Codexパネル", () => {
         fireEvent.change(input, { target: { value: "0" } });
         fireEvent.blur(input);
         await waitFor(() => expect(sessionMock.retentionDays).toBe(0));
+    });
+    it("現在の会話を履歴から削除すると入力を空にし、遅延保存や終了で復活させない", async () => {
+        const view = mount();
+        fireEvent.change(await screen.findByLabelText("指示"), { target: { value: "削除する下書き" } });
+        await waitFor(() => expect(sessionMock.sessions.some(item => item.draft.instruction === "削除する下書き")).toBe(true));
+        const deletedId = sessionMock.sessions[0].id;
+        fireEvent.click(screen.getByRole("button", { name: /会話履歴/ }));
+        fireEvent.click(await screen.findByRole("button", { name: "この会話を削除" }));
+        await waitFor(() => expect(sessionMock.sessions.some(item => item.id === deletedId)).toBe(false));
+        fireEvent.keyDown(window, { key: "Escape" });
+        expect(screen.queryByLabelText("Codex会話履歴")).not.toBeInTheDocument();
+        expect(screen.getByLabelText("指示")).toHaveValue("");
+        view.unmount();
+        await act(async () => {});
+        expect(sessionMock.sessions).toEqual([]);
+    });
+    it("入力した下書きを空に戻しても古い自動保存を残さない", async () => {
+        const view = mount();
+        const instruction = await screen.findByLabelText("指示");
+        await waitFor(() => expect(instruction).not.toBeDisabled());
+        fireEvent.change(instruction, { target: { value: "消す予定の入力" } });
+        fireEvent.change(instruction, { target: { value: "" } });
+        await waitFor(() => expect(sessionMock.sessions).toHaveLength(1));
+        expect(sessionMock.sessions[0].draft.instruction).toBe("");
+        view.unmount();
+        await act(async () => {});
+        expect(sessionMock.sessions[0].draft.instruction).toBe("");
+    });
+    it("送信後の次の質問は過去画像を新しい添付として登録し直さない", async () => {
+        vi.mocked(generateCodex).mockResolvedValue({ answer: "画像を説明しました", replacement: null });
+        mount({ target: { ...snapshot, imageSource: "image.png", editMode: "question" } });
+        await screen.findByLabelText("添付画像");
+        await send("添付ファイル1について");
+        await waitFor(() => expect(screen.getByLabelText("指示")).toHaveValue(""));
+        await send("さきほどの画像の続きです");
+        await waitFor(() => expect(generateCodex).toHaveBeenCalledTimes(2));
+        expect(vi.mocked(generateCodex).mock.calls[1][0].instruction).toContain("今回の添付: なし");
+        expect(vi.mocked(generateCodex).mock.calls[1][0].text).toBe("");
+        await waitFor(() => expect(screen.getByLabelText("指示")).toHaveValue(""));
+        expect(screen.queryByLabelText("添付画像")).not.toBeInTheDocument();
     });
 });

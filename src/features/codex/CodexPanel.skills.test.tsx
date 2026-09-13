@@ -5,6 +5,8 @@ import { CodexPanel } from "./CodexPanel";
 import { generateCodex, listCodexLogs } from "./api";
 import { loadSettings } from "../../lib/commands";
 import type { CodexConversation } from "./sessions";
+import { invoke } from "@tauri-apps/api/core";
+vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
 const store = vi.hoisted(() => ({ sessions: [] as CodexConversation[] }));
 
@@ -54,6 +56,7 @@ beforeEach(() => {
   vi.mocked(loadSettings).mockResolvedValue({ codex: { enabled: true, model: "gpt-5.6-luna" } });
   vi.mocked(listCodexLogs).mockResolvedValue({ entries: [], limit: 20 });
   vi.mocked(generateCodex).mockResolvedValue({ answer: "回答", replacement: null });
+  vi.mocked(invoke).mockResolvedValue({ base64: "bmV3cG5n", mediaType: "image/png", filename: "edited.png" });
 });
 afterEach(cleanup);
 
@@ -94,5 +97,17 @@ describe("CodexPanel の既定スキル入力", () => {
     mount("explain-image", "new");
     await screen.findByLabelText("指示");
     expect(screen.queryByText("前の質問")).not.toBeInTheDocument();
+  });
+  it("PNG生成成功後に入力添付を外して履歴へ残し、採用比較は維持する", async () => {
+    render(<CodexPanel open onClose={vi.fn()} documentName="image.md" documentText="![x](image.png)" available consultationTarget={{ documentId: "png", content: "![x](image.png)", from: 0, to: 15, imageSource: "image.png", skillId: "edit-image", conversationAction: "new" }} getSnapshot={() => ({ documentId: "png", content: "![x](image.png)", from: 0, to: 15 })} applyProposal={vi.fn(() => true)} />);
+    const instruction = await screen.findByRole("textbox", { name: "編集指示" });
+    fireEvent.change(instruction, { target: { value: "添付ファイル1を青くして" } });
+    fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
+    await screen.findByText("変更後");
+    expect(instruction).toHaveValue("");
+    expect(screen.queryByLabelText("添付画像")).not.toBeInTheDocument();
+    expect(screen.getByRole("log")).toHaveTextContent("添付ファイル1");
+    expect(screen.getByRole("button", { name: "この画像を採用" })).toBeVisible();
+    expect(invoke).toHaveBeenCalledWith("codex_edit_image", expect.objectContaining({ request: expect.objectContaining({ instruction: expect.stringContaining("今回の画像は添付ファイル1") }) }));
   });
 });

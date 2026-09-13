@@ -91,4 +91,33 @@ describe("CodexImageEdit", () => {
     resolveEdit({ base64: "late", mediaType: "image/png", filename: "late.png" });
     await waitFor(() => expect(screen.queryByText("変更後")).toBeNull());
   });
+
+  it("Ctrl+Enterで送信し、生成成功時に指示を一度だけ通知する", async () => {
+    const onGenerated = vi.fn();
+    vi.mocked(invoke).mockResolvedValue({ base64: "new", mediaType: "image/png", filename: "edited.png" });
+    render(<CodexImageEdit {...baseProps()} onGenerated={onGenerated} />);
+    const input = screen.getByRole("textbox", { name: "編集指示" });
+    fireEvent.change(input, { target: { value: "青くする" } });
+    fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
+    await screen.findByText("変更後");
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith("codex_edit_image", expect.anything());
+    expect(onGenerated).toHaveBeenCalledTimes(1);
+    expect(onGenerated).toHaveBeenCalledWith("青くする");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("送信中は状態表示と停止を表示し、停止後の結果を無視する", async () => {
+    let resolveEdit!: (value: unknown) => void;
+    vi.mocked(invoke).mockImplementation((command) => command === "codex_edit_image"
+      ? new Promise(resolve => { resolveEdit = resolve; })
+      : Promise.resolve(undefined));
+    render(<CodexImageEdit {...baseProps()} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "編集指示" }), { target: { value: "青くする" } });
+    fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
+    expect(screen.getByRole("status")).toHaveTextContent("送信中");
+    fireEvent.click(screen.getByRole("button", { name: "停止" }));
+    expect(screen.queryByRole("status")).toBeNull();
+    resolveEdit({ base64: "late", mediaType: "image/png", filename: "late.png" });
+    await waitFor(() => expect(screen.queryByText("変更後")).toBeNull());
+  });
 });
