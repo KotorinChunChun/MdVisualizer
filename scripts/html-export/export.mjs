@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { access } from 'node:fs/promises';
 import { build } from 'vite';
 import { chromium } from 'playwright-core';
-import { boundedFile, createAssetReader, decodeText, fetchBytes, LIMITS, saveHtml } from './io.mjs';
+import { boundedFile, createAssetReader, decodeText, fetchBytes, LIMITS, saveHtml, validateDestination } from './io.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 let bundlePromise;
@@ -28,6 +28,7 @@ export async function launchBrowser(executablePath) {
 export async function exportHtml({ markdown, baseDir = process.cwd(), output, title = '文書', theme = 'dark', css = '', force = false, allowRemote = false, drawioViewer, browserPath, signal, protectedPaths = new Set(), onProgress = () => {} }) {
   if (!['dark', 'light', 'github', 'solarized', 'nord'].includes(theme)) throw new Error('非対応のテーマです。');
   if (Buffer.byteLength(markdown) > LIMITS.document) throw new Error('Markdownの容量上限を超えました。');
+  await validateDestination(output, { force, protectedPaths });
   const timeout = AbortSignal.timeout(LIMITS.timeout);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
   combined.throwIfAborted();
@@ -61,7 +62,8 @@ export async function exportHtml({ markdown, baseDir = process.cwd(), output, ti
     if (!await page.evaluate(() => Boolean(window.__htmlExport))) throw new Error(`描画エンジンを初期化できません: ${pageErrors.join('; ')}`);
     onProgress('本文・図・画像を描画しています');
     const statistics = await page.evaluate(options => window.__htmlExport.prepare(options), { markdown, title, theme, css });
-    const diagrams = await page.locator('[data-export-raster]').all();
+    // 置換で一覧の添字が変わるため、各図の要素自体を固定しておく。
+    const diagrams = await page.locator('[data-export-raster]').elementHandles();
     for (const [index, diagram] of diagrams.entries()) {
       combined.throwIfAborted();
       onProgress(`図を画像化しています (${index + 1}/${diagrams.length})`);

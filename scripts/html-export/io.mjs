@@ -95,7 +95,7 @@ export function createAssetReader({ baseDir, allowRemote = false, signal }) {
   return { read, protectedPaths };
 }
 
-export async function saveHtml(filename, html, { force = false, protectedPaths = new Set(), signal } = {}) {
+export async function validateDestination(filename, { force = false, protectedPaths = new Set() } = {}) {
   if (!/\.html?$/i.test(filename)) throw new Error('出力先の拡張子は.htmlまたは.htmを指定してください。');
   const parent = await realpath(path.dirname(path.resolve(filename)));
   const target = path.join(parent, path.basename(filename));
@@ -103,6 +103,12 @@ export async function saveHtml(filename, html, { force = false, protectedPaths =
   try { existing = await realpath(target); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (protectedPaths.has((existing ?? target).toLowerCase())) throw new Error('入力文書や参照資産を上書きできません。');
   if (existing && !force) throw new Error('出力先が存在します。上書きする場合は --force を指定してください。');
+  return target;
+}
+
+export async function saveHtml(filename, html, { force = false, protectedPaths = new Set(), signal } = {}) {
+  const target = await validateDestination(filename, { force, protectedPaths });
+  const parent = path.dirname(target);
   if (Buffer.byteLength(html, 'utf8') > LIMITS.total) throw new Error('HTMLの容量上限を超えました。');
   signal?.throwIfAborted();
   const temporary = path.join(parent, `.html-export-${randomUUID()}.tmp`);

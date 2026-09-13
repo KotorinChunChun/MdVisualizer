@@ -37,18 +37,25 @@ try {
     const controller = new AbortController();
     process.once('SIGINT', () => controller.abort());
     const input = positionals[0] === '-' ? null : await realpath(positionals[0]);
+    const protectedPaths = new Set(input ? [input.toLowerCase()] : []);
+    for (const file of [values.css, values['drawio-viewer']]) if (file) protectedPaths.add((await realpath(file)).toLowerCase());
     let bytes;
     if (input) bytes = await boundedFile(input, LIMITS.document);
     else {
       const chunks = []; let size = 0;
-      for await (const chunk of process.stdin) { size += chunk.length; if (size > LIMITS.document) throw new Error('標準入力の容量上限を超えました。'); chunks.push(chunk); }
+      const abortInput = () => process.stdin.destroy(new Error('出力を中止しました。'));
+      controller.signal.throwIfAborted();
+      controller.signal.addEventListener('abort', abortInput, { once: true });
+      try {
+        for await (const chunk of process.stdin) { size += chunk.length; if (size > LIMITS.document) throw new Error('標準入力の容量上限を超えました。'); chunks.push(chunk); }
+      } finally { controller.signal.removeEventListener('abort', abortInput); }
       bytes = Buffer.concat(chunks);
     }
     const result = await exportHtml({ markdown: decodeText(bytes), baseDir: input ? path.dirname(input) : values['base-dir'] ?? process.cwd(),
       output: path.resolve(values.output), title: values.title ?? (input ? path.basename(input, path.extname(input)) : '無題'),
       theme: values.theme, css: values.css ? decodeText(await boundedFile(values.css, LIMITS.document)) : '', force: values.force,
       allowRemote: values['allow-remote'], drawioViewer: values['drawio-viewer'], browserPath: values.browser,
-      protectedPaths: new Set(input ? [input.toLowerCase()] : []), signal: controller.signal, onProgress: message => console.error(message),
+      protectedPaths, signal: controller.signal, onProgress: message => console.error(message),
     });
     console.log(JSON.stringify(result, null, 2));
   }

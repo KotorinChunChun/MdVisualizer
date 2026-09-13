@@ -35,8 +35,8 @@ figure{margin:1em 0}figcaption{font-size:.9em}pre{padding:16px;overflow:auto}cod
 blockquote{margin:1em 0;padding-left:1em;border-left:4px solid}h1,h2,h3,h4,h5,h6{line-height:1.3;margin:1em 0 .5em}
 p,ul,ol{margin:.7em 0}ul,ol{padding-left:2em}hr{border:0;border-top:1px solid}
 @media(max-width:600px){body{padding:12px}}`;
-const svgTags = new Set('svg g path rect circle ellipse line polyline polygon text tspan defs use linearGradient radialGradient stop clipPath mask pattern title desc marker image foreignObject switch symbol filter feGaussianBlur feOffset feFlood feComposite feMerge feMergeNode feColorMatrix feBlend'.toLowerCase().split(' '));
-const htmlTags = new Set('div span p b strong i em u s br sub sup ul ol li table tbody thead tr td th code pre'.split(' '));
+const svgTags = new Set('svg g path rect circle ellipse line polyline polygon text tspan defs use linearGradient radialGradient stop clipPath mask pattern title desc marker image foreignObject switch symbol filter feGaussianBlur feOffset feFlood feComposite feMerge feMergeNode feColorMatrix feBlend feComponentTransfer feFuncA feFuncB feFuncG feFuncR feConvolveMatrix feDiffuseLighting feDisplacementMap feDistantLight feDropShadow feImage feMorphology fePointLight feSpecularLighting feSpotLight feTile feTurbulence'.toLowerCase().split(' '));
+const htmlTags = new Set('div span p b strong i em u s br sub sup ul ol li table tbody thead tr td th code pre img font body h1 h2 h3 h4 h5 h6'.split(' '));
 const styleProperties = ['color', 'background-color', 'font-family', 'font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing', 'text-align', 'text-decoration', 'white-space', 'vertical-align', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-radius', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'margin-top', 'margin-bottom', 'list-style-type'];
 let title = '', theme = 'dark';
 let host: HTMLElement;
@@ -60,7 +60,8 @@ function previewCss() {
   const selected: string[] = [];
   for (const rule of sheet.cssRules) {
     if (!(rule instanceof CSSStyleRule)) continue;
-    const selectors = rule.selectorText.split(',').map(s => s.trim()).filter(s => s.startsWith(':root') || s.includes('.markdown-body') || s.includes('.hljs'));
+    const selectors = rule.selectorText.split(',').map(s => s.trim()).filter(s => s.startsWith(':root') || s.includes('.markdown-body') || s.includes('.hljs') || s.includes('[data-syntax-theme'))
+      .map(s => s.replaceAll('.code-block', '.markdown-body'));
     if (selectors.length) selected.push(`${selectors.join(',')}{${rule.style.cssText}}`);
   }
   return selected.join('\n');
@@ -84,7 +85,18 @@ async function imageElement(data: string, alt: string) {
   return image;
 }
 
-async function sanitizeSvg(source: string, base?: string) {
+function hasExternalCssUrl(css: string) {
+  return [...css.matchAll(/url\(\s*([^)]*)\)/gi)].some(match => !match[1].trim().replace(/^['"]|['"]$/g, '').startsWith('#'));
+}
+function renderedSvgXml(source: string) {
+  // MermaidのHTMLラベルにはHTML形式のbr等が含まれるため、名前空間付きXMLへ正規化する。
+  const doc = new DOMParser().parseFromString(source, 'text/html');
+  const svg = doc.querySelector('svg');
+  if (!svg) throw new Error('描画結果にSVGがありません。');
+  return new XMLSerializer().serializeToString(svg);
+}
+async function sanitizeSvg(source: string, base?: string, depth = 0) {
+  if (depth > 8) throw new Error('SVG内画像の参照が深すぎます。');
   if (/<!DOCTYPE|<!ENTITY/i.test(source)) throw new Error('SVGのDTD・外部実体は使用できません。');
   const doc = new DOMParser().parseFromString(source, 'image/svg+xml');
   const root = doc.documentElement;
@@ -95,23 +107,30 @@ async function sanitizeSvg(source: string, base?: string) {
     if (tag === 'style') {
       const css = element.textContent ?? '';
       // 生成SVGの内部CSSは保持する。外部読込は別途埋め込まれたimageに限定する。
-      if (/[\\<]|@import|@font-face|@namespace|expression\s*\(|image-set\s*\(/i.test(css) || /url\(\s*['"]?(?!#)/i.test(css)) throw new Error('SVG内CSSの外部参照を自己完結できません。');
+      if (/[\\<]|@import|@font-face|@namespace|expression\s*\(|image-set\s*\(/i.test(css) || hasExternalCssUrl(css)) throw new Error('SVG内CSSの外部参照を自己完結できません。');
       continue;
     }
     const inHtml = Boolean(element.closest('foreignObject')) && tag !== 'foreignobject';
+    if (tag === 'a') { element.replaceWith(...element.childNodes); continue; }
     if (!(inHtml ? htmlTags : svgTags).has(tag)) { element.remove(); continue; }
     for (const attribute of [...element.attributes]) {
       const name = attribute.name.toLowerCase(), value = attribute.value.trim();
       if (name.startsWith('on') || ['content', 'data-mxgraph', 'contenteditable', 'tabindex'].includes(name) || /^data-/.test(name)) element.removeAttribute(attribute.name);
       else if (name === 'href' || name === 'xlink:href' || name === 'src') {
         if (value.startsWith('#')) continue;
-        if (tag === 'image') {
+        if (tag === 'image' || tag === 'img' || tag === 'feimage') {
           const asset = await window.__readAsset(value, base);
-          if (!asset.mime?.startsWith('image/') || asset.mime === 'image/svg+xml') throw new Error('SVG内の画像はPNG/JPEG等のラスター形式で指定してください。');
-          await imageElement(asset.data, ''); element.setAttribute(attribute.name, asset.data);
-        } else element.removeAttribute(attribute.name);
+          if (!asset.mime?.startsWith('image/')) throw new Error('SVG内画像の形式が非対応です。');
+          let data = asset.data;
+          if (asset.mime === 'image/svg+xml') {
+            const nested = await sanitizeSvg(asset.text!, asset.base, depth + 1);
+            data = svgData(new XMLSerializer().serializeToString(nested));
+          }
+          await imageElement(data, ''); element.setAttribute(attribute.name, data);
+        } else if (tag === 'use') throw new Error('外部SVGのuse参照は埋め込みSVGへ変換して指定してください。');
+        else element.removeAttribute(attribute.name);
       } else if (name === 'style') {
-        if (/[\\]|@|expression\s*\(|image-set\s*\(/i.test(value) || /url\(\s*['"]?(?!#)/i.test(value)) throw new Error('SVGのstyleに非対応の参照があります。');
+        if (/[\\]|@|expression\s*\(|image-set\s*\(/i.test(value) || hasExternalCssUrl(value)) throw new Error('SVGのstyleに非対応の参照があります。');
       } else if (/url\(/i.test(value) && !/^url\(\s*['"]?#[\w:.-]+['"]?\s*\)$/i.test(value)) throw new Error('SVGに外部参照があります。');
     }
   }
@@ -121,12 +140,16 @@ async function sanitizeSvg(source: string, base?: string) {
   const ids = [...root.querySelectorAll('[id]')].map(e => e.id);
   if (root.id) ids.push(root.id);
   let serialized = new XMLSerializer().serializeToString(root);
-  for (const id of ids.sort((a, b) => b.length - a.length)) {
+  for (const id of new Set(ids.sort((a, b) => b.length - a.length))) {
     const escapedId = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     serialized = serialized.replace(new RegExp(`([#])${escapedId}(?![\\w-])`, 'g'), `$1${prefix}${id}`).replace(new RegExp(`id="${escapedId}"`, 'g'), `id="${prefix}${id}"`);
   }
   const parsed = new DOMParser().parseFromString(serialized, 'image/svg+xml');
   return document.importNode(parsed.documentElement, true) as unknown as SVGSVGElement;
+}
+
+function svgData(source: string) {
+  return `data:image/svg+xml;base64,${btoa(Array.from(new TextEncoder().encode(source), b => String.fromCharCode(b)).join(''))}`;
 }
 
 async function svgElement(source: string, alt: string, base?: string): Promise<HTMLElement> {
@@ -138,12 +161,12 @@ async function svgElement(source: string, alt: string, base?: string): Promise<H
   const viewBox = svg.viewBox.baseVal;
   if (viewBox.width > 0 && viewBox.height > 0) { svg.setAttribute('width', String(viewBox.width)); svg.setAttribute('height', String(viewBox.height)); }
   if (svg.querySelector('foreignObject')) {
-    wrapper.dataset.exportRaster = 'true';
+    svg.dataset.exportRaster = 'true';
     // 実DOMを図単位で取得するためHTMLラベルとフォントの外観を保てる。
     return wrapper;
   }
   const serialized = new XMLSerializer().serializeToString(svg);
-  const data = `data:image/svg+xml;base64,${btoa(Array.from(new TextEncoder().encode(serialized), b => String.fromCharCode(b)).join(''))}`;
+  const data = svgData(serialized);
   wrapper.replaceChildren(await imageElement(data, alt || '図'));
   return wrapper;
 }
@@ -187,8 +210,17 @@ async function drawio(source: string, base?: string) {
         if (attr.name === 'value' || attr.name === 'label') {
           const label = new DOMParser().parseFromString(attr.value, 'text/html');
           for (const el of [...label.body.querySelectorAll('*')]) {
+            if (!el.isConnected) continue;
             if (!htmlTags.has(el.localName)) { el.replaceWith(document.createTextNode(el.textContent ?? '')); continue; }
-            for (const a of [...el.attributes]) if (a.name !== 'style') el.removeAttribute(a.name); else if (/[\\@]|url\s*\(|expression|image-set/i.test(a.value)) el.removeAttribute('style');
+            for (const a of [...el.attributes]) {
+              if (el.localName === 'img' && a.name === 'src') {
+                const asset = await window.__readAsset(a.value, base);
+                if (!asset.mime?.startsWith('image/')) throw new Error('draw.ioラベルの画像形式が非対応です。');
+                const data = asset.mime === 'image/svg+xml' ? svgData(new XMLSerializer().serializeToString(await sanitizeSvg(asset.text!, asset.base))) : asset.data;
+                await imageElement(data, ''); el.setAttribute('src', data);
+              } else if (a.name === 'style') { if (/[\\@]|url\s*\(|expression|image-set/i.test(a.value)) throw new Error('draw.ioラベルの外部スタイルは使用できません。'); }
+              else if (!['width', 'height', 'alt', 'color', 'face', 'size'].includes(a.name)) el.removeAttribute(a.name);
+            }
           }
           cell.setAttribute(attr.name, label.body.innerHTML);
         }
@@ -196,10 +228,16 @@ async function drawio(source: string, base?: string) {
       const style = cell.getAttribute('style');
       if (style) {
         let next = style;
-        for (const match of style.matchAll(/(?:^|;)image=([^;]+)(?=;|$)/g)) {
-          const asset = await window.__readAsset(match[1], base);
-          if (!asset.mime?.startsWith('image/') || asset.mime === 'image/svg+xml') throw new Error('draw.io内画像の形式が非対応です。');
-          next = next.replace(`image=${match[1]}`, `image=${asset.data}`);
+        for (const match of style.matchAll(/(?:^|;)image=((?:data:[^,]+,[^;]*)|[^;]+)(?=;|$)/g)) {
+          let reference = match[1];
+          // mxGraphのstyle内Data URLは;base64を省略する独自形式を使用する。
+          if (/^data:image\/[^;,]+,/i.test(reference) && !/^data:image\/svg\+xml,(?:<|%3c)/i.test(reference)) reference = reference.replace(',', ';base64,');
+          const asset = await window.__readAsset(reference, base);
+          if (!asset.mime?.startsWith('image/')) throw new Error('draw.io内画像の形式が非対応です。');
+          const data = asset.mime === 'image/svg+xml'
+            ? svgData(new XMLSerializer().serializeToString(await sanitizeSvg(asset.text!, asset.base))) : asset.data;
+          await imageElement(data, '');
+          next = next.replace(`image=${match[1]}`, `image=${data.replace(';base64,', ',')}`);
         }
         cell.setAttribute('style', next);
       }
@@ -236,10 +274,10 @@ async function renderTask(task: Task): Promise<Node> {
   if (isDelimitedTableLanguage(kind)) return tableElement(source, kind);
   if (kind === 'svg') return svgElement(source, alt, base);
   if (isPlantUmlFenceLanguage(kind)) { source = plantUmlToMermaid(source).mermaid; kind = 'mermaid'; }
-  if (kind === 'mermaid') return svgElement(await renderMermaid(source, `export-mermaid-${svgCounter++}`, theme), alt || 'Mermaid図', base);
+  if (kind === 'mermaid') return svgElement(renderedSvgXml(await renderMermaid(source, `export-mermaid-${svgCounter++}`, theme)), alt || 'Mermaid図', base);
   if (kind === 'drawio') {
     const group = document.createElement('div');
-    for (const svg of await drawio(source, base)) group.append(await svgElement(svg, alt || 'draw.io図', base));
+    for (const svg of await drawio(source, base)) group.append(await svgElement(renderedSvgXml(svg), alt || 'draw.io図', base));
     return group;
   }
   const pre = document.createElement('pre'); pre.innerHTML = `<code class="hljs">${codeHtml(source, kind)}</code>`; return pre;
@@ -248,6 +286,7 @@ async function renderTask(task: Task): Promise<Node> {
 async function prepare(options: { markdown: string; title: string; theme: string; css: string }) {
   ({ title, theme } = options); tasks = []; svgCounter = 0;
   document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.syntaxTheme = 'adaptive';
   const style = document.createElement('style'); style.textContent = `${baseCss}\n${previewCss()}\n${trustedCss(options.css)}`; document.head.append(style);
   host = document.createElement('main'); host.className = 'markdown-body'; document.body.append(host);
   document.body.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-color');
@@ -293,13 +332,18 @@ async function prepare(options: { markdown: string; title: string; theme: string
     if (!table.parentElement?.classList.contains('table-scroll')) { const wrapper = document.createElement('div'); wrapper.className = 'table-scroll'; table.replaceWith(wrapper); wrapper.append(table); }
   }
   for (const details of host.querySelectorAll('details')) details.setAttribute('open', '');
+  // block資産の置換後も、再読込時にブラウザーが段落を分断しないHTMLに整える。
+  for (const span of [...host.querySelectorAll('span')].reverse()) if (span.querySelector('figure,pre,div,table')) span.replaceWith(...span.childNodes);
+  for (const paragraph of host.querySelectorAll('p')) if (paragraph.querySelector('figure,pre,div,table')) {
+    const block = document.createElement('div'); block.append(...paragraph.childNodes); paragraph.replaceWith(block);
+  }
   await document.fonts.ready;
   await Promise.all([...host.querySelectorAll('img')].map(image => image.decode()));
   return { items: tasks.length, diagrams, tables: host.querySelectorAll('table').length };
 }
 
 function replaceRaster(element: Element, data: string) {
-  const img = new Image(); img.src = data; img.alt = element.getAttribute('aria-label') ?? '図';
+  const img = new Image(); img.src = data; img.alt = element.closest('figure')?.getAttribute('aria-label') ?? '図';
   const width = element.getBoundingClientRect().width; img.style.width = `${width}px`;
   element.replaceWith(img);
 }
