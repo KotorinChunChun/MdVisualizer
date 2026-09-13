@@ -10,14 +10,38 @@ const MAX_SKILL_BYTES: usize = 128 * 1024;
 const MAX_SKILLS: usize = 100;
 
 const DEFAULT_SKILLS: &[(&str, &str)] = &[
-    ("edit-image", include_str!("../../src/features/codex/default-skills/edit-image/SKILL.md")),
-    ("consult", include_str!("../../src/features/codex/default-skills/consult/SKILL.md")),
-    ("edit", include_str!("../../src/features/codex/default-skills/edit/SKILL.md")),
-    ("edit-diagram", include_str!("../../src/features/codex/default-skills/edit-diagram/SKILL.md")),
-    ("explain-image", include_str!("../../src/features/codex/default-skills/explain-image/SKILL.md")),
-    ("improve-diagram", include_str!("../../src/features/codex/default-skills/improve-diagram/SKILL.md")),
-    ("transcribe", include_str!("../../src/features/codex/default-skills/transcribe/SKILL.md")),
-    ("transcribe-table", include_str!("../../src/features/codex/default-skills/transcribe-table/SKILL.md")),
+    (
+        "edit-image",
+        include_str!("../../src/features/codex/default-skills/edit-image/SKILL.md"),
+    ),
+    (
+        "consult",
+        include_str!("../../src/features/codex/default-skills/consult/SKILL.md"),
+    ),
+    (
+        "edit",
+        include_str!("../../src/features/codex/default-skills/edit/SKILL.md"),
+    ),
+    (
+        "edit-diagram",
+        include_str!("../../src/features/codex/default-skills/edit-diagram/SKILL.md"),
+    ),
+    (
+        "explain-image",
+        include_str!("../../src/features/codex/default-skills/explain-image/SKILL.md"),
+    ),
+    (
+        "improve-diagram",
+        include_str!("../../src/features/codex/default-skills/improve-diagram/SKILL.md"),
+    ),
+    (
+        "transcribe",
+        include_str!("../../src/features/codex/default-skills/transcribe/SKILL.md"),
+    ),
+    (
+        "transcribe-table",
+        include_str!("../../src/features/codex/default-skills/transcribe-table/SKILL.md"),
+    ),
 ];
 
 #[derive(Debug, Clone, Serialize)]
@@ -44,14 +68,19 @@ fn skills_directory(app: &AppHandle) -> Result<PathBuf, String> {
 fn valid_id(id: &str) -> bool {
     !id.is_empty()
         && id.len() <= 100
-        && id.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+        && id
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
 }
 
 fn safe_skill_path(root: &Path, id: &str) -> Result<PathBuf, String> {
     if !valid_id(id) {
-        return Err("スキルIDが不正です。英数字、ハイフン、アンダースコアのみ使用できます。".into());
+        return Err(
+            "スキルIDが不正です。英数字、ハイフン、アンダースコアのみ使用できます。".into(),
+        );
     }
-    fs::create_dir_all(root).map_err(|error| format!("Codexスキル保存先を作成できません: {error}"))?;
+    fs::create_dir_all(root)
+        .map_err(|error| format!("Codexスキル保存先を作成できません: {error}"))?;
     let canonical_root = root
         .canonicalize()
         .map_err(|error| format!("Codexスキル保存先を確認できません: {error}"))?;
@@ -97,7 +126,8 @@ fn ensure_defaults(root: &Path) -> Result<(), String> {
 
 fn list_skills(root: &Path) -> Result<Vec<CodexSkillFile>, String> {
     let mut files = Vec::new();
-    let entries = fs::read_dir(root).map_err(|error| format!("Codexスキル一覧を読み込めません: {error}"))?;
+    let entries =
+        fs::read_dir(root).map_err(|error| format!("Codexスキル一覧を読み込めません: {error}"))?;
     for entry in entries {
         let entry = entry.map_err(|error| format!("Codexスキル一覧を読み込めません: {error}"))?;
         let directory = entry.path();
@@ -112,7 +142,8 @@ fn list_skills(root: &Path) -> Result<Vec<CodexSkillFile>, String> {
         if !path.is_file() {
             continue;
         }
-        let source = fs::read_to_string(&path).map_err(|error| format!("スキル {id} を読み込めません: {error}"))?;
+        let source = fs::read_to_string(&path)
+            .map_err(|error| format!("スキル {id} を読み込めません: {error}"))?;
         if source.len() > MAX_SKILL_BYTES {
             return Err(format!("スキル {id} が大きすぎます。"));
         }
@@ -132,7 +163,10 @@ pub fn codex_list_skills(app: AppHandle) -> Result<CodexSkillFiles, String> {
         ensure_defaults(&root).map_err(crate::errors::AppError::IoError)?;
         list_skills(&root).map_err(crate::errors::AppError::IoError)
     })
-    .map(|files| CodexSkillFiles { directory: root.to_string_lossy().into_owned(), files })
+    .map(|files| CodexSkillFiles {
+        directory: root.to_string_lossy().into_owned(),
+        files,
+    })
     .map_err(|error| error.to_string())
 }
 
@@ -144,8 +178,12 @@ pub fn codex_save_skill(app: AppHandle, id: String, source: String) -> Result<()
     let root = skills_directory(&app)?;
     let path = safe_skill_path(&root, &id)?;
     with_lock(&root.join(".lock"), || {
-        fs::create_dir_all(path.parent().ok_or_else(|| crate::errors::AppError::IoError("スキルフォルダーを取得できません。".into()))?)
-            .map_err(|error| crate::errors::AppError::IoError(format!("スキルフォルダーを作成できません: {error}")))?;
+        fs::create_dir_all(path.parent().ok_or_else(|| {
+            crate::errors::AppError::IoError("スキルフォルダーを取得できません。".into())
+        })?)
+        .map_err(|error| {
+            crate::errors::AppError::IoError(format!("スキルフォルダーを作成できません: {error}"))
+        })?;
         atomic_write(&path, source.as_bytes())
     })
     .map_err(|error| error.to_string())
@@ -157,7 +195,9 @@ pub fn codex_delete_skill(app: AppHandle, id: String) -> Result<(), String> {
     let path = safe_skill_path(&root, &id)?;
     with_lock(&root.join(".lock"), || {
         if path.exists() {
-            fs::remove_file(&path).map_err(|error| crate::errors::AppError::IoError(format!("スキルを削除できません: {error}")))?;
+            fs::remove_file(&path).map_err(|error| {
+                crate::errors::AppError::IoError(format!("スキルを削除できません: {error}"))
+            })?;
         }
         if let Some(parent) = path.parent() {
             let _ = fs::remove_dir(parent);
@@ -170,9 +210,13 @@ pub fn codex_delete_skill(app: AppHandle, id: String) -> Result<(), String> {
 #[tauri::command]
 pub fn codex_open_skills_folder(app: AppHandle) -> Result<(), String> {
     let root = skills_directory(&app)?;
-    fs::create_dir_all(&root).map_err(|error| format!("Codexスキル保存先を作成できません: {error}"))?;
+    fs::create_dir_all(&root)
+        .map_err(|error| format!("Codexスキル保存先を作成できません: {error}"))?;
     #[cfg(target_os = "windows")]
-    std::process::Command::new("explorer").arg(&root).spawn().map_err(|error| error.to_string())?;
+    std::process::Command::new("explorer")
+        .arg(&root)
+        .spawn()
+        .map_err(|error| error.to_string())?;
     #[cfg(not(target_os = "windows"))]
     return Err("スキルフォルダーを開ける環境ではありません。".into());
     Ok(())
@@ -209,8 +253,18 @@ mod tests {
         fs::write(root.path().join("zeta/SKILL.md"), "z").unwrap();
         fs::write(root.path().join("alpha/SKILL.md"), "a").unwrap();
         let files = list_skills(root.path()).unwrap();
-        assert_eq!(files.iter().map(|file| file.id.as_str()).collect::<Vec<_>>(), ["alpha", "zeta"]);
-        fs::write(root.path().join("alpha/SKILL.md"), vec![b'x'; MAX_SKILL_BYTES + 1]).unwrap();
+        assert_eq!(
+            files
+                .iter()
+                .map(|file| file.id.as_str())
+                .collect::<Vec<_>>(),
+            ["alpha", "zeta"]
+        );
+        fs::write(
+            root.path().join("alpha/SKILL.md"),
+            vec![b'x'; MAX_SKILL_BYTES + 1],
+        )
+        .unwrap();
         assert!(list_skills(root.path()).is_err());
     }
 }

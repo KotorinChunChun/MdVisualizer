@@ -142,7 +142,9 @@ pub fn resolve_spmd_asset_uri(
         return Err(SpmdUriError::UnsupportedAsset);
     }
     let base = Url::parse(&document.canonical_uri).map_err(|_| SpmdUriError::Invalid)?;
-    let parsed = base.join(source).map_err(|_| SpmdUriError::UnsupportedAsset)?;
+    let parsed = base
+        .join(source)
+        .map_err(|_| SpmdUriError::UnsupportedAsset)?;
     if parsed.scheme() != SPMD_SCHEME
         || !parsed
             .host_str()
@@ -235,10 +237,7 @@ impl SharePointAuthConfig {
     }
 
     fn credential_target(&self) -> String {
-        format!(
-            "MdVisualizer/SharePoint/{}:{}",
-            self.tenant, self.client_id
-        )
+        format!("MdVisualizer/SharePoint/{}:{}", self.tenant, self.client_id)
     }
 }
 
@@ -254,9 +253,13 @@ pub enum SharePointError {
     AssetTooLarge,
     #[error("SharePoint画像の内容がPNGまたはSVGとして正しくありません: {0}")]
     InvalidAsset(String),
-    #[error("SharePoint画像は読み込み後に更新されています。再読み込みしてから編集し直してください。")]
+    #[error(
+        "SharePoint画像は読み込み後に更新されています。再読み込みしてから編集し直してください。"
+    )]
     AssetConflict,
-    #[error("SharePoint Markdownは読み込み後に更新されています。再読込してから編集し直してください。")]
+    #[error(
+        "SharePoint Markdownは読み込み後に更新されています。再読込してから編集し直してください。"
+    )]
     MarkdownConflict,
     #[error("SharePoint Markdownを元の文字コードで保存できません: {0}")]
     InvalidMarkdown(String),
@@ -754,9 +757,7 @@ impl SharePointClient {
         Ok(SharePointAssetSaveResult {
             filename: updated.name,
             path: asset.canonical_uri,
-            revision: updated
-                .e_tag
-                .unwrap_or(saved_revision),
+            revision: updated.e_tag.unwrap_or(saved_revision),
             size_bytes: updated.size,
         })
     }
@@ -1112,9 +1113,10 @@ fn access_token_has_scope(access_token: &str, required: &str) -> bool {
 
 fn permissions_allow_write(permissions: &[PermissionResponse]) -> bool {
     permissions.iter().any(|permission| {
-        permission.roles.iter().any(|role| {
-            role.eq_ignore_ascii_case("write") || role.eq_ignore_ascii_case("owner")
-        })
+        permission
+            .roles
+            .iter()
+            .any(|role| role.eq_ignore_ascii_case("write") || role.eq_ignore_ascii_case("owner"))
     })
 }
 
@@ -1239,26 +1241,18 @@ fn asset_save_bytes(
     }
 }
 
-fn validate_asset_bytes(
-    media_type: &str,
-    bytes: &[u8],
-) -> Result<Option<String>, SharePointError> {
+fn validate_asset_bytes(media_type: &str, bytes: &[u8]) -> Result<Option<String>, SharePointError> {
     match media_type {
         "image/png" => {
             const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
-            if bytes.len() < 24
-                || &bytes[..8] != PNG_SIGNATURE
-                || &bytes[12..16] != b"IHDR"
-            {
+            if bytes.len() < 24 || &bytes[..8] != PNG_SIGNATURE || &bytes[12..16] != b"IHDR" {
                 return Err(SharePointError::InvalidAsset(
                     "PNGシグネチャまたはIHDRがありません。".into(),
                 ));
             }
             let width = u32::from_be_bytes(bytes[16..20].try_into().unwrap());
             let height = u32::from_be_bytes(bytes[20..24].try_into().unwrap());
-            if width == 0
-                || height == 0
-                || u64::from(width) * u64::from(height) > MAX_IMAGE_PIXELS
+            if width == 0 || height == 0 || u64::from(width) * u64::from(height) > MAX_IMAGE_PIXELS
             {
                 return Err(SharePointError::InvalidAsset(
                     "PNGの画像寸法が無効または大きすぎます。".into(),
@@ -1506,8 +1500,9 @@ mod tests {
         assert!(asset_save_bytes(&png_request, "image/svg+xml").is_err());
         assert!(validate_svg_safety("<svg><script>alert(1)</script></svg>").is_err());
         assert!(validate_svg_safety("<svg><use href=\"#shape\"/></svg>").is_ok());
-        assert!(validate_svg_safety("<svg><image href=\"https://example.com/a.png\"/></svg>")
-            .is_err());
+        assert!(
+            validate_svg_safety("<svg><image href=\"https://example.com/a.png\"/></svg>").is_err()
+        );
     }
 
     #[test]

@@ -68,7 +68,10 @@ fn markdown_style_result(path: &Path, css: String) -> MarkdownStyleFile {
     }
 }
 
-pub(super) fn load_markdown_style_file(path: &Path, default_css: &str) -> Result<MarkdownStyleFile, String> {
+pub(super) fn load_markdown_style_file(
+    path: &Path,
+    default_css: &str,
+) -> Result<MarkdownStyleFile, String> {
     if !path.exists() {
         with_lock(path, || {
             if !path.exists() {
@@ -78,11 +81,15 @@ pub(super) fn load_markdown_style_file(path: &Path, default_css: &str) -> Result
         })
         .map_err(|error| error.to_string())?;
     }
-    let css = fs::read_to_string(path).map_err(|error| format!("Markdown CSSの読込に失敗しました: {error}"))?;
+    let css = fs::read_to_string(path)
+        .map_err(|error| format!("Markdown CSSの読込に失敗しました: {error}"))?;
     Ok(markdown_style_result(path, css))
 }
 
-pub(super) fn save_markdown_style_file(path: &Path, css: &str) -> Result<MarkdownStyleFile, String> {
+pub(super) fn save_markdown_style_file(
+    path: &Path,
+    css: &str,
+) -> Result<MarkdownStyleFile, String> {
     with_lock(path, || atomic_write(path, css.as_bytes())).map_err(|error| error.to_string())?;
     Ok(markdown_style_result(path, css.to_string()))
 }
@@ -281,7 +288,10 @@ pub fn restore_saved_window_geometry(
 /// close callback. Calling native window getters while Windows is dispatching
 /// `CloseRequested` can re-enter the UI thread and prevent the close request
 /// from completing.
-pub fn save_window_geometry(app_handle: &AppHandle, geometry: WindowGeometry) -> Result<(), String> {
+pub fn save_window_geometry(
+    app_handle: &AppHandle,
+    geometry: WindowGeometry,
+) -> Result<(), String> {
     let mut updates = Map::new();
     updates.insert(
         "windowGeometry".into(),
@@ -316,12 +326,18 @@ pub fn save_settings(app_handle: AppHandle, updates: Value) -> Result<Value, Str
 }
 
 #[tauri::command]
-pub fn load_markdown_style(app_handle: AppHandle, default_css: String) -> Result<MarkdownStyleFile, String> {
+pub fn load_markdown_style(
+    app_handle: AppHandle,
+    default_css: String,
+) -> Result<MarkdownStyleFile, String> {
     load_markdown_style_file(&markdown_style_path(&app_handle)?, &default_css)
 }
 
 #[tauri::command]
-pub fn save_markdown_style(app_handle: AppHandle, css: String) -> Result<MarkdownStyleFile, String> {
+pub fn save_markdown_style(
+    app_handle: AppHandle,
+    css: String,
+) -> Result<MarkdownStyleFile, String> {
     save_markdown_style_file(&markdown_style_path(&app_handle)?, &css)
 }
 
@@ -431,25 +447,29 @@ pub async fn open_in_new_window(
     let geometry = adjacent_geometry(source, source_outer_width, area);
     let (width, height, x, y) = logical_geometry(geometry, scale_factor);
 
-    let created_window = match
-        WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
+    let created_window =
+        match WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
             .title("MdVisualizer")
             .inner_size(width, height)
             .position(x, y)
             .prevent_overflow()
             .build()
-    {
-        Ok(created_window) => created_window,
-        Err(error) => {
-            if let Ok(mut initial_files) = state.initial_files.lock() {
-                initial_files.remove(&label);
+        {
+            Ok(created_window) => created_window,
+            Err(error) => {
+                if let Ok(mut initial_files) = state.initial_files.lock() {
+                    initial_files.remove(&label);
+                }
+                return Err(error.to_string());
             }
-            return Err(error.to_string());
-        }
-    };
+        };
     created_window.show().map_err(|error| error.to_string())?;
-    created_window.unminimize().map_err(|error| error.to_string())?;
-    created_window.set_focus().map_err(|error| error.to_string())?;
+    created_window
+        .unminimize()
+        .map_err(|error| error.to_string())?;
+    created_window
+        .set_focus()
+        .map_err(|error| error.to_string())?;
     state
         .window_geometries
         .lock()

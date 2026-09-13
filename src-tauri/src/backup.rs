@@ -82,8 +82,7 @@ impl BackupManager {
         let canonical_original = original_path
             .canonicalize()
             .unwrap_or_else(|_| original_path.to_path_buf());
-        map.get(&canonical_original)
-            .map_or(false, |p| p.exists())
+        map.get(&canonical_original).map_or(false, |p| p.exists())
     }
 }
 

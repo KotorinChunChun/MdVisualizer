@@ -153,10 +153,7 @@ pub fn merge_external_app_settings(
             "imageA4TargetWidth".into(),
             Value::from(image_a4_target_width.max(1)),
         );
-        object.insert(
-            "imageEqualPadding".into(),
-            Value::from(image_equal_padding),
-        );
+        object.insert("imageEqualPadding".into(), Value::from(image_equal_padding));
         write_json(path, &current)?;
         Ok(current)
     })
