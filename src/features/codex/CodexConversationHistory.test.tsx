@@ -22,4 +22,35 @@ describe("CodexConversationHistory", () => {
     fireEvent.click(screen.getByRole("button", { name: /画像1/ }));
     expect(screen.getByRole("dialog", { name: "画像1を拡大" })).not.toBeNull();
   });
+  it("closes the image before the history on Escape, and consumes the event", () => {
+    const onClose = vi.fn();
+    render(<CodexConversationHistory sessions={[session]} selectedId="conversation-1" retentionDays={30} onSelect={vi.fn()} onClose={onClose} onRetentionChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /画像1/ }));
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "画像1を拡大" })).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+  it("deletes only the selected conversation and reports a deletion failure in the history", async () => {
+    const onDelete = vi.fn().mockRejectedValueOnce(new Error("保存先が使えません")).mockResolvedValueOnce(undefined);
+    render(<CodexConversationHistory sessions={[session]} selectedId="conversation-1" retentionDays={30} onSelect={vi.fn()} onClose={vi.fn()} onRetentionChange={vi.fn()} onDelete={onDelete} />);
+    const button = screen.getByRole("button", { name: "この会話を削除" });
+    fireEvent.click(button);
+    expect((await screen.findByRole("alert")).textContent).toContain("保存先が使えません");
+    fireEvent.click(button);
+    await vi.waitFor(() => expect(onDelete).toHaveBeenLastCalledWith("conversation-1"));
+  });
+  it("prevents duplicate deletion while the selected conversation is being deleted", async () => {
+    let complete!: () => void;
+    const onDelete = vi.fn(() => new Promise<void>((resolve) => { complete = resolve; }));
+    render(<CodexConversationHistory sessions={[session]} selectedId="conversation-1" retentionDays={30} onSelect={vi.fn()} onClose={vi.fn()} onRetentionChange={vi.fn()} onDelete={onDelete} />);
+    const button = screen.getByRole("button", { name: "この会話を削除" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    complete();
+    await vi.waitFor(() => expect(screen.getByText("会話を選択してください。")).not.toBeNull());
+  });
 });

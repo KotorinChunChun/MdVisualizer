@@ -24,6 +24,8 @@ export interface CodexConversationDraft {
   targetSnapshot: EditorSnapshot | null;
   editMode: "selection" | "document" | "question";
   attachmentIds: string[];
+  /** 会話内で対象本文を識別する表示名。旧会話では未設定のまま扱う。 */
+  targetLabel?: string;
 }
 
 export interface CodexConversation {
@@ -39,6 +41,8 @@ export interface CodexConversation {
   lastMessageAt: string | null;
   /** Codex CLIが直近の送信で返した実測input_tokens。累積値でも推定値でもない。 */
   contextTokens?: number;
+  /** 次に取り込む対象本文へ割り当てる会話内番号。 */
+  nextTextTargetNumber?: number;
 }
 
 export interface CodexSessionStore {
@@ -54,6 +58,10 @@ export async function loadCodexSessions(): Promise<CodexSessionStore> {
 
 export async function upsertCodexSession(session: CodexConversation): Promise<CodexSessionStore> {
   return await invoke<CodexSessionStore>("upsert_codex_session", { session });
+}
+
+export async function deleteCodexSession(sessionId: string): Promise<CodexSessionStore> {
+  return await invoke<CodexSessionStore>("delete_codex_session", { sessionId });
 }
 
 export async function setCodexSessionRetention(retentionDays: number): Promise<CodexSessionStore> {
