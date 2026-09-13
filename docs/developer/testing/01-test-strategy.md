@@ -1,10 +1,10 @@
 # 検証手順
 
-実行条件は[AGENTS.md](../../AGENTS.md)、コマンドは[ビルド・検証](../BUILD_COMMANDS.md)を参照する。必要な変更領域だけを検証し、結果は対象版の実装報告へ記録する。
+実行条件は[AGENTS.md](../../../AGENTS.md)、コマンドは[ビルド・検証](/docs/developer/BUILD_COMMANDS.md)を参照する。必要な変更領域だけを検証し、結果は対象版の実装報告へ記録する。
 
 - frontend: npm.cmd test。限定できる場合は対象testファイルを指定する。
 - Rust: cargo test --manifest-path ./src-tauri/Cargo.toml。
-- [内部PDF](03-internal-pdf.md)、[Diff](04-document-diff.md)は各手順に従う。
+- [内部PDF](/docs/developer/testing/03-internal-pdf.md)、[Diff](/docs/developer/testing/04-document-diff.md)は各手順に従う。
 - ボタン静的検査: npm.cmd run test:button-style-rules。
 - 編集テスト結果HTML: npm.cmd run report:editing -- --version v0.0.18。版は今回の対象に置き換える。
 - デバッグ実画面: npm.cmd run debug:smoke -- -TargetVersion v0.0.18。既存の未保存文書を保護する。
@@ -12,7 +12,7 @@
 
 生ログ・動画・台帳・生成結果の保存先は生成スクリプトが対象版から決定する。対象版をスクリプトの引数またはMDVISUALIZER_VERSIONで指定する。利用者向けHTML出力CLIの保存先や配布パッケージのreleaseは、検証ログとは別の製品契約である。
 
-SPFxの実行は[保留案](../../dev/PLAN_IDEAS.md)の再開指示に従う。計画に書かれているだけの試験を実装済みとしない。
+SPFxの実行は[保留案](../../../dev/PLAN_IDEAS.md)の再開指示に従う。計画に書かれているだけの試験を実装済みとしない。
 
 ## 変更に応じた検証の選び方
 
@@ -41,4 +41,4 @@ SPFxの実行は[保留案](../../dev/PLAN_IDEAS.md)の再開指示に従う。�
 
 ## 拡張時の設計資料
 
-[テストケース設計](/docs/testing/test-case-design.md)に正常・異常・境界のケース表を、[自動化と品質指標の設計案](/docs/testing/automation-design.md)にレイヤー、fixture API、coverage・性能目標をまとめる。案に含まれるaxe、MSW、SQLite、専用CIなどを導入済みとは扱わない。実行入口はpackage.jsonと[ビルド・検証手順](/docs/BUILD_COMMANDS.md)で確認する。
+[テストケース設計](/docs/developer/testing/test-case-design.md)に正常・異常・境界のケース表を、[自動化と品質指標の設計案](/docs/developer/testing/automation-design.md)にレイヤー、fixture API、coverage・性能目標をまとめる。案に含まれるaxe、MSW、SQLite、専用CIなどを導入済みとは扱わない。実行入口はpackage.jsonと[ビルド・検証手順](/docs/developer/BUILD_COMMANDS.md)で確認する。

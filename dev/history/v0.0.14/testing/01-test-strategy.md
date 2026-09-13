@@ -24,7 +24,7 @@
 | Security | XSS、SVG、path、redirect、secret、CLI | corpus test、dependency audit | PR/nightly |
 | Performance | 起動、検索、描画、DB、同期、AI stream | benchmark script、Playwright trace | nightly/beta前 |
 
-当該PCでは2026-09-13のユーザー指示によりDesktop E2EとUI受入を実施できる。操作範囲と未保存文書の保護は最新のAGENTS.mdに従う。内部PDFテストはGUIやOSプリンターを使わずに実行する。手順とCubePDFを使う手動受入との境界は[内部PDFによる印刷受入](../../../../docs/testing/03-internal-pdf.md)を参照する。
+当該PCでは2026-09-13のユーザー指示によりDesktop E2EとUI受入を実施できる。操作範囲と未保存文書の保護は最新のAGENTS.mdに従う。内部PDFテストはGUIやOSプリンターを使わずに実行する。手順とCubePDFを使う手動受入との境界は[内部PDFによる印刷受入](/docs/developer/testing/03-internal-pdf.md)を参照する。
 
 ## 3. ツール選定
 
@@ -161,7 +161,7 @@ CIではrunner差を考慮して絶対失敗閾値を基準の2倍にし、基�
 
 ## 11. 完了条件
 
-- [テストケース](../../../../docs/testing/02-test-cases.md)のP0ケースが自動化される。
+- [テストケース](/docs/developer/testing/02-test-cases.md)のP0ケースが自動化される。
 - coverage、性能、security、UI品質の数値がCI artifactとして参照できる。
 - 手動確認項目に、自動化できない技術的理由と証跡保存方法がある。
 - desktop/SPFxの能力差が同一contract testと能力マトリクスで説明できる。
@@ -172,7 +172,7 @@ CIではrunner差を考慮して絶対失敗閾値を基準の2倍にし、基�
 
 ## 現行の検証手順の入口（0.0.17完了時に統合）
 
-この節は運用中の確認手順とする。上記の導入計画をすべて実装済みとは扱わない。実行コマンドは[ビルド・検証コマンド](../../../../docs/BUILD_COMMANDS.md)、差分の詳細は[Diffの検証](../../../../docs/testing/04-document-diff.md)、ケース一覧は[テストケース設計](../../../../docs/testing/02-test-cases.md)を参照する。版別要求書に同じ手順を複製しない。
+この節は運用中の確認手順とする。上記の導入計画をすべて実装済みとは扱わない。実行コマンドは[ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)、差分の詳細は[Diffの検証](/docs/developer/testing/04-document-diff.md)、ケース一覧は[テストケース設計](/docs/developer/testing/02-test-cases.md)を参照する。版別要求書に同じ手順を複製しない。
 
 ### 回帰確認
 

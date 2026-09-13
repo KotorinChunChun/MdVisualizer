@@ -27,7 +27,7 @@
 
 ## 3. Markdown編集・Diff
 
-ローカルMarkdownのDiffについては、実装済みの[変更パターンと検証](/docs/testing/04-document-diff.md)に自動検証と別環境の受入を分けて記録する。
+ローカルMarkdownのDiffについては、実装済みの[変更パターンと検証](/docs/developer/testing/04-document-diff.md)に自動検証と別環境の受入を分けて記録する。
 
 | テストID | 観点 | 前提条件 | 手順 | 期待結果 |
 | --- | --- | --- | --- | --- |

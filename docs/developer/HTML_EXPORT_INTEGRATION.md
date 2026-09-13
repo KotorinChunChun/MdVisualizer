@@ -1,6 +1,6 @@
 # HTML出力統合仕様
 
-独立CLIは完成。本体統合は未実装。本書は確定した出力仕様・API・統合時の検証条件を扱う。CLIの操作は[HTML出力CLI](/docs/HTML_EXPORT_CLI.md)を参照する。
+独立CLIは完成。本体統合は未実装。本書は確定した出力仕様・API・統合時の検証条件を扱う。CLIの操作は[HTML出力CLI](/docs/user/HTML_EXPORT_CLI.md)を参照する。
 
 ## 確定した出力仕様
 

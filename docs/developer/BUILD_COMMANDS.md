@@ -62,5 +62,26 @@ npm.cmd run release:test-safety
 
 - SPFxとデスクトップの依存インストール・ビルドは共用領域で競合するため並列実行せず、順次実行する。両方が必要な場合はSPFx完了後にデスクトップを実行する。
 - サンドボックスのコマンド起動失敗は製品不具合と区別し、実行環境とエラーを記録する。実行されていないテストを成功扱いにしない。
-- SPFxのsppkg生成・テスト・アップロードは当面保留。[保留案](../dev/PLAN_IDEAS.md)の再開指示があるまで上記SPFxコマンドを実行しない。手順の存在は実行許可を意味しない。
-- 回帰確認・静的検査・資料点検の入口は[検証手順](testing/01-test-strategy.md)へ統一する。
+- SPFxのsppkg生成・テスト・アップロードは当面保留。[保留案](../../dev/PLAN_IDEAS.md)の再開指示があるまで上記SPFxコマンドを実行しない。手順の存在は実行許可を意味しない。
+- 回帰確認・静的検査・資料点検の入口は[検証手順](/docs/developer/testing/01-test-strategy.md)へ統一する。
+
+## セットアップと補足検証
+
+初回環境構築、デバッグ起動、MSIXと署名環境の準備は[開発環境のセットアップ](/docs/developer/DEVELOPMENT_SETUP.md)を参照してください。
+
+### 全体検証
+
+```powershell
+npm test
+npm run build
+cargo test --manifest-path .\src-tauri\Cargo.toml
+npm run tauri build
+```
+
+#### プリンターを使わない印刷テスト
+
+`npm.cmd run test:print-pdf`で、画面を表示せずに通常文書・プレゼン・選択表をPDFへ出力し、内容とページ構成を検査できます。OSプリンターや保存ダイアログは不要です。設定、成果物、CubePDFを使う手動受入との区別は[内部PDFによる印刷受入](/docs/developer/testing/03-internal-pdf.md)を参照してください。
+
+#### 性能測定
+
+過去の測定例では、release EXEで10,000行のMarkdownを5回起動した測定では、起動時間の中央値は41ms、初回を含む最大は493ms、ワーキングセット最大は24.1MBでした。再測定には `dev/scripts/measure-performance.ps1` を使用します。

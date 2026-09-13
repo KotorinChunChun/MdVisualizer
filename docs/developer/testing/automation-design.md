@@ -1,6 +1,6 @@
 # 自動化と品質指標の設計案
 
-状態: 提案。以下のツール、実行頻度、カバレッジ・性能の数値は自動化拡張時の候補であり、現行の必須ゲートや達成済みの数値ではない。本文中の「採用」「必須」「完了条件」もこの案の条件として読む。現在使える入口と選び方は[検証手順](/docs/testing/01-test-strategy.md)を優先する。アプリの会話・通信記録の保持仕様は[AI利用仕様](/docs/ui/codex.md)を参照する。
+状態: 提案。以下のツール、実行頻度、カバレッジ・性能の数値は自動化拡張時の候補であり、現行の必須ゲートや達成済みの数値ではない。本文中の「採用」「必須」「完了条件」もこの案の条件として読む。現在使える入口と選び方は[検証手順](/docs/developer/testing/01-test-strategy.md)を優先する。アプリの会話・通信記録の保持仕様は[AI利用仕様](/docs/user/ui/codex.md)を参照する。
 
 ## 1. 目的
 
@@ -21,7 +21,7 @@
 | Security | XSS、SVG、path、redirect、secret、CLI | corpus test、dependency audit | PR/nightly |
 | Performance | 起動、検索、描画、DB、同期、AI stream | benchmark script、Playwright trace | nightly/beta前 |
 
-当該PCでは2026-09-13のユーザー指示によりDesktop E2EとUI受入を実施できる。操作範囲と未保存文書の保護は最新のAGENTS.mdに従う。内部PDFテストはGUIやOSプリンターを使わずに実行する。手順とCubePDFを使う手動受入との境界は[内部PDFによる印刷受入](/docs/testing/03-internal-pdf.md)を参照する。
+当該PCでは2026-09-13のユーザー指示によりDesktop E2EとUI受入を実施できる。操作範囲と未保存文書の保護は最新のAGENTS.mdに従う。内部PDFテストはGUIやOSプリンターを使わずに実行する。手順とCubePDFを使う手動受入との境界は[内部PDFによる印刷受入](/docs/developer/testing/03-internal-pdf.md)を参照する。
 
 ## 3. ツール選定
 
@@ -158,7 +158,7 @@ CIではrunner差を考慮して絶対失敗閾値を基準の2倍にし、基�
 
 ## 11. 完了条件
 
-- [テストケース](/docs/testing/02-test-cases.md)のP0ケースが自動化される。
+- [テストケース](/docs/developer/testing/02-test-cases.md)のP0ケースが自動化される。
 - coverage、性能、security、UI品質の数値がCI artifactとして参照できる。
 - 手動確認項目に、自動化できない技術的理由と証跡保存方法がある。
 - desktop/SPFxの能力差が同一contract testと能力マトリクスで説明できる。
