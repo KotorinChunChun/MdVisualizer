@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseModel,deleteNodes,moveNode,groupNodes,updateNode,connect,selectedIds} from './core.js';
+import {parseModel,deleteNodes,moveNode,groupNodes,updateNode,connect,selectedIds,moveIntoGroup,editGroup,ungroup} from './core.js';
 const chain='flowchart TD\n    A[開始] --> B[処理]\n    B --> C[確認]\n    C --> D[終了]';
 const pairs=s=>parseModel(s).edges.map(e=>e.from+'>'+e.to).sort();
 test('単純削除は前後を接続し定義を削除',()=>{const s=deleteNodes(chain,['B']);assert.deepEqual(pairs(s),['A>C','C>D']);assert(!parseModel(s).nodes.some(n=>n.id==='B'));});
@@ -18,3 +18,8 @@ test('複数の同一ID参照を選択できる',()=>{const m=parseModel(chain);
 test('グループ化しても外部接続を保持',()=>{const result=groupNodes(chain,['B','C'],'処理群');assert.deepEqual(pairs(result),pairs(chain));assert(result.includes('subgraph G1["処理群"]'));});
 test('接続追加がコードに反映',()=>assert(pairs(connect(chain,'D','A')).includes('D>A')));
 test('連続矢印の削除',()=>assert.deepEqual(pairs(deleteNodes('flowchart LR\n A[入力] --> B[処理] --> C[出力]',['B'])),['A>C']));
+test('空白のない接続も解析する',()=>assert.deepEqual(pairs(deleteNodes('flowchart LR\n A-->B-->C',['B'])),['A>C']));
+test('非対象の接続行は書式を変えない',()=>{const source=chain+'\n\tX   -->   Y %% untouched';assert(deleteNodes(source,['B']).endsWith('\tX   -->   Y %% untouched'));});
+test('グループへの所属変更と解除で接続を維持',()=>{let source='flowchart TD\n A[開始]\n B[処理]\n A --> B\n subgraph G[分類]\n C[終了]\n end';const before=pairs(source);source=moveIntoGroup(source,['B'],'G');assert.equal(parseModel(source).nodes.find(n=>n.id==='B').group,'G');source=ungroup(source,'G');assert.deepEqual(pairs(source),before);});
+test('グループを自分の子へ移動しない',()=>assert.throws(()=>editGroup('flowchart TD\n subgraph G[親]\n subgraph H[子]\n A\n end\n end','G','親','H'),/子グループ/));
+test('architecture削除はサービス間を再接続',()=>assert.deepEqual(pairs(deleteNodes('architecture-beta\n service a(server)[A]\n service b(server)[B]\n service c(server)[C]\n a:R -- L:b\n b:R -- L:c',['b'])),['a>c']));
