@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { importDocument, sessionZip, type DocumentSession } from './documentSession';
 type Item = { id: string; name: string; expires: number; bytes: number };
-type Session = { user: { name: string; provider: string } | null; csrf: string; providers: string[]; storageAvailable: boolean };
+type Session = { user: { name: string; provider: string } | null; csrf: string; loginUrl: string | null; logoutUrl: string | null; storageAvailable: boolean };
 export function RemoteStorage({ getSession, onOpen, notify }: { getSession: () => DocumentSession; onOpen: (value: DocumentSession) => boolean | void; notify: (message: string) => void }) {
   const [auth, setAuth] = useState<Session | null>(null), [items, setItems] = useState<Item[]>([]), [busy, setBusy] = useState(false);
   const started = useRef(false), operationRunning = useRef(false);
@@ -33,9 +33,9 @@ export function RemoteStorage({ getSession, onOpen, notify }: { getSession: () =
     <strong>暗号化一時保管</strong><p>明示的に保管した文書と画像を10日間お預かりします。</p>
     {!auth && <span>状態を確認しています…</span>}
     {auth && !auth.storageAvailable && <p>サーバーの一時保管設定は準備中です。編集とダウンロードは利用できます。</p>}
-    {auth && !auth.user && auth.providers.map(provider => <a key={provider} href={`api.php?action=login&provider=${encodeURIComponent(provider)}`}>{provider === 'google' ? 'Google' : 'Microsoft'}でサインイン</a>)}
-    {auth && !auth.user && !auth.providers.length && <p>サインイン設定は準備中です。</p>}
-    {auth?.user && <><span>{auth.user.name}</span><button type="button" disabled={busy || !auth.storageAvailable} onClick={() => void perform(store)}>現在の文書と画像を一時保管</button><button type="button" disabled={busy} onClick={() => void perform(async () => { await request('logout', post()); await refresh(); })}>サインアウト</button>
+    {auth && !auth.user && auth.loginUrl && <a href={auth.loginUrl}>Googleでサインイン</a>}
+    {auth && !auth.user && !auth.loginUrl && <p>サイトのGoogleログイン設定は準備中です。</p>}
+    {auth?.user && <><span>{auth.user.name}</span><button type="button" disabled={busy || !auth.storageAvailable} onClick={() => void perform(store)}>現在の文書と画像を一時保管</button>{auth.logoutUrl && <a href={auth.logoutUrl} onClick={(event) => { if (!confirm('サイト全体からサインアウトします。必要な編集内容は先に保存してください。')) event.preventDefault(); }}>サイトからサインアウト</a>}
       {items.map(item => <div key={item.id}><span>{item.name}（{new Date(item.expires * 1000).toLocaleString()}まで）</span><button type="button" disabled={busy} onClick={() => void perform(() => open(item))}>復号して開く</button><button type="button" disabled={busy} onClick={() => { if (confirm('この保管データを削除しますか？')) void perform(async () => { await request(`delete&id=${encodeURIComponent(item.id)}`, post()); await refresh(); }); }}>削除</button></div>)}</>}
   </section>;
 }

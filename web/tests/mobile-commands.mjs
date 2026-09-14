@@ -18,14 +18,11 @@ let zipBytes = Buffer.alloc(0);
 const server = http.createServer(async (request, response) => {
   if (request.url?.startsWith("/api.php?action=session")) {
     response.setHeader("Content-Type", "application/json");
-    response.end(JSON.stringify({ user: signedIn ? { name: "Mobile Test", provider: "google" } : null, csrf: "c".repeat(64), providers: ["google"], storageAvailable: true }));
+    response.end(JSON.stringify({ user: signedIn ? { name: "Mobile Test", provider: "google" } : null, csrf: "c".repeat(64), loginUrl: "/auth/google/login.php?return_to=%2Fapp.html", logoutUrl: signedIn ? "/auth/logout.php?return_to=%2Fapp.html" : null, storageAvailable: true }));
     return;
   }
   if (request.url?.startsWith("/api.php?action=list")) {
     response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ items })); return;
-  }
-  if (request.url?.startsWith("/api.php?action=logout")) {
-    signedIn = false; response.setHeader("Content-Type", "application/json"); response.end("{}"); return;
   }
   if (request.url?.startsWith("/api.php?action=store")) {
     const chunks = []; await new Promise((done) => request.on("data", chunk => chunks.push(chunk)).on("end", done)); zipBytes = Buffer.concat(chunks);
@@ -94,12 +91,8 @@ try {
 
   await page.locator('.web-remote-storage > summary').click();
   await visible(page.getByRole("button", { name: "現在の文書と画像を一時保管", exact: true }), "PHP保管ボタン");
-  await visible(page.getByRole("button", { name: "サインアウト", exact: true }), "PHPサインアウト");
-  await page.getByRole("button", { name: "サインアウト", exact: true }).click();
-  await visible(page.getByRole("link", { name: "Googleでサインイン", exact: true }), "PHPサインアウト後のサインイン");
-  signedIn = true;
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.locator('.web-remote-storage > summary').click();
+  const logout = await visible(page.getByRole("link", { name: "サイトからサインアウト", exact: true }), "サイト共通ログアウトリンク");
+  assert.equal(await logout.getAttribute("href"), "/auth/logout.php?return_to=%2Fapp.html", "サイト共通ログアウトの戻り先");
   await page.getByRole("button", { name: "現在の文書と画像を一時保管", exact: true }).click();
   await visible(page.getByRole("button", { name: "復号して開く", exact: true }), "PHP保管一覧");
   await page.getByRole("button", { name: "復号して開く", exact: true }).click();

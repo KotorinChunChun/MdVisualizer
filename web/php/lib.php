@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+// 本番では Website の公開ルート直下にある共通Google認証を使う。
+// 環境変数は、公開ファイルや認証情報を複製しないローカル契約試験専用。
+require_once getenv('MDVISUALIZER_SITE_AUTH_BOOTSTRAP') ?: dirname(__DIR__, 2) . '/auth/bootstrap.php';
 
 // 公開領域には設定値・利用者データを置かない。
 function mdv_config(): array {
@@ -12,13 +15,9 @@ function mdv_config(): array {
 }
 
 function mdv_session(): void {
-    if (session_status() === PHP_SESSION_ACTIVE) return;
-    ini_set('session.use_strict_mode', '1');
-    ini_set('session.use_only_cookies', '1');
-    session_name('mdvisualizer_session');
-    session_set_cookie_params(['lifetime' => 0, 'path' => mdv_base_path(), 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
-    session_start();
-    if (!isset($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    site_auth_start_session();
+    // 共通セッション上でも、MdVisualizerの変更操作だけをこのCSRF値で分離する。
+    if (!isset($_SESSION['mdv_csrf'])) $_SESSION['mdv_csrf'] = bin2hex(random_bytes(32));
 }
 
 function mdv_base_path(): string {
@@ -28,14 +27,22 @@ function mdv_base_path(): string {
 
 function mdv_user(): array {
     mdv_session();
-    $user = $_SESSION['user'] ?? null;
-    if (!is_array($user) || (int)($user['expires'] ?? 0) <= time()) throw new RuntimeException('サインインしてください。', 401);
-    return $user;
+    $user = site_auth_current_user();
+    if ($user === null) throw new RuntimeException('サイトにサインインしてください。', 401);
+    if (!in_array($user['status'] ?? '', ['active', 'pending'], true)) throw new RuntimeException('このアカウントは利用できません。', 403);
+    $sub = (string)($user['google_sub'] ?? '');
+    if ($sub === '') throw new RuntimeException('アカウント情報を確認できません。', 401);
+    return [
+        // 旧Google OIDC版と同じキーで、既存の暗号化一時保管を同じ本人にだけ結び付ける。
+        'owner' => hash('sha256', "google\0accounts.google.com\0" . $sub),
+        'provider' => 'google',
+        'name' => (string)($user['name'] ?? '利用者'),
+    ];
 }
 
 function mdv_csrf(): void {
     mdv_session();
-    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !hash_equals($_SESSION['csrf'], (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''))) {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !hash_equals($_SESSION['mdv_csrf'], (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''))) {
         throw new RuntimeException('操作を確認できません。画面を開き直してください。', 403);
     }
 }

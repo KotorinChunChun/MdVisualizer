@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__ . '/oidc.php';
+require_once __DIR__ . '/lib.php';
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
@@ -9,19 +9,25 @@ try {
     mdv_session();
     $action = (string)($_GET['action'] ?? 'session');
     if (in_array($action, ['session', 'login', 'callback', 'list', 'download'], true) && ($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') throw new RuntimeException('この操作はGETで実行してください。', 405);
-    if ($action === 'login') mdv_login((string)($_GET['provider'] ?? ''));
-    if ($action === 'callback') mdv_callback();
+    if ($action === 'login') {
+        if (($_GET['provider'] ?? 'google') !== 'google') throw new RuntimeException('サイトのGoogleログインを利用してください。', 400);
+        header('Location: ' . site_auth_login_path(mdv_base_path() . 'index.php'), true, 302); exit;
+    }
+    if ($action === 'callback') throw new RuntimeException('サイトのGoogleログインからやり直してください。', 400);
     if ($action === 'logout') {
-        mdv_csrf(); $_SESSION = []; session_regenerate_id(true); $_SESSION['csrf'] = bin2hex(random_bytes(32)); mdv_json(['ok' => true]);
+        mdv_csrf();
+        // MdVisualizer自身はログイン状態を持たない。ここで共通サイトのCookieを消さない。
+        throw new RuntimeException('サイト全体のログアウトはサイトのメニューから実行してください。', 409);
     }
     if ($action === 'session') {
-        $providers = [];
-        foreach (['google', 'microsoft'] as $provider) { try { mdv_provider($provider); mdv_callback_url(); $providers[] = $provider; } catch (Throwable) {} }
+        $returnTo = mdv_base_path() . 'index.php';
+        $loginUrl = site_auth_is_configured() ? site_auth_login_path($returnTo) : null;
         $user = null;
-        try { $u = mdv_user(); $user = ['name' => $u['name'], 'provider' => $u['provider']]; } catch (RuntimeException) {}
+        try { $u = mdv_user(); $user = ['name' => $u['name'], 'provider' => $u['provider']]; }
+        catch (RuntimeException $error) { if ($error->getCode() !== 401) throw $error; }
         $storage = !empty(mdv_config()['storage_dir']);
         if ($storage) mdv_storage_locked(static fn(string $root): bool => true);
-        mdv_json(['user' => $user, 'csrf' => $_SESSION['csrf'], 'providers' => $providers, 'storageAvailable' => $storage, 'limits' => ['uploadBytes' => 32 * 1024 * 1024, 'retentionDays' => 10]]);
+        mdv_json(['user' => $user, 'csrf' => $_SESSION['mdv_csrf'], 'loginUrl' => $loginUrl, 'logoutUrl' => $user === null ? null : site_auth_logout_path($returnTo), 'storageAvailable' => $storage, 'limits' => ['uploadBytes' => 32 * 1024 * 1024, 'retentionDays' => 10]]);
     }
     $user = mdv_user();
     if ($action === 'list') {
@@ -74,6 +80,6 @@ try {
     }
     throw new RuntimeException('操作が見つかりません。', 404);
 } catch (Throwable $error) {
-    $status = $error instanceof RuntimeException && in_array($error->getCode(), [400,401,403,404,405,413,415,429,502,503], true) ? $error->getCode() : 500;
+    $status = $error instanceof RuntimeException && in_array($error->getCode(), [400,401,403,404,405,409,413,415,429,502,503], true) ? $error->getCode() : 500;
     mdv_json(['error' => $status === 500 ? '処理に失敗しました。内容を保持したまま、しばらくして再試行してください。' : $error->getMessage()], $status);
 }

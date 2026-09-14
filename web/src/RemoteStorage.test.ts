@@ -47,7 +47,7 @@ describe('RemoteStorageの暗号化クライアントフロー', () => {
     vi.stubGlobal('prompt', promptMock);
     fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes('action=session')) return new Response(JSON.stringify({ user: { name: 'Test User', provider: 'google' }, csrf: 'csrf-token', providers: [], storageAvailable: true }), { status: 200 });
+      if (url.includes('action=session')) return new Response(JSON.stringify({ user: { name: 'Test User', provider: 'google' }, csrf: 'csrf-token', loginUrl: '/auth/google/login.php?return_to=%2Fphp%2Findex.php', logoutUrl: '/auth/logout.php?return_to=%2Fphp%2Findex.php', storageAvailable: true }), { status: 200 });
       if (url.includes('action=list')) return new Response(JSON.stringify({ items: uploaded ? [{ id: 'item-1', name: session.name, expires: 2000000000, bytes: uploaded.size }] : [] }), { status: 200 });
       if (url.includes('action=store')) {
         expect(init?.method).toBe('POST');
@@ -116,5 +116,12 @@ describe('RemoteStorageの暗号化クライアントフロー', () => {
     fireEvent.click(screen.getByRole('button', { name: '復号して開く' }));
     await waitFor(() => expect(notify.mock.calls.some(([message]) => String(message).includes('File format is not recognized'))).toBe(true));
     expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('共通サイトのログアウトURLを明示リンクとして表示し、APIログアウトを呼ばない', async () => {
+    render(React.createElement(RemoteStorage, { getSession: () => session, onOpen: vi.fn(), notify: vi.fn() }));
+    const logout = await screen.findByRole('link', { name: 'サイトからサインアウト' });
+    expect(logout.getAttribute('href')).toBe('/auth/logout.php?return_to=%2Fphp%2Findex.php');
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('action=logout'))).toBe(false);
   });
 });
