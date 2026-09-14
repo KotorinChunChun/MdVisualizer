@@ -33,7 +33,10 @@ describe("ExternalDelimitedTableBlock", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "表を編集" })).not.toBeNull());
 
     fireEvent.click(screen.getByRole("button", { name: "表を編集" }));
-    const dialog = screen.getByRole("dialog", { name: "表を編集" });
+    // External file loading updates the table source in an effect.  Wait for
+    // the dialog commit after the click so that a trailing source-reset effect
+    // cannot race this assertion on slower full-suite runs.
+    const dialog = await screen.findByRole("dialog", { name: "表を編集" });
     fireEvent.change(within(dialog).getByRole("textbox", { name: "行 1 列 1" }), { target: { value: "updated" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "反映" }));
 
