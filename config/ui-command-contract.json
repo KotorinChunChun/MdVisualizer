@@ -49116,6 +49116,18 @@
       "signature": "850e442ea3c780ea54e7da7a0a965e08aeaff7aece90fb2c4dea0e24860135b6"
     },
     {
+      "id": "00eb73e4e136c75d",
+      "key": "web-platform/apps/web/src/web.css|@media (max-width:720px)|.web-app .data-grid-toolbar button,.web-app .data-grid-toolbar input,.web-app .data-grid-toolbar select",
+      "file": "web-platform/apps/web/src/web.css",
+      "line": 36,
+      "values": [
+        "height:44px",
+        "min-height:44px",
+        "line-height:1.2"
+      ],
+      "signature": "e8017c17b4e35c7cd471401e496bb0b3f5a6e9d77701baf6dc45c0d369fbcd68"
+    },
+    {
       "id": "9ebaf2100196d501",
       "key": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss||.spfxMarkdownCommandBar,\r\n.spfxMarkdownFormatToolbar",
       "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss",
