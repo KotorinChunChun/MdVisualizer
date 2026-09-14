@@ -13,6 +13,7 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $tauriRoot = Join-Path $projectRoot "src-tauri"
+Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot "ReleaseTools.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "MsixSigning.psm1") -Force
 $releaseConfiguration = Import-ReleaseConfiguration -Path $ConfigPath -ProjectRoot $projectRoot
@@ -130,7 +131,7 @@ try {
     if (-not $SkipTauriBuild) {
         Push-Location $projectRoot
         try {
-            Invoke-CheckedCommand -FilePath "npm.cmd" -ArgumentList @(
+            Invoke-MdVisualizerNpm -ProjectRoot $projectRoot -Arguments @(
                 "run",
                 "tauri",
                 "--",

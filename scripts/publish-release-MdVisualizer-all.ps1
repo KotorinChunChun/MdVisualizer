@@ -17,6 +17,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $PSScriptRoot "ReleaseTools.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "MsixSigning.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 $configuration = Import-ReleaseConfiguration -Path $ConfigPath -ProjectRoot $projectRoot
 
 $releaseModes = @("Build", "Stage", "Publish", "Full")
@@ -106,7 +107,13 @@ function Invoke-BuildRelease {
     $certificate = Get-MsixSigningCertificate -Publisher $configuration.Raw.application.publisher
     $certificate.Dispose()
     Write-Host "Running frontend tests for the explicitly requested release..."
-    Invoke-CheckedExternalCommand -FilePath "npm.cmd" -ArgumentList @("test") -WorkingDirectory $projectRoot
+    Push-Location $projectRoot
+    try {
+        Invoke-MdVisualizerNpm -ProjectRoot $projectRoot -Arguments @('test')
+    }
+    finally {
+        Pop-Location
+    }
     Write-Host "Running Rust tests for the explicitly requested release..."
     Invoke-CheckedExternalCommand -FilePath "cargo" -ArgumentList @("test") -WorkingDirectory (Join-Path $projectRoot "src-tauri")
     Write-Host "Building and signing the explicitly requested MSIX release..."

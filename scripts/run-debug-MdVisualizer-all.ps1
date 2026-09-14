@@ -7,6 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 $resolvedDocuments = @($DocumentPath | ForEach-Object {
     (Resolve-Path -LiteralPath $_ -ErrorAction Stop).Path
 })
@@ -28,10 +29,7 @@ if ($resolvedDocuments.Count -gt 0) {
 
 Push-Location $projectRoot
 try {
-    & npm.cmd @npmArguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "MdVisualizerのデバッグ起動が終了コード $LASTEXITCODE で失敗しました。"
-    }
+    Invoke-MdVisualizerNpm -ProjectRoot $projectRoot -Arguments $npmArguments
 } finally {
     Pop-Location
 }

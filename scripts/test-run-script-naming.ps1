@@ -5,6 +5,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 $expectedScripts = @(
     "run-debug-MdVisualizer-all.ps1",
     "run-debug-MdVisualizer-all-sample.ps1",
@@ -74,6 +75,14 @@ if ($parseErrors.Count -gt 0) {
 & (Join-Path $PSScriptRoot "run-release-MdVisualizer-all.ps1") -WhatIf
 & (Join-Path $PSScriptRoot "run-exe-MdVisualizer-all.ps1") -WhatIf
 & (Join-Path $PSScriptRoot "run-exe-MdVisualizer-all-sample.ps1") -WhatIf
+
+$nodeRuntime = Get-MdVisualizerNodeRuntime -ProjectRoot $projectRoot
+if (-not (Test-Path -LiteralPath $nodeRuntime.NodeExecutable -PathType Leaf) -or -not (Test-Path -LiteralPath $nodeRuntime.NpmCli -PathType Leaf)) {
+    throw 'Node.js/npmの解決結果が不正です。'
+}
+if ($nodeRuntime.CargoBin -and -not (Test-Path -LiteralPath (Join-Path $nodeRuntime.CargoBin 'cargo.exe') -PathType Leaf)) {
+    throw 'Rust/Cargoの解決結果が不正です。'
+}
 
 $oldDebugSample = Join-Path $projectRoot "dev\scripts\run-debug-test.ps1"
 $oldExeSample = Join-Path $projectRoot "dev\scripts\run-release-test.ps1"
