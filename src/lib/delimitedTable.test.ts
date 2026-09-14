@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { compareDelimitedValues, isDelimitedTableLanguage, parseDelimitedTable, serializeDelimitedTable } from "./delimitedTable";
 

@@ -33,7 +33,7 @@
     "release:plan": "pwsh -NoProfile -File ./scripts/publish-release-MdVisualizer-all.ps1 -Mode Plan",
     "test:run-scripts": "pwsh -NoProfile -File ./scripts/test-run-script-naming.ps1",
     "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
-    "pretest": "npm run build:embedded && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./web-platform/scripts/check-ui-styles.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract",
+    "pretest": "npm run build:embedded && npm run typecheck:incremental && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./web-platform/scripts/check-ui-styles.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract && npm run check:block-commands",
     "test": "vitest run",
     "test:diff-layout": "tsc --project tests/diff-layout/tsconfig.json && node ./scripts/test-diff-layout.mjs",
     "test:button-style-rules": "node ./scripts/test-button-style-rules.mjs",
@@ -52,7 +52,15 @@
     "validate:all": "pwsh -NoProfile -File scripts/Invoke-Validate-MdVisualizer-all.ps1",
     "check:ui-contract": "node scripts/ui-command-contract.mjs",
     "test:ui-contract": "node scripts/test-ui-command-contract.mjs && node scripts/test-ui-control-locations.mjs",
-    "publish:web": "pwsh -NoProfile -File scripts/publish-web-MdVisualizer-limited.ps1"
+    "publish:web": "pwsh -NoProfile -File scripts/publish-web-MdVisualizer-limited.ps1",
+    "validate:fast": "node scripts/validate-fast.mjs",
+    "validate:quick": "node scripts/validate-fast.mjs --typecheck",
+    "test:profile": "node scripts/profile-tests.mjs",
+    "check:block-commands": "node scripts/check-block-command-semantics.mjs",
+    "test:block-commands": "node scripts/test-block-command-semantics.mjs",
+    "test:validation-cache": "node scripts/test-validation-cache.mjs",
+    "ui:fixture": "node web-platform/scripts/generate-ui-style-fixture.mjs",
+    "typecheck:incremental": "tsc --noEmit --incremental --tsBuildInfoFile .tools/validation-cache/types.tsbuildinfo"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.4",

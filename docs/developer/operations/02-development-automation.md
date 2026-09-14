@@ -79,3 +79,49 @@ JSXの祖先コンテナー、HTMLのツールバー・メニュー・ダイア�
 ### 折畳メニューと広幅コピーの回帰
 
 通常の `npm test` の前処理でも子側の `check-ui-styles.mjs` を実行する。メニュー用chevronの共通コンポーネント利用、旧文字記号の混入、広幅コピー候補の共通寸法・色・枠・背景・フォントの欠落を静的に検出する。壊した入力による自己検証も同時に実行する。CSS統計の外れ値レポートと併用し、静的合格と実寸・実操作の確認は分けて記録する。
+
+## 高速検証（普段の変更確認）
+
+```powershell
+npm run validate:fast
+# 型検査まで。初回は必要な埋込生成も行う
+npm run validate:quick
+# 変更した共有ソースに依存するDesktopテストだけをVitestで選択
+npm run validate:fast -- --related src/lib/drawio.ts
+# キャッシュを使わず静的検査を再実行
+npm run validate:fast -- --force
+# 遅いテストを計測。全件、または末尾へ対象ファイルを指定
+npm run test:profile
+npm run test:profile -- src/lib/delimitedTable.test.ts src/lib/tableAggregation.test.ts
+```
+
+fastは共有投影、UI一覧、コマンド配線契約、各メニュートリガーとCSSを検査する。quick/relatedはその後に埋込生成と増分TypeScript検査を行う。関連テストの選択はVitestの依存関係解析を使い、共有正本のパスはDesktop投影パスへ変換する。src外の設定変更、Rust、Web/SPFx固有変更にはrelatedだけを使わず、従来の対象別検証を行う。関連テストが見つからない場合を成功扱いにしない。
+
+高速入口は通常のnpm testやリリース検査を置き換えない。npm testにも増分型検査を先行させ、全件テスト後に型エラーが分かる手戻りを減らす。DOMに依存しないことを確認したテストだけ `@vitest-environment node` を指定する。Testing Library・SVG sanitizer・DOM操作を含むテストの環境を一括変更しない。
+
+### キャッシュの成立条件
+
+scripts/validation-cache.mjsは入力の内容、ファイル追加/削除、Node版・OS・アーキテクチャをハッシュ化する。入力にはソース、検査スクリプト、仕様表、設定、依存lockを含める。生成キャッシュは出力の内容と存在も照合し、更新日時だけでは再利用しない。共有投影の手修正保護はキャッシュ時も実行する。失敗・実行中の入力変更では成功記録を保存しない。同一工程のロックが残っていれば所有プロセスを確認し、自動で削除しない。
+
+判定はpassed（今回実行）とcached（同じ入力の過去成功を再利用）を分け、元の検証日時と今回の所要時間をJSONに記録する。署名・アップロード・公開物取得・GUI受入にはこの成功キャッシュを適用しない。依存パッケージの手修正などlockに表れない変更を行った場合は依存を再導入し、--forceで再検証する。
+
+埋込生成の再利用は `npm run build:embedded` に組み込み済み。強制生成は `node scripts/build-embedded-tools.mjs --force`。内容が変わったときは子側のmtime判定も強制更新し、過去日時のファイルへ差し替えた場合も取りこぼさない。
+
+### コマンド仕様と外部通信
+
+`config/block-command-semantics.json` は承認済みブロック仕様への参照と実装経路を持つ。`check:block-commands` は固定表示、狭幅コピー、AIのホスト条件、編集の保存コールバックを実コードへ照合する。UI一覧の基準更新からこの仕様を自動生成・自動承認しない。静的解析が理解する現在の配線パターンの検査であり、任意のJavaScript条件式の証明や全状態の実描画検査ではない。比較表の古い現状欄は再確認候補として別出力し、現在の未実装と断定しない。
+
+draw.io exportの応答形は `web-platform/tests/fixtures/drawio-embed-protocol.json` に公式参照元とともに固定した。実際の保存画面が使う純粋helperをNodeテストから呼び、旧要求、不正な形式、未要求応答を検査する。iframeの送信元確認とSVGの安全性検査は既存のUI/DOMテストに残す。
+
+### 寸法確認と重いテストの調査
+
+`npm run ui:fixture` で、製品の共有CSSを読む小型の実寸確認HTMLを版別logsへ生成する。生成成功とブラウザー上での寸法合格は別結果。実寸と指定幅、高さ不足、高さの不一致を確認する。製品の全ツールバー生成・開閉・実OS操作を置き換えるものではない。
+
+`test:profile` は全テストまたは指定テストの実時間とファイル別時間を保存する。並列実行なのでファイル時間の合計を経過時間と扱わない。計測前の生成処理は含まないため、必要なら先にbuild:embeddedを実行する。次の高速化は記録から優先順を決める。
+
+- jsdom起動が支配的: 純粋処理テストを個別にNodeへ移す。
+- import/transformが支配的: 巨大なUIモジュールへの依存を純粋関数・小さいadapterへ分離する。
+- waitFor/timeoutが支配的: sleep短縮や無条件retryではなく、待っている状態の条件と非同期処理を修正する。
+- worker増加で遅くなる: 同じ対象でworker数を比較する。全CPU使用を無条件に高速とはみなさない。
+
+自動化自体は `npm run test:validation-cache`、`npm run test:block-commands` と既存のUI静的検査に内蔵した破壊fixtureで確認する。

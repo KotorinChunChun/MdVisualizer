@@ -108,3 +108,5 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 コードブロック、Mermaid、SVG、draw.io、表、埋め込み／外部参照ファイルのメニュー変更では、最初に[共通メニュー仕様](/docs/developer/ui/BLOCK_UI_SPEC.md)と同書の定義表・最終配置順を参照する。形式ごとに独自の並び順を増やさず、共通ID・表示条件・幅別配置を更新して実装と照合する。
 
 - [Desktop/Webの画面配置](/docs/developer/ui/WORKSPACE_LAYOUT.md)：メイン、プレビュー上部・左端、フッターの役割と順序。
+
+- 日常の高速検証・増分型検査・関連テスト・性能計測は [開発・検証の自動化](/docs/developer/operations/02-development-automation.md) の「高速検証」を参照する。全件検証と公開時の実確認は省略しない。
