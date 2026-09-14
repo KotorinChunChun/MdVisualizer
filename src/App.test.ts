@@ -20,6 +20,43 @@ describe("new Markdown shortcut wiring", () => {
   });
 });
 
+describe("document workspace controls", () => {
+  it("opens every supported local document through the native file dialog", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    const capability = readFileSync(join(process.cwd(), "src-tauri", "capabilities", "default.json"), "utf8");
+    const openStart = source.indexOf("const openDocument = useCallback");
+    const openEnd = source.indexOf("const toggleDocumentDiff", openStart);
+    const open = source.slice(openStart, openEnd);
+
+    expect(open).toContain("showOpenDialog({");
+    expect(open).toContain('title: "ファイルを開く"');
+    expect(open).toContain("multiple: true");
+    for (const extension of ["md", "markdown", "tsv", "csv", "svg", "mmd", "mermaid", "drawio"]) expect(open).toContain(`"${extension}"`);
+    expect(open).toContain('dispatch({ type: "OPEN", path })');
+    expect(capability).toContain('"dialog:allow-open"');
+  });
+
+  it("places Diff between preview selection and split direction", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    expect(source).toContain("<WorkspaceViewControls betweenPreviewAndDirection={<button data-ui-command=\"document.diff\"");
+  });
+
+  it("keeps the side rail when code is visible and keeps preview actions outside the scrolled body", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    const sidePanel = source.indexOf("{activeTab?.document && <DocumentSidePanel");
+    const panes = source.indexOf('<div className={`document-panes editor-workspace-${editorMode}`}');
+    const previewPane = source.indexOf('<section className="preview-pane">');
+    const previewToolbar = source.indexOf('<div className="preview-panel-toolbar"', previewPane);
+    const previewBody = source.indexOf('<main', previewToolbar);
+
+    expect(sidePanel).toBeGreaterThan(-1);
+    expect(panes).toBeGreaterThan(sidePanel);
+    expect(source.slice(Math.max(0, sidePanel - 48), sidePanel)).not.toContain('editorMode === "preview"');
+    expect(previewToolbar).toBeGreaterThan(previewPane);
+    expect(previewBody).toBeGreaterThan(previewToolbar);
+  });
+});
+
 describe("keyboard-complete document actions", () => {
   it("routes search, print, fold, and Escape actions from the document key handler", () => {
     const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");

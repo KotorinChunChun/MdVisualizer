@@ -93,6 +93,7 @@ web/tests/.php-zip-fixtures/
 /src/components/PlantUmlBlock.tsx
 /src/components/PresentationView.tsx
 /src/components/PreviewInlineEditor.tsx
+/src/components/PreviewPointerReorder.tsx
 /src/components/ResponsiveToolbar.tsx
 /src/components/SearchBar.tsx
 /src/components/SearchResults.tsx
@@ -170,6 +171,7 @@ web/tests/.php-zip-fixtures/
 /src/lib/previewClipboard.ts
 /src/lib/previewContext.ts
 /src/lib/previewInlineEdit.ts
+/src/lib/previewBlockReorder.ts
 /src/lib/printSession.ts
 /src/lib/remarkObsidianImages.ts
 /src/lib/sanitizeSchema.ts
@@ -192,6 +194,7 @@ web/tests/.php-zip-fixtures/
 /src/styles/markdown-editor.css
 /src/styles/presentation.css
 /src/styles/preview-inline-edit.css
+/src/styles/preview-block-reorder.css
 /src/styles/syntax-highlight.css
 /src/styles/themes.css
 /src/types/app.ts

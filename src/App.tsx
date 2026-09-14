@@ -750,13 +750,17 @@ export function App() {
   }, [activeTab, reloadTab]);
 
   const openDocument = useCallback(async () => {
+    try {
     const selected = await showOpenDialog({
-      title: "Markdownファイルを開く",
+      title: "ファイルを開く",
       multiple: true,
       filters: [{ name: "対応ファイル", extensions: ["md", "markdown", "tsv", "csv", "svg", "mmd", "mermaid", "drawio"] }],
     });
     const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
     paths.forEach((path) => dispatch({ type: "OPEN", path }));
+    } catch (error) {
+      setToast({ id: crypto.randomUUID(), message: `ファイルを開けませんでした: ${String(error)}`, type: "error" });
+    }
   }, []);
 
   const toggleDocumentDiff = useCallback(() => {
@@ -2333,10 +2337,7 @@ export function App() {
           <button data-ui-command="document.save" type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
-          <WorkspaceViewControls code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : previewMode === "off" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />
-        </div>
-        <div className="control-group document-actions">
-          <button data-ui-command="document.diff" type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>
+          <WorkspaceViewControls betweenPreviewAndDirection={<button data-ui-command="document.diff" type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>} code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : previewMode === "off" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />
         </div>
         <ExternalActions
           apps={activeSharePoint ? [] : externalApps.filter((app) => app.target === "document")}
@@ -2366,7 +2367,7 @@ export function App() {
         onRefresh={() => void refreshTabStorage(activeTab.id, false)}
         saving={activeTab.saving}
       /> : <>
-      {editorMode === "preview" && activeTab?.document && <DocumentSidePanel
+      {activeTab?.document && <DocumentSidePanel
         activeTab={documentSidePanel}
         onTabChange={changeDocumentSidePanel}
         onClose={documentSidePanel === "search" ? closeSearch : closeDocumentSidePanel}
@@ -2395,6 +2396,7 @@ export function App() {
           onOpenChange={() => undefined}
         />}
       />}
+      <div className={`document-panes editor-workspace-${editorMode}`} data-direction={splitDirection}>
       {canEditActive && editorMode !== "preview" && activeTab?.document && <Suspense fallback={<div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
         <MarkdownEditor
           onCodexConsult={!printing && !activeTab.saving ? (target) => { setCodexTarget(target); setCodexOpen(true); } : undefined}
@@ -2428,19 +2430,7 @@ export function App() {
           onCursorPositionChange={editorMode === "split" ? handleEditorCursorPosition : undefined}
         />
       </Suspense>}
-      {(editorMode !== "edit" || !canEditActive) && <main
-        className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`}
-        ref={containerRef}
-        tabIndex={-1}
-        onScroll={(event) => handlePreviewScroll(event.currentTarget)}
-        onClickCapture={handlePreviewClick}
-        onContextMenu={handlePreviewContextMenu}
-        onPointerMove={handlePreviewPointerMove}
-        onPointerLeave={handlePreviewPointerLeave}
-        onFocusCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.target))}
-        onBlurCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.relatedTarget))}
-        style={{ zoom: viewMode === "presentation" && activeTab?.document?.kind === "markdown" ? 1 : zoom / 100 }}
-      >
+      {(editorMode !== "edit" || !canEditActive) && <section className="preview-pane">
         {activeTab?.kind !== "settings" && activeTab?.document && <div className="preview-panel-toolbar" aria-label="プレビューの操作">
           {viewMode !== "presentation" && <label className="preview-panel-toolbar__heading">見出し
             <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
@@ -2458,6 +2448,19 @@ export function App() {
             </select>
           </label>
         </div>}
+      <main
+        className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`}
+        ref={containerRef}
+        tabIndex={-1}
+        onScroll={(event) => handlePreviewScroll(event.currentTarget)}
+        onClickCapture={handlePreviewClick}
+        onContextMenu={handlePreviewContextMenu}
+        onPointerMove={handlePreviewPointerMove}
+        onPointerLeave={handlePreviewPointerLeave}
+        onFocusCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.target))}
+        onBlurCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.relatedTarget))}
+        style={{ zoom: viewMode === "presentation" && activeTab?.document?.kind === "markdown" ? 1 : zoom / 100 }}
+      >
         {activeTab?.kind === "settings" ? (
           <SettingsPanel
             apps={externalApps}
@@ -2527,6 +2530,7 @@ export function App() {
           />
         ) : activeTab?.document ? (
           <MarkdownPreview
+            enablePointerBlockReorder={visualEditing}
             readOnly={!visualEditing}
             content={previewContent}
             baseDir={activeTab.document.base_dir}
@@ -2605,7 +2609,8 @@ export function App() {
             </div>
           </div>
         )}
-      </main>}
+      </main></section>}
+      </div>
       </>}
       </div>
       {codexOpen && <CodexPanel

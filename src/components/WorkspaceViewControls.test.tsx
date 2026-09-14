@@ -25,6 +25,11 @@ describe("表示切替", () => {
     expect((screen.getByLabelText("プレビュー") as HTMLSelectElement).value).toBe("off");
     expect((screen.getByLabelText("分割方向") as HTMLSelectElement).value).toBe("auto");
   });
+  it("プレビューと分割方向の間にホスト固有操作を置ける", () => {
+    render(<WorkspaceViewControls code preview="preview" direction="auto" onChange={() => undefined} onDirectionChange={() => undefined} betweenPreviewAndDirection={<button type="button">差分</button>} />);
+    const controls = Array.from(screen.getByRole("group", { name: "表示切替" }).children);
+    expect(controls.map((element) => element.getAttribute("data-ui-command") ?? element.textContent)).toEqual(["view.code", "view.preview", "差分", "view.direction"]);
+  });
   it("コードとプレビューを同時にOFFにせず、状態別の青色classを保つ", () => {
     render(<Fixture code={true} preview="off" />);
     fireEvent.click(screen.getByRole("button", { name: "コード" }));

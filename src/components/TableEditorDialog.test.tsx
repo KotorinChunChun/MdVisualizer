@@ -270,6 +270,15 @@ describe("TableEditorDialog grid editing", () => {
     expect(setData).toHaveBeenLastCalledWith("text/plain", "1\t2");
   });
 
+  it("行のドラッグつまみは縦の三点で、列の横つまみと区別する", () => {
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["1"]]} onCancel={() => undefined} onSave={() => true} />);
+    const rowHandle = screen.getByRole("button", { name: "行 1をドラッグして並び替え" });
+    const columnHandle = screen.getByRole("button", { name: "列 1をドラッグして並び替え" });
+    expect(rowHandle.textContent).toBe("⋮");
+    expect(rowHandle.classList.contains("table-editor-row-drag-handle")).toBe(true);
+    expect(columnHandle.classList.contains("table-editor-column-drag-handle")).toBe(true);
+  });
+
   it("places icon alignment toggles on both sides of the heading and treats release as center", () => {
     const onSave = vi.fn(() => true);
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"]]} initialAlignments={[null, null]} showAlignments onCancel={() => undefined} onSave={onSave} />);
