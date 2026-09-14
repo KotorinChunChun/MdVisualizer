@@ -32,6 +32,10 @@ describe("行単位の両側採用", () => {
     const rows = buildMergeRows("a\nb\nc", "S\nb\nT", "a\nL\nc", "a\nL\nc");
     expect(adoptMergeRow("a\nL\nc", rows, "base:0", "storage")).toBe("S\nL\nc");
   });
+  it("開始時の行を復元し、他の編集結果を保持する", () => {
+    const rows = buildMergeRows("a\nb\nc", "a\nS\nc", "a\nL\nc", "a\nL\nc");
+    expect(adoptMergeRow("a\nL\nc", rows, "base:1", "base")).toBe("a\nb\nc");
+  });
   it("同じ変更は未選択にしないが、異なる外部変更は明示選択を要求する", () => {
     const same = buildMergeRows("base", "same", "same", "same");
     expect(unresolvedMergeRows(same, {})).toBe(0);

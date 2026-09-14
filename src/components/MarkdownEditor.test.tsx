@@ -181,15 +181,34 @@ describe("MarkdownEditor", () => {
     expect(output.indexOf("```mermaid")).toBeLessThan(output.indexOf("after"));
   });
 
-  it("enables saving only for an unsaved draft", () => {
+  it("keeps Ctrl+S while removing the duplicate code-pane save button", () => {
     const onSave = vi.fn();
     const { rerender } = render(<MarkdownEditor documentId="tab-1:1" value="# Test" dirty={false} saving={false} onChange={() => {}} onSave={onSave} />);
-    expect((screen.getByRole("button", { name: "保存" }) as HTMLButtonElement).disabled).toBe(true);
-
+    expect(screen.queryByRole("button", { name: "保存" })).toBeNull();
     rerender(<MarkdownEditor documentId="tab-1:1" value="# Edited" dirty saving={false} onChange={() => {}} onSave={onSave} />);
-    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    fireEvent.keyDown(document.querySelector<HTMLElement>(".cm-content")!, { key: "s", ctrlKey: true });
 
     expect(onSave).toHaveBeenCalledOnce();
+  });
+
+  it("embeds a clipboard file through the host adapter before legacy image paste", async () => {
+    const onChange = vi.fn();
+    const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "assets/report.bin" });
+    const file = new File(["binary"], "report.bin", { type: "application/octet-stream" });
+    const { container } = render(<MarkdownEditor documentId="file-paste:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolveFileAttachment={onResolveFileAttachment} />);
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, { clipboardData: { files: [file], items: [], getData: () => "" } });
+    await waitFor(() => expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "embed"));
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("![report.bin](assets/report.bin)before"));
+  });
+
+  it("inserts a relative link for a dropped file through the host adapter", async () => {
+    const onChange = vi.fn();
+    const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "assets/report.bin" });
+    const file = new File(["binary"], "report.bin", { type: "application/octet-stream" });
+    const { container } = render(<MarkdownEditor documentId="file-drop:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolveFileAttachment={onResolveFileAttachment} />);
+    fireEvent.drop(container.querySelector<HTMLElement>(".cm-content")!, { dataTransfer: { files: [file] } });
+    await waitFor(() => expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "link"));
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("[report.bin](assets/report.bin)before"));
   });
 
   it("reflects an externally edited Base64 occurrence in CodeMirror without emitting another change", async () => {

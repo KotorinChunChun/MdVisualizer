@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { resolvedResponsiveOverflowIds, responsiveItemAreaWidth, responsiveOverflowIds } from "./ResponsiveToolbar";
 
 describe("responsive toolbar", () => {
+  it("全体をメニュー化する幅でも固定した検索欄を残す", () => {
+    expect(resolvedResponsiveOverflowIds(["copy"], [{ id: "search", fixed: true }, { id: "copy" }], true)).toEqual(["copy"]);
+  });
   it("moves low-priority non-fixed items to overflow until one line fits", () => {
     const items = [
       { id: "fixed", width: 100, priority: 0, fixed: true },

@@ -29,4 +29,25 @@ describe("MarkdownPreview convertible assets", () => {
     render(<MarkdownPreview content="![pending](image.png)" baseDir="C:\\docs" documentPath="C:\\docs\\note.md" imageVersions={{}} stagedAssetPreviews={{ "image.png": "data:image/png;base64,AAAA" }} />);
     expect(screen.getByAltText("pending").getAttribute("src")).toBe("data:image/png;base64,AAAA");
   });
+
+  it("renders an unsupported embedded attachment as a card and converts it back to a link", () => {
+    const onTextEdit = vi.fn().mockReturnValue(true);
+    render(<MarkdownPreview content="![資料](assets/report.bin)" baseDir="C:\\docs" documentPath="C:\\docs\\note.md" imageVersions={{}} onTextEdit={onTextEdit} />);
+    expect(screen.getByRole("group", { name: "埋め込みファイル: report.bin" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "リンクへ切替" }));
+    expect(onTextEdit).toHaveBeenCalledWith("![資料](assets/report.bin)", 0, "![資料](assets/report.bin)".length, "[資料](assets/report.bin)");
+  });
+
+  it("converts an unsupported file link to an embedded card", () => {
+    const onTextEdit = vi.fn().mockReturnValue(true);
+    render(<MarkdownPreview content="[資料](assets/report.bin)" baseDir="C:\\docs" documentPath="C:\\docs\\note.md" imageVersions={{}} onTextEdit={onTextEdit} />);
+    fireEvent.click(screen.getByRole("button", { name: "埋め込みへ切替" }));
+    expect(onTextEdit).toHaveBeenCalledWith("[資料](assets/report.bin)", 0, "[資料](assets/report.bin)".length, "![資料](assets/report.bin)");
+  });
+
+  it("keeps file-card conversion unavailable in preview-only mode", () => {
+    render(<MarkdownPreview content="![資料](assets/report.bin)" baseDir="C:\\docs" documentPath="C:\\docs\\note.md" imageVersions={{}} onTextEdit={vi.fn()} readOnly />);
+    expect(screen.getByRole("group", { name: "埋め込みファイル: report.bin" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "リンクへ切替" })).toBeNull();
+  });
 });

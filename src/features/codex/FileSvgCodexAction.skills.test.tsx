@@ -17,7 +17,7 @@ describe("FileSvgCodexAction skill placement", () => {
   });
   it("uses blockMenu for the button and contextMenu for right click, then forwards add/new and revision", async () => {
     render(<FileSvgCodexAction path="C:/docs/a.svg" />);
-    fireEvent.click(screen.getByRole("button", { name: "AIに図の編集を依頼" }));
+    fireEvent.click(screen.getByRole("button", { name: "AI▽" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "ブロック編集" }));
 
     await screen.findByRole("dialog");

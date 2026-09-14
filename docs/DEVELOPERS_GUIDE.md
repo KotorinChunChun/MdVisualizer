@@ -17,7 +17,7 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 | `dev/` | 版別要求、実装計画・報告、ロードマップ、開発記録 |
 | `release/` | 再生成可能な配布成果物。Git対象外 |
 
-共通UIの唯一の正本は `web-platform/packages/editor-ui/src/`（親側へ投影される134個の`src`を含む）です。投影先の手修正は避け、同期時のハッシュガードで検出します。Webの版番号は `web-platform/targets.json` で独立管理します。
+共通UIの唯一の正本は `web-platform/packages/editor-ui/src/`（投影対象は`packages/editor-ui/source-map.json`で管理）です。投影先の手修正は避け、同期時のハッシュガードで検出します。Webの版番号は `web-platform/targets.json` で独立管理します。
 
 プロジェクト固有ルールと資料を読む条件はルートの`AGENTS.md`を正本とします。
 
@@ -92,3 +92,11 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 - [インストール手順](/docs/user/INSTALLATION.md)
 - [利用ガイド](/docs/USERS_GUIDE.md)：対応機能、編集、検索、印刷、SharePoint、ショートカット、データ保護
 - [開発環境のセットアップ](/docs/developer/DEVELOPMENT_SETUP.md)：初回起動、MSIX作成、署名環境
+
+## 表・表示切替の共通実装
+
+`WorkspaceViewControls`、`DelimitedTableBlock`、`DocumentDiffWorkspace`は共有正本です。SPFxは`spfx*Bridge.tsx`と`build-embedded-tools.mjs`からReact UIとCSSを生成し、WebPartがSharePointの認証・保存・eTagを所有します。生成ファイルは直接変更しません。コードのFile貼付とドロップは`onResolveFileAttachment` adapterでホストの保存モデルへ接続します。
+
+回帰サンプルは子Gitの`tests/fixtures/v0.0.18-ui-cases.json`、要求ID別の受入は版別test-requirementsへ記録します。表の空行・空ヘッダ・ヘッダOFF・文字コード・CRLFを保存契約として検証します。更新番号を未保存バッジの根拠にせず、ステージされた未保存資産の存在を用います。
+
+設定案内の同梱スキルは共有`features/codex/default-skills/app-settings/SKILL.md`です。デスクトップでは既存ユーザーへの一回限りの追加を行い、削除後に再配布しません。

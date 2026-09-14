@@ -8,6 +8,7 @@ const SKILLS_DIRECTORY: &str = "codex-skills";
 const INITIALIZED_MARKER: &str = ".defaults-initialized";
 const MAX_SKILL_BYTES: usize = 128 * 1024;
 const MAX_SKILLS: usize = 100;
+const SETTINGS_SKILL: &str = include_str!("../../src/features/codex/default-skills/app-settings/SKILL.md");
 
 const DEFAULT_SKILLS: &[(&str, &str)] = &[
     (
@@ -106,6 +107,16 @@ fn safe_skill_path(root: &Path, id: &str) -> Result<PathBuf, String> {
 }
 
 fn ensure_defaults(root: &Path) -> Result<(), String> {
+    // 既存利用者にも新規スキルだけ一度配布する。削除・編集済みのスキルは復元しない。
+    let settings_marker = root.join(".app-settings-initialized");
+    if !settings_marker.exists() {
+        let path = safe_skill_path(root, "app-settings")?;
+        if !path.exists() {
+            fs::create_dir_all(path.parent().ok_or("スキルフォルダーを取得できません。")?).map_err(|error| error.to_string())?;
+            atomic_write(&path, SETTINGS_SKILL.as_bytes()).map_err(|error| error.to_string())?;
+        }
+        atomic_write(&settings_marker, b"initialized\n").map_err(|error| error.to_string())?;
+    }
     let marker = root.join(INITIALIZED_MARKER);
     if marker.exists() {
         return Ok(());
@@ -243,6 +254,21 @@ mod tests {
         fs::remove_file(&deleted).unwrap();
         ensure_defaults(root.path()).unwrap();
         assert!(!deleted.exists());
+    }
+
+    #[test]
+    fn migrates_app_settings_once_for_existing_users_and_does_not_restore_it_after_deletion() {
+        let root = tempdir().unwrap();
+        // 既存利用者は旧既定スキルのmarkerだけを持つ状態から移行する。
+        fs::write(root.path().join(INITIALIZED_MARKER), b"initialized\n").unwrap();
+        ensure_defaults(root.path()).unwrap();
+        let settings = root.path().join("app-settings/SKILL.md");
+        assert_eq!(fs::read_to_string(&settings).unwrap(), SETTINGS_SKILL);
+        assert!(root.path().join(".app-settings-initialized").is_file());
+        fs::remove_file(&settings).unwrap();
+        fs::remove_dir(root.path().join("app-settings")).unwrap();
+        ensure_defaults(root.path()).unwrap();
+        assert!(!settings.exists());
     }
 
     #[test]

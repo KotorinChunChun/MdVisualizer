@@ -109,9 +109,11 @@ describe("DrawioBlock", () => {
     render(<DrawioBlock source={source} theme="light" blockId="controls" />);
 
     expect(screen.getByRole("toolbar", { name: "draw.io操作" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "コードをコピー" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "BMPコピー" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
+    expect(screen.getByRole("menuitem", { name: "コードテキストをコピー" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "drawioファイルとしてコピー" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "コード" }));
     expect(screen.getByText(source)).toBeTruthy();
   });

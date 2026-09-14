@@ -196,3 +196,9 @@ web/tests/.php-zip-fixtures/
 /src/styles/themes.css
 /src/types/app.ts
 /src/types/settings.ts
+
+/src/components/WorkspaceViewControls.tsx
+/src/styles/workspace-view-controls.css
+/src/lib/fileAttachment.ts
+/src/features/codex/default-skills/app-settings/SKILL.md
+/src/contexts/DocumentSaveContext.ts

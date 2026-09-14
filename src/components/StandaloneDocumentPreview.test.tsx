@@ -6,6 +6,10 @@ vi.mock("./ImageRenderer", () => ({
   ImageRenderer: ({ src, alt }: { src: string; alt: string }) => <div data-testid="svg-preview" data-src={src}>{alt}</div>,
 }));
 
+vi.mock("./MermaidToolbar", () => ({
+  MermaidToolbar: ({ source, svg }: { source: string; svg: string }) => <div data-testid="svg-copy-menu" data-source={source} data-svg={svg}>コピー▽</div>,
+}));
+
 vi.mock("./MermaidBlock", () => ({
   MermaidBlock: ({ source, mode, diagramCount, headingTitle }: { source: string; mode: string; diagramCount: number; headingTitle?: string }) => (
     <div data-testid="mermaid-preview" data-mode={mode} data-count={diagramCount} data-title={headingTitle}>{source}</div>
@@ -59,6 +63,8 @@ describe("StandaloneDocumentPreview", () => {
 
     expect(screen.getByTestId("svg-preview").getAttribute("data-src")).toBe("C:\\docs\\diagram.svg");
     expect(screen.getByTestId("svg-preview").textContent).toContain("diagram.svg");
+    expect(screen.getByTestId("svg-copy-menu").dataset.source).toBe("<svg />");
+    expect(screen.getByTestId("svg-copy-menu").dataset.svg).toBe("<svg />");
   });
 
   it("routes Mermaid source through the existing Mermaid renderer", () => {

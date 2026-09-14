@@ -16,7 +16,7 @@ describe("ExternalDelimitedTableBlock", () => {
     render(<ExternalDelimitedTableBlock source="table.csv" baseDir="C:\\docs" documentPath="C:\\docs\\note.md" language="csv" version={1} />);
     await waitFor(() => expect(screen.getByRole("table")).not.toBeNull());
     expect(screen.getByText("table.csv")).not.toBeNull();
-    expect(screen.getByText("更新あり")).not.toBeNull();
+    expect(screen.queryByText("更新あり")).toBeNull();
     expect(screen.getAllByText("1").length).toBeGreaterThan(0);
   });
 
@@ -41,7 +41,7 @@ describe("ExternalDelimitedTableBlock", () => {
   });
 
   it("一時ステージ済みのTSVを優先表示して未保存状態にする", async () => {
-    render(<ExternalDelimitedTableBlock
+    const { rerender } = render(<ExternalDelimitedTableBlock
       source="table.tsv"
       baseDir="C:\\docs"
       documentPath="C:\\docs\\note.md"
@@ -53,6 +53,10 @@ describe("ExternalDelimitedTableBlock", () => {
 
     expect(screen.getByText("未保存")).not.toBeNull();
     expect(screen.getByRole("table").textContent).toContain("staged");
+    rerender(<ExternalDelimitedTableBlock source="table.tsv" baseDir="C:\\docs" documentPath="C:\\docs\\note.md" language="tsv" version={2} />);
+    await waitFor(() => expect(screen.getByRole("table")).not.toBeNull());
+    expect(screen.queryByText("未保存")).toBeNull();
+    expect(screen.queryByText("更新あり")).toBeNull();
   });
 
   it("外部表の非同期保存失敗では編集画面を閉じず、失敗を表示する", async () => {

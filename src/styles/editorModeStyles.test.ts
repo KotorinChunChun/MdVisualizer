@@ -6,23 +6,27 @@ import { describe, expect, it } from "vitest";
 const appSource = readFileSync(join(process.cwd(), "src/App.tsx"), "utf8");
 const headerSource = readFileSync(join(process.cwd(), "src/components/HeaderBar.tsx"), "utf8");
 const appCss = readFileSync(join(process.cwd(), "src/styles/app.css"), "utf8");
+const viewControlsSource = readFileSync(join(process.cwd(), "src/components/WorkspaceViewControls.tsx"), "utf8");
+const viewControlsCss = readFileSync(join(process.cwd(), "src/styles/workspace-view-controls.css"), "utf8");
 
-describe("editor mode segmented control", () => {
-  it("groups the three editor modes for assistive technology", () => {
-    expect(appSource).toContain('className="editor-mode-segments" role="group"');
-    expect(appSource).toContain("編集のみ");
-    expect(appSource).toContain("編集／閲覧");
-    expect(appSource).toContain("閲覧のみ");
+describe("workspace view controls", () => {
+  it("groups the independent code and preview controls for assistive technology", () => {
+    expect(appSource).toContain("<WorkspaceViewControls");
+    expect(viewControlsSource).toContain('className="workspace-view-controls" role="group" aria-label="表示切替"');
+    expect(viewControlsSource).toContain(">コード</button>");
+    expect(viewControlsSource).toContain("プレビュー限定");
+    expect(viewControlsSource).toContain("ビジュアル編集");
+    expect(viewControlsSource).toContain("<option value=\"off\"");
   });
 
-  it("defines connected, selected, hover, focus, and disabled states", () => {
-    expect(appCss).toContain(".editor-mode-segments { display: inline-flex;");
-    expect(appCss).toContain(".editor-mode-segments button:first-child");
-    expect(appCss).toContain(".editor-mode-segments button:last-child");
-    expect(appCss).toContain(".editor-mode-segments button:hover:not(:disabled):not(.is-active)");
-    expect(appCss).toContain(".editor-mode-segments button:focus-visible");
-    expect(appCss).toContain(".editor-mode-segments button.is-active");
-    expect(appCss).toContain(".editor-mode-segments button:disabled");
+  it("defines code, preview, visual editing, and direction states", () => {
+    expect(viewControlsCss).toContain(".workspace-view-controls { display:flex;");
+    expect(viewControlsCss).toContain(".workspace-preview-control.is-preview");
+    expect(viewControlsCss).toContain(".workspace-preview-control.is-visual,.workspace-view-controls button.is-active");
+    expect(viewControlsSource).toContain('aria-label="分割方向"');
+    expect(viewControlsSource).toContain(">自動</option>");
+    expect(viewControlsSource).toContain(">上下</option>");
+    expect(viewControlsSource).toContain(">左右</option>");
   });
 
   it("uses the requested reload label in both headers", () => {

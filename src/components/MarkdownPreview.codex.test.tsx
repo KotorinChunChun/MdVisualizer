@@ -21,4 +21,8 @@ describe("SVGのCodexメニュー", () => {
     render(<MarkdownPreview content={'```svg\n<svg/>\n```\n\n<svg/>'} baseDir="C:/docs" documentPath="C:/docs/a.md" imageVersions={{}} onInlineSvgChange={vi.fn()} onCodeFenceBodyChange={vi.fn()} staticMode />);
     expect(screen.queryByText("Codex図テスト")).toBeNull();
   });
+  it("プレビュー限定ではSVGの視覚編集を出さない", () => {
+    render(<MarkdownPreview content={'```svg\n<svg/>\n```\n\n<svg/>'} baseDir="C:/docs" documentPath="C:/docs/a.md" imageVersions={{}} onInlineSvgChange={vi.fn()} onCodeFenceBodyChange={vi.fn()} readOnly />);
+    expect(screen.queryByText("Codex図テスト")).toBeNull();
+  });
 });

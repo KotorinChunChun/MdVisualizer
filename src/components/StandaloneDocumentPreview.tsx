@@ -7,6 +7,7 @@ import { DrawioBlock } from "./DrawioBlock";
 import { getFileName } from "../lib/path";
 import { DelimitedTableBlock } from "./DelimitedTableBlock";
 import { FileSvgCodexAction } from "../features/codex/FileSvgCodexAction";
+import { MermaidToolbar } from "./MermaidToolbar";
 
 interface StandaloneDocumentPreviewProps {
   document: MarkdownLoadResult;
@@ -17,6 +18,10 @@ interface StandaloneDocumentPreviewProps {
   tabId: string;
   onMediaOpen?: (target: MediaPreviewTarget) => void;
   onDrawioSave?: (source: string) => boolean | void | Promise<boolean | void>;
+  /** Direct CSV/TSV edits are reported before the host persists the document. */
+  onTextChange?: (source: string) => boolean | void | Promise<boolean | void>;
+  /** Optional explicit save route for direct CSV/TSV documents. */
+  onTsvSave?: (source: string) => boolean | void | Promise<boolean | void>;
 }
 
 /** Displays direct SVG and Mermaid files through the same safe preview paths used by Markdown embeds. */
@@ -29,9 +34,12 @@ export function StandaloneDocumentPreview({
   tabId,
   onMediaOpen,
   onDrawioSave,
+  onTextChange,
+  onTsvSave,
 }: StandaloneDocumentPreviewProps) {
   if (document.kind === "svg") {
     return <div className="markdown-body standalone-document standalone-document--svg" ref={contentRef}>
+      <MermaidToolbar source={document.content} svg={document.content} display="diagram" ariaLabel="SVG操作" />
       <ImageRenderer
         src={document.path}
         alt={getFileName(document.path)}
@@ -63,7 +71,7 @@ export function StandaloneDocumentPreview({
 
   if (document.kind === "tsv") {
     return <div className="markdown-body standalone-document standalone-document--tsv" ref={contentRef}>
-      <DelimitedTableBlock language="tsv" source={document.content} headingLabel={<strong>{getFileName(document.path)}</strong>} />
+      <DelimitedTableBlock language="tsv" source={document.content} headingLabel={<strong>{getFileName(document.path)}</strong>} onSave={onTsvSave ?? onTextChange} />
     </div>;
   }
 

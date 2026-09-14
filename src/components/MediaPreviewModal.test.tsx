@@ -144,9 +144,11 @@ describe("MediaPreviewModal", () => {
     />);
 
     expect(screen.getByRole("toolbar", { name: "draw.io全画面操作" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "コードをコピー" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "BMPコピー" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "ベクタコピー" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
+    expect(screen.getByRole("menuitem", { name: "コードテキストをコピー" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "drawioファイルとしてコピー" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "プレビュー" })).toBeNull();
     expect(screen.queryByRole("button", { name: "コード" })).toBeNull();
     expect(document.querySelector(".media-preview__source")).toBeNull();

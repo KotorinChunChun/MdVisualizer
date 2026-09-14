@@ -17,7 +17,17 @@ describe("delimited tables", () => {
   it("normalizes ragged TSV rows and supplies empty header names", () => {
     const data = parseDelimitedTable("\tvalue\nA\t1\textra\nB", "tsv-h");
     expect(data.headers).toEqual(["列 1", "value", "列 3"]);
+    expect(data.rawHeaders).toEqual(["", "value"]);
     expect(data.rows).toEqual([["A", "1", "extra"], ["B", "", ""]]);
+    expect(serializeDelimitedTable(data)).toBe("\tvalue\nA\t1\textra\nB");
+  });
+
+  it("retains empty rows and never treats the first row as a header when disabled", () => {
+    const source = "名前\t数量\n先頭\t1\n\n次\t2";
+    const data = parseDelimitedTable(source, "tsv", { hasHeader: false });
+    expect(data.headers).toEqual(["A", "B"]);
+    expect(data.rows).toEqual([["名前", "数量"], ["先頭", "1"], ["", ""], ["次", "2"]]);
+    expect(serializeDelimitedTable(data)).toBe(source);
   });
 
   it("rejects an unterminated quoted cell", () => {

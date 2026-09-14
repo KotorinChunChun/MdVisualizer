@@ -23,7 +23,9 @@ describe("コード画面の統合右クリック", () => {
     act(() => view.dispatch({ selection: { anchor: 2, head: 9 } }));
     vi.spyOn(view, "posAtCoords").mockReturnValue(5);
     fireEvent.contextMenu(editable, { clientX: 30, clientY: 40 });
-    for (const name of ["元に戻す", "やり直す", "切り取り", "コピー", "貼り付け", "すべて選択"]) expect(screen.getByRole("menuitem", { name })).toBeTruthy();
+    for (const name of ["切り取り", "コピー", "貼り付け", "すべて選択"]) expect(screen.getByRole("menuitem", { name })).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: "元に戻す" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "やり直す" })).toBeNull();
     fireEvent.click(screen.getByRole("menuitem", { name: "AIに相談" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "現在の会話に追加" }));
     await waitFor(() => expect(onConsult).toHaveBeenCalledWith(expect.objectContaining({ documentId: "tab-1:4", content, from: 2, to: 9, editMode: "question", conversationAction: "add" })));

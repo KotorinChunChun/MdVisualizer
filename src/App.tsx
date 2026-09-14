@@ -8,6 +8,8 @@ import { PreviewContextMenu } from "./components/PreviewContextMenu";
 import { StatusBar } from "./components/StatusBar";
 import { MarkdownPreview, type ExternalFileRenameContext, type ExternalTableChangeContext } from "./components/MarkdownPreview";
 import { StandaloneDocumentPreview } from "./components/StandaloneDocumentPreview";
+import { WorkspaceViewControls, type PreviewMode, type SplitDirection } from "./components/WorkspaceViewControls";
+import { DocumentSaveContext } from "./contexts/DocumentSaveContext";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
 import { SearchBar } from "./components/SearchBar";
@@ -76,6 +78,7 @@ import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } fr
 import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
 import { createDocumentStorageRefresh } from "./lib/documentStorageRefresh";
+import { startDeletedDocumentRecovery } from "./lib/deletedDocumentRecovery";
 import { documentDiffTarget } from "./lib/documentDiffTarget";
 import { documentDiffProtectsDraft, documentDiffSavePermission } from "./lib/documentDiffSave";
 import "./styles/app.css";
@@ -119,7 +122,7 @@ export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: 
 }
 
 export function canEditMarkdownDocument(document: { kind: string } | null | undefined): boolean {
-  return document?.kind === "markdown";
+  return document?.kind === "markdown" || document?.kind === "tsv";
 }
 
 export function shouldBlockF5Reload(tab: { dirty: boolean } | null | undefined): boolean {
@@ -340,6 +343,9 @@ export function App() {
   }, []);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedTabs, setClosedTabs] = useState<ClosedTabState[]>([]);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("preview");
+  const [splitDirection, setSplitDirection] = useState<SplitDirection>("auto");
+  const visualEditing = previewMode === "visual";
   const [tabsState, reactDispatch] = useReducer(tabsReducer, initialTabsState);
   const tabsStateRef = useRef(tabsState);
   tabsStateRef.current = tabsState;
@@ -352,9 +358,13 @@ export function App() {
   autoReloadRef.current = autoReload;
   const refreshTabStorage = useMemo(() => createDocumentStorageRefresh({
     getTab: (id) => tabsStateRef.current.tabs.find((tab) => tab.id === id),
-    load: loadMarkdown, dispatch, shouldReload: (id) => autoReloadRef.current === "on"
+    load: loadMarkdown, dispatch, shouldReload: (id) => (autoReloadRef.current === "on" || Boolean(tabsStateRef.current.tabs.find((tab) => tab.id === id)?.deleted))
       && !documentDiffProtectsDraft(tabsStateRef.current.tabs.find((tab) => tab.id === id), diffReviewRef.current),
   }), []);
+  useEffect(() => startDeletedDocumentRecovery(
+    () => tabsStateRef.current.tabs.map((tab) => ({ ...tab, local: Boolean(tab.document && !isSharePointDocument(tab.document)) })),
+    (id) => refreshTabStorage(id),
+  ), [refreshTabStorage]);
   const resolvePastedImage = useCallback(async (image: ClipboardImageData): Promise<ResolvedClipboardImage> => {
     const embedded = { source: `data:${image.mediaType};base64,${image.base64}` };
     if (clipboardImage.storage === "base64") return embedded;
@@ -763,7 +773,7 @@ export function App() {
       return;
     }
     if (!tab.dirty && !permission.force) return;
-    if (tab.document.kind !== "markdown") {
+    if (!canEditMarkdownDocument(tab.document)) {
       setToast({ id: String(Date.now()), message: "この文書は閲覧専用です。", type: "error" });
       return;
     }
@@ -2292,6 +2302,12 @@ export function App() {
   const scopedMarkdownStyle = scopeMarkdownStyleCss(markdownStyleCss) ?? "";
 
   return (
+    <DocumentSaveContext.Provider value={async () => {
+      const id = activeTab?.id;
+      if (!id || id !== tabsStateRef.current.activeId) return false;
+      await saveTab(id);
+      return !tabsStateRef.current.tabs.find(tab => tab.id === id)?.dirty;
+    }}>
     <div className={`app-container${printing ? " is-printing" : ""}`} data-print-fold-mode={printStyle.foldMode}>
       <style data-markdown-custom-style>{scopedMarkdownStyle}</style>
       {printing && activeTab?.document && <PrintMetadata path={activeTab.document.path} startedAt={printStartedAt} settings={printStyle} />}
@@ -2306,12 +2322,7 @@ export function App() {
           <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
-          <span className="control-group__title">画面</span>
-          <div className="editor-mode-segments" role="group" aria-label="編集画面の切り替え">
-            <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("edit")}>編集のみ</button>
-            <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
-            <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
-          </div>
+          <WorkspaceViewControls code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : previewMode === "off" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />
           <button type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>
         </div>
         {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
@@ -2340,7 +2351,7 @@ export function App() {
       </div>}
 
       <div className={`ai-document-layout${codexOpen && codexMaximized ? " ai-document-layout--maximized" : ""}`}>
-      <div className={`document-workspace editor-workspace-${editorMode}`}>
+      <div className={`document-workspace editor-workspace-${editorMode}`} data-direction={splitDirection}>
       {documentDiff && activeTab?.document?.kind === "markdown" && documentSourceIdentity(documentDiff.path) === documentSourceIdentity(activeTab.path) ? <DocumentDiffWorkspace
         key={activeTab.id}
         target={documentDiffTarget(activeTab, documentDiff.conflict)}
@@ -2394,6 +2405,13 @@ export function App() {
           onChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
           onSave={() => void saveTab(activeTab.id)}
           onResolvePastedImage={resolvePastedImage}
+          onResolveFileAttachment={async (file) => {
+            const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
+            if (!tab?.document || tab.untitled) throw new Error("添付ファイルの保存先を決めるため、先に本文を保存してください。");
+            const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); });
+            const asset = await stageDocumentAsset({ documentPath: tab.document.path, preferredFilename: file.name, base64: data.slice(data.indexOf(",") + 1) });
+            return { source: asset.filename, asset };
+          }}
           onStagedAssetAdded={(content, asset) => dispatch({ type: "STAGED_ASSET_ADDED", id: activeTab.id, content, asset })}
           onStagedAssetAbandoned={(asset) => void discardStagedAssets([asset.id])}
           onPasteImageError={(error) => setToast({ id: crypto.randomUUID(), message: `画像の貼り付けに失敗しました: ${String(error)}`, type: "error" })}
@@ -2451,7 +2469,7 @@ export function App() {
           </div>
         ) : activeTab?.document && activeTab.document.kind !== "markdown" ? (
           <StandaloneDocumentPreview
-            document={activeTab.document}
+            document={{ ...activeTab.document, content: activeTab.draft }}
             imageVersions={imageVersions}
             contentRef={markdownRef}
             theme={printing ? "light" : theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
@@ -2459,6 +2477,7 @@ export function App() {
             tabId={activeTab.id}
             onMediaOpen={openMediaPreview}
             onDrawioSave={activeTab.document.kind === "drawio" ? (content) => saveStandaloneDrawio(activeTab.id, content) : undefined}
+            onTextChange={visualEditing && activeTab.document.kind === "tsv" ? (content) => { dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content }); } : undefined}
           />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
@@ -2488,6 +2507,7 @@ export function App() {
           />
         ) : activeTab?.document ? (
           <MarkdownPreview
+            readOnly={!visualEditing}
             content={previewContent}
             baseDir={activeTab.document.base_dir}
             onTextEdit={canEditActive && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
@@ -2760,7 +2780,7 @@ export function App() {
         plainText={previewContext.plainText}
         markdownText={previewContext.markdownText}
         rowTsv={previewContext.rowTsv}
-        canEdit={canEditActive}
+        canEdit={canEditActive && visualEditing}
         onEdit={editPreviewContextLine}
         onSelectLine={() => selectPreviewContent(previewContext.line)}
         onSelectRow={previewContext.rowElement ? selectPreviewRow : undefined}
@@ -2770,6 +2790,7 @@ export function App() {
         onError={(message) => setToast({ id: crypto.randomUUID(), message, type: "error" })}
       />}
     </div>
+    </DocumentSaveContext.Provider>
   );
 }
 

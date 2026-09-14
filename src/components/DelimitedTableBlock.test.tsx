@@ -48,6 +48,16 @@ describe("DelimitedTableBlock", () => {
     expect(bodyRows[0].textContent).toContain("Bob");
   });
 
+  it("shows every row by default and keeps the first row when headers are turned off", () => {
+    render(<DelimitedTableBlock language="tsv" source={"name\tvalue\nA\t1\nB\t2\nC\t3\nD\t4\nE\t5\nF\t6\nG\t7\nH\t8\nI\t9\nJ\t10\nK\t11"} />);
+    expect(screen.getByText("11 / 11 行")).toBeTruthy();
+    expect(screen.getByText("K")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "ヘッダ: ON" }));
+    expect(screen.getByRole("button", { name: /A: .*ソートなし/ })).toBeTruthy();
+    expect(screen.getByRole("table").textContent).toContain("name");
+    expect(screen.getByText("12 / 12 行")).toBeTruthy();
+  });
+
   it("filters through the slicer and toggles visible columns only after explicit actions", () => {
     render(<DelimitedTableBlock language="tsv-h" source={"name\tcity\nAlice\tTokyo\nBob\tOsaka\nCarol\tTokyo"} />);
     fireEvent.click(screen.getByRole("button", { name: "スライサー" }));
@@ -145,8 +155,22 @@ describe("DelimitedTableBlock", () => {
     expect(screen.getByRole("menuitem", { name: "ブロック全体を選択" })).toBeTruthy();
     fireEvent.click(screen.getByRole("menuitem", { name: "選択した行をTSVでコピー" }));
 
-    expect(writeText).toHaveBeenCalledWith("Alice\tTokyo");
+    expect(writeText).toHaveBeenCalledWith("name\tcity\nAlice\tTokyo");
     expect(row.className).toContain("is-selected-row");
+  });
+
+  it("copies a selected preview range as headered TSV and offers Markdown and plain text", () => {
+    render(<DelimitedTableBlock language="tsv" source={"name\tcity\nAlice\tTokyo\nBob\tOsaka"} />);
+    const first = screen.getByText("Alice");
+    const last = screen.getByText("Osaka");
+    fireEvent.mouseDown(first);
+    fireEvent.mouseEnter(last);
+    const setData = vi.fn();
+    fireEvent.copy(screen.getByRole("region", { name: "TSV表" }), { clipboardData: { setData } });
+    expect(setData).toHaveBeenCalledWith("text/plain", "name\tcity\nAlice\tTokyo\nBob\tOsaka");
+    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
+    expect(screen.getByRole("button", { name: "Markdownコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "プレーンテキストコピー" })).toBeTruthy();
   });
 
   it("quotes tabs and line breaks when copying a column or row as TSV", () => {
@@ -162,7 +186,7 @@ describe("DelimitedTableBlock", () => {
     const aliceRow = screen.getByText("Alice").closest("tr")!;
     fireEvent.contextMenu(aliceRow);
     fireEvent.click(screen.getByRole("menuitem", { name: "選択した行をTSVでコピー" }));
-    expect(writeText).toHaveBeenLastCalledWith('Alice\t"line1\nline2"');
+    expect(writeText).toHaveBeenLastCalledWith('name\tnotes\nAlice\t"line1\nline2"');
   });
 
   it("serializes calculated cells when applying an edited delimited table", () => {
@@ -174,6 +198,27 @@ describe("DelimitedTableBlock", () => {
     expect(onSave).toHaveBeenCalledWith("項目,値\nA,10\nB,20\n合計,30");
   });
 
+  it("preserves the source first row and empty rows when header display is disabled", () => {
+    const source = "名前\t数量\n先頭\t1\n\n次\t2";
+    const onSave = vi.fn().mockReturnValue(true);
+    render(<DelimitedTableBlock language="tsv" source={source} onSave={onSave} />);
+    fireEvent.click(screen.getByRole("button", { name: "ヘッダ: ON" }));
+    fireEvent.click(screen.getByRole("button", { name: "表を編集" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "表を編集" })).getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(source);
+  });
+
+  it("preserves blank header cells and empty rows when applying without edits", () => {
+    const source = "\t値\nA\t1\n\nB\t2";
+    const onSave = vi.fn().mockReturnValue(true);
+    render(<DelimitedTableBlock language="tsv" source={source} onSave={onSave} />);
+    fireEvent.click(screen.getByRole("button", { name: "表を編集" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "表を編集" })).getByRole("button", { name: "反映" }));
+
+    expect(onSave).toHaveBeenCalledWith(source);
+  });
+
   it("offers separate CSV and TSV copies without the old CSV menu", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
@@ -183,6 +228,7 @@ describe("DelimitedTableBlock", () => {
     render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} />);
 
     expect(screen.queryByRole("button", { name: "CSV" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
     fireEvent.click(screen.getByRole("button", { name: "CSVコピー" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("name,score\nAlice,10"));
     const csvActions = notices[notices.length - 1]?.actions;
@@ -191,6 +237,7 @@ describe("DelimitedTableBlock", () => {
     await csvActions?.[0].onAction();
     expect(nativeMocks.copyTextFile).toHaveBeenLastCalledWith({ filename: "table.csv", content: "name,score\nAlice,10", utf8Bom: true });
 
+    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
     fireEvent.click(screen.getByRole("button", { name: "TSVコピー" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("name\tscore\nAlice\t10"));
     const tsvActions = notices[notices.length - 1]?.actions;
