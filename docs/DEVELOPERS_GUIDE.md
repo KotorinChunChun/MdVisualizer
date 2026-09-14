@@ -102,3 +102,7 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 設定案内の同梱スキルは共有`features/codex/default-skills/app-settings/SKILL.md`です。デスクトップでは既存ユーザーへの一回限りの追加を行い、削除後に再配布しません。
 
 - [開発・検証・Web公開の自動化](/docs/developer/operations/02-development-automation.md)、[全UI機能対応表](/docs/developer/ui/UI_COMMAND_MATRIX.md)
+
+## ブロック・埋め込みファイルのメニュー変更
+
+コードブロック、Mermaid、SVG、draw.io、表、埋め込み／外部参照ファイルのメニュー変更では、最初に[共通メニュー仕様](/docs/developer/ui/BLOCK_UI_SPEC.md)と同書の定義表・最終配置順を参照する。形式ごとに独自の並び順を増やさず、共通ID・表示条件・幅別配置を更新して実装と照合する。

@@ -1,0 +1,135 @@
+最終配置キー	レベル	配置場所	場所内の順番	表示名	表示形態	表示する種類	対象アプリ	表示条件	配置の補足	共通ID
+1-01-01	1	ブロック上部（左→右）	1	ファイル名／見出し	表示欄	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	名前または見出しがある場合		filename
+1-01-02	1	ブロック上部（左→右）	2	形式名	表示欄	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		format
+1-01-03	1	ブロック上部（左→右）	3	埋め込み／外部参照	バッジ	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	格納形態を取得できる場合		storage-badge
+1-01-04	1	ブロック上部（左→右）	4	検索キーワードを入力	検索欄	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		search
+1-01-05	1	ブロック上部（左→右）	5	その他の操作	展開メニュー	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	収納する操作がある場合	収納する操作がある場合のみ表示	more
+1-02-01	1	その他の操作メニュー（上→下）	1	編集	ボタン	Mermaid・SVG・draw.io・TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	編集可能な文書。保存先／反映処理が利用可能		edit
+1-02-02	1	その他の操作メニュー（上→下）	2	AI▽	メニュー	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	既存のAI連携が利用可能。未対応ホストに新規連携を追加しない		ai
+1-02-03	1	その他の操作メニュー（上→下）	3	コピーグループの上区切り	セパレーター	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合	表示されるコピー候補の直前／直後。候補がない形式ではグループごと省略	separator-before
+1-02-04	1	その他の操作メニュー（上→下）	4	コピー▽	グループ見出し	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合	独立ボタンではなく、続くコピー候補をまとめるグループ	copy
+1-02-05	1	その他の操作メニュー（上→下）	5	コードテキストをコピー	コピー候補	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.text
+1-02-06	1	その他の操作メニュー（上→下）	6	ベクターイメージとしてコピー	コピー候補	Mermaid・SVG・draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.vector
+1-02-07	1	その他の操作メニュー（上→下）	7	ビットマップイメージとしてコピー	コピー候補	Mermaid・SVG・draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.bitmap
+1-02-08	1	その他の操作メニュー（上→下）	8	TXTファイルとしてコピー	コピー候補	通常コード・PS1	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.txt
+1-02-09	1	その他の操作メニュー（上→下）	9	ソースファイルとしてコピー	コピー候補	通常コード・PS1・Mermaid・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.source
+1-02-10	1	その他の操作メニュー（上→下）	10	SVGファイルとしてコピー	コピー候補	SVG・Mermaid	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.svg
+1-02-11	1	その他の操作メニュー（上→下）	11	draw.ioファイルとしてコピー	コピー候補	draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.drawio
+1-02-12	1	その他の操作メニュー（上→下）	12	TSVコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.tsv
+1-02-13	1	その他の操作メニュー（上→下）	13	CSVコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.csv
+1-02-14	1	その他の操作メニュー（上→下）	14	Markdownコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.markdown
+1-02-15	1	その他の操作メニュー（上→下）	15	プレーンテキストコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.plain
+1-02-16	1	その他の操作メニュー（上→下）	16	コピーグループの下区切り	セパレーター	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	表示されるコピー候補の直前／直後。候補がない形式ではグループごと省略	separator-after
+1-02-17	1	その他の操作メニュー（上→下）	17	表示内容	グループ	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合	独立ボタンではなく、続くプレビュー／コードのまとまり	view
+1-02-18	1	その他の操作メニュー（上→下）	18	プレビュー	表示切替候補	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		view.preview
+1-02-19	1	その他の操作メニュー（上→下）	19	コード	表示切替候補	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		view.code
+1-02-20	1	その他の操作メニュー（上→下）	20	折り返し	トグル	通常コード・PS1	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		wrap
+1-02-21	1	その他の操作メニュー（上→下）	21	列表示	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		columns
+1-02-22	1	その他の操作メニュー（上→下）	22	ヘッダ: ON/OFF	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		header
+1-02-23	1	その他の操作メニュー（上→下）	23	スライサー	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		slicer
+1-02-24	1	その他の操作メニュー（上→下）	24	印刷	ボタン	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		print
+1-02-25	1	その他の操作メニュー（上→下）	25	外部ファイルへ切替／埋め込みへ切替	ボタン	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	相互変換に対応し、反映処理が利用可能		storage-switch
+1-02-26	1	その他の操作メニュー（上→下）	26	PowerShell実行	ボタン	PS1	Desktopのみ	Desktopのみ。PS1として認識されたコード。別形式では表示しない		run
+1-05-01	1	列表示／スライサーパネル	1	列の表示チェック	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		column-check
+1-05-02	1	列表示／スライサーパネル	2	フィルター値の選択	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		filter-values
+1-05-03	1	列表示／スライサーパネル	3	フィルタ解除	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		filter-clear
+1-06-01	1	表の列ヘッダー	1	列の並べ替え	列ヘッダー操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		sort
+1-07-01	1	表フッター（左→右）	1	件数表示	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		count
+1-07-02	1	表フッター（左→右）	2	表示件数	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		page-size
+1-07-03	1	表フッター（左→右）	3	前へ	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		previous
+1-07-04	1	表フッター（左→右）	4	ページ表示	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		page
+1-07-05	1	表フッター（左→右）	5	次へ	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		next
+1-08-01	1	表の右クリックメニュー（対象別）	1	列の非表示	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		hide-column
+1-08-02	1	表の右クリックメニュー（対象別）	2	列全体の選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-column
+1-08-03	1	表の右クリックメニュー（対象別）	3	選択した列のコピー	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		copy-column
+1-08-04	1	表の右クリックメニュー（対象別）	4	行選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-row
+1-08-05	1	表の右クリックメニュー（対象別）	5	選択した行をヘッダ付きTSVでコピー	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		copy-row
+1-08-06	1	表の右クリックメニュー（対象別）	6	ブロック全体を選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-block
+2-01-01	2	ブロック上部（左→右）	1	ファイル名／見出し	表示欄	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	名前または見出しがある場合		filename
+2-01-02	2	ブロック上部（左→右）	2	形式名	表示欄	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		format
+2-01-03	2	ブロック上部（左→右）	3	埋め込み／外部参照	バッジ	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	格納形態を取得できる場合		storage-badge
+2-01-04	2	ブロック上部（左→右）	4	検索キーワードを入力	検索欄	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		search
+2-01-05	2	ブロック上部（左→右）	5	編集	ボタン	Mermaid・SVG・draw.io・TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	編集可能な文書。保存先／反映処理が利用可能		edit
+2-01-06	2	ブロック上部（左→右）	6	コピー▽	メニュー／グループ	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		copy
+2-01-07	2	ブロック上部（左→右）	7	表示内容	コンボボックス	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		view
+2-01-08	2	ブロック上部（左→右）	8	その他の操作	展開メニュー	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	収納する操作がある場合	収納する操作がある場合のみ表示	more
+2-02-01	2	その他の操作メニュー（上→下）	1	AI▽	メニュー	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	既存のAI連携が利用可能。未対応ホストに新規連携を追加しない		ai
+2-02-02	2	その他の操作メニュー（上→下）	2	折り返し	トグル	通常コード・PS1	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		wrap
+2-02-03	2	その他の操作メニュー（上→下）	3	列表示	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		columns
+2-02-04	2	その他の操作メニュー（上→下）	4	ヘッダ: ON/OFF	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		header
+2-02-05	2	その他の操作メニュー（上→下）	5	スライサー	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		slicer
+2-02-06	2	その他の操作メニュー（上→下）	6	印刷	ボタン	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		print
+2-02-07	2	その他の操作メニュー（上→下）	7	外部ファイルへ切替／埋め込みへ切替	ボタン	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	相互変換に対応し、反映処理が利用可能		storage-switch
+2-02-08	2	その他の操作メニュー（上→下）	8	PowerShell実行	ボタン	PS1	Desktopのみ	Desktopのみ。PS1として認識されたコード。別形式では表示しない		run
+2-03-01	2	コピー▽のサブメニュー（上→下）	1	コードテキストをコピー	コピー候補	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.text
+2-03-02	2	コピー▽のサブメニュー（上→下）	2	ベクターイメージとしてコピー	コピー候補	Mermaid・SVG・draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.vector
+2-03-03	2	コピー▽のサブメニュー（上→下）	3	ビットマップイメージとしてコピー	コピー候補	Mermaid・SVG・draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.bitmap
+2-03-04	2	コピー▽のサブメニュー（上→下）	4	TXTファイルとしてコピー	コピー候補	通常コード・PS1	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.txt
+2-03-05	2	コピー▽のサブメニュー（上→下）	5	ソースファイルとしてコピー	コピー候補	通常コード・PS1・Mermaid・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.source
+2-03-06	2	コピー▽のサブメニュー（上→下）	6	SVGファイルとしてコピー	コピー候補	SVG・Mermaid	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.svg
+2-03-07	2	コピー▽のサブメニュー（上→下）	7	draw.ioファイルとしてコピー	コピー候補	draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.drawio
+2-03-08	2	コピー▽のサブメニュー（上→下）	8	TSVコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.tsv
+2-03-09	2	コピー▽のサブメニュー（上→下）	9	CSVコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.csv
+2-03-10	2	コピー▽のサブメニュー（上→下）	10	Markdownコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.markdown
+2-03-11	2	コピー▽のサブメニュー（上→下）	11	プレーンテキストコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.plain
+2-04-01	2	表示内容の選択肢（上→下）	1	プレビュー	表示切替候補	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		view.preview
+2-04-02	2	表示内容の選択肢（上→下）	2	コード	表示切替候補	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		view.code
+2-05-01	2	列表示／スライサーパネル	1	列の表示チェック	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		column-check
+2-05-02	2	列表示／スライサーパネル	2	フィルター値の選択	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		filter-values
+2-05-03	2	列表示／スライサーパネル	3	フィルタ解除	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		filter-clear
+2-06-01	2	表の列ヘッダー	1	列の並べ替え	列ヘッダー操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		sort
+2-07-01	2	表フッター（左→右）	1	件数表示	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		count
+2-07-02	2	表フッター（左→右）	2	表示件数	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		page-size
+2-07-03	2	表フッター（左→右）	3	前へ	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		previous
+2-07-04	2	表フッター（左→右）	4	ページ表示	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		page
+2-07-05	2	表フッター（左→右）	5	次へ	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		next
+2-08-01	2	表の右クリックメニュー（対象別）	1	列の非表示	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		hide-column
+2-08-02	2	表の右クリックメニュー（対象別）	2	列全体の選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-column
+2-08-03	2	表の右クリックメニュー（対象別）	3	選択した列のコピー	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		copy-column
+2-08-04	2	表の右クリックメニュー（対象別）	4	行選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-row
+2-08-05	2	表の右クリックメニュー（対象別）	5	選択した行をヘッダ付きTSVでコピー	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		copy-row
+2-08-06	2	表の右クリックメニュー（対象別）	6	ブロック全体を選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-block
+3-01-01	3	ブロック上部（左→右）	1	ファイル名／見出し	表示欄	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	名前または見出しがある場合		filename
+3-01-02	3	ブロック上部（左→右）	2	形式名	表示欄	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		format
+3-01-03	3	ブロック上部（左→右）	3	埋め込み／外部参照	バッジ	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	格納形態を取得できる場合		storage-badge
+3-01-04	3	ブロック上部（左→右）	4	検索キーワードを入力	検索欄	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		search
+3-01-05	3	ブロック上部（左→右）	5	編集	ボタン	Mermaid・SVG・draw.io・TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	編集可能な文書。保存先／反映処理が利用可能		edit
+3-01-06	3	ブロック上部（左→右）	6	AI▽	メニュー	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	既存のAI連携が利用可能。未対応ホストに新規連携を追加しない		ai
+3-01-07	3	ブロック上部（左→右）	7	コピー▽	グループ見出し	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合	独立ボタンではなく、続くコピー候補をまとめるグループ	copy
+3-01-08	3	ブロック上部（左→右）	8	コードテキストをコピー	コピー候補	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.text
+3-01-09	3	ブロック上部（左→右）	9	ベクターイメージとしてコピー	コピー候補	Mermaid・SVG・draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.vector
+3-01-10	3	ブロック上部（左→右）	10	ビットマップイメージとしてコピー	コピー候補	Mermaid・SVG・draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.bitmap
+3-01-11	3	ブロック上部（左→右）	11	TXTファイルとしてコピー	コピー候補	通常コード・PS1	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.txt
+3-01-12	3	ブロック上部（左→右）	12	ソースファイルとしてコピー	コピー候補	通常コード・PS1・Mermaid・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.source
+3-01-13	3	ブロック上部（左→右）	13	SVGファイルとしてコピー	コピー候補	SVG・Mermaid	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.svg
+3-01-14	3	ブロック上部（左→右）	14	draw.ioファイルとしてコピー	コピー候補	draw.io	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.drawio
+3-01-15	3	ブロック上部（左→右）	15	TSVコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.tsv
+3-01-16	3	ブロック上部（左→右）	16	CSVコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.csv
+3-01-17	3	ブロック上部（左→右）	17	Markdownコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.markdown
+3-01-18	3	ブロック上部（左→右）	18	プレーンテキストコピー	コピー候補	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	対象形式に適合するコピー候補だけ表示。説明はツールチップにも付与	copy.plain
+3-01-19	3	ブロック上部（左→右）	19	表示内容	グループ	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合	独立ボタンではなく、続くプレビュー／コードのまとまり	view
+3-01-20	3	ブロック上部（左→右）	20	プレビュー	表示切替候補	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		view.preview
+3-01-21	3	ブロック上部（左→右）	21	コード	表示切替候補	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		view.code
+3-01-22	3	ブロック上部（左→右）	22	折り返し	トグル	通常コード・PS1	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		wrap
+3-01-23	3	ブロック上部（左→右）	23	列表示	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		columns
+3-01-24	3	ブロック上部（左→右）	24	ヘッダ: ON/OFF	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		header
+3-01-25	3	ブロック上部（左→右）	25	スライサー	トグル	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		slicer
+3-01-26	3	ブロック上部（左→右）	26	印刷	ボタン	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		print
+3-01-27	3	ブロック上部（左→右）	27	外部ファイルへ切替／埋め込みへ切替	ボタン	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	相互変換に対応し、反映処理が利用可能		storage-switch
+3-01-28	3	ブロック上部（左→右）	28	PowerShell実行	ボタン	PS1	Desktopのみ	Desktopのみ。PS1として認識されたコード。別形式では表示しない		run
+3-01-29	3	ブロック上部（左→右）	29	その他の操作	展開メニュー	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（ホストの対応機能に限る）	収納する操作がある場合	収納する操作がある場合のみ表示	more
+3-05-01	3	列表示／スライサーパネル	1	列の表示チェック	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		column-check
+3-05-02	3	列表示／スライサーパネル	2	フィルター値の選択	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		filter-values
+3-05-03	3	列表示／スライサーパネル	3	フィルタ解除	パネル操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		filter-clear
+3-06-01	3	表の列ヘッダー	1	列の並べ替え	列ヘッダー操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		sort
+3-07-01	3	表フッター（左→右）	1	件数表示	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		count
+3-07-02	3	表フッター（左→右）	2	表示件数	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		page-size
+3-07-03	3	表フッター（左→右）	3	前へ	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		previous
+3-07-04	3	表フッター（左→右）	4	ページ表示	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		page
+3-07-05	3	表フッター（左→右）	5	次へ	表フッター操作／表示	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		next
+3-08-01	3	表の右クリックメニュー（対象別）	1	列の非表示	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		hide-column
+3-08-02	3	表の右クリックメニュー（対象別）	2	列全体の選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-column
+3-08-03	3	表の右クリックメニュー（対象別）	3	選択した列のコピー	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		copy-column
+3-08-04	3	表の右クリックメニュー（対象別）	4	行選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-row
+3-08-05	3	表の右クリックメニュー（対象別）	5	選択した行をヘッダ付きTSVでコピー	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		copy-row
+3-08-06	3	表の右クリックメニュー（対象別）	6	ブロック全体を選択	右クリック操作	TSV・CSV・Markdown表	Desktop・HTML・PHP（ホストの対応機能に限る）	対応する形式・機能が利用可能な場合		select-block
