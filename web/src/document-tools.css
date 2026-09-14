@@ -1,6 +1,0 @@
-.web-document-tool{position:fixed;inset:0;z-index:11000;background:var(--bg-color,#fff);color:var(--text-primary,#18212f);display:flex;flex-direction:column;min-width:0}
-.web-document-tool__bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:var(--panel-bg,#eef2f7);border-bottom:1px solid var(--border-color,#ccc)}
-.web-document-tool__bar strong{margin-right:auto}.web-document-tool>.document-diff{flex:1;min-height:0}.web-document-tool>.presentation-view{flex:1;min-height:0}
-@media(max-width:600px){.web-document-tool__bar span{display:none}.web-document-tool button{min-height:40px}.web-document-tool .document-diff{overflow:auto}}
-@media print{.web-document-tool__bar{display:none}.web-document-tool{position:static;display:block}.web-document-tool--presentation{inset:auto}}
-@media print{body:has(.web-document-tool--presentation) #root{display:none!important}body:has(.web-document-tool--presentation){height:auto;overflow:visible}.web-document-tool--presentation .presentation-print-pages{display:block!important}.web-document-tool--presentation .presentation-print-page{break-after:page;page-break-after:always}.web-document-tool--presentation .presentation-print-page:last-child{break-after:auto;page-break-after:auto}}

@@ -4,6 +4,8 @@
 
 本リポジトリは、Rust／TauriとReactで構成するWindowsデスクトップ版、SharePoint Framework版、両者が共有するMarkdown処理を管理します。
 
+Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`、`spfx/`、`packages/markdown-core/`、HTML export旧パスは `scripts/setup-web-platform.mjs` の互換リンクとして扱います。初回取得は `git clone --recurse-submodules`、既存環境の再接続は `node scripts/setup-web-platform.mjs` です。
+
 | 配置 | 内容 |
 |---|---|
 | `src/` | デスクトップ版のReact UI、状態、frontend adapter |
@@ -15,6 +17,8 @@
 | `dev/` | 版別要求、実装計画・報告、ロードマップ、開発記録 |
 | `release/` | 再生成可能な配布成果物。Git対象外 |
 
+共通UIの唯一の正本は `web-platform/packages/editor-ui/src/`（親側へ投影される134個の`src`を含む）です。投影先の手修正は避け、同期時のハッシュガードで検出します。Webの版番号は `web-platform/targets.json` で独立管理します。
+
 プロジェクト固有ルールと資料を読む条件はルートの`AGENTS.md`を正本とします。
 
 ## 開発環境
@@ -23,6 +27,8 @@
 - Rustup、Cargo、rustc
 - Windows向けRustビルドに必要なVisual Studio Build Tools
 - SPFxを扱う場合は、リポジトリが固定するNode.js／Heft環境
+
+子リポジトリの依存導入と予定ビルドは `npm.cmd --prefix web-platform ci`、`npm.cmd --prefix web-platform run build:web`、`npm.cmd --prefix web-platform run build:spfx` です。
 
 依存導入、ビルド、テストの再現可能な入口は[ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)にまとめています。PowerShellは`pwsh`を使用します。
 

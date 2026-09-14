@@ -7,7 +7,7 @@
   "repository": "https://github.com/KotorinChunChun/MdVisualizer",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "web-platform/packages/markdown-core"
   ],
   "scripts": {
     "build:embedded": "node scripts/build-embedded-tools.mjs",
@@ -15,7 +15,7 @@
     "prebuild": "npm run build:embedded",
     "prebuild:spfx:local": "npm run build:embedded",
     "prebuild:spfx": "npm run build:embedded",
-    "build:web": "npm run build:embedded && node scripts/build-web.mjs",
+    "build:web": "node scripts/build-web.mjs",
     "postbuild:web": "npm run test:button-layout-web",
     "dev": "vite",
     "run:debug": "pwsh -NoProfile -File ./scripts/run-debug-MdVisualizer-all.ps1",
@@ -33,7 +33,7 @@
     "release:plan": "pwsh -NoProfile -File ./scripts/publish-release-MdVisualizer-all.ps1 -Mode Plan",
     "test:run-scripts": "pwsh -NoProfile -File ./scripts/test-run-script-naming.ps1",
     "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
-    "pretest": "npm run build:embedded && node ./scripts/test-button-style-rules.mjs && node ./scripts/test-css-style-stats.mjs",
+    "pretest": "npm run build:embedded && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./scripts/test-css-style-stats.mjs",
     "test": "vitest run",
     "test:diff-layout": "tsc --project tests/diff-layout/tsconfig.json && node ./scripts/test-diff-layout.mjs",
     "test:button-style-rules": "node ./scripts/test-button-style-rules.mjs",
@@ -44,7 +44,11 @@
     "report:editing": "node ./scripts/generate-editing-test-report.mjs",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test:branding": "node ./scripts/test-branding.mjs"
+    "test:branding": "node ./scripts/test-branding.mjs",
+    "setup:web-platform": "node scripts/setup-web-platform.mjs",
+    "check:shared": "node scripts/sync-desktop-shared.mjs --check",
+    "postinstall": "node scripts/setup-web-platform.mjs",
+    "test:web-platform": "node scripts/test-web-platform-setup.mjs && node scripts/sync-desktop-shared.mjs --check"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.4",
@@ -52,7 +56,7 @@
     "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.8",
-    "@mdvisualizer/markdown-core": "0.0.18+beta.1",
+    "@mdvisualizer/markdown-core": "*",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-opener": "^2",

@@ -8,6 +8,12 @@
 
 ## 資料と出力の配置
 
+### Web子Gitと共有ソース
+
+HTML/PHP/SPFxの正本は`web-platform/`の子Gitで管理する。子側を編集する前に`web-platform/AGENTS.md`を読む。共通UIは`web-platform/packages/editor-ui/src/`、共通Markdown処理は`web-platform/packages/markdown-core/`を編集する。親の`src/`のうち`source-map.json`に列挙されたファイルは生成投影であり、直接編集しない。`npm run setup:web-platform`で反映し、`npm run check:shared`で一致を検証する。手修正検出時は上書きせず変更内容を確認する。
+
+旧`web/`、`spfx/`、`packages/markdown-core/`、`scripts/html-export/`は互換リンク。共通変更は子Gitへコミットし、その後親でsubmodule参照をコミットする。HTML/PHP/SPFxの版は子の`targets.json`で独立して管理し、デスクトップ版へ強制同期しない。初回取得・ビルドは[Web構成](/docs/developer/web/ARCHITECTURE.md)に従う。
+
 | 内容 | 配置 |
 |---|---|
 | 継続的なルール・資料目録・PLAN_IDEAS.md・PLAN_REJECT.md | dev直下。配置規則の正本は本AGENTS.md |

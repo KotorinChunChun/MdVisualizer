@@ -111,13 +111,11 @@ function Initialize-ProjectDependencies {
 }
 
 function Assert-SpfxVersion {
-    $desktop = (Get-Content -LiteralPath (Join-Path $ProjectRoot 'package.json') -Raw | ConvertFrom-Json).version
-    $release = Get-Content -LiteralPath (Join-Path $ProjectRoot 'packaging\release-config.json') -Raw | ConvertFrom-Json
+    $targets = Get-Content -LiteralPath (Join-Path $ProjectRoot 'web-platform/targets.json') -Raw | ConvertFrom-Json
     $spfx = (Get-Content -LiteralPath (Join-Path $SpfxRoot 'package.json') -Raw | ConvertFrom-Json).version
-    $solution = (Get-Content -LiteralPath (Join-Path $SpfxRoot 'config\package-solution.json') -Raw | ConvertFrom-Json).solution.version
-    $expectedSolution = if ([string]::IsNullOrWhiteSpace([string]$release.application.msixVersion)) { "$desktop.0" } else { [string]$release.application.msixVersion }
-    if ($spfx -ne $desktop -or $solution -ne $expectedSolution) {
-        throw "バージョンが同期していません。desktop=$desktop / spfx=$spfx / solution=$solution / expectedSolution=$expectedSolution"
+    $solution = (Get-Content -LiteralPath (Join-Path $SpfxRoot 'config/package-solution.json') -Raw | ConvertFrom-Json).solution.version
+    if ($spfx -ne $targets.targets.spfx.version -or $solution -ne $targets.targets.spfx.solutionVersion) {
+        throw "SPFxの版がtargets.jsonと一致しません。generate-targets.mjsを実行してください。"
     }
 }
 
