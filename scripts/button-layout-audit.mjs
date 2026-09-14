@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 
 export const WEB_BUTTON_LAYOUT_SCOPES = [
   { id: "web-header", selector: ".web-app > header", required: true },
-  { id: "web-nav", selector: ".web-app > nav", required: true },
-  { id: "web-menu-summary", selector: ".web-app-menu > summary", required: false },
-  { id: "web-options-summary", selector: ".web-options > summary", required: false },
+  { id: "web-command-area", selector: ".web-command-area", required: false },
+  { id: "web-options-toggle", selector: ".web-options-toggle", required: true },
+  { id: "web-preview-toolbar", selector: ".web-preview-toolbar", required: false },
+  { id: "web-preview-rail", selector: ".web-preview-rail", required: false },
+  { id: "web-status-controls", selector: ".web-status-bar__controls", required: true },
   { id: "web-editor-toolbar", selector: ".markdown-editor__toolbar", required: false },
   { id: "web-document-tool-bar", selector: ".web-document-tool__bar", required: false },
   { id: "web-remote-storage-summary", selector: ".web-remote-storage > summary", required: false },

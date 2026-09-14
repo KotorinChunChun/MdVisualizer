@@ -24,9 +24,9 @@ describe("workspace view controls", () => {
     expect(viewControlsCss).toContain(".workspace-preview-control.is-preview");
     expect(viewControlsCss).toContain(".workspace-preview-control.is-visual,.workspace-view-controls button.is-active");
     expect(viewControlsSource).toContain('aria-label="分割方向"');
-    expect(viewControlsSource).toContain(">自動</option>");
-    expect(viewControlsSource).toContain(">上下</option>");
-    expect(viewControlsSource).toContain(">左右</option>");
+    expect(viewControlsSource).toContain(">自動分割</option>");
+    expect(viewControlsSource).toContain(">上下分割</option>");
+    expect(viewControlsSource).toContain(">左右分割</option>");
   });
 
   it("uses the requested reload label in both headers", () => {

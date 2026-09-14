@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { save as showSaveDialog } from "@tauri-apps/plugin-dialog";
+import { open as showOpenDialog, save as showSaveDialog } from "@tauri-apps/plugin-dialog";
 import { TabBar } from "./components/TabBar";
 import { DesktopHtmlExport } from "./components/DesktopHtmlExport";
 import { ContextMenu } from "./components/ContextMenu";
@@ -748,6 +748,16 @@ export function App() {
   const reload = useCallback(() => {
     if (activeTab?.document && !activeTab.untitled) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
+
+  const openDocument = useCallback(async () => {
+    const selected = await showOpenDialog({
+      title: "Markdownファイルを開く",
+      multiple: true,
+      filters: [{ name: "対応ファイル", extensions: ["md", "markdown", "tsv", "csv", "svg", "mmd", "mermaid", "drawio"] }],
+    });
+    const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
+    paths.forEach((path) => dispatch({ type: "OPEN", path }));
+  }, []);
 
   const toggleDocumentDiff = useCallback(() => {
     if (documentDiff) {
@@ -2313,28 +2323,21 @@ export function App() {
       {printing && activeTab?.document && <PrintMetadata path={activeTab.document.path} startedAt={printStartedAt} settings={printStyle} />}
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
+        <div className="control-group document-actions">
+          <button type="button" disabled={printing} onClick={() => { focusNewDocumentRef.current = true; dispatch({ type: "NEW_MARKDOWN" }); }}>新規MD</button>
+          <button type="button" disabled={printing} onClick={() => void openDocument()}>開く</button>
+          <button data-ui-command="document.print" type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷</button>
+          <DesktopHtmlExport disabled={!activeTab?.document || printing} getSnapshot={() => activeTab?.document ? { document: activeTab.document, content: activeMarkdownContent, theme: theme === "system" ? document.documentElement.dataset.theme ?? "light" : theme, css: markdownStyleCss, assets: activeTab.pendingAssets ?? [] } : null} />
+          <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
+          <button type="button" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
+          <button data-ui-command="document.save" type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
+        </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <WorkspaceViewControls code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : previewMode === "off" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />
         </div>
         <div className="control-group document-actions">
-          <button type="button" disabled={printing} onClick={() => { focusNewDocumentRef.current = true; dispatch({ type: "NEW_MARKDOWN" }); }}>新規MD</button>
-          <button data-ui-command="document.save" type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
-          <DesktopHtmlExport disabled={!activeTab?.document || printing} getSnapshot={() => activeTab?.document ? { document: activeTab.document, content: activeMarkdownContent, theme: theme === "system" ? document.documentElement.dataset.theme ?? "light" : theme, css: markdownStyleCss, assets: activeTab.pendingAssets ?? [] } : null} />
           <button data-ui-command="document.diff" type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>
-          <button data-ui-command="document.print" type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷</button>
-          <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
-          <button type="button" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
         </div>
-        {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
-          <span className="control-group__title">見出し</span>
-          <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
-            const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset";
-            if (value) applyFoldPreset(value);
-            event.currentTarget.value = "";
-          }}>
-            <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
-          </select>
-        </div>}
         <ExternalActions
           apps={activeSharePoint ? [] : externalApps.filter((app) => app.target === "document")}
           disabled={!activeTab?.document || activeTab.untitled}
@@ -2438,6 +2441,23 @@ export function App() {
         onBlurCapture={(event) => setFocusedLinkTarget(documentLinkTarget(event.relatedTarget))}
         style={{ zoom: viewMode === "presentation" && activeTab?.document?.kind === "markdown" ? 1 : zoom / 100 }}
       >
+        {activeTab?.kind !== "settings" && activeTab?.document && <div className="preview-panel-toolbar" aria-label="プレビューの操作">
+          {viewMode !== "presentation" && <label className="preview-panel-toolbar__heading">見出し
+            <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
+              const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset";
+              if (value) applyFoldPreset(value);
+              event.currentTarget.value = "";
+            }}>
+              <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
+            </select>
+          </label>}
+          <label>レイアウト
+            <select aria-label="レイアウト" value={viewMode} onChange={(event) => changeViewMode(event.target.value as ViewMode)}>
+              <optgroup label="本文レイアウト"><option value="auto">オート</option><option value="a4-portrait">A4縦</option><option value="a3-portrait">A3縦</option></optgroup>
+              <optgroup label="表示モード"><option value="presentation">プレゼン</option><option value="images">画像中心</option></optgroup>
+            </select>
+          </label>
+        </div>}
         {activeTab?.kind === "settings" ? (
           <SettingsPanel
             apps={externalApps}
@@ -2477,7 +2497,7 @@ export function App() {
             tabId={activeTab.id}
             onMediaOpen={openMediaPreview}
             onDrawioSave={activeTab.document.kind === "drawio" ? (content) => saveStandaloneDrawio(activeTab.id, content) : undefined}
-            onTextChange={visualEditing && activeTab.document.kind === "tsv" ? (content) => { dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content }); } : undefined}
+            onTextChange={visualEditing && ["tsv", "svg", "mermaid"].includes(activeTab.document.kind) ? (content) => { dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content }); } : undefined}
           />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView

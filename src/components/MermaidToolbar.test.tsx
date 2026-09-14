@@ -31,11 +31,11 @@ describe("MermaidToolbar", () => {
       fileDiagramKind="drawio"
     />);
 
-    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
-    expect(screen.getByRole("menuitem", { name: "コードテキストをコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("menuitem", { name: "drawioファイルとしてコピー" }));
+    fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
+    expect(screen.getByRole("button", { name: "コードテキストをコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "draw.ioファイルとしてコピー" }));
 
     await waitFor(() => expect(toastDetail?.message).toBe("ファイルを保存しました"));
 
@@ -50,15 +50,15 @@ describe("MermaidToolbar", () => {
 
   it("writes SVG files as SVG instead of Mermaid source", async () => {
     render(<MermaidToolbar source={"flowchart LR\nA-->B"} svg='<svg viewBox="0 0 10 10"/>' display="diagram" />);
-    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "SVGファイルとしてコピー" }));
+    fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
+    fireEvent.click(screen.getByRole("button", { name: "SVGファイルとしてコピー" }));
     await waitFor(() => expect(mocks.copyMermaidAsFile).toHaveBeenCalledWith("svg", "flowchart LR\nA-->B", '<svg viewBox="0 0 10 10"/>', "mermaid"));
   });
 
   it("uses a PNG clipboard image when native BMP is unavailable", async () => {
     render(<MermaidToolbar source="flowchart LR" svg='<svg viewBox="0 0 10 10"/>' display="diagram" allowBitmapCopy={false} />);
-    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
-    const bitmap = screen.getByRole("menuitem", { name: "ビットマップイメージとしてコピー" });
+    fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
+    const bitmap = screen.getByRole("button", { name: "ビットマップイメージとしてコピー" });
     expect(bitmap).not.toHaveProperty("disabled", true);
     fireEvent.click(bitmap);
     await waitFor(() => expect(mocks.copyMermaid).toHaveBeenCalledWith("png", "flowchart LR", '<svg viewBox="0 0 10 10"/>'));

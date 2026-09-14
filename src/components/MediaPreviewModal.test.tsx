@@ -144,11 +144,11 @@ describe("MediaPreviewModal", () => {
     />);
 
     expect(screen.getByRole("toolbar", { name: "draw.io全画面操作" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
-    expect(screen.getByRole("menuitem", { name: "コードテキストをコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "drawioファイルとしてコピー" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
+    expect(screen.getByRole("button", { name: "コードテキストをコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "draw.ioファイルとしてコピー" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "プレビュー" })).toBeNull();
     expect(screen.queryByRole("button", { name: "コード" })).toBeNull();
     expect(document.querySelector(".media-preview__source")).toBeNull();

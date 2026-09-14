@@ -34,17 +34,19 @@ function sourceNodes(file) {
   visit(ast); const result = { ast, nodes, text }; cache.set(file, result); return result;
 }
 function desktopRank(key) {
-  const {nodes} = sourceNodes('src/App.tsx');
-  const container = [...nodes.values()].find(n => (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && attributes(n).className?.split(/\s+/).includes('document-actions'));
-  const children = container?.parent.children?.filter(n=>ts.isJsxElement(n)||ts.isJsxSelfClosingElement(n)) ?? [];
-  const keys = children.map(child => {
-    const open = ts.isJsxElement(child) ? child.openingElement : child;
-    const a = attributes(open), tag = open.tagName.getText();
-    return a['data-ui-command'] || (tag==='DesktopHtmlExport'?'document.export-html':tag==='DiagnosticsPanel'?'diagnostics':child.getText().includes('新規MD')?'new':'reload');
+  const { nodes } = sourceNodes('src/App.tsx');
+  const entry = [...nodes.values()].find(node => {
+    if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) return false;
+    const a = attributes(node), tag = node.tagName.getText();
+    if (a['data-ui-command'] === key) return true;
+    if (key === 'document.export-html') return tag === 'DesktopHtmlExport';
+    if (key === 'diagnostics') return tag === 'DiagnosticsPanel';
+    if (tag !== 'button') return false;
+    const body = node.parent.getText();
+    return key === 'new' ? body.includes('新規MD') : key === 'open' ? body.includes('>開く<') : key === 'reload' && body.includes('再読込');
   });
-  const order = keys.indexOf(key)+1;
-  if(!order) throw new Error(`文書ツールバーの配置が見つかりません: ${key}`);
-  return order;
+  if (!entry) throw new Error(`文書ツールバーの配置が見つかりません: ${key}`);
+  return entry.getStart();
 }
 function location(row) {
   const host = hostNames[row.source.kind], file = row.source.file;
@@ -68,9 +70,9 @@ function location(row) {
   if (node && (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))) {
     const a = attributes(node);
     // 別コンポーネントで描画されるHTML出力を、実際の呼出し位置へ統合する。
-    if ((file === 'src/App.tsx' || file.endsWith('/DesktopHtmlExport.tsx')) && (a['data-ui-command']?.startsWith('document.') || row.displayName === '新規MD' || row.displayName === '再読込')) {
+    if ((file === 'src/App.tsx' || file.endsWith('/DesktopHtmlExport.tsx')) && (a['data-ui-command']?.startsWith('document.') || row.displayName === '新規MD' || row.displayName === '開く' || row.displayName === '再読込')) {
       const command = a['data-ui-command'];
-      const rank = desktopRank(command || (row.displayName === '新規MD' ? 'new' : 'reload'));
+      const rank = desktopRank(command || (row.displayName === '新規MD' ? 'new' : row.displayName === '開く' ? 'open' : 'reload'));
       return {key:'desktop|document',name:'Desktop／文書操作ツールバー',basis:'親画面の配置順（別部品を合流）',rank};
     }
     for (let parent = node.parent; parent; parent = parent.parent) {

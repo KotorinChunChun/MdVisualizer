@@ -106,7 +106,7 @@ describe("MermaidBlock", () => {
     render(<MermaidBlock source="flowchart LR\nA --> B" theme="dark" mode="on" headingTitle="処理フロー" editable />);
 
     const header = screen.getByRole("toolbar", { name: "Mermaidブロック操作" });
-    expect(header.textContent).toContain("Mermaid — 処理フロー");
+    expect(header.textContent).toContain("処理フロー — Mermaid");
     expect(screen.getByRole("button", { name: "Mermaid GUI編集" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Mermaid GUI編集" }));
     expect(screen.getByRole("dialog", { name: "Mermaid GUI編集" })).toBeTruthy();
@@ -120,11 +120,10 @@ describe("MermaidBlock", () => {
     mocks.renderMermaid.mockResolvedValueOnce('<svg><text>diagram</text></svg>');
     render(<MermaidBlock source={"flowchart LR\nA --> B"} theme="dark" mode="on" />);
     await waitFor(() => expect(screen.getByRole("button", { name: "図を拡大" })).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
-    expect(screen.getByRole("menuitem", { name: "コードテキストをコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "SVGファイルとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "コードテキストをコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "SVGファイルとしてコピー" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "コード" }));
     expect(screen.getByText(/flowchart LR/)).toBeTruthy();
@@ -138,18 +137,16 @@ describe("MermaidBlock", () => {
     const source = "flowchart LR\nA --> B";
     render(<MermaidBlock source={source} theme="dark" mode="always-code" />);
 
-    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "コードテキストをコピー" }));
+    fireEvent.click(screen.getByRole("button", { name: "コードテキストをコピー" }));
     await waitFor(() => expect(mocks.copyMermaid).toHaveBeenCalledWith("code", source, ""));
-    expect(screen.getByRole("toolbar", { name: "Mermaid操作" })).toBeTruthy();
+    expect(screen.getByRole("toolbar", { name: "Mermaidブロック操作" })).toBeTruthy();
   });
 
   it("browser-only host offers PNG through the bitmap menu without a native BMP context action", async () => {
     mocks.renderMermaid.mockResolvedValueOnce('<svg><text>diagram</text></svg>');
     render(<BrowserCapabilitiesContext.Provider value={{ ...desktopBrowserCapabilities, canCopyBitmap: false }}><MermaidBlock source="flowchart LR\nA --> B" theme="light" mode="on" /></BrowserCapabilitiesContext.Provider>);
     const diagram = await screen.findByRole("button", { name: "図を拡大" });
-    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
-    expect((screen.getByRole("menuitem", { name: "ビットマップイメージとしてコピー" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole("button", { name: "ビットマップイメージとしてコピー" }) as HTMLButtonElement).disabled).toBe(false);
     fireEvent.contextMenu(diagram);
     expect(mocks.copyMermaid).not.toHaveBeenCalled();
   });

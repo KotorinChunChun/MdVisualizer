@@ -12,7 +12,7 @@ describe("DrawioBlock", () => {
     const source = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/><path d="M0 0L1 1"/><script>alert(1)</script></svg>';
     const { container } = render(<DrawioBlock source={source} theme="light" blockId="one" headingTitle="構成図" onSave={onSave} />);
     expect(container.innerHTML).not.toContain("script");
-    expect(screen.getByText("SVG → draw.io — 構成図")).toBeTruthy();
+    expect(screen.getByText("構成図 — SVG → draw.io")).toBeTruthy();
     const editButton = screen.getByRole("button", { name: "編集" });
     expect(editButton.classList.contains("diagram-action-button")).toBe(true);
     fireEvent.click(editButton);
@@ -108,12 +108,11 @@ describe("DrawioBlock", () => {
     const source = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
     render(<DrawioBlock source={source} theme="light" blockId="controls" />);
 
-    expect(screen.getByRole("toolbar", { name: "draw.io操作" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "コピー▽" }));
-    expect(screen.getByRole("menuitem", { name: "コードテキストをコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "drawioファイルとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("toolbar", { name: "draw.ioブロック操作" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "コードテキストをコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ベクターイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ビットマップイメージとしてコピー" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "SVGファイルとしてコピー" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "コード" }));
     expect(screen.getByText(source)).toBeTruthy();
   });

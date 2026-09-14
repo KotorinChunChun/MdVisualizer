@@ -8,7 +8,7 @@ it("幅に応じて全表示・編集を残す圧縮・全収納を往復する"
   vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function(this: HTMLElement) { return this.classList.contains("responsive-toolbar") ? width : 0; });
   vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function(this: HTMLElement) { return this.textContent === "long commands" ? 200 : this.textContent === "コピー" ? 40 : 100; });
   const view = render(<ResponsiveToolbar threeStage ariaLabel="ブロック操作" items={[
-    { id: "edit", node: <button>編集</button> },
+    { id: "edit", fixed: true, node: <button>編集</button> },
     { id: "copy", node: <button>long commands</button>, compactNode: <button>コピー</button> },
   ]} />);
   const root = view.container.firstElementChild!;

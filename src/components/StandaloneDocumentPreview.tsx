@@ -1,13 +1,11 @@
 import type React from "react";
 import type { MarkdownLoadResult } from "../types/app";
 import type { MediaPreviewTarget } from "./MediaPreviewModal";
-import { ImageRenderer } from "./ImageRenderer";
 import { MermaidBlock } from "./MermaidBlock";
 import { DrawioBlock } from "./DrawioBlock";
 import { getFileName } from "../lib/path";
 import { DelimitedTableBlock } from "./DelimitedTableBlock";
 import { FileSvgCodexAction } from "../features/codex/FileSvgCodexAction";
-import { MermaidToolbar } from "./MermaidToolbar";
 
 interface StandaloneDocumentPreviewProps {
   document: MarkdownLoadResult;
@@ -27,7 +25,7 @@ interface StandaloneDocumentPreviewProps {
 /** Displays direct SVG and Mermaid files through the same safe preview paths used by Markdown embeds. */
 export function StandaloneDocumentPreview({
   document,
-  imageVersions,
+  imageVersions: _imageVersions,
   contentRef,
   theme,
   windowId,
@@ -39,14 +37,13 @@ export function StandaloneDocumentPreview({
 }: StandaloneDocumentPreviewProps) {
   if (document.kind === "svg") {
     return <div className="markdown-body standalone-document standalone-document--svg" ref={contentRef}>
-      <MermaidToolbar source={document.content} svg={document.content} display="diagram" ariaLabel="SVG操作" />
-      <ImageRenderer
-        src={document.path}
-        alt={getFileName(document.path)}
-        baseDir={document.base_dir}
-        imageVersions={imageVersions}
+      <DrawioBlock
+        source={document.content}
+        theme={theme}
+        blockId="standalone-document"
+        headingTitle={getFileName(document.path)}
+        onSave={onTextChange}
         onMediaOpen={onMediaOpen}
-        codexSvgEditable={!document.path.toLowerCase().startsWith("spmd:")}
       />
     </div>;
   }
@@ -64,6 +61,9 @@ export function StandaloneDocumentPreview({
         diagramCount={1}
         headingTitle={getFileName(document.path)}
         onMediaOpen={onMediaOpen}
+        editable={Boolean(onTextChange)}
+        onSourceChange={onTextChange}
+        onCodexSave={onTextChange}
       />
     </div>;
     return document.path.toLowerCase().startsWith("spmd:") ? preview : <FileSvgCodexAction kind="mermaid" path={document.path}>{preview}</FileSvgCodexAction>;

@@ -2,17 +2,9 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MarkdownLoadResult } from "../types/app";
 
-vi.mock("./ImageRenderer", () => ({
-  ImageRenderer: ({ src, alt }: { src: string; alt: string }) => <div data-testid="svg-preview" data-src={src}>{alt}</div>,
-}));
-
-vi.mock("./MermaidToolbar", () => ({
-  MermaidToolbar: ({ source, svg }: { source: string; svg: string }) => <div data-testid="svg-copy-menu" data-source={source} data-svg={svg}>コピー▽</div>,
-}));
-
 vi.mock("./MermaidBlock", () => ({
-  MermaidBlock: ({ source, mode, diagramCount, headingTitle }: { source: string; mode: string; diagramCount: number; headingTitle?: string }) => (
-    <div data-testid="mermaid-preview" data-mode={mode} data-count={diagramCount} data-title={headingTitle}>{source}</div>
+  MermaidBlock: ({ source, mode, diagramCount, headingTitle, editable, onSourceChange }: { source: string; mode: string; diagramCount: number; headingTitle?: string; editable?: boolean; onSourceChange?: (source: string) => void }) => (
+    <button type="button" data-testid="mermaid-preview" data-mode={mode} data-count={diagramCount} data-title={headingTitle} data-editable={String(editable)} onClick={() => onSourceChange?.("flowchart LR\nA --> C")}>{source}</button>
   ),
 }));
 
@@ -52,34 +44,40 @@ describe("StandaloneDocumentPreview", () => {
   });
   afterEach(cleanup);
 
-  it("routes an SVG file through the existing image renderer", () => {
+  it("routes an SVG file through the shared SVG block and its draft callback", () => {
+    const onTextChange = vi.fn();
     render(<StandaloneDocumentPreview
       document={document("svg", "C:\\docs\\diagram.svg", "<svg />")}
       imageVersions={{}}
       theme="dark"
       windowId="main"
       tabId="tab-1"
+      onTextChange={onTextChange}
     />);
 
-    expect(screen.getByTestId("svg-preview").getAttribute("data-src")).toBe("C:\\docs\\diagram.svg");
-    expect(screen.getByTestId("svg-preview").textContent).toContain("diagram.svg");
-    expect(screen.getByTestId("svg-copy-menu").dataset.source).toBe("<svg />");
-    expect(screen.getByTestId("svg-copy-menu").dataset.svg).toBe("<svg />");
+    screen.getByTestId("drawio-preview").click();
+    expect(screen.getByTestId("drawio-preview").dataset.title).toBe("diagram.svg");
+    expect(onTextChange).toHaveBeenCalledWith("<mxfile><diagram name=\"saved\"/></mxfile>");
   });
 
-  it("routes Mermaid source through the existing Mermaid renderer", () => {
+  it("routes Mermaid source through the existing renderer and its draft callback", () => {
+    const onTextChange = vi.fn();
     render(<StandaloneDocumentPreview
       document={document("mermaid", "C:\\docs\\flow.mmd", "flowchart LR\nA --> B")}
       imageVersions={{}}
       theme="nord"
       windowId="main"
       tabId="tab-2"
+      onTextChange={onTextChange}
     />);
 
     expect(screen.getByTestId("mermaid-preview").textContent).toContain("A --> B");
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-mode")).toBe("on");
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-count")).toBe("1");
     expect(screen.getByTestId("mermaid-preview").dataset.title).toBe("flow.mmd");
+    expect(screen.getByTestId("mermaid-preview").dataset.editable).toBe("true");
+    screen.getByTestId("mermaid-preview").click();
+    expect(onTextChange).toHaveBeenCalledWith("flowchart LR\nA --> C");
   });
 
   it("routes a draw.io file through the existing draw.io renderer and save callback", () => {

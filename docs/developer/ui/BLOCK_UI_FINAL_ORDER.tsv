@@ -6,7 +6,7 @@
 1-01-05	1	ブロック上部（左→右）	5	編集	ボタン		Mermaid・SVG・draw.io・TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	編集可能な文書。保存先／反映処理が利用可能	edit
 1-01-06	1	ブロック上部（左→右）	6	AI▽	メニュー		通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktopのみ	Desktopのみ。対応する全AI操作をAI▽に集約。全レベルでその他メニューへ収納しない	ai
 1-01-07	1	ブロック上部（左→右）	7	折り返し	トグル		通常コード・PS1	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	wrap
-1-01-08	1	ブロック上部（左→右）	8	その他の操作	展開メニュー	直前に区切り（隣接する両グループが非空の場合のみ）	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	収納する操作がある場合	more
+1-01-08	1	ブロック上部（左→右）	8	その他の操作	展開メニュー		通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	収納する操作がある場合	more
 1-02-01	1	その他メニュー（上→下）	1	コピー▽	グループ（独立ボタンではない）		通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	copy
 1-02-02	1	その他メニュー（上→下）	2	コードテキストをコピー	コピー候補		通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	copy.text
 1-02-03	1	その他メニュー（上→下）	3	ベクターイメージとしてコピー	コピー候補		Mermaid・SVG・draw.io	Desktop・HTML・PHP（対応機能のみ）	対象形式に適合し、変換結果が取得可能。各候補に内容を説明するツールチップを付与	copy.vector
@@ -51,8 +51,8 @@
 2-01-06	2	ブロック上部（左→右）	6	AI▽	メニュー		通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktopのみ	Desktopのみ。対応する全AI操作をAI▽に集約。全レベルでその他メニューへ収納しない	ai
 2-01-07	2	ブロック上部（左→右）	7	コピー▽	メニュー／グループ	直前に区切り（隣接する両グループが非空の場合のみ）	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	copy
 2-01-08	2	ブロック上部（左→右）	8	表示内容	コンボボックス	直前に区切り（隣接する両グループが非空の場合のみ）	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	view
-2-01-09	2	ブロック上部（左→右）	9	折り返し	トグル		通常コード・PS1	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	wrap
-2-01-10	2	ブロック上部（左→右）	10	その他の操作	展開メニュー	直前に区切り（隣接する両グループが非空の場合のみ）	通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	収納する操作がある場合	more
+2-01-09	2	ブロック上部（左→右）	9	折り返し	トグル	直前に区切り（隣接する両グループが非空の場合のみ）	通常コード・PS1	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	wrap
+2-01-10	2	ブロック上部（左→右）	10	その他の操作	展開メニュー		通常コード・PS1・Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	収納する操作がある場合	more
 2-02-01	2	その他メニュー（上→下）	1	列表示	トグル		TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	columns
 2-02-02	2	その他メニュー（上→下）	2	ヘッダ: ON/OFF	トグル		TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	header
 2-02-03	2	その他メニュー（上→下）	3	スライサー	トグル		TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	slicer
@@ -108,8 +108,8 @@
 3-01-19	3	ブロック上部（左→右）	19	表示内容	グループ（独立ボタンではない）	直前に区切り（隣接する両グループが非空の場合のみ）	Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	view
 3-01-20	3	ブロック上部（左→右）	20	プレビュー	表示切替候補		Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	view.preview
 3-01-21	3	ブロック上部（左→右）	21	コード	表示切替候補		Mermaid・SVG・draw.io・TSV・CSV・Markdown表・ショートカット	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	view.code
-3-01-22	3	ブロック上部（左→右）	22	折り返し	トグル		通常コード・PS1	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	wrap
-3-01-23	3	ブロック上部（左→右）	23	列表示	トグル	直前に区切り（隣接する両グループが非空の場合のみ）	TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	columns
+3-01-22	3	ブロック上部（左→右）	22	折り返し	トグル	直前に区切り（隣接する両グループが非空の場合のみ）	通常コード・PS1	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	wrap
+3-01-23	3	ブロック上部（左→右）	23	列表示	トグル		TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	columns
 3-01-24	3	ブロック上部（左→右）	24	ヘッダ: ON/OFF	トグル		TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	header
 3-01-25	3	ブロック上部（左→右）	25	スライサー	トグル		TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	slicer
 3-01-26	3	ブロック上部（左→右）	26	印刷	ボタン		TSV・CSV・Markdown表	Desktop・HTML・PHP（対応機能のみ）	対応する形式・機能が利用可能な場合	print

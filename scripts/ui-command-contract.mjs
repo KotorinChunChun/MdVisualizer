@@ -85,10 +85,10 @@ export function compareInventory(expected, actual) {
 }
 
 const coreCommands = [
-  { id: 'document.save', label: '保存', variants: ['保存中…', 'ZIPを保存'], order: 10 },
+  { id: 'document.print', label: '印刷', order: 10 },
   { id: 'document.export-html', label: 'HTML出力', order: 20 },
-  { id: 'document.diff', label: '差分', order: 30 },
-  { id: 'document.print', label: '印刷', order: 50 },
+  { id: 'document.save', label: '保存', variants: ['保存中…', 'ZIPを保存'], order: 30 },
+  { id: 'document.diff', label: '差分', order: 40 },
 ];
 
 function checkCore() {
@@ -104,9 +104,9 @@ function checkCore() {
   }
   const desktop = read(files[0]), web = read(files[2]), spfx = read(files[3]);
   for (const [name, text, markers] of [
-    ['desktop', desktop, ['document.save', '<DesktopHtmlExport', 'document.diff', 'document.print']],
+    ['desktop', desktop, ['document.print', '<DesktopHtmlExport', 'document.save', 'document.diff']],
     ['html/php', web, coreCommands.map(c => c.id)],
-    ['spfx', spfx, coreCommands.slice(0, 3).map(c => c.id)],
+    ['spfx', spfx, ['document.save', 'document.export-html', 'document.diff']],
   ]) {
     const positions = markers.map(m => text.indexOf(m));
     if (positions.some((p, i) => p < 0 || (i && p <= positions[i - 1]))) errors.push(`${name}: 文書コマンド順序不一致`);

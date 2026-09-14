@@ -24,29 +24,20 @@ try {
     await assertButtonLayoutHelperSelfTest(page);
     await page.goto(target, { waitUntil: "domcontentloaded" });
     await page.locator(".web-app").waitFor();
-    assert.equal(await page.locator('.web-view-selector select').inputValue(), 'preview', 'WebAppの初期表示はプレビュー');
+    assert.equal(await page.locator('[data-ui-command="view.preview"]').inputValue(), 'preview', 'WebAppの初期表示はプレビュー');
     const initial = await collectButtonLayoutAudit(page, WEB_BUTTON_LAYOUT_SCOPES);
     assertButtonLayoutAudit(initial);
 
-    // details の閉じた中身は監査対象外。summaryを開いて、各パネル自身を独立して監査する。
-    const menuSummary = page.locator('.web-app-menu > summary');
-    const optionsSummary = page.locator('.web-options > summary');
-    const menuSummaryVisible = await menuSummary.isVisible();
-    if (menuSummaryVisible) await menuSummary.click();
-    const menu = await collectButtonLayoutAudit(page, [{ id: 'web-menu-panel', selector: '.web-menu-items', required: true }]);
-    assertButtonLayoutAudit(menu);
-    if (menuSummaryVisible) await menuSummary.click();
-    if (await optionsSummary.isVisible()) await optionsSummary.click();
-    const options = await collectButtonLayoutAudit(page, [{ id: 'web-options-panel', selector: '.web-options-items', required: true }]);
-    assertButtonLayoutAudit(options);
-    if (await optionsSummary.isVisible()) await optionsSummary.click();
-    await page.locator('.web-view-selector select').selectOption('source');
+    // 狭幅ではオプションで文書コマンドを開く。広幅では既に表示されている。
+    const optionsToggle = page.locator('.web-options-toggle');
+    if (await page.locator('.web-command-area').isHidden()) await optionsToggle.click();
+    const commands = await collectButtonLayoutAudit(page, [{ id: 'web-command-area-open', selector: '.web-command-area', required: true }]);
+    assertButtonLayoutAudit(commands);
+    await page.locator('[data-ui-command="view.preview"]').selectOption('off');
     const toolbarSummary = page.locator('.markdown-editor__toolbar-details > summary');
     if (await toolbarSummary.isVisible()) await toolbarSummary.click();
     const editor = await collectButtonLayoutAudit(page, [{ id: 'web-editor-toolbar', selector: '.markdown-editor__toolbar', required: true }]);
     assertButtonLayoutAudit(editor);
-    if (menuSummaryVisible) await menuSummary.click();
-
     const htmlExport = page.getByRole("button", { name: "HTML出力", exact: true });
     let modal = [];
     if (await htmlExport.count()) {
@@ -55,7 +46,7 @@ try {
       modal = await collectButtonLayoutAudit(page, [{ id: "web-html-export-modal", selector: ".html-export-dialog", required: true }]);
       assertButtonLayoutAudit(modal);
     }
-    viewports.push({ width, height: 1000, scopes: [...initial, ...menu, ...options, ...editor, ...modal] });
+    viewports.push({ width, height: 1000, scopes: [...initial, ...commands, ...editor, ...modal] });
     await page.close();
   }
   assert.deepEqual(errors, [], `WebApp pageerror: ${errors.join(" | ")}`);

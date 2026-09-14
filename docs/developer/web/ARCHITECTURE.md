@@ -64,3 +64,5 @@ node web/tests/php-browser-integration.mjs
 子の`npm run test:ui-static`はCSSの高さ・余白・文字サイズ等を用途別に集計し、少数値候補を版別ログへ記録します。ボタンのインラインstyleや子の外部へのソース参照は失敗として扱い、Web/SPFxビルド前にも実行します。少数値だけでは不具合と断定せず、画面寸法検証と組み合わせます。
 
 親の`node scripts/test-web-platform-setup.mjs`は新規投影、再生成、差分検出、手修正保護、パス逸脱拒否を検証します。親の履歴を保持したまま子Gitへ移管しており、共通コード更新時は子をコミットしてから親のsubmodule参照をコミットします。
+
+SPFxの親入口`Invoke-Spfx.ps1`は、子Gitと`apps/spfx`の依存だけを初期化し、子の`build:spfx`／`test:spfx`／`start:spfx`／`clean:spfx`へ委譲します。SPFx工程で親Desktopのnode_modulesを再インストールしません。共有生成物を更新するビルド同士は順次実行します。
