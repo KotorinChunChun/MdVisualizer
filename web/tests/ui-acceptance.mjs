@@ -10,10 +10,12 @@ const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors
 try {
  await page.goto(pathToFileURL(path.resolve('release/web/mdvisualizer.html')).href);
  await page.locator('.web-app>header').waitFor();
+ assert.equal(await page.locator('.web-view-selector select').inputValue(), 'preview');
  const markdown='# タッチ編集確認\n\n本文を編集します。\n\n| 名前 | 数 |\n| --- | --- |\n| 項目 | 1 |\n\n```mermaid\nflowchart LR\nA[開始] --> B[完了]\n```\n';
  await page.locator('input[type=file]').setInputFiles({name:'touch.md',mimeType:'text/markdown',buffer:Buffer.from(markdown)});
+ await page.locator('.web-view-selector select').selectOption('source');
  await page.locator('.cm-content').fill(markdown.replace('本文を編集します。','本文を変更しました。'));
- await page.locator('.web-app>nav select').first().selectOption('preview');
+ await page.locator('.web-view-selector select').selectOption('preview');
  await page.locator('article').getByText('本文を変更しました。',{exact:true}).waitFor();
  await page.locator('button.markdown-table-edit').tap();
  await page.getByRole('textbox',{name:'行 1 列 2',exact:true}).fill('42');
@@ -36,10 +38,10 @@ try {
  await tocToggle.tap();
  await page.getByRole('navigation',{name:'文書全体の目次'}).getByRole('button',{name:'タッチ編集確認',exact:true}).tap();
  await page.locator('article .document-toc-toggle').getAttribute('aria-expanded').then(value=>assert.equal(value,'false'));
- await page.locator('.web-app>nav select').first().selectOption('source');
+ await page.locator('.web-view-selector select').selectOption('source');
  assert.equal(await tocToggle.isVisible(),false);
  await page.setViewportSize({width:1280,height:800});
- await page.locator('.web-app>nav select').first().selectOption('split');
+ await page.locator('.web-view-selector select').selectOption('split');
  assert.equal(await tocToggle.count(),1);assert.equal(await tocToggle.isVisible(),true);
  const desktopTocBounds=await tocToggle.boundingBox(),desktopPreviewBounds=await page.locator('article.markdown-body').boundingBox();
  assert.ok(desktopTocBounds&&desktopPreviewBounds&&desktopTocBounds.x+desktopTocBounds.width<=desktopPreviewBounds.x+desktopPreviewBounds.width&&desktopTocBounds.y>=desktopPreviewBounds.y);
@@ -48,20 +50,22 @@ try {
  const paragraphWidth=await page.locator('article .markdown-body p').first().evaluate(node=>({width:node.getBoundingClientRect().width,parent:(node.parentElement?.getBoundingClientRect().width??0)}));
  assert.ok(paragraphWidth.width>=paragraphWidth.parent-4,JSON.stringify(paragraphWidth));
  await page.setViewportSize({width:390,height:844});
- await page.locator('.web-app>nav select').first().selectOption('source');
+ await page.locator('.web-view-selector select').selectOption('source');
  await page.screenshot({path:path.join(out,'touch-preview.png'),fullPage:true});
  assert.equal(await page.getByRole('button',{name:/PowerShell|フォルダーを開く|AIに図の編集/}).count(),0);
  const rows=Array.from({length:125},(_,i)=>`| 項目${i+1} | ${i+1} |`).join('\n');
- await page.locator('.web-app>nav select').first().selectOption('source');
+ await page.locator('.web-view-selector select').selectOption('source');
  await page.locator('.cm-content').fill(`# 印刷全文確認\n\n| 名前 | 数 |\n| --- | --- |\n${rows}\n`);
  await page.evaluate(()=>{
    window.__printResult=null;
    const observer=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes){if(node instanceof HTMLIFrameElement && node.title==='印刷用文書')node.addEventListener('load',()=>{node.contentWindow.print=()=>{const doc=node.contentDocument;window.__printResult={rows:doc.querySelectorAll('tr').length,last:doc.body.innerText.includes('項目125'),heading:doc.querySelector('h1')?.textContent};node.contentWindow.dispatchEvent(new Event('afterprint'));};},{once:true});}});
    observer.observe(document.body,{childList:true});
  });
+ await page.locator('.web-app-menu > summary').tap();
  await page.locator('.web-app>header').getByRole('button',{name:'印刷',exact:true}).tap();
  await page.waitForFunction(()=>window.__printResult!==null,null,{timeout:60000});
  const print=await page.evaluate(()=>window.__printResult);assert.equal(print.rows,126);assert.equal(print.last,true);
+ await page.locator('.web-options > summary').tap();
  await page.getByRole('button',{name:'下書きを削除',exact:true}).tap();
  await page.waitForTimeout(900);
  const readDraft=()=>page.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('mdvisualizer-web-v2',1);r.onsuccess=()=>{const db=r.result;const tx=db.transaction('drafts','readonly');const q=tx.objectStore('drafts').get('current');q.onsuccess=()=>{resolve(q.result ?? null);db.close();};q.onerror=reject;};r.onerror=reject;}));

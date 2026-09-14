@@ -46,6 +46,8 @@ interface MarkdownEditorProps {
   onPasteImageError?: (error: unknown) => void;
   onLineEndingsNormalized?: (lineEnding: MarkdownLineEnding) => void;
   compact?: boolean;
+  /** Shows the formatting actions behind an accessible disclosure on narrow hosts. */
+  collapsibleToolbar?: boolean;
   /** One-based lines to highlight when this editor is embedded in Diff. */
   diffChangedLines?: ReadonlySet<number>;
   onScrollLine?: (line: number) => void;
@@ -158,7 +160,7 @@ function listToggleKind(action: MarkdownEditAction): StructuredListKind | null {
   return null;
 }
 
-export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, diffChangedLines, onScrollLine, onActiveLineChange, onCursorPositionChange, viewStateKey, codeBlockFoldMinLines = 10, onCodexConsult }, ref) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor({ documentId, value, dirty, saving, onChange, onSave, onResolvePastedImage, onStagedAssetAdded, onStagedAssetAbandoned, onPasteImageError, onLineEndingsNormalized, compact = false, collapsibleToolbar = false, diffChangedLines, onScrollLine, onActiveLineChange, onCursorPositionChange, viewStateKey, codeBlockFoldMinLines = 10, onCodexConsult }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const contextSelection = useRef({ from: 0, to: 0 });
@@ -487,14 +489,15 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     { label: "貼り付け", group: "clipboard", disabled: saving, run: target => editContext(target, "paste") },
     { label: "すべて選択", group: "selection", run: () => { if (viewRef.current) { selectAll(viewRef.current); viewRef.current.focus(); } } },
   ]);
-  return <section className={`markdown-editor${compact ? " markdown-editor--compact" : ""}`} aria-label="Markdown編集">
-    <div className="markdown-editor__toolbar" role="toolbar" aria-label="Markdown書式">
+  const toolbar = <div className="markdown-editor__toolbar" role="toolbar" aria-label="Markdown書式">
       {TOOLBAR_ACTIONS.map((item) => <button key={item.action} type="button" title={item.title} aria-label={item.title} disabled={disabledToolbarActions.includes(item.action)} onClick={() => apply(item.action)}>{item.label}</button>)}
       <span className="markdown-editor__toolbar-spacer" />
       <button type="button" title="H2以下と長いコードを折畳" onClick={() => { const view = viewRef.current; if (view) { foldHeadingsBelowH1(view); foldSpecialContent(view, codeBlockFoldMinLines); } }}>折畳</button>
       <button type="button" title="すべて展開" onClick={() => { const view = viewRef.current; if (view) unfoldAll(view); }}>展開</button>
       <button type="button" className="markdown-editor__save" disabled={!dirty || saving} onClick={onSave}>{saving ? "保存中…" : "保存"}</button>
-    </div>
+    </div>;
+  return <section className={`markdown-editor${compact ? " markdown-editor--compact" : ""}`} aria-label="Markdown編集">
+    {collapsibleToolbar ? <details className="markdown-editor__toolbar-details"><summary>書式</summary>{toolbar}</details> : toolbar}
     <div className="markdown-editor__surface" ref={hostRef} onContextMenuCapture={consultation.onContextMenuCapture} />
     {consultation.menu}
     {contextError && <p role="alert">{contextError}</p>}

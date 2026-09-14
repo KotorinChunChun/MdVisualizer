@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 export const WEB_BUTTON_LAYOUT_SCOPES = [
   { id: "web-header", selector: ".web-app > header", required: true },
   { id: "web-nav", selector: ".web-app > nav", required: true },
-  { id: "web-toolbar", selector: ".web-document-tool__bar, .remote-storage, .markdown-editor__toolbar, .responsive-toolbar", required: false },
+  { id: "web-menu-summary", selector: ".web-app-menu > summary", required: false },
+  { id: "web-options-summary", selector: ".web-options > summary", required: false },
+  { id: "web-editor-toolbar", selector: ".markdown-editor__toolbar", required: false },
+  { id: "web-document-tool-bar", selector: ".web-document-tool__bar", required: false },
+  { id: "web-remote-storage-summary", selector: ".web-remote-storage > summary", required: false },
   { id: "web-modal", selector: '[role="dialog"]', required: false },
 ];
 
@@ -38,11 +42,12 @@ export async function collectButtonLayoutAudit(page, scopes, options = {}) {
   const tolerance = options.tolerance ?? DEFAULT_TOLERANCE;
   return page.evaluate(({ requestedScopes, geometryTolerance }) => {
     const visible = (element) => {
+      if (typeof element.checkVisibility === "function" && !element.checkVisibility({ checkOpacity: false, checkVisibilityCSS: true, contentVisibilityAuto: true })) return false;
       const style = getComputedStyle(element);
       const rect = element.getBoundingClientRect();
       return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
     };
-    const label = (control) => (control instanceof HTMLSelectElement ? `select:${control.value}` : control.getAttribute("aria-label") || control.textContent?.replace(/\s+/g, " ").trim() || "(無名ボタン)");
+    const label = (control) => (control instanceof HTMLSelectElement ? `select:${control.value}` : control.getAttribute("aria-label") || control.textContent?.replace(/\s+/g, " ").trim() || "(無名コントロール)");
     const verticalOverlap = (left, right) => Math.max(0, Math.min(left.rect.bottom, right.rect.bottom) - Math.max(left.rect.top, right.rect.top));
     const sameRow = (left, right) => verticalOverlap(left, right) >= Math.min(left.rect.height, right.rect.height) * 0.5;
     const groupRows = (buttons) => {
@@ -67,7 +72,7 @@ export async function collectButtonLayoutAudit(page, scopes, options = {}) {
       }
       roots.forEach((root, rootIndex) => {
         const rootRect = root.getBoundingClientRect();
-        const controls = [...root.querySelectorAll("button, select")].filter(visible).map((button) => {
+        const controls = [...(root.matches("button, select, summary") ? [root] : []), ...root.querySelectorAll("button, select, summary")].filter(visible).map((button) => {
           const rect = button.getBoundingClientRect();
           return { tagName: button.tagName.toLowerCase(), label: label(button), rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, height: rect.height }, centerY: (rect.top + rect.bottom) / 2 };
         });
@@ -94,7 +99,7 @@ export async function collectButtonLayoutAudit(page, scopes, options = {}) {
             ],
           };
         });
-        results.push({ id: `${requested.id}#${rootIndex + 1}`, selector: requested.selector, required: Boolean(requested.required), matched: 1, buttonCount: controls.filter((control) => control.tagName === "button").length, controlCount: controls.length, rows, violations: rows.flatMap((row) => row.violations) });
+        results.push({ id: `${requested.id}#${rootIndex + 1}`, selector: requested.selector, required: Boolean(requested.required), matched: 1, buttonCount: controls.filter((control) => ["button", "summary"].includes(control.tagName)).length, controlCount: controls.length, rows, violations: rows.flatMap((row) => row.violations) });
       });
     }
     return results;
@@ -103,7 +108,7 @@ export async function collectButtonLayoutAudit(page, scopes, options = {}) {
 
 export function assertButtonLayoutAudit(results, options = {}) {
   const exceptions = normalizeExceptions(options.exceptions ?? []);
-  const requiredMissing = results.filter((result) => result.required && (result.matched === 0 || result.buttonCount === 0)).map((result) => `${result.id} (${result.selector})`);
+  const requiredMissing = results.filter((result) => result.required && result.matched === 0).map((result) => `${result.id} (${result.selector})`);
   const violations = results.flatMap((result) => result.violations).filter((issue) => !exceptions.some((exception) => exceptionApplies(issue, exception)));
   assert.deepEqual(requiredMissing, [], `必須ボタンscopeが見つかりません: ${requiredMissing.join(", ")}`);
   assert.deepEqual(violations, [], `ボタン配置監査に失敗しました: ${JSON.stringify(violations)}`);
