@@ -51,7 +51,7 @@
     "test:web-platform": "node scripts/test-web-platform-setup.mjs && node scripts/sync-desktop-shared.mjs --check",
     "validate:all": "pwsh -NoProfile -File scripts/Invoke-Validate-MdVisualizer-all.ps1",
     "check:ui-contract": "node scripts/ui-command-contract.mjs",
-    "test:ui-contract": "node scripts/test-ui-command-contract.mjs",
+    "test:ui-contract": "node scripts/test-ui-command-contract.mjs && node scripts/test-ui-control-locations.mjs",
     "publish:web": "pwsh -NoProfile -File scripts/publish-web-MdVisualizer-limited.ps1"
   },
   "dependencies": {

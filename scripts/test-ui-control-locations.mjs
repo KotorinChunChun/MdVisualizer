@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { locateControls } from './ui-control-locations.mjs';
+const contract = JSON.parse(fs.readFileSync(new URL('../config/ui-command-contract.json',import.meta.url)));
+const locations = locateControls(contract.controls);
+assert.equal(locations.size,contract.controls.length);
+assert.equal(new Set([...locations.values()].map(x=>x.number)).size,contract.controls.length);
+const rows = contract.controls.map(r=>({...r,place:locations.get(r.id)}));
+const desktop = rows.filter(r=>r.place.name==='Desktop／文書操作ツールバー').sort((a,b)=>a.place.order-b.place.order);
+assert.deepEqual(desktop.map(r=>r.displayName?.startsWith('診断')?'診断':r.displayName?.includes('保存中')?'保存':r.displayName),['新規MD','保存','HTML出力','差分','印刷','診断','再読込']);
+const format = rows.filter(r=>r.place.name==='共通／コード書式ツールバー');
+assert.equal(format.length,17);
+assert.deepEqual(format.map(r=>r.place.order),Array.from({length:17},(_,i)=>i+1));
+assert(rows.some(r=>r.tag==='option'&&r.place.name.includes('プレビュー')));
+for(const row of rows) assert(row.place.name && row.place.order>0 && row.place.basis);
+console.log('UI所属・採番検査成功: 全登録、番号重複なし、文書7操作、書式17操作、子メニュー');

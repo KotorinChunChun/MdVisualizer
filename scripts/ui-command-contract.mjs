@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import ts from 'typescript';
 import postcss from 'postcss';
 import { scanUiControls } from './ui-control-inventory.mjs';
+import { locateControls } from './ui-control-locations.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const contractPath = path.join(root, 'config/ui-command-contract.json');
@@ -116,11 +117,11 @@ function checkCore() {
 
 function renderMatrix(contract, inventory) {
   const escape = value => String(value ?? '動的/未抽出').replaceAll('|', '&#124;').replaceAll('\n', ' ').replaceAll('<', '&lt;');
-  const lines = ['# UI機能対応表', '', '正本は `config/ui-command-contract.json`。`npm run check:ui-contract` が未登録・削除・名称/順序/属性変更・CSS変更とこの表の更新漏れを検出する。表はソース上の対応を示し、非表示条件・実寸・実操作の合格を推測しない。', '', '## 共通の操作規約', '', '| ID | 表示名 | 許容する状態表示 | 相対順序 |', '| --- | --- | --- | --- |', ...contract.commands.map(c => `| ${c.id} | ${c.label} | ${(c.variants ?? []).join(' / ')} | ${c.order} |`), '', '書式操作は `editorToolbarActions.ts` の単一リストをDesktop/HTML/PHP/SPFxで使用する。表示切替は共通部品とCSSを使用する。デスクトップの新規/再読込、Webの開く/ZIP、PHPの一時保管など固有操作は共通コマンドの相対順を崩さず配置する。', '', '## 全操作の登録', '', `登録 ${contract.controls.length} 件。動的表示の展開、条件付き表示、キーボード到達、画面の高さは実画面で別途確認する。「別実装/未対応」は利用不可の承認や合格を意味しない。`, '', '| ID | 機能/表示名 | Desktop | HTML | PHP | SPFx | 名前・順序・デザインの判定方法 | 定義位置 |', '| --- | --- | --- | --- | --- | --- | --- | --- |'];
+  const lines = ['# UI機能対応表', '', '正本は `config/ui-command-contract.json`。`npm run check:ui-contract` が未登録・削除・名称/順序/属性変更・CSS変更とこの表の更新漏れを検出する。表はソース上の対応を示し、非表示条件・実寸・実操作の合格を推測しない。', '', '## 共通の操作規約', '', '| ID | 表示名 | 許容する状態表示 | 相対順序 |', '| --- | --- | --- | --- |', ...contract.commands.map(c => `| ${c.id} | ${c.label} | ${(c.variants ?? []).join(' / ')} | ${c.order} |`), '', '書式操作は `editorToolbarActions.ts` の単一リストをDesktop/HTML/PHP/SPFxで使用する。表示切替は共通部品とCSSを使用する。デスクトップの新規/再読込、Webの開く/ZIP、PHPの一時保管など固有操作は共通コマンドの相対順を崩さず配置する。', '', '## 全操作の登録', '', `登録 ${contract.controls.length} 件。動的表示の展開、条件付き表示、キーボード到達、画面の高さは実画面で別途確認する。「別実装/未対応」は利用不可の承認や合格を意味しない。`, '', '番号は同じ操作領域内で1から付ける。UIxxxがツールバー/メニューの識別番号、末尾が項目順。子メニューは別領域とし、動的生成など実表示順を確定できない箇所は定義順と明記する。既存のui-IDは変更しない。', '', '| UI番号 | ツールバー／メニュー名 | 順序の根拠 | ID | 機能/表示名 | Desktop | HTML | PHP | SPFx | 名前・順序・デザインの判定方法 | 定義位置 |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'];
   const positions = new Map(inventory.controls.map(c => [c.id, c.source]));
-  for (const c of contract.controls) {
+  for (const c of [...contract.controls].sort((a,b) => a.location.groupId.localeCompare(b.location.groupId) || a.location.order-b.location.order)) {
     const at = positions.get(c.id) ?? c.source;
-    lines.push(`| ${c.id} | ${escape(c.displayName)} | ${escape(c.hosts.desktop)} | ${escape(c.hosts.html)} | ${escape(c.hosts.php)} | ${escape(c.hosts.spfx)} | ${escape(c.nameCheck)}; ${escape(c.orderCheck)}; ${escape(c.designCheck)} | ${at.file}:${at.line} |`);
+    lines.push(`| ${c.location.number} | ${escape(c.location.name)} | ${escape(c.location.basis)} | ${c.id} | ${escape(c.displayName)} | ${escape(c.hosts.desktop)} | ${escape(c.hosts.html)} | ${escape(c.hosts.php)} | ${escape(c.hosts.spfx)} | ${escape(c.nameCheck)}; ${escape(c.orderCheck)}; ${escape(c.designCheck)} | ${at.file}:${at.line} |`);
   }
   lines.push('', '## デザインの静的検査', '', `操作UIに関するCSS ${contract.css.length} 規則を登録。値変更はレビューが必要。既存のCSS分布レポートは用途別の少数値を示すが、少数値だけで不具合とは判定しない。共有CSSでもホスト側のカスケード差は実寸検査が必要。`, '');
   return lines.join('\n');
@@ -128,10 +129,11 @@ function renderMatrix(contract, inventory) {
 
 export function auditContract({ update = false } = {}) {
   const inventory = scanUiControls(), css = cssRecords();
+  const locations = locateControls(inventory.controls);
   const overrides = JSON.parse(read('config/ui-host-mappings.json')).overrides;
   if (update) {
     // 初回/レビュー後の明示操作のみ。通常チェックは基準を更新しない。
-    const controls = inventory.controls.map(row => ({ ...row, ...mappedAssessment(row, overrides) }));
+    const controls = inventory.controls.map(row => ({ ...row, ...mappedAssessment(row, overrides), location: locations.get(row.id) }));
     const contract = { schemaVersion: 1, commands: coreCommands, controls, css };
     fs.mkdirSync(path.dirname(contractPath), { recursive: true });
     fs.writeFileSync(contractPath, JSON.stringify(contract, null, 2) + '\n');
@@ -141,6 +143,7 @@ export function auditContract({ update = false } = {}) {
   const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
   const errors = [...compareInventory(contract.controls, inventory.controls), ...compareInventory(contract.css, css), ...checkCore()];
   for (const row of contract.controls) if (JSON.stringify(row.hosts) !== JSON.stringify(mappedAssessment(row, overrides).hosts)) errors.push(`${row.id}: 対応分類と正本の更新が一致しない`);
+  for (const row of contract.controls) if (JSON.stringify(row.location) !== JSON.stringify(locations.get(row.id))) errors.push(`${row.id}: 所属領域または項目順が対応表と一致しない`);
   for (const row of contract.controls) if (!row.hosts || Object.values(row.hosts).some(v => !v)) errors.push(`${row.id}: ホスト対応/理由がない`);
   if (fs.readFileSync(documentPath, 'utf8') !== renderMatrix(contract, inventory)) errors.push('対応表の生成内容が古い');
   const result = { status: errors.length ? 'failed' : 'passed', controls: inventory.controls.length, cssRules: css.length, runtimeNameChecks: inventory.controls.filter(c => c.labelKind !== 'static').length, crossHostReview: contract.controls.filter(c => Object.values(c.hosts).some(v => v.startsWith('別実装/未対応'))).length, errors };
