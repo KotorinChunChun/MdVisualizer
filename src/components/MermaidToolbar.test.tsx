@@ -20,6 +20,23 @@ beforeEach(() => {
 });
 
 describe("MermaidToolbar", () => {
+  it.each([
+    ["ベクターイメージとしてコピー", "SVGファイルとしてコピー", "svg"],
+    ["ビットマップイメージとしてコピー", "ビットマップファイルとしてコピー", "bmp"],
+  ])("offers the corresponding file action after %s", async (command, label, kind) => {
+    let detail: { actions?: { label: string; onAction: () => Promise<void> }[] } | undefined;
+    const listener = (event: Event) => { detail = (event as CustomEvent).detail; };
+    window.addEventListener("markdown-toast", listener);
+    try {
+      render(<MermaidToolbar source="flowchart LR" svg="<svg/>" display="diagram" />);
+      fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
+      fireEvent.click(screen.getByRole("button", { name: command }));
+      await waitFor(() => expect(detail?.actions?.[0].label).toBe(label));
+      await detail!.actions![0].onAction();
+      expect(mocks.copyMermaidAsFile).toHaveBeenCalledWith(kind, "flowchart LR", "<svg/>", "mermaid");
+      expect(detail?.actions).toBeUndefined();
+    } finally { window.removeEventListener("markdown-toast", listener); }
+  });
   it("offers all draw.io copy forms in the single menu", async () => {
     let toastDetail: { message?: string } | undefined;
     const listener = (event: Event) => { toastDetail = (event as CustomEvent).detail; };

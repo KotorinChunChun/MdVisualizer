@@ -115,7 +115,19 @@ function Invoke-BuildRelease {
         Pop-Location
     }
     Write-Host "Running Rust tests for the explicitly requested release..."
-    Invoke-CheckedExternalCommand -FilePath "cargo" -ArgumentList @("test") -WorkingDirectory (Join-Path $projectRoot "src-tauri")
+    $runtime = Get-MdVisualizerNodeRuntime -ProjectRoot $projectRoot
+    if (-not $runtime.CargoBin) { throw 'Rustの実行環境が見つかりません。' }
+    $previousCargoHome = $env:CARGO_HOME
+    $previousRustupHome = $env:RUSTUP_HOME
+    try {
+        $env:CARGO_HOME = $runtime.CargoHome
+        $env:RUSTUP_HOME = $runtime.RustupHome
+        Invoke-CheckedExternalCommand -FilePath (Join-Path $runtime.CargoBin 'cargo.exe') -ArgumentList @("test") -WorkingDirectory (Join-Path $projectRoot "src-tauri")
+    }
+    finally {
+        $env:CARGO_HOME = $previousCargoHome
+        $env:RUSTUP_HOME = $previousRustupHome
+    }
     Write-Host "Building and signing the explicitly requested MSIX release..."
     & (Join-Path $PSScriptRoot "package-MdVisualizer-msix.ps1") `
         -ConfigPath $configuration.ConfigPath

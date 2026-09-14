@@ -40,7 +40,7 @@ npm.cmd run build:spfx:local
 npm.cmd run release:test-safety
 ```
 
-当該PCではGUIテストを行いません。実WebView、印刷画面、実SharePointの利用者操作は別PCまたは専用runnerの受入として分離します。
+GUIテストの可否は最新のAGENTS.mdに従います。当該PCでは実画面確認が許可されています。実WebView、印刷画面、実SharePointの利用者操作は、自動テストや成果物生成とは別に実施結果を記録します。
 
 ## SPFx
 

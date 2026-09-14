@@ -33,7 +33,7 @@
     "release:plan": "pwsh -NoProfile -File ./scripts/publish-release-MdVisualizer-all.ps1 -Mode Plan",
     "test:run-scripts": "pwsh -NoProfile -File ./scripts/test-run-script-naming.ps1",
     "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
-    "pretest": "npm run build:embedded && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract",
+    "pretest": "npm run build:embedded && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./web-platform/scripts/check-ui-styles.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract",
     "test": "vitest run",
     "test:diff-layout": "tsc --project tests/diff-layout/tsconfig.json && node ./scripts/test-diff-layout.mjs",
     "test:button-style-rules": "node ./scripts/test-button-style-rules.mjs",

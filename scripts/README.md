@@ -6,7 +6,7 @@
 |---|---|
 | `run-debug-MdVisualizer-all.ps1` | 全機能をデバッグビルドして起動する。 |
 | `run-debug-MdVisualizer-all-sample.ps1` | `samples/sample.md`を使用して全機能をデバッグ起動する。`-TestFile`で変更できる。 |
-| `run-debug-MdVisualizer-all-smoke.ps1` | デバッグ再ビルド後に実画面スモークを実行する。GUIテストを行わない当該PCでは使用しない。 |
+| `run-debug-MdVisualizer-all-smoke.ps1` | デバッグ再ビルド後に実画面スモークを実行する。実行可否と未保存文書保護は最新のAGENTS.mdに従う。 |
 | `run-release-MdVisualizer-all.ps1` | 全機能をリリースビルドし、生成した実行ファイルを起動する。 |
 | `run-exe-MdVisualizer-all.ps1` | ビルド済み実行ファイルを起動する。既定はrelease、`-Configuration debug`も指定できる。 |
 | `run-exe-MdVisualizer-all-sample.ps1` | `samples/sample.md`を使用してビルド済み実行ファイルを起動する。 |

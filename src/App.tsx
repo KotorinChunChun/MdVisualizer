@@ -2500,7 +2500,8 @@ export function App() {
             tabId={activeTab.id}
             onMediaOpen={openMediaPreview}
             onDrawioSave={activeTab.document.kind === "drawio" ? (content) => saveStandaloneDrawio(activeTab.id, content) : undefined}
-            onTextChange={visualEditing && ["tsv", "svg", "mermaid"].includes(activeTab.document.kind) ? (content) => { dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content }); } : undefined}
+            onTextChange={canEditActive && !printing && ["tsv", "svg", "mermaid"].includes(activeTab.document.kind) ? (content) => { dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content }); } : undefined}
+            enableCodex={canEditActive && !printing}
           />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
@@ -2532,6 +2533,7 @@ export function App() {
           <MarkdownPreview
             enablePointerBlockReorder={visualEditing}
             readOnly={!visualEditing}
+            allowBlockActions={canEditActive && !printing && !activeTab.saving}
             content={previewContent}
             baseDir={activeTab.document.base_dir}
             onTextEdit={canEditActive && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
@@ -2599,6 +2601,7 @@ export function App() {
             stagedDrawioSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.drawio$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
             stagedMermaidSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.(?:mmd|mermaid)$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
             stagedTableSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.(?:csv|tsv)$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
+            stagedTextSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined ? [[asset.filename, asset.text]] : []))}
           />
         ) : (
           <div className="empty-state">

@@ -87,6 +87,7 @@ web/tests/.php-zip-fixtures/
 /src/components/MarkdownEditor.tsx
 /src/components/MarkdownPreview.tsx
 /src/components/MediaPreviewModal.tsx
+/src/components/MenuChevron.tsx
 /src/components/MermaidBlock.tsx
 /src/components/MermaidEditorModal.tsx
 /src/components/MermaidToolbar.tsx
@@ -108,6 +109,7 @@ web/tests/.php-zip-fixtures/
 /src/features/codex/DiagramCodexAction.tsx
 /src/features/codex/DiagramProposalPreview.tsx
 /src/features/codex/FileSvgCodexAction.tsx
+/src/features/codex/TableCodexAction.tsx
 /src/features/codex/api.ts
 /src/features/codex/codex.css
 /src/features/codex/codexImageEdit.css

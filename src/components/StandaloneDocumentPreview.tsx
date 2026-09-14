@@ -20,6 +20,7 @@ interface StandaloneDocumentPreviewProps {
   onTextChange?: (source: string) => boolean | void | Promise<boolean | void>;
   /** Optional explicit save route for direct CSV/TSV documents. */
   onTsvSave?: (source: string) => boolean | void | Promise<boolean | void>;
+  enableCodex?: boolean;
 }
 
 /** Displays direct SVG and Mermaid files through the same safe preview paths used by Markdown embeds. */
@@ -34,6 +35,7 @@ export function StandaloneDocumentPreview({
   onDrawioSave,
   onTextChange,
   onTsvSave,
+  enableCodex = false,
 }: StandaloneDocumentPreviewProps) {
   if (document.kind === "svg") {
     return <div className="markdown-body standalone-document standalone-document--svg" ref={contentRef}>
@@ -71,7 +73,7 @@ export function StandaloneDocumentPreview({
 
   if (document.kind === "tsv") {
     return <div className="markdown-body standalone-document standalone-document--tsv" ref={contentRef}>
-      <DelimitedTableBlock language="tsv" source={document.content} headingLabel={<strong>{getFileName(document.path)}</strong>} onSave={onTsvSave ?? onTextChange} />
+      <DelimitedTableBlock language="tsv" source={document.content} headingLabel={<strong>{getFileName(document.path)}</strong>} onSave={onTsvSave ?? onTextChange} enableCodex={enableCodex} />
     </div>;
   }
 

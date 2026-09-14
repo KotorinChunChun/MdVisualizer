@@ -19,6 +19,14 @@ vi.mock("./ExternalDrawioBlock", () => ({
 describe("MarkdownPreview draw.io fences", () => {
   afterEach(cleanup);
 
+  it("keeps external SVG block actions in preview-only while preserving genuine read-only", () => {
+    const props = { content: "![図](diagram.svg)", baseDir: "C:/docs", documentPath: "C:/docs/note.md", imageVersions: {}, readOnly: true };
+    const { rerender } = render(<MarkdownPreview {...props} allowBlockActions />);
+    expect(screen.getByTestId("external-drawio").dataset.editable).toBe("true");
+    rerender(<MarkdownPreview {...props} />);
+    expect(screen.getByTestId("external-drawio").dataset.editable).toBe("false");
+  });
+
   it("passes the selected fence occurrence to the safe body-change callback", () => {
     const onCodeFenceBodyChange = vi.fn(() => true);
     const onMediaOpen = vi.fn();

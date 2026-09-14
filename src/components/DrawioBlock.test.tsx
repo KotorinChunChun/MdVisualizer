@@ -20,6 +20,13 @@ describe("DrawioBlock", () => {
     expect(screen.getByText(/<path>/)).toBeTruthy();
   });
 
+  it("keeps a valid SVG preview when it cannot be converted into editable draw.io cells", () => {
+    const source = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>';
+    render(<DrawioBlock source={source} theme="light" blockId="svg-path" onMediaOpen={() => {}} />);
+    expect(screen.getByRole("button", { name: "図を拡大" }).querySelector("svg")).toBeTruthy();
+    expect(screen.queryByText("変換可能なSVG要素が見つかりませんでした。")).toBeNull();
+  });
+
   it("uses the Mermaid preview for draw.io Mermaid sources", () => {
     render(<DrawioBlock source={"flowchart LR\nA-->B"} theme="dark" blockId="two" />);
     expect(screen.getByTestId("mermaid-drawio").textContent).toContain("A-->B");

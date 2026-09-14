@@ -29,6 +29,14 @@ const loaded = {
 };
 
 describe("ExternalDrawioBlock", () => {
+  it("loads an external SVG through the shared editable diagram toolbar", async () => {
+    const svg = { ...loaded, path: "C:/docs/diagram.svg", kind: "svg", content: '<svg xmlns="http://www.w3.org/2000/svg"/>' };
+    loadMarkdown.mockResolvedValue(svg);
+    render(<ExternalDrawioBlock source="diagram.svg" documentKind="svg" baseDir="C:/docs" theme="dark" blockId="svg" version={0} />);
+    expect((await screen.findByTestId("external-drawio")).dataset.editable).toBe("true");
+    expect(screen.getByTestId("external-drawio").textContent).toBe(svg.content);
+    expect(loadMarkdown).toHaveBeenCalledWith("C:/docs/diagram.svg");
+  });
   afterEach(() => {
     cleanup();
     loadMarkdown.mockReset();
