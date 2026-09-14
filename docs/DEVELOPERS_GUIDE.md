@@ -100,3 +100,5 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 回帰サンプルは子Gitの`tests/fixtures/v0.0.18-ui-cases.json`、要求ID別の受入は版別test-requirementsへ記録します。表の空行・空ヘッダ・ヘッダOFF・文字コード・CRLFを保存契約として検証します。更新番号を未保存バッジの根拠にせず、ステージされた未保存資産の存在を用います。
 
 設定案内の同梱スキルは共有`features/codex/default-skills/app-settings/SKILL.md`です。デスクトップでは既存ユーザーへの一回限りの追加を行い、削除後に再配布しません。
+
+- [開発・検証・Web公開の自動化](/docs/developer/operations/02-development-automation.md)、[全UI機能対応表](/docs/developer/ui/UI_COMMAND_MATRIX.md)

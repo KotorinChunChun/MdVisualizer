@@ -1,0 +1,337 @@
+{
+  "schemaVersion": 1,
+  "overrides": [
+    {
+      "file": "src/App.tsx",
+      "hosts": {
+        "desktop": "実装: デスクトップ文書・タブ操作",
+        "html": "未対応: ブラウザー版は単一セッションで新規MD、再読込、見出し折りたたみ、AIパネルを提供しない",
+        "php": "未対応: ブラウザー版と同じ単一セッション構成",
+        "spfx": "未対応: SharePoint WebPartは文書選択と保存を提供し、デスクトップのタブ・AI・折りたたみ操作は提供しない"
+      },
+      "evidence": "src/App.tsx:2320-2348。WebApp.tsx:179-199 と MdVisualizerWebPart.ts:45-78 を確認。"
+    },
+    {
+      "file": "src/App.tsx",
+      "displayNames": [
+        "{{activeTab?.saving ? \"保存中…\" : \"保存\"}}",
+        "差分",
+        "印刷"
+      ],
+      "hosts": {
+        "desktop": "実装: Appの保存・差分・印刷コマンド",
+        "html": "同等機能: WebAppの保存/差分/印刷。表示と状態はホスト別実装",
+        "php": "同等機能: WebAppの保存/差分/印刷。PHPは同じWeb画面を提供",
+        "spfx": "別実装: MdVisualizerControllerの保存/HTML出力とWebPartの差分。印刷は未対応"
+      },
+      "evidence": "src/App.tsx:2321-2324、web-platform/apps/web/src/WebApp.tsx:180、WebDocumentTools.tsx:20、MdVisualizerController.ts:104-117、MdVisualizerWebPart.ts:50。"
+    },
+    {
+      "file": "src/components/ContextMenu.tsx",
+      "hosts": {
+        "desktop": "実装: ネイティブ文書タブの右クリック操作",
+        "html": "未対応: WebAppは単一文書セッションでデスクトップタブ・ローカルアプリ起動を提供しない",
+        "php": "未対応: WebAppと同じ理由",
+        "spfx": "未対応: SharePoint WebPartにデスクトップタブ・ローカルアプリ起動はない"
+      },
+      "evidence": "src/components/ContextMenu.tsx:8-43、src/App.tsx:2775。"
+    },
+    {
+      "file": "src/components/CropOverlay.tsx",
+      "hosts": {
+        "desktop": "実装: ローカル画像のクロップ専用オーバーレイ",
+        "html": "別実装: WebImageEditorが共有ImageAnnotationEditorを直接使用し、CropOverlayは使用しない",
+        "php": "別実装: HTML版と同じWebImageEditor経路",
+        "spfx": "未対応: SPFx側に画像編集起動経路を確認できない"
+      },
+      "evidence": "src/App.tsx:2627、web-platform/apps/web/src/WebImageEditor.tsx:1-23、SPFxのMdVisualizerController.tsを確認。"
+    },
+    {
+      "file": "src/components/DesktopHtmlExport.tsx",
+      "hosts": {
+        "desktop": "実装: DesktopHtmlExport",
+        "html": "同等機能: WebAppのHtmlExportDialogとexportHtmlInBrowser",
+        "php": "同等機能: WebAppのHtmlExportDialogとexportHtmlInBrowser",
+        "spfx": "別実装: MdVisualizerControllerのDOM HTML出力ダイアログ"
+      },
+      "evidence": "src/components/DesktopHtmlExport.tsx:33-83、WebApp.tsx:97-110/180、MdVisualizerController.ts:491-540。"
+    },
+    {
+      "file": "src/components/DocumentSidePanel.tsx",
+      "hosts": {
+        "desktop": "実装: デスクトップの文書サイドパネル",
+        "html": "未対応: WebAppに同じパネルUIはない",
+        "php": "未対応: WebAppに同じパネルUIはない",
+        "spfx": "未対応: WebPartに同じパネルUIはない"
+      },
+      "evidence": "src/components/DocumentSidePanel.tsx、WebApp.tsx:179-199、MdVisualizerWebPart.ts:45-78。"
+    },
+    {
+      "file": "src/components/EditingTestReport.tsx",
+      "hosts": {
+        "desktop": "実装: 開発用編集テスト診断",
+        "html": "対象外: 開発診断UIはWeb配布画面へ含めない",
+        "php": "対象外: 開発診断UIはWeb配布画面へ含めない",
+        "spfx": "対象外: 開発診断UIはSPFx配布画面へ含めない"
+      },
+      "evidence": "src/App.tsx:96/2744 と src/components/EditingTestReport.tsx。"
+    },
+    {
+      "file": "src/components/HeaderBar.tsx",
+      "hosts": {
+        "desktop": "未到達: 現行AppからHeaderBarの利用を確認できない",
+        "html": "未対応: WebAppは独自headerを使用",
+        "php": "未対応: WebAppは独自headerを使用",
+        "spfx": "未対応: WebPartは独自command barを使用"
+      },
+      "evidence": "src/components/HeaderBar.tsx、src/App.tsx、WebApp.tsx:180、MdVisualizerWebPart.ts:47-60。"
+    },
+    {
+      "file": "src/components/ImageGallery.tsx",
+      "hosts": {
+        "desktop": "実装: デスクトップの画像ギャラリー",
+        "html": "未対応: WebAppに画像ギャラリー起動経路を確認できない",
+        "php": "未対応: WebAppに画像ギャラリー起動経路を確認できない",
+        "spfx": "未対応: WebPartに画像ギャラリー起動経路を確認できない"
+      },
+      "evidence": "src/components/ImageGallery.tsx、src/App.tsxの画像ギャラリー呼出し、WebApp.tsxとMdVisualizerWebPart.tsを確認。"
+    },
+    {
+      "file": "src/components/MermaidEditorPlaceholderModal.tsx",
+      "hosts": {
+        "desktop": "未到達: MermaidEditorPlaceholderModalのimport/JSX利用を確認できない",
+        "html": "未対応: Webは共有MermaidEditorModal経路を使用",
+        "php": "未対応: Webは共有MermaidEditorModal経路を使用",
+        "spfx": "別実装: SpfxMermaidEditorDialogを使用"
+      },
+      "evidence": "src/components/MermaidEditorPlaceholderModal.tsx:4 の定義のみ。MermaidBlock.tsx と SpfxMermaidEditorDialog.ts を確認。"
+    },
+    {
+      "file": "src/components/PreviewContextMenu.tsx",
+      "hosts": {
+        "desktop": "実装: デスクトッププレビューの右クリック編集・コピー",
+        "html": "未対応: WebAppにPreviewContextMenuの利用を確認できない",
+        "php": "未対応: WebAppにPreviewContextMenuの利用を確認できない",
+        "spfx": "未対応: WebPartにPreviewContextMenuの利用を確認できない"
+      },
+      "evidence": "src/App.tsx:1223/2777、src/components/PreviewContextMenu.tsx。"
+    },
+    {
+      "file": "src/components/SharePointAuthDialog.tsx",
+      "hosts": {
+        "desktop": "実装: ネイティブSharePoint認証案内",
+        "html": "未対応: WebAppはこの認証ダイアログを使用しない",
+        "php": "未対応: WebAppはこの認証ダイアログを使用しない",
+        "spfx": "対象外: SPFxはSharePointページのコンテキスト認証を使用"
+      },
+      "evidence": "src/App.tsx:2745、src/components/SharePointAuthDialog.tsx、MdVisualizerWebPart.tsのSPHttpClient使用。"
+    },
+    {
+      "file": "src/components/ShortcutHelpModal.tsx",
+      "hosts": {
+        "desktop": "実装: デスクトップのショートカット案内",
+        "html": "未対応: WebAppに同一モーダルの利用を確認できない",
+        "php": "未対応: WebAppに同一モーダルの利用を確認できない",
+        "spfx": "未対応: WebPartに同一モーダルの利用を確認できない"
+      },
+      "evidence": "src/components/ShortcutHelpModal.tsx、src/App.tsx、WebApp.tsx、MdVisualizerWebPart.ts。"
+    },
+    {
+      "file": "src/components/SvgSourceEditor.tsx",
+      "hosts": {
+        "desktop": "実装: デスクトップのSharePoint SVGソース保存",
+        "html": "未対応: WebAppはSVGソース保存ダイアログを使用しない",
+        "php": "未対応: WebAppはSVGソース保存ダイアログを使用しない",
+        "spfx": "未対応: WebPartにSVGソース編集ダイアログを確認できない"
+      },
+      "evidence": "src/App.tsx:2680-2701、src/components/SvgSourceEditor.tsx。"
+    },
+    {
+      "file": "src/components/Toast.tsx",
+      "hosts": {
+        "desktop": "実装: デスクトップの復元・操作アクション付きToast",
+        "html": "別実装: WebAppはstatus outputで通知しToast操作は提供しない",
+        "php": "別実装: WebAppはstatus outputで通知しToast操作は提供しない",
+        "spfx": "別実装: WebPartはspfxMarkdownStatusで通知する"
+      },
+      "evidence": "src/components/Toast.tsx、WebApp.tsx:198、MdVisualizerWebPart.ts:60-63。"
+    },
+    {
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/DrawioEditorBridge.ts",
+      "hosts": {
+        "desktop": "別実装: 共有DrawioEditorModalとデスクトップ接続アダプター",
+        "html": "別実装: 共有DrawioEditorModalをWebAppから使用",
+        "php": "別実装: HTML版と同じ共有DrawioEditorModal経路",
+        "spfx": "実装: DrawioEditorBridgeのiframe編集"
+      },
+      "evidence": "web-platform/apps/spfx/src/webparts/mdVisualizer/DrawioEditorBridge.ts、web-platform/packages/editor-ui/src/components/DrawioEditorModal.tsx。"
+    },
+    {
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizerController.ts",
+      "hosts": {
+        "desktop": "別実装: React Appと共有editor-ui部品",
+        "html": "別実装: WebAppと共有editor-ui部品",
+        "php": "別実装: WebAppと共有editor-ui部品",
+        "spfx": "実装: DOM組立の編集・HTML出力・図表操作"
+      },
+      "evidence": "MdVisualizerController.ts:98-120/294-341/491-540。"
+    },
+    {
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizerController.ts",
+      "displayNames": [
+        "保存",
+        "HTML出力",
+        "差分",
+        "ファイル名",
+        "出力形式",
+        "スクリプトなし",
+        "スクリプトあり",
+        "キャンセル",
+        "HTMLを出力"
+      ],
+      "hosts": {
+        "desktop": "同等機能: Appの保存・差分、DesktopHtmlExportの出力ダイアログ",
+        "html": "同等機能: WebAppの保存・Diff・HtmlExportDialog",
+        "php": "同等機能: WebAppの保存・Diff・HtmlExportDialog",
+        "spfx": "実装: Controllerの保存・HTML出力・差分起動"
+      },
+      "evidence": "src/App.tsx:2321-2324、DesktopHtmlExport.tsx、WebApp.tsx:97-110/180、MdVisualizerController.ts:104-117/491-540。"
+    },
+    {
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizerWebPart.ts",
+      "hosts": {
+        "desktop": "未対応: SharePointライブラリ選択とProperty PaneはデスクトップUIにない",
+        "html": "未対応: SharePointライブラリ選択とProperty PaneはWebAppにない",
+        "php": "未対応: SharePointライブラリ選択とProperty PaneはWebAppにない",
+        "spfx": "実装: ファイル一覧・選択・Property Pane接続設定"
+      },
+      "evidence": "MdVisualizerWebPart.ts:45-78/127-148/166-170。"
+    },
+    {
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/SpfxAttachmentPresentation.ts",
+      "hosts": {
+        "desktop": "別実装: 共有ExternalFileHeader等の添付表示",
+        "html": "別実装: WebAppの資産セッション内添付表示",
+        "php": "別実装: HTML版と同じ資産セッション内添付表示",
+        "spfx": "実装: SharePoint添付のリンク/埋め込み切替"
+      },
+      "evidence": "SpfxAttachmentPresentation.ts、web-platform/packages/editor-ui/src/components/ExternalFileHeader.tsx、WebApp.tsxのAssetWorkspace。"
+    },
+    {
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/SpfxDiffDialog.ts",
+      "hosts": {
+        "desktop": "別実装: DocumentDiffWorkspace",
+        "html": "別実装: WebDocumentToolsのWebDiff",
+        "php": "別実装: WebDocumentToolsのWebDiff",
+        "spfx": "実装: SpfxDiffDialog"
+      },
+      "evidence": "SpfxDiffDialog.ts、src/components/DocumentDiffWorkspace.tsx、web-platform/apps/web/src/WebDocumentTools.tsx。"
+    },
+    {
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/SpfxMermaidEditorDialog.ts",
+      "hosts": {
+        "desktop": "別実装: 共有MermaidEditorModal",
+        "html": "別実装: 共有MermaidEditorModal",
+        "php": "別実装: 共有MermaidEditorModal",
+        "spfx": "実装: SpfxMermaidEditorDialog"
+      },
+      "evidence": "SpfxMermaidEditorDialog.ts、web-platform/packages/editor-ui/src/components/MermaidEditorModal.tsx。"
+    },
+    {
+      "file": "web-platform/apps/web/src/PreviewReorderOverlay.tsx",
+      "hosts": {
+        "desktop": "未対応: デスクトップはPreviewReorderOverlayを使用しない",
+        "html": "実装: タッチを含むWebプレビュー行移動",
+        "php": "実装: HTML版と同じWebプレビュー行移動",
+        "spfx": "未対応: WebPartに行移動オーバーレイを確認できない"
+      },
+      "evidence": "web-platform/apps/web/src/PreviewReorderOverlay.tsx と WebApp.tsx:182。"
+    },
+    {
+      "file": "web-platform/apps/web/src/RemoteStorage.tsx",
+      "hosts": {
+        "desktop": "未対応: ローカル文書保存を使用し暗号化一時保管はない",
+        "html": "対象外: 静的HTML版はサーバーへ保存しない",
+        "php": "実装: 明示操作による暗号化一時保管",
+        "spfx": "未対応: SharePoint保存を使用しRemoteStorageはない"
+      },
+      "evidence": "web-platform/apps/web/src/RemoteStorage.tsx と WebApp.tsx:198 のhosted条件。"
+    },
+    {
+      "file": "web-platform/apps/web/src/WebApp.tsx",
+      "hosts": {
+        "desktop": "別実装: React Appのローカル文書・タブ・設定",
+        "html": "実装: ブラウザー単一セッション・ZIP資産・下書き",
+        "php": "実装: HTML版に加えhosted時のRemoteStorage入口",
+        "spfx": "別実装: WebPartのSharePoint文書選択・保存"
+      },
+      "evidence": "WebApp.tsx:38-198、src/App.tsx、MdVisualizerWebPart.ts:45-78。"
+    },
+    {
+      "file": "web-platform/apps/web/src/WebApp.tsx",
+      "displayNames": [
+        "HTML出力",
+        "差分",
+        "印刷"
+      ],
+      "hosts": {
+        "desktop": "同等機能: DesktopHtmlExport、DocumentDiffWorkspace、印刷",
+        "html": "実装: WebAppのHTML出力・差分・印刷",
+        "php": "実装: WebAppのHTML出力・差分・印刷",
+        "spfx": "別実装: HTML出力と差分は提供、印刷は未対応"
+      },
+      "evidence": "WebApp.tsx:97-115/180、DesktopHtmlExport.tsx、DocumentDiffWorkspace.tsx、MdVisualizerController.ts:104-117。"
+    },
+    {
+      "file": "web-platform/apps/web/src/WebDocumentTools.tsx",
+      "hosts": {
+        "desktop": "別実装: DocumentDiffWorkspaceとPresentationView/印刷",
+        "html": "実装: WebDiff・WebPresentation・印刷",
+        "php": "実装: WebDiff・WebPresentation・印刷",
+        "spfx": "別実装/未対応: 差分はSpfxDiffDialog、プレゼンと印刷は未対応"
+      },
+      "evidence": "web-platform/apps/web/src/WebDocumentTools.tsx、src/components/DocumentDiffWorkspace.tsx、SpfxDiffDialog.ts。"
+    },
+    {
+      "file": "web-platform/apps/web/src/WebDocumentTools.tsx",
+      "displayNames": [
+        "比較を閉じる"
+      ],
+      "hosts": {
+        "spfx": "別実装: SpfxDiffDialogの閉じる操作"
+      },
+      "evidence": "WebDocumentToolsのWebDiffとSpfxDiffDialogのダイアログ終了経路。"
+    },
+    {
+      "file": "web-platform/apps/web/src/WebDocumentTools.tsx",
+      "displayNames": [
+        "印刷",
+        "プレゼンを終了"
+      ],
+      "hosts": {
+        "spfx": "未対応: SPFxにはプレゼン・印刷の画面を提供しない"
+      },
+      "evidence": "SPFxのコントローラーには該当画面の起動経路がない。"
+    },
+    {
+      "file": "src/App.tsx",
+      "displayNames": [
+        "差分"
+      ],
+      "hosts": {
+        "spfx": "別実装: MdVisualizerControllerからSpfxDiffDialogを開く"
+      },
+      "evidence": "MdVisualizerControllerのdocument.diffとWebPartのonDiff。"
+    },
+    {
+      "file": "src/App.tsx",
+      "displayNames": [
+        "印刷"
+      ],
+      "hosts": {
+        "spfx": "未対応: SPFxには印刷コマンドを提供しない"
+      },
+      "evidence": "MdVisualizerControllerの文書操作は保存/HTML出力/差分。"
+    }
+  ]
+}

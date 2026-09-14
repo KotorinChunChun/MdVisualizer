@@ -2313,17 +2313,17 @@ export function App() {
       {printing && activeTab?.document && <PrintMetadata path={activeTab.document.path} startedAt={printStartedAt} settings={printStyle} />}
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
-        <div className="control-group document-actions">
-          <button type="button" disabled={printing} onClick={() => { focusNewDocumentRef.current = true; dispatch({ type: "NEW_MARKDOWN" }); }}>新規MD</button>
-          <button type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷/PDF</button>
-          <DesktopHtmlExport disabled={!activeTab?.document || printing} getSnapshot={() => activeTab?.document ? { document: activeTab.document, content: activeMarkdownContent, theme: theme === "system" ? document.documentElement.dataset.theme ?? "light" : theme, css: markdownStyleCss, assets: activeTab.pendingAssets ?? [] } : null} />
-          <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
-          <button type="button" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
-          <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
-        </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <WorkspaceViewControls code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : previewMode === "off" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />
-          <button type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>
+        </div>
+        <div className="control-group document-actions">
+          <button type="button" disabled={printing} onClick={() => { focusNewDocumentRef.current = true; dispatch({ type: "NEW_MARKDOWN" }); }}>新規MD</button>
+          <button data-ui-command="document.save" type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
+          <DesktopHtmlExport disabled={!activeTab?.document || printing} getSnapshot={() => activeTab?.document ? { document: activeTab.document, content: activeMarkdownContent, theme: theme === "system" ? document.documentElement.dataset.theme ?? "light" : theme, css: markdownStyleCss, assets: activeTab.pendingAssets ?? [] } : null} />
+          <button data-ui-command="document.diff" type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>
+          <button data-ui-command="document.print" type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷</button>
+          <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
+          <button type="button" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
         </div>
         {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
           <span className="control-group__title">見出し</span>

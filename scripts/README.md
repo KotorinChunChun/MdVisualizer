@@ -29,3 +29,7 @@
 ## 単一HTML出力CLI
 
 `export-html.mjs`は、アプリを起動せずMarkdownを閲覧専用の単一HTMLへ変換する独立CLIです。引数と使い方は[HTML出力CLI](/docs/user/HTML_EXPORT_CLI.md)を参照してください。
+
+## 統合検証と限定Web公開
+
+`Invoke-Validate-MdVisualizer-all.ps1` と `publish-web-MdVisualizer-limited.ps1` の対象指定、結果集計、UI基準更新、排他制御は[自動化手順](/docs/developer/operations/02-development-automation.md)を参照する。

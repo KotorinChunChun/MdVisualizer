@@ -202,3 +202,5 @@ web/tests/.php-zip-fixtures/
 /src/lib/fileAttachment.ts
 /src/features/codex/default-skills/app-settings/SKILL.md
 /src/contexts/DocumentSaveContext.ts
+/src/lib/editorToolbarActions.ts
+/scripts/__pycache__/

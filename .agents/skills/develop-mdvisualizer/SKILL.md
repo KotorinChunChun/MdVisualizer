@@ -31,3 +31,10 @@ description: MdVisualizerの機能追加、不具合修正、リファクタリ�
 4. 生成物、依存物、ユーザーのサンプル変更を混ぜず、対象差分だけを日本語コミットメッセージでコミットする。テスト失敗や残件があれば、完了扱いにせず記録する。
 
 リリース、署名、App Catalog、FTP公開は実装完了の延長として実行せず、対応する公開skillとユーザーの明示的な許可へ切り替える。
+
+## 自動化とUI対応表
+
+- 共有UIの正本は `web-platform/packages/editor-ui/src/`。子GitのAGENTS.mdを読み、source-map経由で親へ反映する。
+- UI変更前後に `npm run check:ui-contract` を実行し、`config/ui-host-mappings.json` と全UI機能対応表でDesktop/HTML/PHP/SPFxの名称・順序・デザイン・利用不可理由を確認する。
+- 意図した変更のみレビュー後に `node scripts/ui-command-contract.mjs --accept-reviewed` で基準を更新する。検査を通す目的で差分を無条件承認しない。
+- 工程選択、排他制御、要求ID対応、自己テストは `docs/developer/operations/02-development-automation.md` を正本とする。適切な対象のStatic検査と近接テストから進める。

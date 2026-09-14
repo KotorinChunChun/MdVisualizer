@@ -4,6 +4,19 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { DocumentDiffWorkspace, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
 
 afterEach(cleanup);
+it.each([false, true].flatMap(threeWay => ["single", "split"].flatMap(display => ["auto", "vertical", "horizontal"].map(direction => ({ threeWay, display, direction })))))
+("差分状態 $threeWay/$display/$direction の列構成を保つ", ({ threeWay, display, direction }) => {
+  render(<Fixture source={{ ...target, storageContent: threeWay ? target.storageContent : target.openedContent }} />);
+  fireEvent.change(screen.getByLabelText("差分の表示"), { target: { value: display } });
+  fireEvent.change(screen.getByLabelText("差分の分割方向"), { target: { value: direction } });
+  if (display === "single") {
+    expect(screen.getByLabelText("統合差分")).toBeTruthy();
+    expect(document.querySelectorAll('.diff-columns').length).toBe(0);
+  } else {
+    expect(document.querySelectorAll('.diff-columns > article').length).toBe(threeWay ? 3 : 2);
+    expect(document.querySelector(`.diff-columns--${direction === 'auto' ? 'vertical' : direction}`)).toBeTruthy();
+  }
+});
 beforeAll(() => { Range.prototype.getClientRects = () => [] as unknown as DOMRectList; Range.prototype.getBoundingClientRect = () => new DOMRect(); });
 const target: DocumentDiffTarget = { path: "C:\\docs\\note.md", baseDir: "C:\\docs", openedContent: "a\nb\nc", storageContent: "a\nS\nc", editingContent: "a\nL\nc", baselineRevision: "r1", storageRevision: "r2" };
 function Fixture({ content = target.editingContent, source = target }: { content?: string; source?: DocumentDiffTarget }) { const [draft, setDraft] = useState(content); return <><DocumentDiffWorkspace target={{ ...source, editingContent: draft }} editorMode="edit" theme="dark" onEditingChange={setDraft} /><output data-testid="draft">{draft}</output></>; }

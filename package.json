@@ -33,7 +33,7 @@
     "release:plan": "pwsh -NoProfile -File ./scripts/publish-release-MdVisualizer-all.ps1 -Mode Plan",
     "test:run-scripts": "pwsh -NoProfile -File ./scripts/test-run-script-naming.ps1",
     "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
-    "pretest": "npm run build:embedded && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./scripts/test-css-style-stats.mjs",
+    "pretest": "npm run build:embedded && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract",
     "test": "vitest run",
     "test:diff-layout": "tsc --project tests/diff-layout/tsconfig.json && node ./scripts/test-diff-layout.mjs",
     "test:button-style-rules": "node ./scripts/test-button-style-rules.mjs",
@@ -48,7 +48,11 @@
     "setup:web-platform": "node scripts/setup-web-platform.mjs",
     "check:shared": "node scripts/sync-desktop-shared.mjs --check",
     "postinstall": "node scripts/setup-web-platform.mjs",
-    "test:web-platform": "node scripts/test-web-platform-setup.mjs && node scripts/sync-desktop-shared.mjs --check"
+    "test:web-platform": "node scripts/test-web-platform-setup.mjs && node scripts/sync-desktop-shared.mjs --check",
+    "validate:all": "pwsh -NoProfile -File scripts/Invoke-Validate-MdVisualizer-all.ps1",
+    "check:ui-contract": "node scripts/ui-command-contract.mjs",
+    "test:ui-contract": "node scripts/test-ui-command-contract.mjs",
+    "publish:web": "pwsh -NoProfile -File scripts/publish-web-MdVisualizer-limited.ps1"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.4",

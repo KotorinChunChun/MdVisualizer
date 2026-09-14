@@ -10,6 +10,14 @@ function Fixture({ code = true, preview = "off" as PreviewMode, direction = "aut
 
 describe("表示切替", () => {
   afterEach(cleanup);
+  it.each(([false, true] as const).flatMap(code => (["off", "preview", "visual"] as PreviewMode[]).filter(preview => code || preview !== "off").flatMap(preview => (["auto", "vertical", "horizontal"] as SplitDirection[]).map(direction => ({ code, preview, direction })))))
+  ("有効な表示状態 $code/$preview/$direction で切替後も表示を残す", ({ code, preview, direction }) => {
+    render(<Fixture code={code} preview={preview} direction={direction} />);
+    fireEvent.click(screen.getByRole("button", { name: "コード" }));
+    const state = JSON.parse(screen.getByTestId("state").textContent!);
+    expect(state.code || state.preview !== "off").toBe(true);
+    expect((screen.getByLabelText("分割方向") as HTMLSelectElement).value).toBe(direction);
+  });
   it("ラベル付きのグループ、コードトグル、プレビュー三択、方向選択を公開する", () => {
     render(<Fixture />);
     expect(screen.getByRole("group", { name: "表示切替" })).toBeTruthy();

@@ -80,7 +80,7 @@ export function DesktopHtmlExport({ disabled, getSnapshot }: { disabled: boolean
     } finally { busy.current = false; setRunning(false); controller.current = null; setProgress(''); }
   };
   return <>
-    <button type="button" disabled={disabled || running} onClick={() => { const next = getSnapshot(); if (next) setSnapshot({ ...next, document: { ...next.document }, assets: next.assets.map(asset => ({ ...asset })) }); }}>HTML出力</button>
+    <button data-ui-command="document.export-html" type="button" disabled={disabled || running} onClick={() => { const next = getSnapshot(); if (next) setSnapshot({ ...next, document: { ...next.document }, assets: next.assets.map(asset => ({ ...asset })) }); }}>HTML出力</button>
     {snapshot && <HtmlExportDialog running={running} progress={progress} defaultFilename={(snapshot.document.path.split(/[\\/]/).pop() || 'document').replace(/\.[^.]+$/, '') + '.html'} onExport={execute} onCancel={() => { controller.current?.abort(); if (!running) setSnapshot(null); }} />}
   </>;
 }
