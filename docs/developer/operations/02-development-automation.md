@@ -73,3 +73,5 @@ node scripts/test-ui-command-contract.mjs
 JSXの祖先コンテナー、HTMLのツールバー・メニュー・ダイアログ、コマンド配列から所属を求める。DesktopのHTML出力・診断は別部品でもAppの配置順へ合流する。子メニューは独立して1から採番する。動的DOM生成など所属や実表示順を確定できない行は、コンポーネント/関数名を含む操作領域名と「定義順（実表示順は要確認）」で表す。並び替えや非表示条件を推測で確定しない。
 
 `npm run test:ui-contract` は所属と採番も検証する。通常の `check:ui-contract` は所属・番号の更新漏れを失敗にする。
+
+全操作の登録表は `docs/developer/ui/UI_COMMAND_MATRIX.tsv` へ生成する。Markdownには説明とTSVへのリンクのみを残す。TSVはUTF-8・ヘッダー付きの11列で、タブ・改行・引用符を含むセルは引用符で囲み、セル内の引用符を二重化する。`check:ui-contract` でTSVの更新漏れも検査する。
