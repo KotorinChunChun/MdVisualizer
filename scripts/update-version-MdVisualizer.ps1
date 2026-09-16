@@ -94,7 +94,7 @@ function ConvertTo-VersionParts {
     param([Parameter(Mandatory)][string]$Version)
     $match = [regex]::Match($Version.Trim(), '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$')
     if (-not $match.Success) {
-        throw "入力版が不正です。4桁の数値版（例: 0.0.18.2 または v0.0.18.2）を指定してください: $Version"
+        throw "入力版が不正です。4桁の数値版（例: 1.2.3.4 または v1.2.3.4）を指定してください: $Version"
     }
 
     $parts = @(
@@ -219,21 +219,47 @@ function Assert-VersionSnapshot {
 }
 
 function Get-TextFilesForResidueScan {
-    $excludedDirectoryNames = @('.git', 'node_modules', 'release', 'target', '.tools', 'logs', 'dev')
+    $scanPaths = @(
+        'package.json',
+        'package-lock.json',
+        'scripts',
+        'src',
+        'src-tauri/Cargo.toml',
+        'src-tauri/Cargo.lock',
+        'src-tauri/src',
+        'packaging',
+        'web-platform/targets.json',
+        'web-platform/package.json',
+        'web-platform/package-lock.json',
+        'web-platform/scripts',
+        'web-platform/packages',
+        'web-platform/apps/web/src',
+        'web-platform/apps/spfx/config',
+        'web-platform/apps/spfx/src',
+        'web-platform/apps/spfx/package.json',
+        'web-platform/apps/spfx/package-lock.json'
+    )
     $excludedRelativePaths = @(
         'web-platform/scripts/test-target-versions.mjs',
         'scripts/test-validation-runner.ps1',
         'scripts/test-version-update.ps1'
     )
     $extensions = @('.json', '.toml', '.rs', '.ts', '.tsx', '.js', '.mjs', '.ps1', '.md', '.html', '.xml', '.yaml', '.yml', '.lock')
-
-    Get-ChildItem -LiteralPath $projectRootFullPath -File -Recurse -Force | Where-Object {
-        $relative = [IO.Path]::GetRelativePath($projectRootFullPath, $_.FullName).Replace('\', '/')
-        $parts = $relative.Split('/')
-        $extensionAllowed = $extensions -contains $_.Extension.ToLowerInvariant()
-        $directoryAllowed = -not ($parts | Where-Object { $excludedDirectoryNames -contains $_ })
-        $pathAllowed = $excludedRelativePaths -notcontains $relative
-        $extensionAllowed -and $directoryAllowed -and $pathAllowed
+    foreach ($relativeRoot in $scanPaths) {
+        $rootPath = Join-Path $projectRootFullPath $relativeRoot
+        if (-not (Test-Path -LiteralPath $rootPath)) { continue }
+        $items = if (Test-Path -LiteralPath $rootPath -PathType Container) {
+            Get-ChildItem -LiteralPath $rootPath -File -Recurse -Force
+        }
+        else {
+            @(Get-Item -LiteralPath $rootPath)
+        }
+        foreach ($file in $items) {
+            $relative = [IO.Path]::GetRelativePath($projectRootFullPath, $file.FullName).Replace('\', '/')
+            $extensionAllowed = $extensions -contains $file.Extension.ToLowerInvariant()
+            $pathAllowed = $excludedRelativePaths -notcontains $relative
+            if ($extensionAllowed -and $pathAllowed) { $file }
+        }
     }
 }
 
@@ -395,7 +421,7 @@ if ([string]::IsNullOrWhiteSpace($TargetVersion)) {
     Write-Host ''
     Write-Host '入力凡例:'
     Write-Host '  入力形式: vメジャー.マイナー.パッチ.リビジョン または メジャー.マイナー.パッチ.リビジョン'
-    Write-Host '  入力例:   v0.0.18.2 または 0.0.18.2'
+    Write-Host '  入力例:   v1.2.3.4 または 1.2.3.4'
     Write-Host '  4つ目の番号はbeta版のリビジョンとして使用します。'
     $TargetVersion = Read-Host '変更後のバージョンを入力してください'
 }

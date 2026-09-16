@@ -3,9 +3,9 @@
   "entryScript": "scripts\\publish-release-MdVisualizer-all.ps1",
   "application": {
     "displayName": "MdVisualizer",
-    "publicVersion": "0.0.18.1 beta",
-    "packageVersion": "0.0.18+beta.1",
-    "msixVersion": "0.0.18.1",
+    "publicVersion": "0.0.18.2 beta",
+    "packageVersion": "0.0.18+beta.2",
+    "msixVersion": "0.0.18.2",
     "artifactBaseName": "MdVisualizer",
     "identityName": "com.mdvisualizer.viewer",
     "publisher": "CN=KotorinChunChun",
