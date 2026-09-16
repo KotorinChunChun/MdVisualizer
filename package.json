@@ -37,6 +37,8 @@
     "release:verify": "pwsh -NoProfile -File ./scripts/verify-release-MdVisualizer.ps1",
     "release:full": "pwsh -NoProfile -File ./scripts/full-release-MdVisualizer.ps1",
     "release:stable": "pwsh -NoProfile -File ./scripts/full-release-stable-MdVisualizer.ps1",
+    "version:update": "pwsh -NoProfile -File ./scripts/update-version-MdVisualizer.ps1",
+    "version:test": "pwsh -NoProfile -File ./scripts/test-version-update.ps1",
     "test:run-scripts": "pwsh -NoProfile -File ./scripts/test-run-script-naming.ps1",
     "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
     "pretest": "npm run build:embedded && npm run typecheck:incremental && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./web-platform/scripts/check-ui-styles.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract && npm run check:block-commands",

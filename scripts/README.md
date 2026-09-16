@@ -38,6 +38,8 @@ SPFx系統（共通リリースエンジンとは別系統）
 
 betaの工程別入口はすべてbetaに固定している。stableを正式公開するときだけ、`full-release-stable-MdVisualizer.ps1`を使用する。stable入口は、設定がbetaのままではビルドを開始せず、`packaging/release-config.json`をstable用Versionへ更新するよう停止する。
 
+バージョン更新は`update-version-MdVisualizer.ps1`を使用する。現在のbeta版を表示した後、4桁版を入力すると、公開表示版、内部版、MSIX版、SPFx版、lockファイル、配布ページを各用途の表記へ変換して更新する。更新前の整合性検査と、更新後の旧版表記検索も自動で行う。履歴版は4桁目を除いた`vX.Y.Z`として扱う。
+
 ## 起動用スクリプト
 
 | スクリプト | 用途 |
@@ -75,6 +77,12 @@ pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\plan-release-MdVisualizer
 ```
 
 各PowerShellスクリプトは、1つのコードブロックに1つずつ記載する。
+
+### バージョン更新
+
+```powershell
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\update-version-MdVisualizer.ps1"
+```
 
 ### 起動
 
@@ -188,7 +196,7 @@ pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-Validate-MdVisuali
 pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-web-MdVisualizer-limited.ps1" -Mode Plan
 ```
 
-`Version`を省略した場合は、スクリプト開始時に`packaging/release-config.json`から履歴版を決定する。現在の設定から決まる検証対象版は`v0.0.18`である。ビルド版の`0.0.18.1`とは異なり、履歴フォルダー名に使う3桁版を指定する。
+`Version`を省略した場合は、スクリプト開始時に`packaging/release-config.json`から履歴版を決定する。ビルド版の4桁目は履歴フォルダー名に含めず、`vX.Y.Z`形式の3桁版を使用する。
 `build-release-MdVisualizer-spfx.ps1`はSPFx packageをローカル生成し、外部変更を行わない。`publish-release-MdVisualizer-spfx.ps1`は`-PublishConfirmed`を必須とし、既定ではApp Catalogへの上書きアップロードまでを行う。全サイト展開は`-Deploy`を明示した場合だけ行う。ルートの`build-spfx.ps1`はローカルビルド専用の互換入口である。
 
 ## 補助スクリプト

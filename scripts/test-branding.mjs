@@ -21,8 +21,12 @@ assert.equal(json('packages/markdown-core/package.json').version, webTargets.sha
 assert.equal(json('spfx/package.json').version, webTargets.targets.spfx.version);
 assert.equal(json('spfx/config/package-solution.json').solution.version, webTargets.targets.spfx.solutionVersion);
 assert.match(read('src-tauri/Cargo.toml'), new RegExp(`^version = "${pkg.version.replace(/[.+]/g, '\\$&')}"$`, 'm'));
-assert.equal(release.application.publicVersion, '0.0.18.1 beta');
-assert.equal(release.application.msixVersion, '0.0.18.1');
+const publicVersionMatch = /^(\d+\.\d+\.\d+\.\d+) beta$/.exec(release.application.publicVersion);
+const packageVersionMatch = /^(\d+\.\d+\.\d+)\+beta\.(\d+)$/.exec(release.application.packageVersion);
+assert.ok(publicVersionMatch, `公開表示版がbetaの4桁版ではありません: ${release.application.publicVersion}`);
+assert.ok(packageVersionMatch, `内部版がbetaのbuild metadata形式ではありません: ${release.application.packageVersion}`);
+assert.equal(publicVersionMatch[1], release.application.msixVersion);
+assert.equal(`${packageVersionMatch[1]}.${packageVersionMatch[2]}`, release.application.msixVersion);
 assert.match(read('src-tauri/Cargo.toml'), /name = "mdvisualizer"/);
 const manifest = read('packaging/msix/AppxManifest.xml.in');
 assert.match(manifest, /Executable="mdvisualizer.exe"/);
@@ -37,15 +41,21 @@ for (const text of Object.values(pkg.scripts)) {
   for (const match of text.matchAll(/\.\/scripts\/([^ ]+\.ps1)/g)) assert.ok(fs.existsSync(path.join(root, 'scripts', match[1])), match[1]);
 }
 const page = read('packaging/site/MdVisualizer.html');
-assert.ok(page.includes('0.0.17（ベータ）'));
+assert.ok(page.includes(release.application.msixVersion));
 assert.doesNotMatch(page, /0\.0\.15|旧版|MarkdownViewer|公開準備中/);
-assert.ok(page.includes('MdVisualizer_0.0.17.0_x64.msix'));
+assert.ok(page.includes(`MdVisualizer_${release.application.msixVersion}_x64.msix`));
 assert.ok(page.includes('href="./beta/MdVisualizer.appinstaller'));
 assert.ok(!page.includes(pkg.repository)); // 非公開リポジトリを公開サイトに案内しない。
 assert.match(read('packaging/site/.htaccess'), /RedirectMatch 301/);
 assert.ok(read('packaging/site/MakdownViewer.html').includes('url=./MdVisualizer.html'));
 for (const file of ['packaging/site/index.html', 'packaging/site/MdVisualizer.html', 'packaging/site/certificate/index.html']) {
   const html = read(file);
+  const allowedReleaseFiles = new Set([
+    'MdVisualizer.appinstaller',
+    `MdVisualizer_${release.application.msixVersion}_x64.msix`,
+    `MdVisualizer_${release.application.msixVersion}_x64_portable.zip`,
+    'MdVisualizer.cer',
+  ]);
   assert.doesNotMatch(html, /(?:href|src)="[^"\n]*(?:MakdownViewer\.html|markdownviewer-icon\.png)/);
   for (const match of html.matchAll(/(?:src|href)="([^"#?]+)"/g)) {
     const target = match[1];
@@ -53,7 +63,7 @@ for (const file of ['packaging/site/index.html', 'packaging/site/MdVisualizer.ht
     if (target === './assets/httpselector-icon.png' || target === './HttpSelector.html' || target.startsWith('./ScriptSync/')) continue;
     if (/^(?:https?:|mailto:)/.test(target)) continue;
     if (/\/(?:beta|stable)\//.test(target)) {
-      assert.ok(['MdVisualizer.appinstaller', 'MdVisualizer_0.0.17.0_x64.msix', 'MdVisualizer_0.0.17_x64_portable.zip', 'MdVisualizer.cer'].includes(path.basename(target)), target);
+      assert.ok(allowedReleaseFiles.has(path.basename(target)), target);
       continue;
     }
     assert.ok(fs.existsSync(path.resolve(root, path.dirname(file), target)), `${file}: ${target}`);

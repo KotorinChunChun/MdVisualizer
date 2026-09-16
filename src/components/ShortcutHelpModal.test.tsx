@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ShortcutHelpModal } from "./ShortcutHelpModal";
 import { openExternalUrl } from "../lib/commands";
+import { APP_INFO } from "../lib/appInfo";
 
 vi.mock("../lib/commands", () => ({
   openExternalUrl: vi.fn().mockResolvedValue(undefined),
@@ -29,7 +30,7 @@ describe("ShortcutHelpModal", () => {
 
     expect(screen.getByRole("heading", { name: "バージョン情報" })).toBeTruthy();
     expect(screen.getByText("2026-09-14")).toBeTruthy();
-    expect(screen.getByText("0.0.18.1 beta")).toBeTruthy();
+    expect(screen.getByText(APP_INFO.version)).toBeTruthy();
     expect(screen.getByText("KotorinChunChun")).toBeTruthy();
 
     const readme = screen.getByRole("link", { name: "READMEを開く" });

@@ -60,9 +60,18 @@ Import-Module $releaseToolsPath -Force
 $configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
 $historyVersion = Get-ConfiguredHistoryVersion -Configuration $configuration
 if ($historyVersion -ne 'v0.0.18') { throw "履歴版の決定結果が不正です: $historyVersion" }
+$publicVersion = [string]$configuration.Raw.application.publicVersion
+$packageVersion = [string]$configuration.Raw.application.packageVersion
+$publicMatch = [regex]::Match($publicVersion, '^(\d+\.\d+\.\d+)\.(\d+) beta$')
+$packageMatch = [regex]::Match($packageVersion, '^(\d+\.\d+\.\d+)\+beta\.(\d+)$')
+if (-not $publicMatch.Success -or -not $packageMatch.Success) { throw "beta版の版表記が不正です: $publicVersion / $packageVersion" }
+$expectedMsixVersion = "$($publicMatch.Groups[1].Value).$($publicMatch.Groups[2].Value)"
+if ($packageMatch.Groups[1].Value -ne $publicMatch.Groups[1].Value -or $packageMatch.Groups[2].Value -ne $publicMatch.Groups[2].Value -or [string]$configuration.Raw.application.msixVersion -ne $expectedMsixVersion) {
+    throw "beta版の公開版・内部版・MSIX版が一致していません。"
+}
 foreach ($channel in @("beta", "stable")) {
     $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $channel
-    if ($artifacts.PublicVersion -ne "0.0.18.1 beta" -or $artifacts.ApplicationVersion -ne "0.0.18+beta.1" -or $artifacts.PackageVersion -ne "0.0.18.1") {
+    if ($artifacts.PublicVersion -ne $publicVersion -or $artifacts.ApplicationVersion -ne $packageVersion -or $artifacts.PackageVersion -ne $expectedMsixVersion) {
         throw "公開表示版・内部版・MSIX版の対応が不正です: $($artifacts.PublicVersion) / $($artifacts.ApplicationVersion) / $($artifacts.PackageVersion)"
     }
     if ($artifacts.CertificateFileName -ne "MdVisualizer.cer") {
