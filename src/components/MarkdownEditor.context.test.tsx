@@ -24,6 +24,8 @@ describe("コード画面の統合右クリック", () => {
     vi.spyOn(view, "posAtCoords").mockReturnValue(5);
     fireEvent.contextMenu(editable, { clientX: 30, clientY: 40 });
     for (const name of ["切り取り", "コピー", "貼り付け", "すべて選択"]) expect(screen.getByRole("menuitem", { name })).toBeTruthy();
+    expect(screen.getAllByRole("separator")).toHaveLength(2);
+    expect(screen.queryByRole("menuitem", { name: "アプリの設定を変更したい" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "元に戻す" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "やり直す" })).toBeNull();
     fireEvent.click(screen.getByRole("menuitem", { name: "AIに相談" }));

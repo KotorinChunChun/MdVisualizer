@@ -23,6 +23,7 @@ describe("workspace view controls", () => {
     expect(viewControlsCss).toContain(".workspace-view-controls { display:flex;");
     expect(viewControlsCss).toContain(".workspace-preview-control.is-preview");
     expect(viewControlsCss).toContain(".workspace-preview-control.is-visual,.workspace-view-controls button.is-active");
+    expect(viewControlsCss).toContain('.workspace-view-controls [data-ui-command="document.diff"][aria-pressed="true"]');
     expect(viewControlsSource).toContain('aria-label="分割方向"');
     expect(viewControlsSource).toContain(">自動分割</option>");
     expect(viewControlsSource).toContain(">上下分割</option>");

@@ -375,7 +375,7 @@ export function App() {
     }
     const staged = await stageClipboardImage({
       documentPath: tab.document.path,
-      preferredFilename: formatClipboardImageFilename(new Date()),
+      preferredFilename: clipboardImage.pngLocation === "fixed" ? clipboardImage.fixedFilename : formatClipboardImageFilename(new Date()),
       base64: image.base64,
       ...clipboardImageDestination(clipboardImage.pngLocation, clipboardImage.absoluteDirectory),
     });
@@ -1166,7 +1166,7 @@ export function App() {
     const viewportScale = container.clientHeight > 0 ? containerBounds.height / container.clientHeight : 1;
     paneSyncOrigin.current = "edit";
     const previousScrollTop = container.scrollTop;
-    container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, 0, viewportScale);
+    container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, container.clientHeight / 2, viewportScale);
     if (Math.abs(container.scrollTop - previousScrollTop) > 0.5) pendingPreviewScrollTop.current = { value: container.scrollTop, until: performance.now() + 200 };
     releasePaneSync();
   }, [releasePaneSync]);
@@ -1192,7 +1192,7 @@ export function App() {
       container,
     );
     if (endScrollTop === null) {
-      container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, position.screenY - containerBounds.top, viewportScale);
+      container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, container.clientHeight / 2, viewportScale);
     } else {
       container.scrollTop = endScrollTop;
     }
@@ -1214,7 +1214,7 @@ export function App() {
     const line = sourceLineAtViewportTop(blocks.map((block) => ({
       line: Number(block.dataset.sourceLine) || 1,
       top: block.getBoundingClientRect().top,
-    })), element.getBoundingClientRect().top);
+    })), element.getBoundingClientRect().top + element.clientHeight / 2);
     paneSyncOrigin.current = "view";
     editorRef.current?.scrollToLine(line);
     releasePaneSync();

@@ -4773,14 +4773,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 124,
+        "sourceLine": 128,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 124,
+        "line": 128,
         "column": 7
       },
       "interactions": [
@@ -4824,14 +4824,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 130,
+        "sourceLine": 134,
         "sourceColumn": 31,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 130,
+        "line": 134,
         "column": 31
       },
       "interactions": [
@@ -4875,14 +4875,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 136,
+        "sourceLine": 140,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 136,
+        "line": 140,
         "column": 9
       },
       "interactions": [
@@ -4926,14 +4926,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 137,
+        "sourceLine": 141,
         "sourceColumn": 11,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 137,
+        "line": 141,
         "column": 11
       },
       "interactions": [],
@@ -4975,14 +4975,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 138,
+        "sourceLine": 142,
         "sourceColumn": 11,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 138,
+        "line": 142,
         "column": 11
       },
       "interactions": [],
@@ -5024,14 +5024,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 139,
+        "sourceLine": 143,
         "sourceColumn": 11,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 139,
+        "line": 143,
         "column": 11
       },
       "interactions": [],
@@ -5073,14 +5073,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 140,
+        "sourceLine": 144,
         "sourceColumn": 11,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 140,
+        "line": 144,
         "column": 11
       },
       "interactions": [],
@@ -5122,14 +5122,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 148,
+        "sourceLine": 152,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 148,
+        "line": 152,
         "column": 9
       },
       "interactions": [
@@ -5173,14 +5173,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 154,
+        "sourceLine": 158,
         "sourceColumn": 9,
         "ordinal": 9
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 154,
+        "line": 158,
         "column": 9
       },
       "interactions": [
@@ -5224,14 +5224,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 157,
+        "sourceLine": 161,
         "sourceColumn": 9,
         "ordinal": 10
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 157,
+        "line": 161,
         "column": 9
       },
       "interactions": [
@@ -5275,14 +5275,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 163,
+        "sourceLine": 167,
         "sourceColumn": 9,
         "ordinal": 11
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 163,
+        "line": 167,
         "column": 9
       },
       "interactions": [
@@ -5326,14 +5326,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 164,
+        "sourceLine": 168,
         "sourceColumn": 51,
         "ordinal": 12
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 164,
+        "line": 168,
         "column": 51
       },
       "interactions": [],
@@ -5375,14 +5375,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 168,
+        "sourceLine": 172,
         "sourceColumn": 9,
         "ordinal": 13
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 168,
+        "line": 172,
         "column": 9
       },
       "interactions": [
@@ -5426,14 +5426,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 171,
+        "sourceLine": 175,
         "sourceColumn": 19,
         "ordinal": 14
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 171,
+        "line": 175,
         "column": 19
       },
       "interactions": [
@@ -5477,14 +5477,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 172,
+        "sourceLine": 176,
         "sourceColumn": 19,
         "ordinal": 15
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 172,
+        "line": 176,
         "column": 19
       },
       "interactions": [
@@ -5528,14 +5528,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 184,
+        "sourceLine": 188,
         "sourceColumn": 20,
         "ordinal": 16
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 184,
+        "line": 188,
         "column": 20
       },
       "interactions": [
@@ -5579,14 +5579,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 185,
+        "sourceLine": 189,
         "sourceColumn": 19,
         "ordinal": 17
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 185,
+        "line": 189,
         "column": 19
       },
       "interactions": [
@@ -5630,14 +5630,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 186,
+        "sourceLine": 190,
         "sourceColumn": 19,
         "ordinal": 18
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 186,
+        "line": 190,
         "column": 19
       },
       "interactions": [
@@ -5681,14 +5681,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 188,
+        "sourceLine": 192,
         "sourceColumn": 20,
         "ordinal": 19
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 188,
+        "line": 192,
         "column": 20
       },
       "interactions": [
@@ -5732,14 +5732,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 189,
+        "sourceLine": 193,
         "sourceColumn": 45,
         "ordinal": 20
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 189,
+        "line": 193,
         "column": 45
       },
       "interactions": [],
@@ -5781,14 +5781,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 191,
+        "sourceLine": 195,
         "sourceColumn": 73,
         "ordinal": 21
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 191,
+        "line": 195,
         "column": 73
       },
       "interactions": [
@@ -5832,14 +5832,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 192,
+        "sourceLine": 196,
         "sourceColumn": 21,
         "ordinal": 22
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 192,
+        "line": 196,
         "column": 21
       },
       "interactions": [
@@ -5883,14 +5883,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 193,
+        "sourceLine": 197,
         "sourceColumn": 42,
         "ordinal": 23
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 193,
+        "line": 197,
         "column": 42
       },
       "interactions": [],
@@ -5932,14 +5932,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 196,
+        "sourceLine": 200,
         "sourceColumn": 16,
         "ordinal": 24
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 196,
+        "line": 200,
         "column": 16
       },
       "interactions": [
@@ -5983,14 +5983,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 197,
+        "sourceLine": 201,
         "sourceColumn": 16,
         "ordinal": 25
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 197,
+        "line": 201,
         "column": 16
       },
       "interactions": [
@@ -6034,14 +6034,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 198,
+        "sourceLine": 202,
         "sourceColumn": 16,
         "ordinal": 26
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 198,
+        "line": 202,
         "column": 16
       },
       "interactions": [
@@ -6085,14 +6085,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 207,
+        "sourceLine": 211,
         "sourceColumn": 9,
         "ordinal": 27
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 207,
+        "line": 211,
         "column": 9
       },
       "interactions": [
@@ -6136,14 +6136,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 208,
+        "sourceLine": 212,
         "sourceColumn": 11,
         "ordinal": 28
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 208,
+        "line": 212,
         "column": 11
       },
       "interactions": [],
@@ -6185,14 +6185,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 209,
+        "sourceLine": 213,
         "sourceColumn": 11,
         "ordinal": 29
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 209,
+        "line": 213,
         "column": 11
       },
       "interactions": [],
@@ -6234,14 +6234,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 214,
+        "sourceLine": 218,
         "sourceColumn": 11,
         "ordinal": 30
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 214,
+        "line": 218,
         "column": 11
       },
       "interactions": [
@@ -6285,14 +6285,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 215,
+        "sourceLine": 219,
         "sourceColumn": 13,
         "ordinal": 31
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 215,
+        "line": 219,
         "column": 13
       },
       "interactions": [],
@@ -6334,14 +6334,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 216,
+        "sourceLine": 220,
         "sourceColumn": 13,
         "ordinal": 32
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 216,
+        "line": 220,
         "column": 13
       },
       "interactions": [],
@@ -6377,24 +6377,24 @@
       "controlKind": "select",
       "tag": "option",
       "role": null,
-      "displayName": "Markdownと同じフォルダーのimages",
+      "displayName": "Markdownと同じフォルダーのimage",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 217,
+        "sourceLine": 221,
         "sourceColumn": 13,
         "ordinal": 33
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 217,
+        "line": 221,
         "column": 13
       },
       "interactions": [],
-      "signature": "sha256:b76015f82c9f757ccb3aa633c61a1c3e257f1093c871d6b1a8a9aec74152ccfa",
+      "signature": "sha256:d5020eb33ba6e5a3f6beef9b8afb1f5b5bd2290da95560d8e8714f73de3354bd",
       "targetSourcePresence": {
         "desktop": "present-in-host-source",
         "html": "not-in-host-source",
@@ -6421,7 +6421,56 @@
       }
     },
     {
-      "id": "ui-93f56b0c0b40",
+      "id": "ui-e909a247bf08",
+      "featureGroup": "components",
+      "controlKind": "select",
+      "tag": "option",
+      "role": null,
+      "displayName": "固定ファイル名で上書き",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "SettingsPanel",
+        "sourceFile": "src/components/SettingsPanel.tsx",
+        "sourceLine": 222,
+        "sourceColumn": 13,
+        "ordinal": 34
+      },
+      "source": {
+        "kind": "desktop",
+        "file": "src/components/SettingsPanel.tsx",
+        "line": 222,
+        "column": 13
+      },
+      "interactions": [],
+      "signature": "sha256:c17f835481e30d363793663d2fc284ed9ebc0dc5dae2fc68dbbbb55f1c081e21",
+      "targetSourcePresence": {
+        "desktop": "present-in-host-source",
+        "html": "not-in-host-source",
+        "php": "not-in-host-source",
+        "spfx": "not-in-host-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "ホスト固有実装",
+        "html": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "ホスト内ソース順序",
+      "designCheck": "ホストCSSを別検査",
+      "location": {
+        "groupId": "UI038",
+        "name": "Desktop／SettingsPanel／貼り付け画像のPNG保存先",
+        "order": 4,
+        "number": "UI038-04",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-1a6034f0e300",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -6432,14 +6481,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 221,
+        "sourceLine": 226,
         "sourceColumn": 11,
-        "ordinal": 34
+        "ordinal": 35
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 221,
+        "line": 226,
         "column": 11
       },
       "interactions": [
@@ -6472,31 +6521,31 @@
       }
     },
     {
-      "id": "ui-5fdcc899b9f4",
+      "id": "ui-8ad9737c18d0",
       "featureGroup": "components",
-      "controlKind": "select",
-      "tag": "select",
+      "controlKind": "input",
+      "tag": "input",
       "role": null,
-      "displayName": "Markdown改行モード",
+      "displayName": "固定PNGファイル名",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
         "sourceLine": 229,
-        "sourceColumn": 9,
-        "ordinal": 35
+        "sourceColumn": 11,
+        "ordinal": 36
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
         "line": 229,
-        "column": 9
+        "column": 11
       },
       "interactions": [
         "onChange"
       ],
-      "signature": "sha256:94122b779e6d07b21cb62883ce6e9b556c6dd89e6c86c8f373693d30a5cdcc08",
+      "signature": "sha256:eb3a0aa709f6c5c2e165ad4b2c4ee3981232abad6d6ab2ead80be6073e524bd7",
       "targetSourcePresence": {
         "desktop": "present-in-host-source",
         "html": "not-in-host-source",
@@ -6523,7 +6572,58 @@
       }
     },
     {
-      "id": "ui-d36b5df196ce",
+      "id": "ui-3774e17160bf",
+      "featureGroup": "components",
+      "controlKind": "select",
+      "tag": "select",
+      "role": null,
+      "displayName": "Markdown改行モード",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "SettingsPanel",
+        "sourceFile": "src/components/SettingsPanel.tsx",
+        "sourceLine": 237,
+        "sourceColumn": 9,
+        "ordinal": 37
+      },
+      "source": {
+        "kind": "desktop",
+        "file": "src/components/SettingsPanel.tsx",
+        "line": 237,
+        "column": 9
+      },
+      "interactions": [
+        "onChange"
+      ],
+      "signature": "sha256:94122b779e6d07b21cb62883ce6e9b556c6dd89e6c86c8f373693d30a5cdcc08",
+      "targetSourcePresence": {
+        "desktop": "present-in-host-source",
+        "html": "not-in-host-source",
+        "php": "not-in-host-source",
+        "spfx": "not-in-host-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "ホスト固有実装",
+        "html": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "ホスト内ソース順序",
+      "designCheck": "ホストCSSを別検査",
+      "location": {
+        "groupId": "UI032",
+        "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
+        "order": 23,
+        "number": "UI032-23",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
+      "id": "ui-e4f31b22be5c",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -6534,14 +6634,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 233,
+        "sourceLine": 241,
         "sourceColumn": 11,
-        "ordinal": 36
+        "ordinal": 38
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 233,
+        "line": 241,
         "column": 11
       },
       "interactions": [],
@@ -6572,7 +6672,7 @@
       }
     },
     {
-      "id": "ui-fc4996ed5460",
+      "id": "ui-c6f7083200ef",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -6583,14 +6683,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 234,
+        "sourceLine": 242,
         "sourceColumn": 11,
-        "ordinal": 37
+        "ordinal": 39
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 234,
+        "line": 242,
         "column": 11
       },
       "interactions": [],
@@ -6621,7 +6721,7 @@
       }
     },
     {
-      "id": "ui-06c10a6b9c55",
+      "id": "ui-17c805e7811d",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -6632,14 +6732,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 238,
+        "sourceLine": 246,
         "sourceColumn": 83,
-        "ordinal": 38
+        "ordinal": 40
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 238,
+        "line": 246,
         "column": 83
       },
       "interactions": [
@@ -6666,13 +6766,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 23,
-        "number": "UI032-23",
+        "order": 24,
+        "number": "UI032-24",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-8fcce6386994",
+      "id": "ui-83b5136b635e",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -6683,14 +6783,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 239,
+        "sourceLine": 247,
         "sourceColumn": 19,
-        "ordinal": 39
+        "ordinal": 41
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 239,
+        "line": 247,
         "column": 19
       },
       "interactions": [
@@ -6717,13 +6817,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 24,
-        "number": "UI032-24",
+        "order": 25,
+        "number": "UI032-25",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-17c805e7811d",
+      "id": "ui-64f50ea0034c",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -6734,14 +6834,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 240,
+        "sourceLine": 248,
         "sourceColumn": 26,
-        "ordinal": 40
+        "ordinal": 42
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 240,
+        "line": 248,
         "column": 26
       },
       "interactions": [
@@ -6768,13 +6868,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 25,
-        "number": "UI032-25",
+        "order": 26,
+        "number": "UI032-26",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-811e460bfb9a",
+      "id": "ui-95dea092f6af",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "select",
@@ -6785,14 +6885,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 241,
+        "sourceLine": 249,
         "sourceColumn": 20,
-        "ordinal": 41
+        "ordinal": 43
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 241,
+        "line": 249,
         "column": 20
       },
       "interactions": [
@@ -6819,13 +6919,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 26,
-        "number": "UI032-26",
+        "order": 27,
+        "number": "UI032-27",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-ab1feb866d57",
+      "id": "ui-0e10684f6c70",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -6836,14 +6936,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 242,
+        "sourceLine": 250,
         "sourceColumn": 50,
-        "ordinal": 42
+        "ordinal": 44
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 242,
+        "line": 250,
         "column": 50
       },
       "interactions": [],
@@ -6874,7 +6974,7 @@
       }
     },
     {
-      "id": "ui-72a46bbd362e",
+      "id": "ui-f552e04c031f",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -6885,14 +6985,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 244,
+        "sourceLine": 252,
         "sourceColumn": 18,
-        "ordinal": 43
+        "ordinal": 45
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 244,
+        "line": 252,
         "column": 18
       },
       "interactions": [
@@ -6919,13 +7019,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 27,
-        "number": "UI032-27",
+        "order": 28,
+        "number": "UI032-28",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-ab180227412d",
+      "id": "ui-fab3ab580d9f",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "textarea",
@@ -6936,14 +7036,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 251,
+        "sourceLine": 259,
         "sourceColumn": 9,
-        "ordinal": 44
+        "ordinal": 46
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 251,
+        "line": 259,
         "column": 9
       },
       "interactions": [],
@@ -6968,13 +7068,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 28,
-        "number": "UI032-28",
+        "order": 29,
+        "number": "UI032-29",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-fa81f2c7c7c7",
+      "id": "ui-1c007edd651a",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -6985,14 +7085,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 255,
+        "sourceLine": 263,
         "sourceColumn": 9,
-        "ordinal": 45
+        "ordinal": 47
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 255,
+        "line": 263,
         "column": 9
       },
       "interactions": [
@@ -7025,7 +7125,7 @@
       }
     },
     {
-      "id": "ui-6f01cba9389b",
+      "id": "ui-533662c27b07",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -7036,14 +7136,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 256,
+        "sourceLine": 264,
         "sourceColumn": 9,
-        "ordinal": 46
+        "ordinal": 48
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 256,
+        "line": 264,
         "column": 9
       },
       "interactions": [
@@ -7076,7 +7176,7 @@
       }
     },
     {
-      "id": "ui-1c007edd651a",
+      "id": "ui-6a1fa8253c71",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -7087,14 +7187,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 257,
+        "sourceLine": 265,
         "sourceColumn": 9,
-        "ordinal": 47
+        "ordinal": 49
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 257,
+        "line": 265,
         "column": 9
       },
       "interactions": [
@@ -7127,7 +7227,7 @@
       }
     },
     {
-      "id": "ui-57a2db73c794",
+      "id": "ui-77dc0286c8b2",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -7138,14 +7238,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 271,
+        "sourceLine": 279,
         "sourceColumn": 18,
-        "ordinal": 48
+        "ordinal": 50
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 271,
+        "line": 279,
         "column": 18
       },
       "interactions": [
@@ -7172,13 +7272,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 29,
-        "number": "UI032-29",
+        "order": 30,
+        "number": "UI032-30",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-c08bab2457f6",
+      "id": "ui-88db64bf23ef",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -7189,14 +7289,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 273,
+        "sourceLine": 281,
         "sourceColumn": 19,
-        "ordinal": 49
+        "ordinal": 51
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 273,
+        "line": 281,
         "column": 19
       },
       "interactions": [
@@ -7223,13 +7323,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 30,
-        "number": "UI032-30",
+        "order": 31,
+        "number": "UI032-31",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-df6c8ce1eb92",
+      "id": "ui-c0c8cbc4a083",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "select",
@@ -7240,14 +7340,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 274,
+        "sourceLine": 282,
         "sourceColumn": 20,
-        "ordinal": 50
+        "ordinal": 52
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 274,
+        "line": 282,
         "column": 20
       },
       "interactions": [
@@ -7274,13 +7374,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 31,
-        "number": "UI032-31",
+        "order": 32,
+        "number": "UI032-32",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-ed7cc290733c",
+      "id": "ui-cda708a91c43",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -7291,14 +7391,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 274,
+        "sourceLine": 282,
         "sourceColumn": 156,
-        "ordinal": 51
+        "ordinal": 53
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 274,
+        "line": 282,
         "column": 156
       },
       "interactions": [],
@@ -7329,7 +7429,7 @@
       }
     },
     {
-      "id": "ui-1e7a3f7c1787",
+      "id": "ui-05d167f5c448",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -7340,14 +7440,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 274,
+        "sourceLine": 282,
         "sourceColumn": 194,
-        "ordinal": 52
+        "ordinal": 54
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 274,
+        "line": 282,
         "column": 194
       },
       "interactions": [],
@@ -7378,7 +7478,7 @@
       }
     },
     {
-      "id": "ui-294c810700cd",
+      "id": "ui-08af6f785bc5",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -7389,14 +7489,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 276,
+        "sourceLine": 284,
         "sourceColumn": 24,
-        "ordinal": 53
+        "ordinal": 55
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 276,
+        "line": 284,
         "column": 24
       },
       "interactions": [
@@ -7423,13 +7523,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 32,
-        "number": "UI032-32",
+        "order": 33,
+        "number": "UI032-33",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-c18d3d453df2",
+      "id": "ui-b0dde7ead00a",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "textarea",
@@ -7440,14 +7540,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 277,
+        "sourceLine": 285,
         "sourceColumn": 30,
-        "ordinal": 54
+        "ordinal": 56
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 277,
+        "line": 285,
         "column": 30
       },
       "interactions": [
@@ -7474,13 +7574,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 33,
-        "number": "UI032-33",
+        "order": 34,
+        "number": "UI032-34",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-08af6f785bc5",
+      "id": "ui-088040563b98",
       "featureGroup": "components",
       "controlKind": "input",
       "tag": "input",
@@ -7491,14 +7591,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 278,
+        "sourceLine": 286,
         "sourceColumn": 25,
-        "ordinal": 55
+        "ordinal": 57
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 278,
+        "line": 286,
         "column": 25
       },
       "interactions": [
@@ -7525,13 +7625,13 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 34,
-        "number": "UI032-34",
+        "order": 35,
+        "number": "UI032-35",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-d390b7735848",
+      "id": "ui-28888d7347e6",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -7542,14 +7642,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 281,
+        "sourceLine": 289,
         "sourceColumn": 11,
-        "ordinal": 56
+        "ordinal": 58
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 281,
+        "line": 289,
         "column": 11
       },
       "interactions": [
@@ -7582,7 +7682,7 @@
       }
     },
     {
-      "id": "ui-51aa07aed2ce",
+      "id": "ui-a618c5906469",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -7593,14 +7693,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 282,
+        "sourceLine": 290,
         "sourceColumn": 11,
-        "ordinal": 57
+        "ordinal": 59
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 282,
+        "line": 290,
         "column": 11
       },
       "interactions": [
@@ -7633,7 +7733,7 @@
       }
     },
     {
-      "id": "ui-28888d7347e6",
+      "id": "ui-fa5a29b794bc",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -7644,14 +7744,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 283,
+        "sourceLine": 291,
         "sourceColumn": 11,
-        "ordinal": 58
+        "ordinal": 60
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 283,
+        "line": 291,
         "column": 11
       },
       "interactions": [
@@ -7684,7 +7784,7 @@
       }
     },
     {
-      "id": "ui-a618c5906469",
+      "id": "ui-2319d17a22c7",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -7695,14 +7795,14 @@
       "orderScope": {
         "component": "SettingsPanel",
         "sourceFile": "src/components/SettingsPanel.tsx",
-        "sourceLine": 286,
+        "sourceLine": 294,
         "sourceColumn": 11,
-        "ordinal": 59
+        "ordinal": 61
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/SettingsPanel.tsx",
-        "line": 286,
+        "line": 294,
         "column": 11
       },
       "interactions": [
@@ -7729,8 +7829,8 @@
       "location": {
         "groupId": "UI032",
         "name": "Desktop／SettingsPanel／SettingsPanelの操作領域",
-        "order": 35,
-        "number": "UI032-35",
+        "order": 36,
+        "number": "UI032-36",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -18425,14 +18525,14 @@
       "orderScope": {
         "component": "action",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 58,
+        "sourceLine": 60,
         "sourceColumn": 389,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 58,
+        "line": 60,
         "column": 389
       },
       "interactions": [
@@ -18476,14 +18576,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 65,
+        "sourceLine": 67,
         "sourceColumn": 16,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 65,
+        "line": 67,
         "column": 16
       },
       "interactions": [
@@ -18527,14 +18627,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 65,
+        "sourceLine": 67,
         "sourceColumn": 127,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 65,
+        "line": 67,
         "column": 127
       },
       "interactions": [],
@@ -18576,14 +18676,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 65,
+        "sourceLine": 67,
         "sourceColumn": 159,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 65,
+        "line": 67,
         "column": 159
       },
       "interactions": [],
@@ -18625,14 +18725,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 65,
+        "sourceLine": 67,
         "sourceColumn": 195,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 65,
+        "line": 67,
         "column": 195
       },
       "interactions": [],
@@ -18674,14 +18774,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 66,
+        "sourceLine": 68,
         "sourceColumn": 16,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 66,
+        "line": 68,
         "column": 16
       },
       "interactions": [
@@ -18725,14 +18825,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 66,
+        "sourceLine": 68,
         "sourceColumn": 119,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 66,
+        "line": 68,
         "column": 119
       },
       "interactions": [],
@@ -18774,14 +18874,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 66,
+        "sourceLine": 68,
         "sourceColumn": 154,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 66,
+        "line": 68,
         "column": 154
       },
       "interactions": [],
@@ -18823,14 +18923,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 67,
+        "sourceLine": 69,
         "sourceColumn": 75,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 67,
+        "line": 69,
         "column": 75
       },
       "interactions": [
@@ -18874,14 +18974,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 67,
+        "sourceLine": 69,
         "sourceColumn": 175,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 67,
+        "line": 69,
         "column": 175
       },
       "interactions": [],
@@ -18923,14 +19023,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 67,
+        "sourceLine": 69,
         "sourceColumn": 219,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 67,
+        "line": 69,
         "column": 219
       },
       "interactions": [],
@@ -18972,14 +19072,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 68,
+        "sourceLine": 70,
         "sourceColumn": 7,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 68,
+        "line": 70,
         "column": 7
       },
       "interactions": [
@@ -19023,14 +19123,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 68,
+        "sourceLine": 70,
         "sourceColumn": 119,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 68,
+        "line": 70,
         "column": 119
       },
       "interactions": [
@@ -19074,14 +19174,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 68,
+        "sourceLine": 70,
         "sourceColumn": 211,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 68,
+        "line": 70,
         "column": 211
       },
       "interactions": [
@@ -19125,14 +19225,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 68,
+        "sourceLine": 70,
         "sourceColumn": 317,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 68,
+        "line": 70,
         "column": 317
       },
       "interactions": [
@@ -19176,14 +19276,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 68,
+        "sourceLine": 70,
         "sourceColumn": 416,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 68,
+        "line": 70,
         "column": 416
       },
       "interactions": [
@@ -19227,14 +19327,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 69,
+        "sourceLine": 71,
         "sourceColumn": 28,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 69,
+        "line": 71,
         "column": 28
       },
       "interactions": [
@@ -19693,14 +19793,14 @@
       "orderScope": {
         "component": "DrawioEditorModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DrawioEditorModal.tsx",
-        "sourceLine": 133,
+        "sourceLine": 126,
         "sourceColumn": 23,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DrawioEditorModal.tsx",
-        "line": 133,
+        "line": 126,
         "column": 23
       },
       "interactions": [],
@@ -19742,14 +19842,14 @@
       "orderScope": {
         "component": "DrawioEditorModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DrawioEditorModal.tsx",
-        "sourceLine": 137,
+        "sourceLine": 130,
         "sourceColumn": 7,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DrawioEditorModal.tsx",
-        "line": 137,
+        "line": 130,
         "column": 7
       },
       "interactions": [
@@ -19793,14 +19893,14 @@
       "orderScope": {
         "component": "DrawioEditorModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DrawioEditorModal.tsx",
-        "sourceLine": 144,
+        "sourceLine": 137,
         "sourceColumn": 7,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DrawioEditorModal.tsx",
-        "line": 144,
+        "line": 137,
         "column": 7
       },
       "interactions": [
@@ -24425,14 +24525,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 514,
+        "sourceLine": 515,
         "sourceColumn": 5,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 514,
+        "line": 515,
         "column": 5
       },
       "interactions": [
@@ -24476,14 +24576,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 515,
+        "sourceLine": 516,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 515,
+        "line": 516,
         "column": 5
       },
       "interactions": [
@@ -24527,14 +24627,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 516,
+        "sourceLine": 517,
         "sourceColumn": 5,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 516,
+        "line": 517,
         "column": 5
       },
       "interactions": [
@@ -24578,14 +24678,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 517,
+        "sourceLine": 518,
         "sourceColumn": 5,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 517,
+        "line": 518,
         "column": 5
       },
       "interactions": [
@@ -24629,14 +24729,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 519,
+        "sourceLine": 520,
         "sourceColumn": 19,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 519,
+        "line": 520,
         "column": 19
       },
       "interactions": [],
@@ -24678,14 +24778,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 520,
+        "sourceLine": 521,
         "sourceColumn": 38,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 520,
+        "line": 521,
         "column": 38
       },
       "interactions": [
@@ -24729,14 +24829,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 522,
+        "sourceLine": 523,
         "sourceColumn": 7,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 522,
+        "line": 523,
         "column": 7
       },
       "interactions": [
@@ -24780,14 +24880,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 523,
+        "sourceLine": 524,
         "sourceColumn": 7,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 523,
+        "line": 524,
         "column": 7
       },
       "interactions": [
@@ -24831,14 +24931,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 526,
+        "sourceLine": 527,
         "sourceColumn": 81,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 526,
+        "line": 527,
         "column": 81
       },
       "interactions": [],
@@ -48937,10 +49037,21 @@
       "signature": "29142460379def210705c592d81268b03761ba01622bebf969c910e721c25a50"
     },
     {
+      "id": "5231a3a61596d05d",
+      "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls [data-ui-command=\"document.diff\"][aria-pressed=\"true\"]",
+      "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
+      "line": 35,
+      "values": [
+        "background:var(--accent-color,#3b82f6)",
+        "color:#fff"
+      ],
+      "signature": "ee2d200b9453164cee42654258cff51565932372d4e5d511490bad5646370e2b"
+    },
+    {
       "id": "202c67724169d93f",
       "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css|@media (max-width:720px)|.app-container .view-controls [data-ui-command],.app-container .document-actions button,.web-app>header button,.web-app>header select[data-ui-command],.spfxMdVisualizer [data-ui-command]",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
-      "line": 37,
+      "line": 38,
       "values": [
         "min-height:44px"
       ],

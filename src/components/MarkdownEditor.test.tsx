@@ -191,14 +191,14 @@ describe("MarkdownEditor", () => {
     expect(onSave).toHaveBeenCalledOnce();
   });
 
-  it("embeds a clipboard file through the host adapter before legacy image paste", async () => {
+  it("inserts a relative link for a clipboard file through the host adapter before legacy image paste", async () => {
     const onChange = vi.fn();
     const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "assets/report.bin" });
     const file = new File(["binary"], "report.bin", { type: "application/octet-stream" });
     const { container } = render(<MarkdownEditor documentId="file-paste:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolveFileAttachment={onResolveFileAttachment} />);
     fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, { clipboardData: { files: [file], items: [], getData: () => "" } });
-    await waitFor(() => expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "embed"));
-    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("![report.bin](assets/report.bin)before"));
+    await waitFor(() => expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "link"));
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("[report.bin](assets/report.bin)before"));
   });
 
   it("inserts a relative link for a dropped file through the host adapter", async () => {

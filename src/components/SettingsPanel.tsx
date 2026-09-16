@@ -106,6 +106,10 @@ export function SettingsPanel({
       setError("PNGの絶対保存フォルダーには絶対パスを入力してください。");
       return;
     }
+    if (clipboardImageDraft.storage === "png" && clipboardImageDraft.pngLocation === "fixed" && !/^[^\\/]+\.png$/i.test(clipboardImageDraft.fixedFilename.trim())) {
+      setError("固定PNGファイル名にはフォルダーを含まない.pngファイル名を入力してください。");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -214,13 +218,17 @@ export function SettingsPanel({
           <select aria-label="貼り付け画像のPNG保存先" value={clipboardImageDraft.pngLocation} onChange={(event) => setClipboardImageDraft((current) => ({ ...current, pngLocation: event.target.value as ClipboardImagePngLocation }))}>
             <option value="absolute">指定した絶対パス</option>
             <option value="document">Markdownと同じフォルダー</option>
-            <option value="images">Markdownと同じフォルダーのimages</option>
+            <option value="image">Markdownと同じフォルダーのimage</option>
+            <option value="fixed">固定ファイル名で上書き</option>
           </select>
         </label>
         {clipboardImageDraft.pngLocation === "absolute" && <label>絶対保存フォルダー
           <input aria-label="貼り付け画像の絶対保存フォルダー" value={clipboardImageDraft.absoluteDirectory} onChange={(event) => setClipboardImageDraft((current) => ({ ...current, absoluteDirectory: event.target.value }))} placeholder="C:\\Documents\\MarkdownImages" />
         </label>}
-        <p>ファイル名: <code>yyyymmdd_hhnnss.png</code>（同名時は連番を付加）</p>
+        {clipboardImageDraft.pngLocation === "fixed" && <label>固定PNGファイル名
+          <input aria-label="貼り付け画像の固定PNGファイル名" value={clipboardImageDraft.fixedFilename} onChange={(event) => setClipboardImageDraft((current) => ({ ...current, fixedFilename: event.target.value }))} placeholder="test.png" />
+        </label>}
+        <p>{clipboardImageDraft.pngLocation === "fixed" ? "指定したPNGを毎回上書きします。" : "ファイル名: imageN.png（Nは1から始まる未使用番号）"}</p>
       </>}
     </fieldset>
     <fieldset className="settings-section markdown-style-settings">

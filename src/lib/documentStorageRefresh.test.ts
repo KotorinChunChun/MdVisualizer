@@ -26,6 +26,14 @@ function setup() {
 }
 
 describe("ストレージ通知とDiff基準", () => {
+  it("ビジュアル編集はコードとプレビュー、プレビュー限定はプレビュー差分を表示する", () => {
+    const s = setup();
+    const target = documentDiffTarget(s.tab());
+    expect(buildWorkspaceDiffPanes(target, "split")).toMatchObject({ showCode: true, showPreview: true });
+    expect(buildWorkspaceDiffPanes(target, "preview")).toMatchObject({ showCode: false, showPreview: true });
+    expect(buildWorkspaceDiffPanes(target, "edit")).toMatchObject({ showCode: true, showPreview: false });
+  });
+
   it("未編集なら本文・基準・リビジョン・メタデータを同時更新する", async () => {
     const s = setup(); const pending = s.refresh();
     s.requests[0].resolve({ ...doc("external", "r2"), encoding: "UTF-16LE" }); await pending;

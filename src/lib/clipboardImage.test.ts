@@ -7,8 +7,8 @@ describe("clipboardImage", () => {
       .resolves.toEqual({ mediaType: "image/png", base64: "AAEC" });
   });
 
-  it("uses the required local timestamp filename", () => {
-    expect(formatClipboardImageFilename(new Date(2026, 7, 24, 9, 5, 7))).toBe("20260824_090507.png");
+  it("uses the first numbered local PNG filename", () => {
+    expect(formatClipboardImageFilename(new Date(2026, 7, 24, 9, 5, 7))).toBe("image1.png");
   });
 
   it("wraps paths with spaces so Markdown keeps the absolute destination intact", () => {
@@ -20,7 +20,8 @@ describe("clipboardImage", () => {
 
   it("only carries an absolute folder for the absolute destination", () => {
     expect(clipboardImageDestination("absolute", " C:\\Images ")).toEqual({ destination: "absolute", absoluteDirectory: "C:\\Images" });
-    expect(clipboardImageDestination("images", "C:\\Images")).toEqual({ destination: "images", absoluteDirectory: undefined });
+    expect(clipboardImageDestination("image", "C:\\Images")).toEqual({ destination: "image", absoluteDirectory: undefined });
+    expect(clipboardImageDestination("fixed", "C:\\Images")).toEqual({ destination: "fixed", absoluteDirectory: undefined });
   });
 
   it("prefers a PNG clipboard representation over SVG and text", () => {
