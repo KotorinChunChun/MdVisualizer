@@ -66,17 +66,48 @@ Web版は[Web版と共通編集・出力](/docs/developer/web/ARCHITECTURE.md)�
 
 リリース工程の共通処理は`scripts/Invoke-MdVisualizerRelease.ps1`に集約しています。通常利用する工程別入口はすべてbeta固定で、利用者が確認スイッチやチャンネルを指定する必要はありません。stableは正式リリース時に`scripts/full-release-stable-MdVisualizer.ps1`だけを使用し、ビルドから公開後検証までを一括実行します。
 
+通常のbeta更新は、Version更新、Plan確認、Full実行の順です。
+
 ```powershell
+pwsh -NoProfile -File .\scripts\update-version-MdVisualizer.ps1
 pwsh -NoProfile -File .\scripts\plan-release-MdVisualizer.ps1
-pwsh -NoProfile -File .\scripts\build-release-MdVisualizer.ps1
-pwsh -NoProfile -File .\scripts\stage-release-MdVisualizer.ps1
-pwsh -NoProfile -File .\scripts\verify-release-MdVisualizer.ps1
-pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer.ps1
 pwsh -NoProfile -File .\scripts\full-release-MdVisualizer.ps1
+```
+
+`update-version-MdVisualizer.ps1`の入力は4桁版で、現在版より新しくする。同じ版を再指定すると更新不要として停止する。`plan-release-MdVisualizer.ps1`は読み取り専用であり、betaとstableのURLを併記するが、stableへ送信しない。`full-release-MdVisualizer.ps1`はbeta固定で、stable公開には使用しない。
+
+BuildとStageが成功した後に、Python未検出などでPublishだけが失敗した場合は、成果物を作り直さず次で公開工程を再実行する。`$pythonPath`が空の場合はPythonのインストール場所を確認してから実行する。
+
+```powershell
+$pythonPath = Get-ChildItem -LiteralPath "$env:USERPROFILE\scoop\apps\python" -Filter "python.exe" -Recurse -File | Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+pwsh -NoProfile -File .\scripts\Invoke-MdVisualizerRelease.ps1 -Mode Publish -Channel beta -ReleaseIntentConfirmed -PublishConfirmed -PythonPath $pythonPath
+```
+
+工程別に実行する場合は、次のbeta固定入口を使用する。`build`と`stage`の後に`publish`を実行する場合も、公開前に`verify`を挟む。
+
+```powershell
+pwsh -NoProfile -File .\scripts\build-release-MdVisualizer.ps1
+```
+
+```powershell
+pwsh -NoProfile -File .\scripts\stage-release-MdVisualizer.ps1
+```
+
+```powershell
+pwsh -NoProfile -File .\scripts\verify-release-MdVisualizer.ps1
+```
+
+```powershell
+pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer.ps1
+```
+
+既存の`publish-release-MdVisualizer-all.ps1 -Mode <Mode>`と`publish-MdVisualizer.ps1`は互換入口として残しています。stableの正式リリースは次の入口だけを使用する。
+
+```powershell
 pwsh -NoProfile -File .\scripts\full-release-stable-MdVisualizer.ps1
 ```
 
-既存の`publish-release-MdVisualizer-all.ps1 -Mode <Mode>`と`publish-MdVisualizer.ps1`は互換入口として残しています。これらのコマンド例は確認だけの説明であり、実行時はリリース作業として扱います。
+これらの公開系コマンドは確認だけの説明ではなく、実行時に成果物生成または外部公開を行う。
 
 ## ビルドの競合回避と環境エラー
 

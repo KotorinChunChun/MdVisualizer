@@ -40,6 +40,51 @@ betaの工程別入口はすべてbetaに固定している。stableを正式公
 
 バージョン更新は`update-version-MdVisualizer.ps1`を使用する。現在のbeta版を表示した後、4桁版を入力すると、公開表示版、内部版、MSIX版、SPFx版、lockファイル、配布ページを各用途の表記へ変換して更新する。更新前の整合性検査と、更新後の旧版表記検索も自動で行う。履歴版は4桁目を除いた`vX.Y.Z`として扱う。Node.js生成器の詳細出力は画面へ表示せず、`dev/history/vX.Y.Z/logs/version-update/`のログへ保存する。`-WhatIf`では一時フォルダーへ保存する。
 
+## 通常のbeta更新から公開まで
+
+通常は次の順番で実行する。すべての版情報は`packaging/release-config.json`へ反映されるため、公開前に同ファイルの表示版が意図した値になっていることを確認する。
+
+### 1. Versionを更新する
+
+```powershell
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\update-version-MdVisualizer.ps1"
+```
+
+入力は4桁の数値版（`0.0.18.3`または`v0.0.18.3`）とする。4つ目の番号がbetaリビジョンになる。入力版は現在版より新しくなければならないため、現在版が`0.0.18.2`のときに同じ`0.0.18.2`を再指定すると、更新不要としてエラーになる。確認だけ行う場合は次を使う。
+
+```powershell
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\update-version-MdVisualizer.ps1" -TargetVersion "0.0.18.3" -WhatIf
+```
+
+### 2. 公開計画を確認する
+
+```powershell
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\plan-release-MdVisualizer.ps1"
+```
+
+このコマンドは読み取り専用で、ビルド・署名・ステージング・アップロードを行わない。出力にbetaとstableのURLが両方表示されるが、stable URLは計画表示用であり、beta入口からstableへアップロードされることを意味しない。
+
+### 3. betaをビルドから公開後検証まで実行する
+
+```powershell
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\full-release-MdVisualizer.ps1"
+```
+
+この入口は`Channel=beta`、リリース確認、公開確認を内部で指定し、productionテスト、成果物生成、ステージング、beta FTP公開、公開後検証までを実行する。デバッグ版MdVisualizerや対象成果物を使用中の場合は、先に終了する。
+
+### 公開工程だけを再実行する場合
+
+ビルド・ステージングが成功した後、Python未検出などで公開工程だけが失敗した場合は、全工程をやり直さず、Pythonの絶対パスを指定して`Publish`だけを再実行する。ScoopのPythonを自動検索する例は次のとおり。
+
+```powershell
+$pythonPath = Get-ChildItem -LiteralPath "$env:USERPROFILE\scoop\apps\python" -Filter "python.exe" -Recurse -File | Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-MdVisualizerRelease.ps1" -Mode Publish -Channel beta -ReleaseIntentConfirmed -PublishConfirmed -PythonPath $pythonPath
+```
+
+ステージング検証まで成功していて、`PythonPath is required for FTP publication`で停止した場合はこの復旧方法を使用する。`Channel beta`を変更しない限りstableへ送信しない。stable公開は、将来ユーザーが明示的に開始するときだけ`full-release-stable-MdVisualizer.ps1`を使用する。
+
+公開工程の途中で停止した場合は、同じ版の成果物を確認してから、成功済みの直前工程より後だけを再実行する。Planで停止した場合は何も変更されていないため、BuildまたはFullを開始する。
+
 ## 起動用スクリプト
 
 | スクリプト | 用途 |

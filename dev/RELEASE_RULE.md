@@ -50,7 +50,28 @@ GUIテストの可否は最新のAGENTS.mdに従います。当該PCでは実画
 
 ## MSIX・App Installer・配布サイト
 
-`scripts/publish-release-MdVisualizer-all.ps1`は現行のガード付きMSIX／App Installer統合入口です。読み取り専用の計画確認と、Build、Stage、Publish、Verify、Fullを分離し、変更を伴うmodeでは確認スイッチを要求します。旧`publish-MdVisualizer.ps1`は互換転送だけを行います。実行例と設定は`packaging/msix/README.md`および`packaging/release-config.json`を正本とします。
+通常のbeta公開は、Version更新後に`scripts/plan-release-MdVisualizer.ps1`で計画を確認し、問題がなければ`scripts/full-release-MdVisualizer.ps1`を実行します。この入口はbetaに固定され、productionテスト、MSIX／App Installer／ポータブル成果物生成、ステージング、beta FTP公開、公開後検証までを一括実行します。stable公開は保留とし、将来明示的に正式リリースするときだけ`scripts/full-release-stable-MdVisualizer.ps1`を使用します。
+
+Planの出力には計画表示用としてbetaとstableのURLが併記されますが、Planは読み取り専用で、beta入口からstableへアップロードされることを意味しません。同じVersionを`update-version-MdVisualizer.ps1`へ再指定すると、入力版が現在版より新しくないため停止します。
+
+Build／Stage完了後にPython未検出でPublishが停止した場合は、生成済み成果物を再作成せず、`Invoke-MdVisualizerRelease.ps1 -Mode Publish -Channel beta`へPythonの絶対パスと確認スイッチを渡して公開工程だけを再実行します。`Resolve-PythonExecutable`がPATH上のPythonを見つけられない環境では、Scoopなどの`python.exe`を明示します。旧`scripts/publish-release-MdVisualizer-all.ps1`と`publish-MdVisualizer.ps1`は互換転送入口として残しています。実行例と設定は`packaging/msix/README.md`および`packaging/release-config.json`を正本とします。
+
+```powershell
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\update-version-MdVisualizer.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\plan-release-MdVisualizer.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\full-release-MdVisualizer.ps1"
+```
+
+```powershell
+$pythonPath = Get-ChildItem -LiteralPath "$env:USERPROFILE\scoop\apps\python" -Filter "python.exe" -Recurse -File | Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-MdVisualizerRelease.ps1" -Mode Publish -Channel beta -ReleaseIntentConfirmed -PublishConfirmed -PythonPath $pythonPath
+```
 
 公開時は、Websiteリポジトリの既存差分を保護し、対象ファイルだけをコミットします。既定のFTP先は`/download/`と`/download/beta/`です。配布記事の表示版、MSIX版、公開日、App Installerリンク、版付きMSIX直接リンクをbeta版へ揃え、stable版の準備中表示を維持します。
 
