@@ -110,6 +110,15 @@ foreach ($mode in @('Plan', 'Build', 'Stage', 'Publish', 'Verify', 'Full')) {
     }
 }
 
+foreach ($versionPromptScript in @('Invoke-Validate-MdVisualizer-all.ps1', 'publish-web-MdVisualizer-limited.ps1')) {
+    $versionPromptSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot $versionPromptScript) -Raw
+    if ($versionPromptSource -match '\[Parameter\(Mandatory\)\]' -or
+        $versionPromptSource -notmatch 'Versionの凡例' -or
+        $versionPromptSource -notmatch "Read-Host 'Version'") {
+        throw "Version入力の凡例または手動プロンプトが不正です: $versionPromptScript"
+    }
+}
+
 $parseErrors = [Collections.Generic.List[object]]::new()
 Get-ChildItem -LiteralPath $PSScriptRoot -File -Filter "*.ps1" | ForEach-Object {
     $tokens = $null

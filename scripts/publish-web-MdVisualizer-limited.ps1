@@ -2,8 +2,6 @@
 param(
     [ValidateSet('Plan', 'Publish', 'Verify')]
     [string]$Mode = 'Plan',
-    [Parameter(Mandatory)]
-    [ValidatePattern('^v\d+\.\d+\.\d+(\.\d+)?$')]
     [string]$Version,
     [switch]$PublishConfirmed,
     [string]$PythonPath
@@ -11,6 +9,16 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+$versionPattern = '^v\d+\.\d+\.\d+(?:\.\d+)?$'
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    Write-Host 'Versionの凡例: vで始まる3桁または4桁の数字を指定します。'
+    Write-Host '入力例: v0.0.18 または v0.0.18.1（現在のbeta版: v0.0.18.1）'
+    $Version = Read-Host 'Version'
+}
+if ($Version -notmatch $versionPattern) {
+    throw "Versionの形式が不正です。v0.0.18 または v0.0.18.1 の形式で指定してください: $Version"
+}
 
 if ($Mode -eq 'Publish' -and -not $PublishConfirmed) {
     throw 'Publish は公開承認済みの場合だけ -PublishConfirmed を指定して実行してください。'
