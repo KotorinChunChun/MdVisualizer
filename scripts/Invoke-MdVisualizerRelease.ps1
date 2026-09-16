@@ -20,6 +20,14 @@ Import-Module (Join-Path $PSScriptRoot "ReleaseTools.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "MsixSigning.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 $configuration = Import-ReleaseConfiguration -Path $ConfigPath -ProjectRoot $projectRoot
+$historyVersion = Get-ConfiguredHistoryVersion -Configuration $configuration
+Write-Host "Release history version selected from packaging/release-config.json: $historyVersion"
+$configuredApplicationVersion = Get-ConfiguredApplicationVersion -Configuration $configuration
+if ($Channel -eq "stable" -and (
+        [string]$configuration.Raw.application.publicVersion -match "(?i)beta" -or
+        $configuredApplicationVersion -match "(?i)(\+|-)beta")) {
+    throw "stableリリースを開始できません。packaging/release-config.jsonをstable用Versionへ更新してから実行してください。"
+}
 
 $releaseModes = @("Build", "Stage", "Publish", "Full")
 if ($Mode -in $releaseModes -and -not $ReleaseIntentConfirmed) {
@@ -77,6 +85,7 @@ function Show-ReleasePlan {
     $msixVersion = Get-ConfiguredMsixVersion -Configuration $configuration
     Write-Host "Release automation plan (read-only)"
     Write-Host "Application: $($configuration.Raw.application.displayName)"
+    Write-Host "Release history version: $historyVersion"
     Write-Host "Public version: $publicVersion"
     Write-Host "Application version: $applicationVersion"
     Write-Host "Package version: $msixVersion"

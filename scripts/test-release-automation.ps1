@@ -58,6 +58,8 @@ $websiteFingerprintBefore = Get-DirectoryFingerprint -Path $websiteDownloadDirec
 $releaseToolsPath = Join-Path $PSScriptRoot "ReleaseTools.psm1"
 Import-Module $releaseToolsPath -Force
 $configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
+$historyVersion = Get-ConfiguredHistoryVersion -Configuration $configuration
+if ($historyVersion -ne 'v0.0.18') { throw "履歴版の決定結果が不正です: $historyVersion" }
 foreach ($channel in @("beta", "stable")) {
     $artifacts = Get-ReleaseArtifacts -Configuration $configuration -Channel $channel
     if ($artifacts.PublicVersion -ne "0.0.18.1 beta" -or $artifacts.ApplicationVersion -ne "0.0.18+beta.1" -or $artifacts.PackageVersion -ne "0.0.18.1") {
@@ -113,6 +115,10 @@ Assert-BlockedBeforeWork `
     -ExpectedMessage "PublishConfirmed" `
     -ReleaseIntentConfirmed
 Assert-BlockedBeforeWork -Mode Full -ExpectedMessage "ReleaseIntentConfirmed"
+$stableBlocked = $false
+try { & (Join-Path $PSScriptRoot 'full-release-stable-MdVisualizer.ps1') }
+catch { $stableBlocked = $_.Exception.Message.Contains('stableリリースを開始できません') }
+if (-not $stableBlocked) { throw 'beta設定のままstable一括入口が開始されました。' }
 
 $portableBlocked = $false
 try { & (Join-Path $PSScriptRoot 'package-MdVisualizer-portable.ps1') }

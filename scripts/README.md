@@ -3,6 +3,12 @@
 ## スクリプトの呼び出し関係
 
 ```text
+packaging/release-config.json（Version正本）
+  ├─ 製品ビルドVersion・MSIX Version・公開表示Version
+  ├─ Invoke-MdVisualizerRelease.ps1（開始直後に履歴版を決定）
+  └─ Invoke-Validate-MdVisualizer-all.ps1 / publish-web-MdVisualizer-limited.ps1
+     （同じ設定から履歴版を決定）
+
 利用者向けbeta入口（すべて引数なし）
   plan-release-MdVisualizer.ps1   ─┐
   build-release-MdVisualizer.ps1  ─┤
@@ -30,7 +36,7 @@ SPFx系統（共通リリースエンジンとは別系統）
   build-release-MdVisualizer-spfx.ps1 → publish-release-MdVisualizer-spfx.ps1
 ```
 
-betaの工程別入口はすべてbetaに固定している。stableを正式公開するときだけ、`full-release-stable-MdVisualizer.ps1`を使用する。
+betaの工程別入口はすべてbetaに固定している。stableを正式公開するときだけ、`full-release-stable-MdVisualizer.ps1`を使用する。stable入口は、設定がbetaのままではビルドを開始せず、`packaging/release-config.json`をstable用Versionへ更新するよう停止する。
 
 ## 起動用スクリプト
 
@@ -175,14 +181,14 @@ pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\build-appinstaller.ps1"
 ```
 
 ```powershell
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-Validate-MdVisualizer-all.ps1" -Version v0.0.18.1
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-Validate-MdVisualizer-all.ps1"
 ```
 
 ```powershell
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-web-MdVisualizer-limited.ps1" -Mode Plan -Version v0.0.18.1
+pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-web-MdVisualizer-limited.ps1" -Mode Plan
 ```
 
-`Version`を省略した場合は、スクリプトが凡例を表示してから入力を求める。形式は`v0.0.18`または`v0.0.18.1`で、現在のbeta版は`v0.0.18.1`である。
+`Version`を省略した場合は、スクリプト開始時に`packaging/release-config.json`から履歴版を決定する。現在の設定から決まる検証対象版は`v0.0.18`である。ビルド版の`0.0.18.1`とは異なり、履歴フォルダー名に使う3桁版を指定する。
 `build-release-MdVisualizer-spfx.ps1`はSPFx packageをローカル生成し、外部変更を行わない。`publish-release-MdVisualizer-spfx.ps1`は`-PublishConfirmed`を必須とし、既定ではApp Catalogへの上書きアップロードまでを行う。全サイト展開は`-Deploy`を明示した場合だけ行う。ルートの`build-spfx.ps1`はローカルビルド専用の互換入口である。
 
 ## 補助スクリプト

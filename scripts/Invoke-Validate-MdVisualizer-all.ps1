@@ -12,18 +12,18 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 
-$versionPattern = '^v\d+\.\d+\.\d+(?:\.\d+)?$'
+Import-Module (Join-Path $PSScriptRoot 'ReleaseTools.psm1') -Force
+$configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
+$configuredVersion = Get-ConfiguredHistoryVersion -Configuration $configuration
 if ([string]::IsNullOrWhiteSpace($Version)) {
-    Write-Host 'Versionの凡例: vで始まる3桁または4桁の数字を指定します。'
-    Write-Host '入力例: v0.0.18 または v0.0.18.1（現在のbeta版: v0.0.18.1）'
-    $Version = Read-Host 'Version'
+    $Version = $configuredVersion
+    Write-Host "検証対象版をrelease-config.jsonから決定しました: $Version"
 }
-if ($Version -notmatch $versionPattern) {
-    throw "Versionの形式が不正です。v0.0.18 または v0.0.18.1 の形式で指定してください: $Version"
+elseif ($Version -ne $configuredVersion) {
+    throw "指定Versionがrelease-config.jsonから決定した対象版と一致しません: $Version / $configuredVersion"
 }
-
-Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'ValidationRunner.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 
 function Assert-Node22Runtime {
     param($Runtime)

@@ -6,9 +6,9 @@
 
 ```powershell
 cd C:\develop\MdVisualizer
-./scripts/Invoke-Validate-MdVisualizer-all.ps1 -Version v0.0.18 -Target Static,Web,SPFx
+./scripts/Invoke-Validate-MdVisualizer-all.ps1 -Target Static,Web,SPFx
 # デスクトップを含む全対象
-./scripts/Invoke-Validate-MdVisualizer-all.ps1 -Version v0.0.18
+./scripts/Invoke-Validate-MdVisualizer-all.ps1
 ```
 
 Staticは共有投影、依存境界、CSS、UI対応表、要求と試験入力、文書リンク、親子接続、TypeScriptを検査する。WebはVitestと単一HTML生成、DesktopはVitestとfrontend buildとRust、SPFxは埋込ツール生成とproduction test/packageを行う。Staticを先に指定して軽い不整合から検出する。署名、インストール、App Catalog公開は行わない。
@@ -49,9 +49,9 @@ git diff -- config docs/developer/ui/UI_COMMAND_MATRIX.md
 既存テストサイトのHTML/PHP画面2ファイルだけを対象とする。PHP認証・設定・一時保管データには触れない。公開許可はユーザー指示から確認し、許可済みの範囲では再確認を要求しない。
 
 ```powershell
-./scripts/publish-web-MdVisualizer-limited.ps1 -Version v0.0.18 -Mode Plan
-./scripts/publish-web-MdVisualizer-limited.ps1 -Version v0.0.18 -Mode Publish -PublishConfirmed
-./scripts/publish-web-MdVisualizer-limited.ps1 -Version v0.0.18 -Mode Verify
+./scripts/publish-web-MdVisualizer-limited.ps1 -Mode Plan
+./scripts/publish-web-MdVisualizer-limited.ps1 -Mode Publish -PublishConfirmed
+./scripts/publish-web-MdVisualizer-limited.ps1 -Mode Verify
 ```
 
 PythonがPATHにない場合は `-PythonPath <python.exeの絶対パス>` を付ける。Planは対象のサイズとSHA-256を保存する。PublishはWebsiteへのステージ、対象限定のドライラン、FTP転送、FTP読み戻し、HTTP/MIME/サイズ/ハッシュ検証を行う。PHP入口のHTTP 200と内部app.htmlの403も検査する。途中失敗でも成功済み工程をresult.jsonに残す。公開後の認証と画面操作は別途確認する。Gitコミットやpushは自動では行わない。

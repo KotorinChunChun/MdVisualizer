@@ -113,9 +113,10 @@ foreach ($mode in @('Plan', 'Build', 'Stage', 'Publish', 'Verify', 'Full')) {
 foreach ($versionPromptScript in @('Invoke-Validate-MdVisualizer-all.ps1', 'publish-web-MdVisualizer-limited.ps1')) {
     $versionPromptSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot $versionPromptScript) -Raw
     if ($versionPromptSource -match '\[Parameter\(Mandatory\)\]' -or
-        $versionPromptSource -notmatch 'Versionの凡例' -or
-        $versionPromptSource -notmatch "Read-Host 'Version'") {
-        throw "Version入力の凡例または手動プロンプトが不正です: $versionPromptScript"
+        $versionPromptSource -match 'Read-Host' -or
+        $versionPromptSource -notmatch 'Get-ConfiguredHistoryVersion' -or
+        $versionPromptSource -notmatch 'release-config\.jsonから決定') {
+        throw "Versionをrelease-config.jsonから決定する処理が不正です: $versionPromptScript"
     }
 }
 
