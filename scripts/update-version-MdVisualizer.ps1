@@ -268,9 +268,20 @@ function Invoke-NodeScript {
     )
     Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
     $runtime = Get-MdVisualizerNodeRuntime -ProjectRoot $projectRootFullPath
-    & $runtime.NodeExecutable $ScriptPath @Arguments | ForEach-Object { Write-Host $_ }
-    if ($LASTEXITCODE -ne 0) {
-        throw "Nodeスクリプトが終了コード $LASTEXITCODE で失敗しました: $ScriptPath"
+    $utf8 = [Text.UTF8Encoding]::new($false)
+    $previousConsoleOutputEncoding = [Console]::OutputEncoding
+    $previousPowerShellOutputEncoding = $OutputEncoding
+    try {
+        [Console]::OutputEncoding = $utf8
+        $OutputEncoding = $utf8
+        & $runtime.NodeExecutable $ScriptPath @Arguments | ForEach-Object { Write-Host $_ }
+        if ($LASTEXITCODE -ne 0) {
+            throw "Nodeスクリプトが終了コード $LASTEXITCODE で失敗しました: $ScriptPath"
+        }
+    }
+    finally {
+        [Console]::OutputEncoding = $previousConsoleOutputEncoding
+        $OutputEncoding = $previousPowerShellOutputEncoding
     }
 }
 
