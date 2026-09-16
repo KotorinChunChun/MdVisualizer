@@ -21,6 +21,7 @@ $expectedScripts = @(
     "publish-release-MdVisualizer.ps1",
     "verify-release-MdVisualizer.ps1",
     "full-release-MdVisualizer.ps1",
+    "full-release-stable-MdVisualizer.ps1",
     "package-MdVisualizer-msix.ps1",
     "package-MdVisualizer-appinstaller.ps1",
     "publish-release-MdVisualizer-all.ps1",
@@ -84,6 +85,23 @@ foreach ($entry in $releaseEntryModes.GetEnumerator()) {
     if ($entrySource -notmatch [regex]::Escape(('Mode = "{0}"' -f $entry.Value))) {
         throw "リリース工程のモード転送が不正です: $($entry.Key)"
     }
+    if ($entrySource -notmatch [regex]::Escape('Channel = "beta"')) {
+        throw "beta固定のチャンネル転送がありません: $($entry.Key)"
+    }
+    if ($entrySource -match '\$Channel|\$ConfigPath|\$PythonPath|\$PSBoundParameters|\[switch\]') {
+        throw "beta工程入口に利用者向けパラメーターが残っています: $($entry.Key)"
+    }
+}
+$stableEntryPath = Join-Path $PSScriptRoot 'full-release-stable-MdVisualizer.ps1'
+$stableEntrySource = Get-Content -LiteralPath $stableEntryPath -Raw
+if ($stableEntrySource -notmatch [regex]::Escape('Mode = "Full"') -or
+    $stableEntrySource -notmatch [regex]::Escape('Channel = "stable"') -or
+    $stableEntrySource -notmatch 'ReleaseIntentConfirmed\s*=\s*\$true' -or
+    $stableEntrySource -notmatch 'PublishConfirmed\s*=\s*\$true') {
+    throw 'stable一括入口の固定パラメーターが不正です。'
+}
+if ($stableEntrySource -match '\$Channel|\$ConfigPath|\$PythonPath|\$PSBoundParameters|\[switch\]') {
+    throw 'stable一括入口に利用者向けパラメーターが残っています。'
 }
 $commonReleaseSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Invoke-MdVisualizerRelease.ps1') -Raw
 foreach ($mode in @('Plan', 'Build', 'Stage', 'Publish', 'Verify', 'Full')) {

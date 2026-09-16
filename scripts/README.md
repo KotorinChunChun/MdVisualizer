@@ -1,5 +1,37 @@
 # MdVisualizer スクリプト一覧
 
+## スクリプトの呼び出し関係
+
+```text
+利用者向けbeta入口（すべて引数なし）
+  plan-release-MdVisualizer.ps1   ─┐
+  build-release-MdVisualizer.ps1  ─┤
+  stage-release-MdVisualizer.ps1  ─┤
+  publish-release-MdVisualizer.ps1─┤
+  verify-release-MdVisualizer.ps1 ─┤
+  full-release-MdVisualizer.ps1   ─┤
+                                  │
+正式リリース用stable入口（1個）  │
+  full-release-stable-MdVisualizer.ps1
+                                  │
+既存互換入口                      │
+  publish-release-MdVisualizer-all.ps1 ─┤
+  publish-MdVisualizer.ps1             ─┘
+                                           ▼
+                             Invoke-MdVisualizerRelease.ps1
+                                           │
+                  ┌────────────────────────┼────────────────────────┐
+                  ▼                        ▼                        ▼
+       package-MdVisualizer-msix.ps1  stage-msix-release.ps1  verify-msix-release.ps1
+       package-MdVisualizer-          package-MdVisualizer-  FTP公開・公開後検証
+       appinstaller.ps1               portable.ps1
+
+SPFx系統（共通リリースエンジンとは別系統）
+  build-release-MdVisualizer-spfx.ps1 → publish-release-MdVisualizer-spfx.ps1
+```
+
+betaの工程別入口はすべてbetaに固定している。stableを正式公開するときだけ、`full-release-stable-MdVisualizer.ps1`を使用する。
+
 ## 起動用スクリプト
 
 | スクリプト | 用途 |
@@ -17,7 +49,7 @@
 
 ### リリース工程の共通入口
 
-リリース工程の共通処理は`Invoke-MdVisualizerRelease.ps1`に集約している。`-Mode`には`Plan`、`Build`、`Stage`、`Publish`、`Verify`、`Full`を指定できる。各工程をファイル名で選ぶ場合は、次の薄い入口を使う。
+リリース工程の共通処理は`Invoke-MdVisualizerRelease.ps1`に集約している。`-Mode`には`Plan`、`Build`、`Stage`、`Publish`、`Verify`、`Full`を指定できる。通常利用する工程別入口はすべてbeta固定で、追加パラメーターなしで実行する。
 
 | スクリプト | 共通処理へ渡すモード | 用途 |
 |---|---|---|
@@ -26,83 +58,129 @@
 | `stage-release-MdVisualizer.ps1` | `Stage` | 成果物を公開用ステージへ配置する。 |
 | `publish-release-MdVisualizer.ps1` | `Publish` | 指定チャンネルへ公開する。 |
 | `verify-release-MdVisualizer.ps1` | `Verify` | ローカルまたは公開前成果物を検証する。 |
-| `full-release-MdVisualizer.ps1` | `Full` | ビルドから公開後検証までを実行する。 |
+| `full-release-MdVisualizer.ps1` | `Full` | betaのビルドから公開後検証までを実行する。 |
 
-`publish-release-MdVisualizer-all.ps1`は既存名を維持した互換入口であり、従来どおり`-Mode`を指定できる。旧`publish-MdVisualizer.ps1`も互換転送だけを行う。`Build`、`Stage`、`Publish`、`Full`では`-Channel`と`-ReleaseIntentConfirmed`が必要で、`Publish`と`Full`ではさらに`-PublishConfirmed`が必要となる。`Verify`は`-Channel`が必要ですが、共通エンジンの既存仕様どおりリリース意図確認は必須ではありません。整理確認ではこれらのモードを実行しない。
+`full-release-stable-MdVisualizer.ps1`は、将来の正式リリース用にstableのビルドから公開後検証までを一括実行する唯一の利用者向け入口である。stable公開は通常の工程別入口へ追加しない。`publish-release-MdVisualizer-all.ps1`は既存名を維持した互換入口であり、従来どおり`-Mode`を指定できる。旧`publish-MdVisualizer.ps1`も互換転送だけを行う。共通エンジンと互換入口の確認スイッチは、通常利用の工程別入口では内部的に付加する。
 
 フルパスでの実行例:
 
 ```powershell
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\plan-release-MdVisualizer.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\build-release-MdVisualizer.ps1" -Channel beta -ReleaseIntentConfirmed
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-release-MdVisualizer.ps1" -Channel beta -ReleaseIntentConfirmed -PublishConfirmed
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\plan-release-MdVisualizer.ps1"
 ```
 
-各PowerShellスクリプトをフルパスで実行する場合は、次のコマンドを使用する。
+各PowerShellスクリプトは、1つのコードブロックに1つずつ記載する。
 
 ### 起動
 
 ```powershell
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\run-debug-MdVisualizer-all.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\run-debug-MdVisualizer-all-sample.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\run-debug-MdVisualizer-all-smoke.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\run-release-MdVisualizer-all.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\run-exe-MdVisualizer-all.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\run-exe-MdVisualizer-all-sample.ps1"
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\run-debug-MdVisualizer-all.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\run-debug-MdVisualizer-all-sample.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\run-debug-MdVisualizer-all-smoke.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\run-release-MdVisualizer-all.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\run-exe-MdVisualizer-all.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\run-exe-MdVisualizer-all-sample.ps1"
 ```
 
 ### リリース共通エンジンと工程別入口
 
+betaの工程別入口は追加パラメーターなしで実行する。
+
 ```powershell
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-MdVisualizerRelease.ps1" -Mode Plan
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\plan-release-MdVisualizer.ps1"
-
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\build-release-MdVisualizer.ps1" `
-  -Channel beta `
-  -ReleaseIntentConfirmed
-
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\stage-release-MdVisualizer.ps1" `
-  -Channel beta `
-  -ReleaseIntentConfirmed
-
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\verify-release-MdVisualizer.ps1" `
-  -Channel beta
-
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-release-MdVisualizer.ps1" `
-  -Channel beta `
-  -ReleaseIntentConfirmed `
-  -PublishConfirmed
-
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\full-release-MdVisualizer.ps1" `
-  -Channel beta `
-  -ReleaseIntentConfirmed `
-  -PublishConfirmed
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\plan-release-MdVisualizer.ps1"
 ```
 
-既存の互換入口を実行する場合:
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\build-release-MdVisualizer.ps1"
+```
 
 ```powershell
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-release-MdVisualizer-all.ps1" -Mode Plan
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-MdVisualizer.ps1" -Mode Plan
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\stage-release-MdVisualizer.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\verify-release-MdVisualizer.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\publish-release-MdVisualizer.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\full-release-MdVisualizer.ps1"
+```
+
+stableの正式リリースは、次の一括入口だけを使用する。
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\full-release-stable-MdVisualizer.ps1"
+```
+
+### 既存の互換入口
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\publish-release-MdVisualizer-all.ps1" -Mode Plan
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\publish-MdVisualizer.ps1" -Mode Plan
 ```
 
 ### SPFx、配布物生成、検証
 
 ```powershell
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\build-release-MdVisualizer-spfx.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\build-spfx.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-release-MdVisualizer-spfx.ps1" -PublishConfirmed
-
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\package-MdVisualizer-msix.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\package-MdVisualizer-appinstaller.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\package-MdVisualizer-portable.ps1" -ReleaseIntentConfirmed
-
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\build-msix.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\build-appinstaller.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-Validate-MdVisualizer-all.ps1"
-pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\publish-web-MdVisualizer-limited.ps1"
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\build-release-MdVisualizer-spfx.ps1"
 ```
 
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\build-spfx.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\publish-release-MdVisualizer-spfx.ps1" -PublishConfirmed
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\package-MdVisualizer-msix.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\package-MdVisualizer-appinstaller.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\package-MdVisualizer-portable.ps1" -ReleaseIntentConfirmed
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\build-msix.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\build-appinstaller.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\Invoke-Validate-MdVisualizer-all.ps1"
+```
+
+```powershell
+pwsh -NoProfile -File "C:\\develop\\MdVisualizer\\scripts\\publish-web-MdVisualizer-limited.ps1"
+```
 `build-release-MdVisualizer-spfx.ps1`はSPFx packageをローカル生成し、外部変更を行わない。`publish-release-MdVisualizer-spfx.ps1`は`-PublishConfirmed`を必須とし、既定ではApp Catalogへの上書きアップロードまでを行う。全サイト展開は`-Deploy`を明示した場合だけ行う。ルートの`build-spfx.ps1`はローカルビルド専用の互換入口である。
 
 ## 補助スクリプト

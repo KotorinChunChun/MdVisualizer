@@ -64,15 +64,16 @@ Web版は[Web版と共通編集・出力](/docs/developer/web/ARCHITECTURE.md)�
 
 ### リリース工程の入口
 
-リリース工程の共通処理は`scripts/Invoke-MdVisualizerRelease.ps1`に集約し、工程ごとの入口は次の既存・追加スクリプトから選択します。Plan以外は対象チャンネルを明示し、Build／Stage／Publish／Fullでは`-ReleaseIntentConfirmed`、Publish／Fullではさらに`-PublishConfirmed`が必要です。Verifyは既存仕様どおりチャンネル指定だけで実行できます。
+リリース工程の共通処理は`scripts/Invoke-MdVisualizerRelease.ps1`に集約しています。通常利用する工程別入口はすべてbeta固定で、利用者が確認スイッチやチャンネルを指定する必要はありません。stableは正式リリース時に`scripts/full-release-stable-MdVisualizer.ps1`だけを使用し、ビルドから公開後検証までを一括実行します。
 
 ```powershell
 pwsh -NoProfile -File .\scripts\plan-release-MdVisualizer.ps1
-pwsh -NoProfile -File .\scripts\build-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed
-pwsh -NoProfile -File .\scripts\stage-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed
-pwsh -NoProfile -File .\scripts\verify-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed
-pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed -PublishConfirmed
-pwsh -NoProfile -File .\scripts\full-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed -PublishConfirmed
+pwsh -NoProfile -File .\scripts\build-release-MdVisualizer.ps1
+pwsh -NoProfile -File .\scripts\stage-release-MdVisualizer.ps1
+pwsh -NoProfile -File .\scripts\verify-release-MdVisualizer.ps1
+pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer.ps1
+pwsh -NoProfile -File .\scripts\full-release-MdVisualizer.ps1
+pwsh -NoProfile -File .\scripts\full-release-stable-MdVisualizer.ps1
 ```
 
 既存の`publish-release-MdVisualizer-all.ps1 -Mode <Mode>`と`publish-MdVisualizer.ps1`は互換入口として残しています。これらのコマンド例は確認だけの説明であり、実行時はリリース作業として扱います。

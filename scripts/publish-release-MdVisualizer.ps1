@@ -1,20 +1,8 @@
 #Requires -Version 7.0
 [CmdletBinding()]
-param(
-    [Parameter(Mandatory)]
-    [ValidateSet("beta", "stable")]
-    [string]$Channel,
-    [string]$ConfigPath,
-    [string]$PythonPath,
-    [switch]$ReleaseIntentConfirmed,
-    [switch]$PublishConfirmed
-)
+param()
 
-$arguments = @{ Mode = "Publish"; Channel = $Channel }
-if ($PSBoundParameters.ContainsKey("ConfigPath")) { $arguments.ConfigPath = $ConfigPath }
-if ($PSBoundParameters.ContainsKey("PythonPath")) { $arguments.PythonPath = $PythonPath }
-if ($ReleaseIntentConfirmed) { $arguments.ReleaseIntentConfirmed = $true }
-if ($PublishConfirmed) { $arguments.PublishConfirmed = $true }
+$arguments = @{ Mode = "Publish"; Channel = "beta"; ReleaseIntentConfirmed = $true; PublishConfirmed = $true }
 & (Join-Path $PSScriptRoot "Invoke-MdVisualizerRelease.ps1") @arguments
 $exitCode = 0
 $lastExitCodeVariable = Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue

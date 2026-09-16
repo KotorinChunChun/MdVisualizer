@@ -1,14 +1,8 @@
 #Requires -Version 7.0
 [CmdletBinding()]
-param(
-    [ValidateSet("beta", "stable")]
-    [string]$Channel,
-    [string]$ConfigPath
-)
+param()
 
-$arguments = @{ Mode = "Plan" }
-if ($PSBoundParameters.ContainsKey("Channel")) { $arguments.Channel = $Channel }
-if ($PSBoundParameters.ContainsKey("ConfigPath")) { $arguments.ConfigPath = $ConfigPath }
+$arguments = @{ Mode = "Plan"; Channel = "beta" }
 & (Join-Path $PSScriptRoot "Invoke-MdVisualizerRelease.ps1") @arguments
 $exitCode = 0
 $lastExitCodeVariable = Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue
