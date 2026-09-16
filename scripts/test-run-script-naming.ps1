@@ -14,6 +14,13 @@ $expectedScripts = @(
     "run-exe-MdVisualizer-all.ps1",
     "run-exe-MdVisualizer-all-sample.ps1",
     "build-release-MdVisualizer-spfx.ps1",
+    "Invoke-MdVisualizerRelease.ps1",
+    "plan-release-MdVisualizer.ps1",
+    "build-release-MdVisualizer.ps1",
+    "stage-release-MdVisualizer.ps1",
+    "publish-release-MdVisualizer.ps1",
+    "verify-release-MdVisualizer.ps1",
+    "full-release-MdVisualizer.ps1",
     "package-MdVisualizer-msix.ps1",
     "package-MdVisualizer-appinstaller.ps1",
     "publish-release-MdVisualizer-all.ps1",
@@ -54,6 +61,34 @@ foreach ($scriptName in @(
 )) {
     if ($scriptName -notmatch $productEntryPattern) {
         throw "製品操作用スクリプト名が規則外です: $scriptName"
+    }
+}
+
+$releaseEntryPattern = '^(plan|build|stage|publish|verify|full)-release-MdVisualizer\.ps1$'
+$releaseEntryModes = @{
+    'plan-release-MdVisualizer.ps1' = 'Plan'
+    'build-release-MdVisualizer.ps1' = 'Build'
+    'stage-release-MdVisualizer.ps1' = 'Stage'
+    'publish-release-MdVisualizer.ps1' = 'Publish'
+    'verify-release-MdVisualizer.ps1' = 'Verify'
+    'full-release-MdVisualizer.ps1' = 'Full'
+}
+foreach ($entry in $releaseEntryModes.GetEnumerator()) {
+    if ($entry.Key -notmatch $releaseEntryPattern) {
+        throw "リリース工程用スクリプト名が規則外です: $($entry.Key)"
+    }
+    $entrySource = Get-Content -LiteralPath (Join-Path $PSScriptRoot $entry.Key) -Raw
+    if ($entrySource -notmatch 'Invoke-MdVisualizerRelease\.ps1') {
+        throw "共通リリース処理を呼び出していません: $($entry.Key)"
+    }
+    if ($entrySource -notmatch [regex]::Escape(('Mode = "{0}"' -f $entry.Value))) {
+        throw "リリース工程のモード転送が不正です: $($entry.Key)"
+    }
+}
+$commonReleaseSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Invoke-MdVisualizerRelease.ps1') -Raw
+foreach ($mode in @('Plan', 'Build', 'Stage', 'Publish', 'Verify', 'Full')) {
+    if ($commonReleaseSource -notmatch [regex]::Escape(('"{0}"' -f $mode))) {
+        throw "共通リリース処理にモードがありません: $mode"
     }
 }
 

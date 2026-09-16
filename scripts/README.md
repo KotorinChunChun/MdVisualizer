@@ -15,7 +15,28 @@
 
 ## 公開用スクリプト
 
-`publish-release-MdVisualizer-all.ps1`はMSIX／App Installerのガード付き公開エントリポイントである。既定の`Plan`は読み取り専用で、ビルドや公開には確認スイッチが必要となる。旧`publish-MdVisualizer.ps1`は互換転送だけを行う。
+### リリース工程の共通入口
+
+リリース工程の共通処理は`Invoke-MdVisualizerRelease.ps1`に集約している。`-Mode`には`Plan`、`Build`、`Stage`、`Publish`、`Verify`、`Full`を指定できる。各工程をファイル名で選ぶ場合は、次の薄い入口を使う。
+
+| スクリプト | 共通処理へ渡すモード | 用途 |
+|---|---|---|
+| `plan-release-MdVisualizer.ps1` | `Plan` | 版・署名・公開先の計画表示。読み取り専用。 |
+| `build-release-MdVisualizer.ps1` | `Build` | production成果物を生成する。 |
+| `stage-release-MdVisualizer.ps1` | `Stage` | 成果物を公開用ステージへ配置する。 |
+| `publish-release-MdVisualizer.ps1` | `Publish` | 指定チャンネルへ公開する。 |
+| `verify-release-MdVisualizer.ps1` | `Verify` | ローカルまたは公開前成果物を検証する。 |
+| `full-release-MdVisualizer.ps1` | `Full` | ビルドから公開後検証までを実行する。 |
+
+`publish-release-MdVisualizer-all.ps1`は既存名を維持した互換入口であり、従来どおり`-Mode`を指定できる。旧`publish-MdVisualizer.ps1`も互換転送だけを行う。`Build`、`Stage`、`Publish`、`Full`では`-Channel`と`-ReleaseIntentConfirmed`が必要で、`Publish`と`Full`ではさらに`-PublishConfirmed`が必要となる。`Verify`は`-Channel`が必要ですが、共通エンジンの既存仕様どおりリリース意図確認は必須ではありません。整理確認ではこれらのモードを実行しない。
+
+例:
+
+```powershell
+pwsh -NoProfile -File .\scripts\plan-release-MdVisualizer.ps1
+pwsh -NoProfile -File .\scripts\build-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed
+pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed -PublishConfirmed
+```
 
 `build-release-MdVisualizer-spfx.ps1`はSPFx packageをローカル生成し、外部変更を行わない。`publish-release-MdVisualizer-spfx.ps1`は`-PublishConfirmed`を必須とし、既定ではApp Catalogへの上書きアップロードまでを行う。全サイト展開は`-Deploy`を明示した場合だけ行う。ルートの`build-spfx.ps1`はローカルビルド専用の互換入口である。
 

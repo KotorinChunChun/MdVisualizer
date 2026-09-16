@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $orchestratorPath = Join-Path $PSScriptRoot "publish-release-MdVisualizer-all.ps1"
+$commonOrchestratorPath = Join-Path $PSScriptRoot "Invoke-MdVisualizerRelease.ps1"
 $releaseDirectory = Join-Path $projectRoot "release\msix"
 $websiteDownloadDirectory = "C:\develop\excel-chunchun\www\download"
 
@@ -99,6 +100,10 @@ $planOutput = (& $orchestratorPath -Mode Plan 6>&1 | Out-String)
 if (-not $planOutput.Contains("NO BUILD, INSTALLER GENERATION, STAGING, UPLOAD, OR INSTALLATION WAS STARTED.")) {
     throw "Plan mode did not emit the no-work safety marker."
 }
+$namedPlanOutput = (& (Join-Path $PSScriptRoot "plan-release-MdVisualizer.ps1") 6>&1 | Out-String)
+if (-not $namedPlanOutput.Contains("NO BUILD, INSTALLER GENERATION, STAGING, UPLOAD, OR INSTALLATION WAS STARTED.")) {
+    throw "The named Plan entry point did not emit the no-work safety marker."
+}
 
 Assert-BlockedBeforeWork -Mode Build -ExpectedMessage "ReleaseIntentConfirmed"
 Assert-BlockedBeforeWork -Mode Stage -ExpectedMessage "ReleaseIntentConfirmed"
@@ -113,7 +118,7 @@ $portableBlocked = $false
 try { & (Join-Path $PSScriptRoot 'package-MdVisualizer-portable.ps1') }
 catch { $portableBlocked = $_.Exception.Message.Contains('ReleaseIntentConfirmed') }
 if (!$portableBlocked) { throw 'ポータブル版の無承認生成を防げませんでした。' }
-$publishSource = Get-Content -LiteralPath $orchestratorPath -Raw
+$publishSource = Get-Content -LiteralPath $commonOrchestratorPath -Raw
 if ($publishSource -match '@\(\$configuration.FtpUploadScriptPath,\s*(?:"--dry-run",\s*)?\$configuration.SiteDirectory\)') {
     throw '配布ルート全体を送信する呼び出しは禁止です。製品ファイル一覧を使用してください。'
 }

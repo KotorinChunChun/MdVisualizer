@@ -62,6 +62,21 @@ Web版は[Web版と共通編集・出力](/docs/developer/web/ARCHITECTURE.md)�
 
 これらは対応する明示依頼と公開手順に従って実施します。
 
+### リリース工程の入口
+
+リリース工程の共通処理は`scripts/Invoke-MdVisualizerRelease.ps1`に集約し、工程ごとの入口は次の既存・追加スクリプトから選択します。Plan以外は対象チャンネルを明示し、Build／Stage／Publish／Fullでは`-ReleaseIntentConfirmed`、Publish／Fullではさらに`-PublishConfirmed`が必要です。Verifyは既存仕様どおりチャンネル指定だけで実行できます。
+
+```powershell
+pwsh -NoProfile -File .\scripts\plan-release-MdVisualizer.ps1
+pwsh -NoProfile -File .\scripts\build-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed
+pwsh -NoProfile -File .\scripts\stage-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed
+pwsh -NoProfile -File .\scripts\verify-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed
+pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed -PublishConfirmed
+pwsh -NoProfile -File .\scripts\full-release-MdVisualizer.ps1 -Channel beta -ReleaseIntentConfirmed -PublishConfirmed
+```
+
+既存の`publish-release-MdVisualizer-all.ps1 -Mode <Mode>`と`publish-MdVisualizer.ps1`は互換入口として残しています。これらのコマンド例は確認だけの説明であり、実行時はリリース作業として扱います。
+
 ## ビルドの競合回避と環境エラー
 
 - SPFxとデスクトップの依存インストール・ビルドは共用領域で競合するため並列実行せず、順次実行する。両方が必要な場合はSPFx完了後にデスクトップを実行する。
