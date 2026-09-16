@@ -247,6 +247,7 @@ function Find-OldVersionResidues {
         $relative = [IO.Path]::GetRelativePath($projectRootFullPath, $file.FullName).Replace('\', '/')
         if ($AllowedRelativePaths -contains $relative) { continue }
         $content = Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Stop
+        if ($null -eq $content) { $content = '' }
         foreach ($oldVersion in $OldVersions | Select-Object -Unique) {
             if (-not $content.Contains($oldVersion)) { continue }
             $lineNumber = 0

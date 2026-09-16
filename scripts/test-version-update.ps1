@@ -60,6 +60,7 @@ try {
         Copy-FixtureFile -RelativePath $relativePath
     }
     New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'dev/history/v0.0.18') -Force | Out-Null
+    New-Item -ItemType File -Path (Join-Path $fixtureRoot 'empty.md') -Force | Out-Null
 
     $fixtureScript = Join-Path $fixtureRoot 'scripts/update-version-MdVisualizer.ps1'
     $fixtureOutput = & $fixtureScript -ProjectRoot $fixtureRoot -TargetVersion '0.0.18.2' -Yes *>&1 | Out-String
