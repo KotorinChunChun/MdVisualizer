@@ -70,10 +70,12 @@ describe("MarkdownEditor", () => {
     const { rerender } = render(<MarkdownEditor ref={first} documentId="tab-1:1" viewStateKey="C:\\docs\\note.md" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
     act(() => first.current?.focusLine(3));
     expect(first.current?.snapshot()?.from).toBe(8);
+    await waitFor(() => expect(first.current?.contains(document.activeElement)).toBe(true));
 
     const second = createRef<MarkdownEditorHandle>();
     rerender(<MarkdownEditor ref={second} documentId="tab-1:2" viewStateKey="C:\\docs\\note.md" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
     await waitFor(() => expect(second.current?.snapshot()?.from).toBe(8));
+    await waitFor(() => expect(second.current?.contains(document.activeElement)).toBe(true));
   });
 
   it("keeps an unaffected long-code fold and both scroll axes when a save adds lines before it", async () => {

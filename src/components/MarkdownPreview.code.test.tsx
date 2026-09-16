@@ -11,6 +11,16 @@ describe("MarkdownPreview code fences", () => {
     expect(screen.getByText("plain text")).toBeTruthy();
   });
 
+  it("shows a copy action for inline code and copies only its source", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<MarkdownPreview content={"インライン `npm run build` の例"} baseDir="" imageVersions={{}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "インラインコードをコピー" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("npm run build"));
+  });
+
   it("edits an unlabeled fenced block through the Markdown occurrence callback", async () => {
     const onCodeFenceBodyChange = vi.fn().mockResolvedValue(true);
     render(<MarkdownPreview content={"```\nold value\n```"} baseDir="C:\\docs" documentPath="C:\\docs\\note.md" imageVersions={{}} onCodeFenceBodyChange={onCodeFenceBodyChange} />);

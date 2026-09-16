@@ -134,6 +134,8 @@ describe("Edit and View pane coordination", () => {
     expect(source).toContain("<PreviewContextMenu");
     expect(source).toContain('event.ctrlKey && event.shiftKey');
     expect(source).toContain('editorMode === "split"');
+    expect(source).toContain('if (event.key === "F2")');
+    expect(source).toContain('editorRef.current?.contains(focusedElement)');
   });
 
   it("解除完了前に再登録されたファイル起動リスナーを後から解除する", () => {

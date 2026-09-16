@@ -39,14 +39,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2331,
+        "sourceLine": 2340,
         "sourceColumn": 11,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2331,
+        "line": 2340,
         "column": 11
       },
       "interactions": [
@@ -91,14 +91,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2332,
+        "sourceLine": 2341,
         "sourceColumn": 11,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2332,
+        "line": 2341,
         "column": 11
       },
       "interactions": [
@@ -143,14 +143,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2333,
+        "sourceLine": 2342,
         "sourceColumn": 11,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2333,
+        "line": 2342,
         "column": 11
       },
       "interactions": [
@@ -195,14 +195,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2336,
+        "sourceLine": 2345,
         "sourceColumn": 11,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2336,
+        "line": 2345,
         "column": 11
       },
       "interactions": [
@@ -247,14 +247,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2337,
+        "sourceLine": 2346,
         "sourceColumn": 11,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2337,
+        "line": 2346,
         "column": 11
       },
       "interactions": [
@@ -299,14 +299,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2340,
+        "sourceLine": 2349,
         "sourceColumn": 62,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2340,
+        "line": 2349,
         "column": 62
       },
       "interactions": [
@@ -351,14 +351,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2351,
+        "sourceLine": 2360,
         "sourceColumn": 67,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2351,
+        "line": 2360,
         "column": 67
       },
       "interactions": [
@@ -403,14 +403,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2352,
+        "sourceLine": 2361,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2352,
+        "line": 2361,
         "column": 9
       },
       "interactions": [
@@ -455,14 +455,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2436,
+        "sourceLine": 2445,
         "sourceColumn": 13,
         "ordinal": 9
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2436,
+        "line": 2445,
         "column": 13
       },
       "interactions": [
@@ -507,14 +507,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2441,
+        "sourceLine": 2450,
         "sourceColumn": 15,
         "ordinal": 10
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2441,
+        "line": 2450,
         "column": 15
       },
       "interactions": [],
@@ -557,14 +557,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2441,
+        "sourceLine": 2450,
         "sourceColumn": 55,
         "ordinal": 11
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2441,
+        "line": 2450,
         "column": 55
       },
       "interactions": [],
@@ -607,14 +607,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2441,
+        "sourceLine": 2450,
         "sourceColumn": 92,
         "ordinal": 12
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2441,
+        "line": 2450,
         "column": 92
       },
       "interactions": [],
@@ -657,14 +657,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2441,
+        "sourceLine": 2450,
         "sourceColumn": 134,
         "ordinal": 13
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2441,
+        "line": 2450,
         "column": 134
       },
       "interactions": [],
@@ -707,14 +707,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2441,
+        "sourceLine": 2450,
         "sourceColumn": 168,
         "ordinal": 14
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2441,
+        "line": 2450,
         "column": 168
       },
       "interactions": [],
@@ -757,14 +757,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2441,
+        "sourceLine": 2450,
         "sourceColumn": 202,
         "ordinal": 15
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2441,
+        "line": 2450,
         "column": 202
       },
       "interactions": [],
@@ -807,14 +807,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2441,
+        "sourceLine": 2450,
         "sourceColumn": 236,
         "ordinal": 16
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2441,
+        "line": 2450,
         "column": 236
       },
       "interactions": [],
@@ -857,14 +857,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2441,
+        "sourceLine": 2450,
         "sourceColumn": 281,
         "ordinal": 17
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2441,
+        "line": 2450,
         "column": 281
       },
       "interactions": [],
@@ -907,14 +907,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2445,
+        "sourceLine": 2454,
         "sourceColumn": 13,
         "ordinal": 18
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2445,
+        "line": 2454,
         "column": 13
       },
       "interactions": [
@@ -959,14 +959,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2446,
+        "sourceLine": 2455,
         "sourceColumn": 41,
         "ordinal": 19
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2446,
+        "line": 2455,
         "column": 41
       },
       "interactions": [],
@@ -1009,14 +1009,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2446,
+        "sourceLine": 2455,
         "sourceColumn": 74,
         "ordinal": 20
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2446,
+        "line": 2455,
         "column": 74
       },
       "interactions": [],
@@ -1059,14 +1059,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2446,
+        "sourceLine": 2455,
         "sourceColumn": 114,
         "ordinal": 21
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2446,
+        "line": 2455,
         "column": 114
       },
       "interactions": [],
@@ -1109,14 +1109,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2447,
+        "sourceLine": 2456,
         "sourceColumn": 39,
         "ordinal": 22
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2447,
+        "line": 2456,
         "column": 39
       },
       "interactions": [],
@@ -1159,14 +1159,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2447,
+        "sourceLine": 2456,
         "sourceColumn": 81,
         "ordinal": 23
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2447,
+        "line": 2456,
         "column": 81
       },
       "interactions": [],
@@ -24525,14 +24525,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 515,
+        "sourceLine": 520,
         "sourceColumn": 5,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 515,
+        "line": 520,
         "column": 5
       },
       "interactions": [
@@ -24576,14 +24576,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 516,
+        "sourceLine": 521,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 516,
+        "line": 521,
         "column": 5
       },
       "interactions": [
@@ -24627,14 +24627,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 517,
+        "sourceLine": 522,
         "sourceColumn": 5,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 517,
+        "line": 522,
         "column": 5
       },
       "interactions": [
@@ -24678,14 +24678,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 518,
+        "sourceLine": 523,
         "sourceColumn": 5,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 518,
+        "line": 523,
         "column": 5
       },
       "interactions": [
@@ -24729,14 +24729,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 520,
+        "sourceLine": 525,
         "sourceColumn": 19,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 520,
+        "line": 525,
         "column": 19
       },
       "interactions": [],
@@ -24778,14 +24778,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 521,
+        "sourceLine": 526,
         "sourceColumn": 38,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 521,
+        "line": 526,
         "column": 38
       },
       "interactions": [
@@ -24829,14 +24829,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 523,
+        "sourceLine": 528,
         "sourceColumn": 7,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 523,
+        "line": 528,
         "column": 7
       },
       "interactions": [
@@ -24880,14 +24880,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 524,
+        "sourceLine": 529,
         "sourceColumn": 7,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 524,
+        "line": 529,
         "column": 7
       },
       "interactions": [
@@ -24931,14 +24931,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 527,
+        "sourceLine": 532,
         "sourceColumn": 81,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 527,
+        "line": 532,
         "column": 81
       },
       "interactions": [],
@@ -25070,6 +25070,57 @@
       }
     },
     {
+      "id": "ui-d520191145e8",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "{{copied ? \"コピー済み\" : \"コピー\"}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{copied ? \"コピー済み\" : \"コピー\"}}",
+      "orderScope": {
+        "component": "InlineCodeCopyButton",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
+        "sourceLine": 371,
+        "sourceColumn": 10,
+        "ordinal": 1
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
+        "line": 371,
+        "column": 10
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:80a0a48e740339494bfe48d63f04b132fb4d84e6024c73576eef53a6e5fa56c9",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI142",
+        "name": "共通／MarkdownPreview／InlineCodeCopyButtonの操作領域",
+        "order": 1,
+        "number": "UI142-01",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
       "id": "ui-9878ec33a95d",
       "featureGroup": "components",
       "controlKind": "button",
@@ -25081,14 +25132,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 659,
+        "sourceLine": 676,
         "sourceColumn": 18,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 659,
+        "line": 676,
         "column": 18
       },
       "interactions": [
@@ -25113,10 +25164,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 1,
-        "number": "UI142-01",
+        "number": "UI143-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25132,14 +25183,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 691,
+        "sourceLine": 708,
         "sourceColumn": 27,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 691,
+        "line": 708,
         "column": 27
       },
       "interactions": [
@@ -25164,10 +25215,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 2,
-        "number": "UI142-02",
+        "number": "UI143-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25183,14 +25234,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 691,
+        "sourceLine": 708,
         "sourceColumn": 101,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 691,
+        "line": 708,
         "column": 101
       },
       "interactions": [
@@ -25215,10 +25266,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 3,
-        "number": "UI142-03",
+        "number": "UI143-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25234,14 +25285,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 691,
+        "sourceLine": 708,
         "sourceColumn": 175,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 691,
+        "line": 708,
         "column": 175
       },
       "interactions": [
@@ -25266,10 +25317,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 4,
-        "number": "UI142-04",
+        "number": "UI143-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25285,14 +25336,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 691,
+        "sourceLine": 708,
         "sourceColumn": 259,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 691,
+        "line": 708,
         "column": 259
       },
       "interactions": [
@@ -25317,10 +25368,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 5,
-        "number": "UI142-05",
+        "number": "UI143-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25336,14 +25387,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 716,
+        "sourceLine": 743,
         "sourceColumn": 135,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 716,
+        "line": 743,
         "column": 135
       },
       "interactions": [
@@ -25368,10 +25419,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 6,
-        "number": "UI142-06",
+        "number": "UI143-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25387,14 +25438,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 717,
+        "sourceLine": 744,
         "sourceColumn": 95,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 717,
+        "line": 744,
         "column": 95
       },
       "interactions": [
@@ -25419,10 +25470,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 7,
-        "number": "UI142-07",
+        "number": "UI143-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25438,14 +25489,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 720,
+        "sourceLine": 747,
         "sourceColumn": 58,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 720,
+        "line": 747,
         "column": 58
       },
       "interactions": [
@@ -25470,10 +25521,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 8,
-        "number": "UI142-08",
+        "number": "UI143-08",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25489,14 +25540,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 720,
+        "sourceLine": 747,
         "sourceColumn": 219,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 720,
+        "line": 747,
         "column": 219
       },
       "interactions": [
@@ -25521,10 +25572,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 9,
-        "number": "UI142-09",
+        "number": "UI143-09",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25540,14 +25591,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 720,
+        "sourceLine": 747,
         "sourceColumn": 340,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 720,
+        "line": 747,
         "column": 340
       },
       "interactions": [
@@ -25572,10 +25623,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 10,
-        "number": "UI142-10",
+        "number": "UI143-10",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25591,14 +25642,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 720,
+        "sourceLine": 747,
         "sourceColumn": 459,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 720,
+        "line": 747,
         "column": 459
       },
       "interactions": [],
@@ -25621,10 +25672,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI143",
+        "groupId": "UI144",
         "name": "共通／MarkdownPreview／表の表示内容",
         "order": 1,
-        "number": "UI143-01",
+        "number": "UI144-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -25640,14 +25691,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 720,
+        "sourceLine": 747,
         "sourceColumn": 497,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 720,
+        "line": 747,
         "column": 497
       },
       "interactions": [],
@@ -25670,10 +25721,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI143",
+        "groupId": "UI144",
         "name": "共通／MarkdownPreview／表の表示内容",
         "order": 2,
-        "number": "UI143-02",
+        "number": "UI144-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -25689,14 +25740,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 721,
+        "sourceLine": 748,
         "sourceColumn": 60,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 721,
+        "line": 748,
         "column": 60
       },
       "interactions": [
@@ -25721,10 +25772,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 11,
-        "number": "UI142-11",
+        "number": "UI143-11",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25740,14 +25791,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 722,
+        "sourceLine": 749,
         "sourceColumn": 59,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 722,
+        "line": 749,
         "column": 59
       },
       "interactions": [
@@ -25772,10 +25823,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 12,
-        "number": "UI142-12",
+        "number": "UI143-12",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25791,14 +25842,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 723,
+        "sourceLine": 750,
         "sourceColumn": 58,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 723,
+        "line": 750,
         "column": 58
       },
       "interactions": [
@@ -25823,10 +25874,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 13,
-        "number": "UI142-13",
+        "number": "UI143-13",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25842,14 +25893,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 725,
+        "sourceLine": 752,
         "sourceColumn": 145,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 725,
+        "line": 752,
         "column": 145
       },
       "interactions": [
@@ -25874,10 +25925,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 14,
-        "number": "UI142-14",
+        "number": "UI143-14",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25893,14 +25944,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 730,
+        "sourceLine": 757,
         "sourceColumn": 53,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 730,
+        "line": 757,
         "column": 53
       },
       "interactions": [
@@ -25925,10 +25976,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 15,
-        "number": "UI142-15",
+        "number": "UI143-15",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25944,14 +25995,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 730,
+        "sourceLine": 757,
         "sourceColumn": 358,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 730,
+        "line": 757,
         "column": 358
       },
       "interactions": [
@@ -25976,10 +26027,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 16,
-        "number": "UI142-16",
+        "number": "UI143-16",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -25995,14 +26046,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 735,
+        "sourceLine": 762,
         "sourceColumn": 506,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 735,
+        "line": 762,
         "column": 506
       },
       "interactions": [
@@ -26027,10 +26078,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI142",
+        "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
         "order": 17,
-        "number": "UI142-17",
+        "number": "UI143-17",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -26046,14 +26097,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 777,
+        "sourceLine": 804,
         "sourceColumn": 72,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 777,
+        "line": 804,
         "column": 72
       },
       "interactions": [
@@ -26079,10 +26130,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI144",
+        "groupId": "UI145",
         "name": "共通／MarkdownPreview／MarkdownLinkの操作領域",
         "order": 1,
-        "number": "UI144-01",
+        "number": "UI145-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -26098,14 +26149,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 786,
+        "sourceLine": 813,
         "sourceColumn": 33,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 786,
+        "line": 813,
         "column": 33
       },
       "interactions": [
@@ -26130,10 +26181,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI144",
+        "groupId": "UI145",
         "name": "共通／MarkdownPreview／MarkdownLinkの操作領域",
         "order": 2,
-        "number": "UI144-02",
+        "number": "UI145-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -26149,14 +26200,14 @@
       "orderScope": {
         "component": "UnsupportedFileCard",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 794,
+        "sourceLine": 821,
         "sourceColumn": 19,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 794,
+        "line": 821,
         "column": 19
       },
       "interactions": [
@@ -26181,10 +26232,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI145",
+        "groupId": "UI146",
         "name": "共通／MarkdownPreview／UnsupportedFileCardの操作領域",
         "order": 1,
-        "number": "UI145-01",
+        "number": "UI146-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -26200,14 +26251,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1175,
+        "sourceLine": 1202,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1175,
+        "line": 1202,
         "column": 7
       },
       "interactions": [
@@ -26234,10 +26285,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI146",
+        "groupId": "UI147",
         "name": "共通／MarkdownPreview／MarkdownPreviewComponentの操作領域",
         "order": 1,
-        "number": "UI146-01",
+        "number": "UI147-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -26285,10 +26336,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI147",
+        "groupId": "UI148",
         "name": "共通／MediaPreviewModal／MediaPreviewModalの操作領域",
         "order": 1,
-        "number": "UI147-01",
+        "number": "UI148-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -26336,10 +26387,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI148",
+        "groupId": "UI149",
         "name": "共通／MediaPreviewModal／dialog",
         "order": 1,
-        "number": "UI148-01",
+        "number": "UI149-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26387,10 +26438,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI149",
+        "groupId": "UI150",
         "name": "共通／MediaPreviewModal／media-preview__toolbar",
         "order": 1,
-        "number": "UI149-01",
+        "number": "UI150-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26438,10 +26489,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI149",
+        "groupId": "UI150",
         "name": "共通／MediaPreviewModal／media-preview__toolbar",
         "order": 2,
-        "number": "UI149-02",
+        "number": "UI150-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26489,10 +26540,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI149",
+        "groupId": "UI150",
         "name": "共通／MediaPreviewModal／media-preview__toolbar",
         "order": 3,
-        "number": "UI149-03",
+        "number": "UI150-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26540,10 +26591,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI149",
+        "groupId": "UI150",
         "name": "共通／MediaPreviewModal／media-preview__toolbar",
         "order": 4,
-        "number": "UI149-04",
+        "number": "UI150-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26591,10 +26642,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI149",
+        "groupId": "UI150",
         "name": "共通／MediaPreviewModal／media-preview__toolbar",
         "order": 5,
-        "number": "UI149-05",
+        "number": "UI150-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26642,10 +26693,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI149",
+        "groupId": "UI150",
         "name": "共通／MediaPreviewModal／media-preview__toolbar",
         "order": 6,
-        "number": "UI149-06",
+        "number": "UI150-06",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26693,10 +26744,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI148",
+        "groupId": "UI149",
         "name": "共通／MediaPreviewModal／dialog",
         "order": 2,
-        "number": "UI148-02",
+        "number": "UI149-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26744,10 +26795,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI148",
+        "groupId": "UI149",
         "name": "共通／MediaPreviewModal／dialog",
         "order": 3,
-        "number": "UI148-03",
+        "number": "UI149-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26802,10 +26853,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI148",
+        "groupId": "UI149",
         "name": "共通／MediaPreviewModal／dialog",
         "order": 4,
-        "number": "UI148-04",
+        "number": "UI149-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26853,10 +26904,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI148",
+        "groupId": "UI149",
         "name": "共通／MediaPreviewModal／dialog",
         "order": 5,
-        "number": "UI148-05",
+        "number": "UI149-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -26904,10 +26955,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI150",
+        "groupId": "UI151",
         "name": "共通／MermaidBlock／MermaidBlockの操作領域",
         "order": 1,
-        "number": "UI150-01",
+        "number": "UI151-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -26955,10 +27006,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI150",
+        "groupId": "UI151",
         "name": "共通／MermaidBlock／MermaidBlockの操作領域",
         "order": 2,
-        "number": "UI150-02",
+        "number": "UI151-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27006,10 +27057,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI150",
+        "groupId": "UI151",
         "name": "共通／MermaidBlock／MermaidBlockの操作領域",
         "order": 3,
-        "number": "UI150-03",
+        "number": "UI151-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27057,10 +27108,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI150",
+        "groupId": "UI151",
         "name": "共通／MermaidBlock／MermaidBlockの操作領域",
         "order": 4,
-        "number": "UI150-04",
+        "number": "UI151-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27108,10 +27159,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI150",
+        "groupId": "UI151",
         "name": "共通／MermaidBlock／MermaidBlockの操作領域",
         "order": 5,
-        "number": "UI150-05",
+        "number": "UI151-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27159,10 +27210,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI150",
+        "groupId": "UI151",
         "name": "共通／MermaidBlock／MermaidBlockの操作領域",
         "order": 6,
-        "number": "UI150-06",
+        "number": "UI151-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27210,10 +27261,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI151",
+        "groupId": "UI152",
         "name": "共通／MermaidBlock／主ツールバー",
         "order": 1,
-        "number": "UI151-01",
+        "number": "UI152-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -27261,10 +27312,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI152",
+        "groupId": "UI153",
         "name": "共通／MermaidBlock／Mermaidエラー詳細",
         "order": 1,
-        "number": "UI152-01",
+        "number": "UI153-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -27313,10 +27364,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI150",
+        "groupId": "UI151",
         "name": "共通／MermaidBlock／MermaidBlockの操作領域",
         "order": 7,
-        "number": "UI150-07",
+        "number": "UI151-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27364,10 +27415,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI153",
+        "groupId": "UI154",
         "name": "共通／MermaidEditorModal／MermaidEditorModalの操作領域",
         "order": 1,
-        "number": "UI153-01",
+        "number": "UI154-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27415,10 +27466,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI153",
+        "groupId": "UI154",
         "name": "共通／MermaidEditorModal／MermaidEditorModalの操作領域",
         "order": 2,
-        "number": "UI153-02",
+        "number": "UI154-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27466,10 +27517,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI154",
+        "groupId": "UI155",
         "name": "共通／MermaidEditorModal／主ツールバー",
         "order": 1,
-        "number": "UI154-01",
+        "number": "UI155-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -27517,10 +27568,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI155",
+        "groupId": "UI156",
         "name": "共通／MermaidEditorModal／dialog",
         "order": 1,
-        "number": "UI155-01",
+        "number": "UI156-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -27568,10 +27619,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI155",
+        "groupId": "UI156",
         "name": "共通／MermaidEditorModal／dialog",
         "order": 2,
-        "number": "UI155-02",
+        "number": "UI156-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -27619,10 +27670,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI156",
+        "groupId": "UI157",
         "name": "共通／MermaidToolbar／MermaidCopyControlsの操作領域",
         "order": 1,
-        "number": "UI156-01",
+        "number": "UI157-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27670,10 +27721,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI156",
+        "groupId": "UI157",
         "name": "共通／MermaidToolbar／MermaidCopyControlsの操作領域",
         "order": 2,
-        "number": "UI156-02",
+        "number": "UI157-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27721,10 +27772,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI156",
+        "groupId": "UI157",
         "name": "共通／MermaidToolbar／MermaidCopyControlsの操作領域",
         "order": 3,
-        "number": "UI156-03",
+        "number": "UI157-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27772,10 +27823,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI156",
+        "groupId": "UI157",
         "name": "共通／MermaidToolbar／MermaidCopyControlsの操作領域",
         "order": 4,
-        "number": "UI156-04",
+        "number": "UI157-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -27823,10 +27874,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI157",
+        "groupId": "UI158",
         "name": "共通／MermaidToolbar／表示内容",
         "order": 1,
-        "number": "UI157-01",
+        "number": "UI158-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -27872,10 +27923,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI158",
+        "groupId": "UI159",
         "name": "共通／MermaidToolbar／表示内容",
         "order": 1,
-        "number": "UI158-01",
+        "number": "UI159-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -27921,10 +27972,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI158",
+        "groupId": "UI159",
         "name": "共通／MermaidToolbar／表示内容",
         "order": 2,
-        "number": "UI158-02",
+        "number": "UI159-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -27972,10 +28023,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI157",
+        "groupId": "UI158",
         "name": "共通／MermaidToolbar／表示内容",
         "order": 2,
-        "number": "UI157-02",
+        "number": "UI158-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28023,10 +28074,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI157",
+        "groupId": "UI158",
         "name": "共通／MermaidToolbar／表示内容",
         "order": 3,
-        "number": "UI157-03",
+        "number": "UI158-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28072,10 +28123,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI159",
+        "groupId": "UI160",
         "name": "共通／MermaidToolbar／MermaidToolbarの操作領域",
         "order": 1,
-        "number": "UI159-01",
+        "number": "UI160-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -28123,10 +28174,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI160",
+        "groupId": "UI161",
         "name": "共通／MermaidToolbar／mermaid-toolbar__edit",
         "order": 1,
-        "number": "UI160-01",
+        "number": "UI161-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28174,10 +28225,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI161",
+        "groupId": "UI162",
         "name": "共通／PresentationView／下位見出し",
         "order": 1,
-        "number": "UI161-01",
+        "number": "UI162-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28225,10 +28276,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI162",
+        "groupId": "UI163",
         "name": "共通／PresentationView／見出し階層",
         "order": 1,
-        "number": "UI162-01",
+        "number": "UI163-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28276,10 +28327,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI163",
+        "groupId": "UI164",
         "name": "共通／PresentationView／PresentationViewの操作領域",
         "order": 1,
-        "number": "UI163-01",
+        "number": "UI164-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -28327,10 +28378,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI163",
+        "groupId": "UI164",
         "name": "共通／PresentationView／PresentationViewの操作領域",
         "order": 2,
-        "number": "UI163-02",
+        "number": "UI164-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -28382,10 +28433,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI164",
+        "groupId": "UI165",
         "name": "共通／PreviewInlineEditor／PreviewInlineEditorの操作領域",
         "order": 1,
-        "number": "UI164-01",
+        "number": "UI165-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -28431,10 +28482,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI165",
+        "groupId": "UI166",
         "name": "共通／ResponsiveToolbar／ResponsiveToolbarの操作領域",
         "order": 1,
-        "number": "UI165-01",
+        "number": "UI166-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -28483,10 +28534,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI166",
+        "groupId": "UI167",
         "name": "共通／ResponsiveToolbar／responsive-toolbar__more",
         "order": 1,
-        "number": "UI166-01",
+        "number": "UI167-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28534,10 +28585,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI166",
+        "groupId": "UI167",
         "name": "共通／ResponsiveToolbar／responsive-toolbar__more",
         "order": 2,
-        "number": "UI166-02",
+        "number": "UI167-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28586,10 +28637,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI167",
+        "groupId": "UI168",
         "name": "共通／SearchBar／検索ツールバー",
         "order": 1,
-        "number": "UI167-01",
+        "number": "UI168-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28637,10 +28688,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI167",
+        "groupId": "UI168",
         "name": "共通／SearchBar／検索ツールバー",
         "order": 2,
-        "number": "UI167-02",
+        "number": "UI168-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28688,10 +28739,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI167",
+        "groupId": "UI168",
         "name": "共通／SearchBar／検索ツールバー",
         "order": 3,
-        "number": "UI167-03",
+        "number": "UI168-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28739,10 +28790,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI167",
+        "groupId": "UI168",
         "name": "共通／SearchBar／検索ツールバー",
         "order": 4,
-        "number": "UI167-04",
+        "number": "UI168-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28788,10 +28839,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI168",
+        "groupId": "UI169",
         "name": "共通／SearchBar／文脈行数",
         "order": 1,
-        "number": "UI168-01",
+        "number": "UI169-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28839,10 +28890,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI167",
+        "groupId": "UI168",
         "name": "共通／SearchBar／検索ツールバー",
         "order": 5,
-        "number": "UI167-05",
+        "number": "UI168-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28890,10 +28941,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI167",
+        "groupId": "UI168",
         "name": "共通／SearchBar／検索ツールバー",
         "order": 6,
-        "number": "UI167-06",
+        "number": "UI168-06",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28941,10 +28992,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI167",
+        "groupId": "UI168",
         "name": "共通／SearchBar／検索ツールバー",
         "order": 7,
-        "number": "UI167-07",
+        "number": "UI168-07",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -28992,10 +29043,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI169",
+        "groupId": "UI170",
         "name": "共通／SearchResults／SearchResultsの操作領域",
         "order": 1,
-        "number": "UI169-01",
+        "number": "UI170-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -29044,10 +29095,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI169",
+        "groupId": "UI170",
         "name": "共通／SearchResults／SearchResultsの操作領域",
         "order": 2,
-        "number": "UI169-02",
+        "number": "UI170-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -29099,10 +29150,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI170",
+        "groupId": "UI171",
         "name": "共通／TableEditorDialog／TableEditorDialogの操作領域",
         "order": 1,
-        "number": "UI170-01",
+        "number": "UI171-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -29150,10 +29201,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI171",
+        "groupId": "UI172",
         "name": "共通／TableEditorDialog／table-editor-aggregate-menu",
         "order": 1,
-        "number": "UI171-01",
+        "number": "UI172-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29199,10 +29250,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI171",
+        "groupId": "UI172",
         "name": "共通／TableEditorDialog／table-editor-aggregate-menu",
         "order": 2,
-        "number": "UI171-02",
+        "number": "UI172-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29250,10 +29301,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI172",
+        "groupId": "UI173",
         "name": "共通／TableEditorDialog／集計を追加",
         "order": 1,
-        "number": "UI172-01",
+        "number": "UI173-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29301,10 +29352,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI172",
+        "groupId": "UI173",
         "name": "共通／TableEditorDialog／集計を追加",
         "order": 2,
-        "number": "UI172-02",
+        "number": "UI173-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29352,10 +29403,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 1,
-        "number": "UI173-01",
+        "number": "UI174-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29403,10 +29454,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 2,
-        "number": "UI173-02",
+        "number": "UI174-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29454,10 +29505,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 3,
-        "number": "UI173-03",
+        "number": "UI174-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29506,10 +29557,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 4,
-        "number": "UI173-04",
+        "number": "UI174-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29557,10 +29608,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 5,
-        "number": "UI173-05",
+        "number": "UI174-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29608,10 +29659,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 6,
-        "number": "UI173-06",
+        "number": "UI174-06",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29659,10 +29710,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 7,
-        "number": "UI173-07",
+        "number": "UI174-07",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29710,10 +29761,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 8,
-        "number": "UI173-08",
+        "number": "UI174-08",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29761,10 +29812,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 9,
-        "number": "UI173-09",
+        "number": "UI174-09",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29812,10 +29863,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 10,
-        "number": "UI173-10",
+        "number": "UI174-10",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29863,10 +29914,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 11,
-        "number": "UI173-11",
+        "number": "UI174-11",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29915,10 +29966,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 12,
-        "number": "UI173-12",
+        "number": "UI174-12",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -29966,10 +30017,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 13,
-        "number": "UI173-13",
+        "number": "UI174-13",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30017,10 +30068,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 14,
-        "number": "UI173-14",
+        "number": "UI174-14",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30068,10 +30119,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 15,
-        "number": "UI173-15",
+        "number": "UI174-15",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30120,10 +30171,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI173",
+        "groupId": "UI174",
         "name": "共通／TableEditorDialog／dialog",
         "order": 16,
-        "number": "UI173-16",
+        "number": "UI174-16",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30171,10 +30222,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI174",
+        "groupId": "UI175",
         "name": "共通／TableEditorDialog／表編集操作",
         "order": 1,
-        "number": "UI174-01",
+        "number": "UI175-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30222,10 +30273,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI174",
+        "groupId": "UI175",
         "name": "共通／TableEditorDialog／表編集操作",
         "order": 2,
-        "number": "UI174-02",
+        "number": "UI175-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30273,10 +30324,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI174",
+        "groupId": "UI175",
         "name": "共通／TableEditorDialog／表編集操作",
         "order": 3,
-        "number": "UI174-03",
+        "number": "UI175-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30324,10 +30375,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI174",
+        "groupId": "UI175",
         "name": "共通／TableEditorDialog／表編集操作",
         "order": 4,
-        "number": "UI174-04",
+        "number": "UI175-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30375,10 +30426,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI174",
+        "groupId": "UI175",
         "name": "共通／TableEditorDialog／表編集操作",
         "order": 5,
-        "number": "UI174-05",
+        "number": "UI175-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30426,10 +30477,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI174",
+        "groupId": "UI175",
         "name": "共通／TableEditorDialog／表編集操作",
         "order": 6,
-        "number": "UI174-06",
+        "number": "UI175-06",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30477,10 +30528,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI174",
+        "groupId": "UI175",
         "name": "共通／TableEditorDialog／表編集操作",
         "order": 7,
-        "number": "UI174-07",
+        "number": "UI175-07",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30528,10 +30579,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI174",
+        "groupId": "UI175",
         "name": "共通／TableEditorDialog／表編集操作",
         "order": 8,
-        "number": "UI174-08",
+        "number": "UI175-08",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30577,10 +30628,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI170",
+        "groupId": "UI171",
         "name": "共通／TableEditorDialog／TableEditorDialogの操作領域",
         "order": 2,
-        "number": "UI170-02",
+        "number": "UI171-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -30628,10 +30679,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI170",
+        "groupId": "UI171",
         "name": "共通／TableEditorDialog／TableEditorDialogの操作領域",
         "order": 3,
-        "number": "UI170-03",
+        "number": "UI171-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -30679,10 +30730,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI170",
+        "groupId": "UI171",
         "name": "共通／TableEditorDialog／TableEditorDialogの操作領域",
         "order": 4,
-        "number": "UI170-04",
+        "number": "UI171-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -30730,10 +30781,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI175",
+        "groupId": "UI176",
         "name": "共通／WorkspaceViewControls／表示切替",
         "order": 1,
-        "number": "UI175-01",
+        "number": "UI176-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30781,10 +30832,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI175",
+        "groupId": "UI176",
         "name": "共通／WorkspaceViewControls／表示切替",
         "order": 2,
-        "number": "UI175-02",
+        "number": "UI176-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30830,10 +30881,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI176",
+        "groupId": "UI177",
         "name": "共通／WorkspaceViewControls／プレビュー",
         "order": 1,
-        "number": "UI176-01",
+        "number": "UI177-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30879,10 +30930,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI176",
+        "groupId": "UI177",
         "name": "共通／WorkspaceViewControls／プレビュー",
         "order": 2,
-        "number": "UI176-02",
+        "number": "UI177-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30928,10 +30979,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI176",
+        "groupId": "UI177",
         "name": "共通／WorkspaceViewControls／プレビュー",
         "order": 3,
-        "number": "UI176-03",
+        "number": "UI177-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -30979,10 +31030,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI175",
+        "groupId": "UI176",
         "name": "共通／WorkspaceViewControls／表示切替",
         "order": 3,
-        "number": "UI175-03",
+        "number": "UI176-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31028,10 +31079,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI177",
+        "groupId": "UI178",
         "name": "共通／WorkspaceViewControls／分割方向",
         "order": 1,
-        "number": "UI177-01",
+        "number": "UI178-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31077,10 +31128,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI177",
+        "groupId": "UI178",
         "name": "共通／WorkspaceViewControls／分割方向",
         "order": 2,
-        "number": "UI177-02",
+        "number": "UI178-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31126,10 +31177,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI177",
+        "groupId": "UI178",
         "name": "共通／WorkspaceViewControls／分割方向",
         "order": 3,
-        "number": "UI177-03",
+        "number": "UI178-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31178,10 +31229,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI178",
+        "groupId": "UI179",
         "name": "共通／CodexBlockMenu／CodexBlockMenuの操作領域",
         "order": 1,
-        "number": "UI178-01",
+        "number": "UI179-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -31229,10 +31280,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI178",
+        "groupId": "UI179",
         "name": "共通／CodexBlockMenu／CodexBlockMenuの操作領域",
         "order": 2,
-        "number": "UI178-02",
+        "number": "UI179-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -31280,10 +31331,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI179",
+        "groupId": "UI180",
         "name": "共通／CodexBlockMenu／AIブロック操作",
         "order": 1,
-        "number": "UI179-01",
+        "number": "UI180-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31331,10 +31382,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI179",
+        "groupId": "UI180",
         "name": "共通／CodexBlockMenu／AIブロック操作",
         "order": 2,
-        "number": "UI179-02",
+        "number": "UI180-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31382,10 +31433,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI179",
+        "groupId": "UI180",
         "name": "共通／CodexBlockMenu／AIブロック操作",
         "order": 3,
-        "number": "UI179-03",
+        "number": "UI180-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31433,10 +31484,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI179",
+        "groupId": "UI180",
         "name": "共通／CodexBlockMenu／AIブロック操作",
         "order": 4,
-        "number": "UI179-04",
+        "number": "UI180-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31484,10 +31535,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI180",
+        "groupId": "UI181",
         "name": "共通／CodexConversationHistory／主ツールバー",
         "order": 1,
-        "number": "UI180-01",
+        "number": "UI181-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31535,10 +31586,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI181",
+        "groupId": "UI182",
         "name": "共通／CodexConversationHistory／保存した会話",
         "order": 1,
-        "number": "UI181-01",
+        "number": "UI182-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31587,10 +31638,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI181",
+        "groupId": "UI182",
         "name": "共通／CodexConversationHistory／保存した会話",
         "order": 2,
-        "number": "UI181-02",
+        "number": "UI182-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31638,10 +31689,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI182",
+        "groupId": "UI183",
         "name": "共通／CodexConversationHistory／主ツールバー",
         "order": 1,
-        "number": "UI182-01",
+        "number": "UI183-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31689,10 +31740,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI182",
+        "groupId": "UI183",
         "name": "共通／CodexConversationHistory／主ツールバー",
         "order": 2,
-        "number": "UI182-02",
+        "number": "UI183-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31740,10 +31791,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI183",
+        "groupId": "UI184",
         "name": "共通／CodexConversationHistory／CodexConversationHistoryの操作領域",
         "order": 1,
-        "number": "UI183-01",
+        "number": "UI184-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -31791,10 +31842,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI183",
+        "groupId": "UI184",
         "name": "共通／CodexConversationHistory／CodexConversationHistoryの操作領域",
         "order": 2,
-        "number": "UI183-02",
+        "number": "UI184-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -31842,10 +31893,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI184",
+        "groupId": "UI185",
         "name": "共通／CodexConversationHistory／dialog",
         "order": 1,
-        "number": "UI184-01",
+        "number": "UI185-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31893,10 +31944,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI184",
+        "groupId": "UI185",
         "name": "共通／CodexConversationHistory／dialog",
         "order": 2,
-        "number": "UI184-02",
+        "number": "UI185-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -31945,10 +31996,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 1,
-        "number": "UI185-01",
+        "number": "UI186-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -31996,10 +32047,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI186",
+        "groupId": "UI187",
         "name": "共通／CodexImageEdit／codex-image-edit__send-actions",
         "order": 1,
-        "number": "UI186-01",
+        "number": "UI187-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32047,10 +32098,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI186",
+        "groupId": "UI187",
         "name": "共通／CodexImageEdit／codex-image-edit__send-actions",
         "order": 2,
-        "number": "UI186-02",
+        "number": "UI187-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32098,10 +32149,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 2,
-        "number": "UI185-02",
+        "number": "UI186-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32149,10 +32200,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 3,
-        "number": "UI185-03",
+        "number": "UI186-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32200,10 +32251,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 4,
-        "number": "UI185-04",
+        "number": "UI186-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32251,10 +32302,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 5,
-        "number": "UI185-05",
+        "number": "UI186-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32302,10 +32353,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 6,
-        "number": "UI185-06",
+        "number": "UI186-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32353,10 +32404,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 7,
-        "number": "UI185-07",
+        "number": "UI186-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32404,10 +32455,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 8,
-        "number": "UI185-08",
+        "number": "UI186-08",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32455,10 +32506,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI185",
+        "groupId": "UI186",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
         "order": 9,
-        "number": "UI185-09",
+        "number": "UI186-09",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32506,10 +32557,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI187",
+        "groupId": "UI188",
         "name": "共通／CodexLogViewer／CodexLogViewerの操作領域",
         "order": 1,
-        "number": "UI187-01",
+        "number": "UI188-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32557,10 +32608,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI188",
+        "groupId": "UI189",
         "name": "共通／CodexLogViewer／主ツールバー",
         "order": 1,
-        "number": "UI188-01",
+        "number": "UI189-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32608,10 +32659,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI189",
+        "groupId": "UI190",
         "name": "共通／CodexLogViewer／AI通信記録一覧",
         "order": 1,
-        "number": "UI189-01",
+        "number": "UI190-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32661,10 +32712,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI189",
+        "groupId": "UI190",
         "name": "共通／CodexLogViewer／AI通信記録一覧",
         "order": 2,
-        "number": "UI189-02",
+        "number": "UI190-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32712,10 +32763,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI190",
+        "groupId": "UI191",
         "name": "共通／CodexLogViewer／codex-log-viewer__response-controls",
         "order": 1,
-        "number": "UI190-01",
+        "number": "UI191-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32763,10 +32814,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI190",
+        "groupId": "UI191",
         "name": "共通／CodexLogViewer／codex-log-viewer__response-controls",
         "order": 2,
-        "number": "UI190-02",
+        "number": "UI191-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32814,10 +32865,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 1,
-        "number": "UI191-01",
+        "number": "UI192-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -32863,10 +32914,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI192",
+        "groupId": "UI193",
         "name": "共通／CodexPanel／編集の許可",
         "order": 1,
-        "number": "UI192-01",
+        "number": "UI193-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32912,10 +32963,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI192",
+        "groupId": "UI193",
         "name": "共通／CodexPanel／編集の許可",
         "order": 2,
-        "number": "UI192-02",
+        "number": "UI193-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -32961,10 +33012,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI192",
+        "groupId": "UI193",
         "name": "共通／CodexPanel／編集の許可",
         "order": 3,
-        "number": "UI192-03",
+        "number": "UI193-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33012,10 +33063,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 2,
-        "number": "UI191-02",
+        "number": "UI192-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -33065,10 +33116,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 3,
-        "number": "UI191-03",
+        "number": "UI192-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -33116,10 +33167,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI193",
+        "groupId": "UI194",
         "name": "共通／CodexPanel／主ツールバー",
         "order": 1,
-        "number": "UI193-01",
+        "number": "UI194-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33167,10 +33218,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI193",
+        "groupId": "UI194",
         "name": "共通／CodexPanel／主ツールバー",
         "order": 2,
-        "number": "UI193-02",
+        "number": "UI194-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33218,10 +33269,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI193",
+        "groupId": "UI194",
         "name": "共通／CodexPanel／主ツールバー",
         "order": 3,
-        "number": "UI193-03",
+        "number": "UI194-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33269,10 +33320,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI193",
+        "groupId": "UI194",
         "name": "共通／CodexPanel／主ツールバー",
         "order": 4,
-        "number": "UI193-04",
+        "number": "UI194-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33320,10 +33371,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI193",
+        "groupId": "UI194",
         "name": "共通／CodexPanel／主ツールバー",
         "order": 5,
-        "number": "UI193-05",
+        "number": "UI194-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33371,10 +33422,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 4,
-        "number": "UI191-04",
+        "number": "UI192-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -33424,10 +33475,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 5,
-        "number": "UI191-05",
+        "number": "UI192-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -33476,10 +33527,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 6,
-        "number": "UI191-06",
+        "number": "UI192-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -33527,10 +33578,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI194",
+        "groupId": "UI195",
         "name": "共通／CodexPanel／codex-panel__send-actions",
         "order": 1,
-        "number": "UI194-01",
+        "number": "UI195-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33578,10 +33629,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI194",
+        "groupId": "UI195",
         "name": "共通／CodexPanel／codex-panel__send-actions",
         "order": 2,
-        "number": "UI194-02",
+        "number": "UI195-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33629,10 +33680,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 7,
-        "number": "UI191-07",
+        "number": "UI192-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -33678,10 +33729,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI195",
+        "groupId": "UI196",
         "name": "共通／CodexPanel／ツール",
         "order": 1,
-        "number": "UI195-01",
+        "number": "UI196-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33727,10 +33778,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI195",
+        "groupId": "UI196",
         "name": "共通／CodexPanel／ツール",
         "order": 2,
-        "number": "UI195-02",
+        "number": "UI196-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33776,10 +33827,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI195",
+        "groupId": "UI196",
         "name": "共通／CodexPanel／ツール",
         "order": 3,
-        "number": "UI195-03",
+        "number": "UI196-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33825,10 +33876,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI195",
+        "groupId": "UI196",
         "name": "共通／CodexPanel／ツール",
         "order": 4,
-        "number": "UI195-04",
+        "number": "UI196-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33874,10 +33925,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI195",
+        "groupId": "UI196",
         "name": "共通／CodexPanel／ツール",
         "order": 5,
-        "number": "UI195-05",
+        "number": "UI196-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33923,10 +33974,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI195",
+        "groupId": "UI196",
         "name": "共通／CodexPanel／ツール",
         "order": 6,
-        "number": "UI195-06",
+        "number": "UI196-06",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -33974,10 +34025,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 8,
-        "number": "UI191-08",
+        "number": "UI192-08",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34023,10 +34074,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 9,
-        "number": "UI191-09",
+        "number": "UI192-09",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34074,10 +34125,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI196",
+        "groupId": "UI197",
         "name": "共通／CodexPanel／codex-panel__tool-actions",
         "order": 1,
-        "number": "UI196-01",
+        "number": "UI197-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34125,10 +34176,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI197",
+        "groupId": "UI198",
         "name": "共通／CodexPanel／codex-panel__actions",
         "order": 1,
-        "number": "UI197-01",
+        "number": "UI198-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34177,10 +34228,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 10,
-        "number": "UI191-10",
+        "number": "UI192-10",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34228,10 +34279,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 11,
-        "number": "UI191-11",
+        "number": "UI192-11",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34279,10 +34330,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI198",
+        "groupId": "UI199",
         "name": "共通／CodexPanel／codex-panel__actions",
         "order": 1,
-        "number": "UI198-01",
+        "number": "UI199-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34330,10 +34381,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI198",
+        "groupId": "UI199",
         "name": "共通／CodexPanel／codex-panel__actions",
         "order": 2,
-        "number": "UI198-02",
+        "number": "UI199-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34381,10 +34432,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI198",
+        "groupId": "UI199",
         "name": "共通／CodexPanel／codex-panel__actions",
         "order": 3,
-        "number": "UI198-03",
+        "number": "UI199-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34433,10 +34484,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 12,
-        "number": "UI191-12",
+        "number": "UI192-12",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34484,10 +34535,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 13,
-        "number": "UI191-13",
+        "number": "UI192-13",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34533,10 +34584,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI191",
+        "groupId": "UI192",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
         "order": 14,
-        "number": "UI191-14",
+        "number": "UI192-14",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34584,10 +34635,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI199",
+        "groupId": "UI200",
         "name": "共通／CodexProposalReview／主ツールバー",
         "order": 1,
-        "number": "UI199-01",
+        "number": "UI200-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34635,10 +34686,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI200",
+        "groupId": "UI201",
         "name": "共通／CodexProposalReview／CodexProposalReviewの操作領域",
         "order": 1,
-        "number": "UI200-01",
+        "number": "UI201-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34686,10 +34737,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI200",
+        "groupId": "UI201",
         "name": "共通／CodexProposalReview／CodexProposalReviewの操作領域",
         "order": 2,
-        "number": "UI200-02",
+        "number": "UI201-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34737,10 +34788,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI200",
+        "groupId": "UI201",
         "name": "共通／CodexProposalReview／CodexProposalReviewの操作領域",
         "order": 3,
-        "number": "UI200-03",
+        "number": "UI201-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -34788,10 +34839,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI201",
+        "groupId": "UI202",
         "name": "共通／CodexProposalReview／主ツールバー",
         "order": 1,
-        "number": "UI201-01",
+        "number": "UI202-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34839,10 +34890,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI202",
+        "groupId": "UI203",
         "name": "共通／CodexProposalReview／主ツールバー",
         "order": 1,
-        "number": "UI202-01",
+        "number": "UI203-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34890,10 +34941,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI203",
+        "groupId": "UI204",
         "name": "共通／CodexProposalReview／codex-proposal-review__row-actions",
         "order": 1,
-        "number": "UI203-01",
+        "number": "UI204-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34941,10 +34992,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI203",
+        "groupId": "UI204",
         "name": "共通／CodexProposalReview／codex-proposal-review__row-actions",
         "order": 2,
-        "number": "UI203-02",
+        "number": "UI204-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34992,10 +35043,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI200",
+        "groupId": "UI201",
         "name": "共通／CodexProposalReview／CodexProposalReviewの操作領域",
         "order": 4,
-        "number": "UI200-04",
+        "number": "UI201-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35043,10 +35094,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI200",
+        "groupId": "UI201",
         "name": "共通／CodexProposalReview／CodexProposalReviewの操作領域",
         "order": 5,
-        "number": "UI200-05",
+        "number": "UI201-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35094,10 +35145,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI200",
+        "groupId": "UI201",
         "name": "共通／CodexProposalReview／CodexProposalReviewの操作領域",
         "order": 6,
-        "number": "UI200-06",
+        "number": "UI201-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35145,10 +35196,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI200",
+        "groupId": "UI201",
         "name": "共通／CodexProposalReview／CodexProposalReviewの操作領域",
         "order": 7,
-        "number": "UI200-07",
+        "number": "UI201-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35197,10 +35248,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI204",
+        "groupId": "UI205",
         "name": "共通／DiagramCodexAction／DiagramCodexActionの操作領域",
         "order": 1,
-        "number": "UI204-01",
+        "number": "UI205-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35248,10 +35299,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI204",
+        "groupId": "UI205",
         "name": "共通／DiagramCodexAction／DiagramCodexActionの操作領域",
         "order": 2,
-        "number": "UI204-02",
+        "number": "UI205-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35299,10 +35350,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI205",
+        "groupId": "UI206",
         "name": "共通／DiagramCodexAction／図のAI操作",
         "order": 1,
-        "number": "UI205-01",
+        "number": "UI206-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -35350,10 +35401,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI205",
+        "groupId": "UI206",
         "name": "共通／DiagramCodexAction／図のAI操作",
         "order": 2,
-        "number": "UI205-02",
+        "number": "UI206-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -35401,10 +35452,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI206",
+        "groupId": "UI207",
         "name": "共通／DiagramCodexAction／DiagramCodexDialogの操作領域",
         "order": 1,
-        "number": "UI206-01",
+        "number": "UI207-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35452,10 +35503,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI207",
+        "groupId": "UI208",
         "name": "共通／FileSvgCodexAction／FileSvgCodexActionの操作領域",
         "order": 1,
-        "number": "UI207-01",
+        "number": "UI208-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35503,10 +35554,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI207",
+        "groupId": "UI208",
         "name": "共通／FileSvgCodexAction／FileSvgCodexActionの操作領域",
         "order": 2,
-        "number": "UI207-02",
+        "number": "UI208-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35554,10 +35605,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI208",
+        "groupId": "UI209",
         "name": "共通／FileSvgCodexAction／図のAI操作",
         "order": 1,
-        "number": "UI208-01",
+        "number": "UI209-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -35605,10 +35656,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI208",
+        "groupId": "UI209",
         "name": "共通／FileSvgCodexAction／図のAI操作",
         "order": 2,
-        "number": "UI208-02",
+        "number": "UI209-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -35657,10 +35708,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI209",
+        "groupId": "UI210",
         "name": "共通／TableCodexAction／TableCodexActionの操作領域",
         "order": 1,
-        "number": "UI209-01",
+        "number": "UI210-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35708,10 +35759,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI209",
+        "groupId": "UI210",
         "name": "共通／TableCodexAction／TableCodexActionの操作領域",
         "order": 2,
-        "number": "UI209-02",
+        "number": "UI210-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35759,10 +35810,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI210",
+        "groupId": "UI211",
         "name": "共通／TableCodexAction／表のAI操作",
         "order": 1,
-        "number": "UI210-01",
+        "number": "UI211-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -35810,10 +35861,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI210",
+        "groupId": "UI211",
         "name": "共通／TableCodexAction／表のAI操作",
         "order": 2,
-        "number": "UI210-02",
+        "number": "UI211-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -35861,10 +35912,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI211",
+        "groupId": "UI212",
         "name": "共通／useConsultationMenu／useConsultationMenuの操作領域",
         "order": 1,
-        "number": "UI211-01",
+        "number": "UI212-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35912,10 +35963,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI212",
+        "groupId": "UI213",
         "name": "共通／useConsultationMenu／対象部分の操作",
         "order": 1,
-        "number": "UI212-01",
+        "number": "UI213-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -35963,10 +36014,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI212",
+        "groupId": "UI213",
         "name": "共通／useConsultationMenu／対象部分の操作",
         "order": 2,
-        "number": "UI212-02",
+        "number": "UI213-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -36014,10 +36065,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI212",
+        "groupId": "UI213",
         "name": "共通／useConsultationMenu／対象部分の操作",
         "order": 3,
-        "number": "UI212-03",
+        "number": "UI213-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -36065,10 +36116,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI212",
+        "groupId": "UI213",
         "name": "共通／useConsultationMenu／対象部分の操作",
         "order": 4,
-        "number": "UI212-04",
+        "number": "UI213-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -36116,10 +36167,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI212",
+        "groupId": "UI213",
         "name": "共通／useConsultationMenu／対象部分の操作",
         "order": 5,
-        "number": "UI212-05",
+        "number": "UI213-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -36167,10 +36218,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI212",
+        "groupId": "UI213",
         "name": "共通／useConsultationMenu／対象部分の操作",
         "order": 6,
-        "number": "UI212-06",
+        "number": "UI213-06",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -36218,10 +36269,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI212",
+        "groupId": "UI213",
         "name": "共通／useConsultationMenu／対象部分の操作",
         "order": 7,
-        "number": "UI212-07",
+        "number": "UI213-07",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -36269,10 +36320,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 1,
-        "number": "UI213-01",
+        "number": "UI214-01",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36320,10 +36371,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 2,
-        "number": "UI213-02",
+        "number": "UI214-02",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36371,10 +36422,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 3,
-        "number": "UI213-03",
+        "number": "UI214-03",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36422,10 +36473,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 4,
-        "number": "UI213-04",
+        "number": "UI214-04",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36473,10 +36524,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 5,
-        "number": "UI213-05",
+        "number": "UI214-05",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36524,10 +36575,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 6,
-        "number": "UI213-06",
+        "number": "UI214-06",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36575,10 +36626,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 7,
-        "number": "UI213-07",
+        "number": "UI214-07",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36626,10 +36677,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 8,
-        "number": "UI213-08",
+        "number": "UI214-08",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36677,10 +36728,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 9,
-        "number": "UI213-09",
+        "number": "UI214-09",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36728,10 +36779,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 10,
-        "number": "UI213-10",
+        "number": "UI214-10",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36779,10 +36830,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 11,
-        "number": "UI213-11",
+        "number": "UI214-11",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36830,10 +36881,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 12,
-        "number": "UI213-12",
+        "number": "UI214-12",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36881,10 +36932,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 13,
-        "number": "UI213-13",
+        "number": "UI214-13",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36932,10 +36983,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 14,
-        "number": "UI213-14",
+        "number": "UI214-14",
         "basis": "共通コマンド配列順"
       }
     },
@@ -36983,10 +37034,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 15,
-        "number": "UI213-15",
+        "number": "UI214-15",
         "basis": "共通コマンド配列順"
       }
     },
@@ -37034,10 +37085,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 16,
-        "number": "UI213-16",
+        "number": "UI214-16",
         "basis": "共通コマンド配列順"
       }
     },
@@ -37085,10 +37136,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI213",
+        "groupId": "UI214",
         "name": "共通／コード書式ツールバー",
         "order": 17,
-        "number": "UI213-17",
+        "number": "UI214-17",
         "basis": "共通コマンド配列順"
       }
     },
@@ -37136,10 +37187,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI214",
+        "groupId": "UI215",
         "name": "共通／app／DOM assemblyの操作領域",
         "order": 1,
-        "number": "UI214-01",
+        "number": "UI215-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37185,10 +37236,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI214",
+        "groupId": "UI215",
         "name": "共通／app／DOM assemblyの操作領域",
         "order": 2,
-        "number": "UI214-02",
+        "number": "UI215-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37236,10 +37287,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI215",
+        "groupId": "UI216",
         "name": "共通／app／DOM dynamic factoryの操作領域",
         "order": 1,
-        "number": "UI215-01",
+        "number": "UI216-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37288,10 +37339,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI214",
+        "groupId": "UI215",
         "name": "共通／app／DOM assemblyの操作領域",
         "order": 3,
-        "number": "UI214-03",
+        "number": "UI215-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37339,10 +37390,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI214",
+        "groupId": "UI215",
         "name": "共通／app／DOM assemblyの操作領域",
         "order": 4,
-        "number": "UI214-04",
+        "number": "UI215-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37390,10 +37441,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI216",
+        "groupId": "UI217",
         "name": "共通／app／drawGalleryの操作領域",
         "order": 1,
-        "number": "UI216-01",
+        "number": "UI217-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37441,10 +37492,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI216",
+        "groupId": "UI217",
         "name": "共通／app／drawGalleryの操作領域",
         "order": 2,
-        "number": "UI216-02",
+        "number": "UI217-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37492,10 +37543,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI216",
+        "groupId": "UI217",
         "name": "共通／app／drawGalleryの操作領域",
         "order": 3,
-        "number": "UI216-03",
+        "number": "UI217-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37543,10 +37594,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI214",
+        "groupId": "UI215",
         "name": "共通／app／DOM assemblyの操作領域",
         "order": 5,
-        "number": "UI214-05",
+        "number": "UI215-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37594,10 +37645,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI217",
+        "groupId": "UI218",
         "name": "共通／app／insertSnippetの操作領域",
         "order": 1,
-        "number": "UI217-01",
+        "number": "UI218-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37645,10 +37696,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 1,
-        "number": "UI218-01",
+        "number": "UI219-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37696,10 +37747,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 2,
-        "number": "UI218-02",
+        "number": "UI219-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37747,10 +37798,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 3,
-        "number": "UI218-03",
+        "number": "UI219-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37798,10 +37849,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 4,
-        "number": "UI218-04",
+        "number": "UI219-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37849,10 +37900,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 5,
-        "number": "UI218-05",
+        "number": "UI219-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37900,10 +37951,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI214",
+        "groupId": "UI215",
         "name": "共通／app／DOM assemblyの操作領域",
         "order": 6,
-        "number": "UI214-06",
+        "number": "UI215-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -37951,10 +38002,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI219",
+        "groupId": "UI220",
         "name": "共通／app／addSelectedの操作領域",
         "order": 1,
-        "number": "UI219-01",
+        "number": "UI220-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38002,10 +38053,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI219",
+        "groupId": "UI220",
         "name": "共通／app／addSelectedの操作領域",
         "order": 2,
-        "number": "UI219-02",
+        "number": "UI220-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38053,10 +38104,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI219",
+        "groupId": "UI220",
         "name": "共通／app／addSelectedの操作領域",
         "order": 3,
-        "number": "UI219-03",
+        "number": "UI220-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38104,10 +38155,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI219",
+        "groupId": "UI220",
         "name": "共通／app／addSelectedの操作領域",
         "order": 4,
-        "number": "UI219-04",
+        "number": "UI220-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38155,10 +38206,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI219",
+        "groupId": "UI220",
         "name": "共通／app／addSelectedの操作領域",
         "order": 5,
-        "number": "UI219-05",
+        "number": "UI220-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38206,10 +38257,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI219",
+        "groupId": "UI220",
         "name": "共通／app／addSelectedの操作領域",
         "order": 6,
-        "number": "UI219-06",
+        "number": "UI220-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38257,10 +38308,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 1,
-        "number": "UI220-01",
+        "number": "UI221-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38308,10 +38359,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 2,
-        "number": "UI220-02",
+        "number": "UI221-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38359,10 +38410,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 3,
-        "number": "UI220-03",
+        "number": "UI221-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38410,10 +38461,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 4,
-        "number": "UI220-04",
+        "number": "UI221-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38461,10 +38512,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 5,
-        "number": "UI220-05",
+        "number": "UI221-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38512,10 +38563,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 6,
-        "number": "UI220-06",
+        "number": "UI221-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38563,10 +38614,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 7,
-        "number": "UI220-07",
+        "number": "UI221-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38614,10 +38665,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 8,
-        "number": "UI220-08",
+        "number": "UI221-08",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38665,10 +38716,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 9,
-        "number": "UI220-09",
+        "number": "UI221-09",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38716,10 +38767,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 10,
-        "number": "UI220-10",
+        "number": "UI221-10",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38767,10 +38818,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 11,
-        "number": "UI220-11",
+        "number": "UI221-11",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38818,10 +38869,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 12,
-        "number": "UI220-12",
+        "number": "UI221-12",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38869,10 +38920,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 13,
-        "number": "UI220-13",
+        "number": "UI221-13",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38920,10 +38971,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 14,
-        "number": "UI220-14",
+        "number": "UI221-14",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -38971,10 +39022,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 15,
-        "number": "UI220-15",
+        "number": "UI221-15",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39022,10 +39073,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 16,
-        "number": "UI220-16",
+        "number": "UI221-16",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39073,10 +39124,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 17,
-        "number": "UI220-17",
+        "number": "UI221-17",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39124,10 +39175,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 18,
-        "number": "UI220-18",
+        "number": "UI221-18",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39175,10 +39226,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 19,
-        "number": "UI220-19",
+        "number": "UI221-19",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39226,10 +39277,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 20,
-        "number": "UI220-20",
+        "number": "UI221-20",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39277,10 +39328,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 21,
-        "number": "UI220-21",
+        "number": "UI221-21",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39328,10 +39379,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 22,
-        "number": "UI220-22",
+        "number": "UI221-22",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39379,10 +39430,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 23,
-        "number": "UI220-23",
+        "number": "UI221-23",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39430,10 +39481,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 24,
-        "number": "UI220-24",
+        "number": "UI221-24",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39481,10 +39532,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 25,
-        "number": "UI220-25",
+        "number": "UI221-25",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39532,10 +39583,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 26,
-        "number": "UI220-26",
+        "number": "UI221-26",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39583,10 +39634,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 27,
-        "number": "UI220-27",
+        "number": "UI221-27",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39634,10 +39685,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 28,
-        "number": "UI220-28",
+        "number": "UI221-28",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39685,10 +39736,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 29,
-        "number": "UI220-29",
+        "number": "UI221-29",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39736,10 +39787,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 30,
-        "number": "UI220-30",
+        "number": "UI221-30",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39787,10 +39838,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 31,
-        "number": "UI220-31",
+        "number": "UI221-31",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39838,10 +39889,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 32,
-        "number": "UI220-32",
+        "number": "UI221-32",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39889,10 +39940,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 33,
-        "number": "UI220-33",
+        "number": "UI221-33",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39940,10 +39991,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 34,
-        "number": "UI220-34",
+        "number": "UI221-34",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -39991,10 +40042,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 35,
-        "number": "UI220-35",
+        "number": "UI221-35",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40042,10 +40093,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 36,
-        "number": "UI220-36",
+        "number": "UI221-36",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40093,10 +40144,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 37,
-        "number": "UI220-37",
+        "number": "UI221-37",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40144,10 +40195,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI220",
+        "groupId": "UI221",
         "name": "共通／app／editSelectedの操作領域",
         "order": 38,
-        "number": "UI220-38",
+        "number": "UI221-38",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40195,10 +40246,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 6,
-        "number": "UI218-06",
+        "number": "UI219-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40246,10 +40297,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 7,
-        "number": "UI218-07",
+        "number": "UI219-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40297,10 +40348,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 8,
-        "number": "UI218-08",
+        "number": "UI219-08",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40348,10 +40399,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI214",
+        "groupId": "UI215",
         "name": "共通／app／DOM assemblyの操作領域",
         "order": 7,
-        "number": "UI214-07",
+        "number": "UI215-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40399,10 +40450,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 9,
-        "number": "UI218-09",
+        "number": "UI219-09",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40450,10 +40501,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 10,
-        "number": "UI218-10",
+        "number": "UI219-10",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40501,10 +40552,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 11,
-        "number": "UI218-11",
+        "number": "UI219-11",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40552,10 +40603,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 12,
-        "number": "UI218-12",
+        "number": "UI219-12",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40603,10 +40654,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 13,
-        "number": "UI218-13",
+        "number": "UI219-13",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40654,10 +40705,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 14,
-        "number": "UI218-14",
+        "number": "UI219-14",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40705,10 +40756,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 15,
-        "number": "UI218-15",
+        "number": "UI219-15",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40756,10 +40807,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 16,
-        "number": "UI218-16",
+        "number": "UI219-16",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40807,10 +40858,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 17,
-        "number": "UI218-17",
+        "number": "UI219-17",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40858,10 +40909,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 18,
-        "number": "UI218-18",
+        "number": "UI219-18",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40909,10 +40960,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI218",
+        "groupId": "UI219",
         "name": "共通／app／moduleの操作領域",
         "order": 19,
-        "number": "UI218-19",
+        "number": "UI219-19",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -40960,10 +41011,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI221",
+        "groupId": "UI222",
         "name": "共通／app／addToGroupの操作領域",
         "order": 1,
-        "number": "UI221-01",
+        "number": "UI222-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41009,10 +41060,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI214",
+        "groupId": "UI215",
         "name": "共通／app／DOM assemblyの操作領域",
         "order": 8,
-        "number": "UI214-08",
+        "number": "UI215-08",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41060,10 +41111,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI222",
+        "groupId": "UI223",
         "name": "共通／form-widgets／choiceFieldの操作領域",
         "order": 1,
-        "number": "UI222-01",
+        "number": "UI223-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41111,10 +41162,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI223",
+        "groupId": "UI224",
         "name": "共通／form-widgets／DOM assemblyの操作領域",
         "order": 1,
-        "number": "UI223-01",
+        "number": "UI224-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41162,10 +41213,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI223",
+        "groupId": "UI224",
         "name": "共通／form-widgets／DOM assemblyの操作領域",
         "order": 2,
-        "number": "UI223-02",
+        "number": "UI224-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41213,10 +41264,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI224",
+        "groupId": "UI225",
         "name": "Mermaid／topbar",
         "order": 1,
-        "number": "UI224-01",
+        "number": "UI225-01",
         "basis": "HTML内の配置順"
       }
     },
@@ -41264,10 +41315,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI225",
+        "groupId": "UI226",
         "name": "Mermaid／ファイルツールバー",
         "order": 1,
-        "number": "UI225-01",
+        "number": "UI226-01",
         "basis": "HTML内の配置順"
       }
     },
@@ -41315,10 +41366,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI225",
+        "groupId": "UI226",
         "name": "Mermaid／ファイルツールバー",
         "order": 2,
-        "number": "UI225-02",
+        "number": "UI226-02",
         "basis": "HTML内の配置順"
       }
     },
@@ -41366,10 +41417,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI225",
+        "groupId": "UI226",
         "name": "Mermaid／ファイルツールバー",
         "order": 3,
-        "number": "UI225-03",
+        "number": "UI226-03",
         "basis": "HTML内の配置順"
       }
     },
@@ -41417,10 +41468,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI225",
+        "groupId": "UI226",
         "name": "Mermaid／ファイルツールバー",
         "order": 4,
-        "number": "UI225-04",
+        "number": "UI226-04",
         "basis": "HTML内の配置順"
       }
     },
@@ -41468,10 +41519,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI226",
+        "groupId": "UI227",
         "name": "共通／index／static HTMLの操作領域",
         "order": 1,
-        "number": "UI226-01",
+        "number": "UI227-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41519,10 +41570,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI226",
+        "groupId": "UI227",
         "name": "共通／index／static HTMLの操作領域",
         "order": 2,
-        "number": "UI226-02",
+        "number": "UI227-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41570,10 +41621,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI227",
+        "groupId": "UI228",
         "name": "Mermaid／library",
         "order": 1,
-        "number": "UI227-01",
+        "number": "UI228-01",
         "basis": "HTML内の配置順"
       }
     },
@@ -41621,10 +41672,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI227",
+        "groupId": "UI228",
         "name": "Mermaid／library",
         "order": 2,
-        "number": "UI227-02",
+        "number": "UI228-02",
         "basis": "HTML内の配置順"
       }
     },
@@ -41672,10 +41723,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI226",
+        "groupId": "UI227",
         "name": "共通／index／static HTMLの操作領域",
         "order": 3,
-        "number": "UI226-03",
+        "number": "UI227-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41723,10 +41774,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI226",
+        "groupId": "UI227",
         "name": "共通／index／static HTMLの操作領域",
         "order": 4,
-        "number": "UI226-04",
+        "number": "UI227-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -41774,10 +41825,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 1,
-        "number": "UI228-01",
+        "number": "UI229-01",
         "basis": "HTML内の配置順"
       }
     },
@@ -41825,10 +41876,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 2,
-        "number": "UI228-02",
+        "number": "UI229-02",
         "basis": "HTML内の配置順"
       }
     },
@@ -41876,10 +41927,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 3,
-        "number": "UI228-03",
+        "number": "UI229-03",
         "basis": "HTML内の配置順"
       }
     },
@@ -41927,10 +41978,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 4,
-        "number": "UI228-04",
+        "number": "UI229-04",
         "basis": "HTML内の配置順"
       }
     },
@@ -41978,10 +42029,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 5,
-        "number": "UI228-05",
+        "number": "UI229-05",
         "basis": "HTML内の配置順"
       }
     },
@@ -42029,10 +42080,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 6,
-        "number": "UI228-06",
+        "number": "UI229-06",
         "basis": "HTML内の配置順"
       }
     },
@@ -42080,10 +42131,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 7,
-        "number": "UI228-07",
+        "number": "UI229-07",
         "basis": "HTML内の配置順"
       }
     },
@@ -42131,10 +42182,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 8,
-        "number": "UI228-08",
+        "number": "UI229-08",
         "basis": "HTML内の配置順"
       }
     },
@@ -42182,10 +42233,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 9,
-        "number": "UI228-09",
+        "number": "UI229-09",
         "basis": "HTML内の配置順"
       }
     },
@@ -42233,10 +42284,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 10,
-        "number": "UI228-10",
+        "number": "UI229-10",
         "basis": "HTML内の配置順"
       }
     },
@@ -42284,10 +42335,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 11,
-        "number": "UI228-11",
+        "number": "UI229-11",
         "basis": "HTML内の配置順"
       }
     },
@@ -42335,10 +42386,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 12,
-        "number": "UI228-12",
+        "number": "UI229-12",
         "basis": "HTML内の配置順"
       }
     },
@@ -42386,10 +42437,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 13,
-        "number": "UI228-13",
+        "number": "UI229-13",
         "basis": "HTML内の配置順"
       }
     },
@@ -42437,10 +42488,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 14,
-        "number": "UI228-14",
+        "number": "UI229-14",
         "basis": "HTML内の配置順"
       }
     },
@@ -42488,10 +42539,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 15,
-        "number": "UI228-15",
+        "number": "UI229-15",
         "basis": "HTML内の配置順"
       }
     },
@@ -42539,10 +42590,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 16,
-        "number": "UI228-16",
+        "number": "UI229-16",
         "basis": "HTML内の配置順"
       }
     },
@@ -42590,10 +42641,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 17,
-        "number": "UI228-17",
+        "number": "UI229-17",
         "basis": "HTML内の配置順"
       }
     },
@@ -42641,10 +42692,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 18,
-        "number": "UI228-18",
+        "number": "UI229-18",
         "basis": "HTML内の配置順"
       }
     },
@@ -42692,10 +42743,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI228",
+        "groupId": "UI229",
         "name": "Mermaid／編集ツールバー",
         "order": 19,
-        "number": "UI228-19",
+        "number": "UI229-19",
         "basis": "HTML内の配置順"
       }
     },
@@ -42743,10 +42794,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI226",
+        "groupId": "UI227",
         "name": "共通／index／static HTMLの操作領域",
         "order": 5,
-        "number": "UI226-05",
+        "number": "UI227-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -42794,10 +42845,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI229",
+        "groupId": "UI230",
         "name": "Mermaid／プレビューツールバー",
         "order": 1,
-        "number": "UI229-01",
+        "number": "UI230-01",
         "basis": "HTML内の配置順"
       }
     },
@@ -42845,10 +42896,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI229",
+        "groupId": "UI230",
         "name": "Mermaid／プレビューツールバー",
         "order": 2,
-        "number": "UI229-02",
+        "number": "UI230-02",
         "basis": "HTML内の配置順"
       }
     },
@@ -42896,10 +42947,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI229",
+        "groupId": "UI230",
         "name": "Mermaid／プレビューツールバー",
         "order": 3,
-        "number": "UI229-03",
+        "number": "UI230-03",
         "basis": "HTML内の配置順"
       }
     },
@@ -42947,10 +42998,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI229",
+        "groupId": "UI230",
         "name": "Mermaid／プレビューツールバー",
         "order": 4,
-        "number": "UI229-04",
+        "number": "UI230-04",
         "basis": "HTML内の配置順"
       }
     },
@@ -42998,10 +43049,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI226",
+        "groupId": "UI227",
         "name": "共通／index／static HTMLの操作領域",
         "order": 6,
-        "number": "UI226-06",
+        "number": "UI227-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43049,10 +43100,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI226",
+        "groupId": "UI227",
         "name": "共通／index／static HTMLの操作領域",
         "order": 7,
-        "number": "UI226-07",
+        "number": "UI227-07",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43100,10 +43151,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI230",
+        "groupId": "UI231",
         "name": "Mermaid／図のテンプレートメニュー",
         "order": 1,
-        "number": "UI230-01",
+        "number": "UI231-01",
         "basis": "HTML内の配置順"
       }
     },
@@ -43151,10 +43202,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI226",
+        "groupId": "UI227",
         "name": "共通／index／static HTMLの操作領域",
         "order": 8,
-        "number": "UI226-08",
+        "number": "UI227-08",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43202,10 +43253,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI231",
+        "groupId": "UI232",
         "name": "Mermaid／図の編集フォーム",
         "order": 1,
-        "number": "UI231-01",
+        "number": "UI232-01",
         "basis": "HTML内の配置順"
       }
     },
@@ -43253,10 +43304,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI231",
+        "groupId": "UI232",
         "name": "Mermaid／図の編集フォーム",
         "order": 2,
-        "number": "UI231-02",
+        "number": "UI232-02",
         "basis": "HTML内の配置順"
       }
     },
@@ -43304,10 +43355,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI231",
+        "groupId": "UI232",
         "name": "Mermaid／図の編集フォーム",
         "order": 3,
-        "number": "UI231-03",
+        "number": "UI232-03",
         "basis": "HTML内の配置順"
       }
     },
@@ -43355,10 +43406,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI232",
+        "groupId": "UI233",
         "name": "共通／sequence-actions／participantOptionsの操作領域",
         "order": 1,
-        "number": "UI232-01",
+        "number": "UI233-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43404,10 +43455,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI233",
+        "groupId": "UI234",
         "name": "共通／sequence-surface／DOM assemblyの操作領域",
         "order": 1,
-        "number": "UI233-01",
+        "number": "UI234-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43455,10 +43506,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI233",
+        "groupId": "UI234",
         "name": "共通／sequence-surface／DOM assemblyの操作領域",
         "order": 2,
-        "number": "UI233-02",
+        "number": "UI234-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43506,10 +43557,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI234",
+        "groupId": "UI235",
         "name": "共通／sequence-surface／refreshの操作領域",
         "order": 1,
-        "number": "UI234-01",
+        "number": "UI235-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43557,10 +43608,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI234",
+        "groupId": "UI235",
         "name": "共通／sequence-surface／refreshの操作領域",
         "order": 2,
-        "number": "UI234-02",
+        "number": "UI235-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43608,10 +43659,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI234",
+        "groupId": "UI235",
         "name": "共通／sequence-surface／refreshの操作領域",
         "order": 3,
-        "number": "UI234-03",
+        "number": "UI235-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43659,10 +43710,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI235",
+        "groupId": "UI236",
         "name": "共通／sequence-ui／anchorsの操作領域",
         "order": 1,
-        "number": "UI235-01",
+        "number": "UI236-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43710,10 +43761,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI235",
+        "groupId": "UI236",
         "name": "共通／sequence-ui／anchorsの操作領域",
         "order": 2,
-        "number": "UI235-02",
+        "number": "UI236-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43761,10 +43812,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI235",
+        "groupId": "UI236",
         "name": "共通／sequence-ui／anchorsの操作領域",
         "order": 3,
-        "number": "UI235-03",
+        "number": "UI236-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43812,10 +43863,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI236",
+        "groupId": "UI237",
         "name": "共通／sequence-ui／partiesの操作領域",
         "order": 1,
-        "number": "UI236-01",
+        "number": "UI237-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43863,10 +43914,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI236",
+        "groupId": "UI237",
         "name": "共通／sequence-ui／partiesの操作領域",
         "order": 2,
-        "number": "UI236-02",
+        "number": "UI237-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43914,10 +43965,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI237",
+        "groupId": "UI238",
         "name": "共通／sequence-ui／participantの操作領域",
         "order": 1,
-        "number": "UI237-01",
+        "number": "UI238-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43965,10 +44016,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI237",
+        "groupId": "UI238",
         "name": "共通／sequence-ui／participantの操作領域",
         "order": 2,
-        "number": "UI237-02",
+        "number": "UI238-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44016,10 +44067,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI237",
+        "groupId": "UI238",
         "name": "共通／sequence-ui／participantの操作領域",
         "order": 3,
-        "number": "UI237-03",
+        "number": "UI238-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44067,10 +44118,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI237",
+        "groupId": "UI238",
         "name": "共通／sequence-ui／participantの操作領域",
         "order": 4,
-        "number": "UI237-04",
+        "number": "UI238-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44118,10 +44169,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI237",
+        "groupId": "UI238",
         "name": "共通／sequence-ui／participantの操作領域",
         "order": 5,
-        "number": "UI237-05",
+        "number": "UI238-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44169,10 +44220,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI238",
+        "groupId": "UI239",
         "name": "共通／sequence-ui／messageの操作領域",
         "order": 1,
-        "number": "UI238-01",
+        "number": "UI239-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44220,10 +44271,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI239",
+        "groupId": "UI240",
         "name": "共通／sequence-ui／arrowsの操作領域",
         "order": 1,
-        "number": "UI239-01",
+        "number": "UI240-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44271,10 +44322,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI239",
+        "groupId": "UI240",
         "name": "共通／sequence-ui／arrowsの操作領域",
         "order": 2,
-        "number": "UI239-02",
+        "number": "UI240-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44322,10 +44373,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI239",
+        "groupId": "UI240",
         "name": "共通／sequence-ui／arrowsの操作領域",
         "order": 3,
-        "number": "UI239-03",
+        "number": "UI240-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44373,10 +44424,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI239",
+        "groupId": "UI240",
         "name": "共通／sequence-ui／arrowsの操作領域",
         "order": 4,
-        "number": "UI239-04",
+        "number": "UI240-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44424,10 +44475,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI239",
+        "groupId": "UI240",
         "name": "共通／sequence-ui／arrowsの操作領域",
         "order": 5,
-        "number": "UI239-05",
+        "number": "UI240-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44475,10 +44526,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI240",
+        "groupId": "UI241",
         "name": "共通／sequence-ui／noteの操作領域",
         "order": 1,
-        "number": "UI240-01",
+        "number": "UI241-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44526,10 +44577,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI240",
+        "groupId": "UI241",
         "name": "共通／sequence-ui／noteの操作領域",
         "order": 2,
-        "number": "UI240-02",
+        "number": "UI241-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44577,10 +44628,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI240",
+        "groupId": "UI241",
         "name": "共通／sequence-ui／noteの操作領域",
         "order": 3,
-        "number": "UI240-03",
+        "number": "UI241-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44628,10 +44679,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI240",
+        "groupId": "UI241",
         "name": "共通／sequence-ui／noteの操作領域",
         "order": 4,
-        "number": "UI240-04",
+        "number": "UI241-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44679,10 +44730,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI240",
+        "groupId": "UI241",
         "name": "共通／sequence-ui／noteの操作領域",
         "order": 5,
-        "number": "UI240-05",
+        "number": "UI241-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44730,10 +44781,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI241",
+        "groupId": "UI242",
         "name": "共通／sequence-ui／editの操作領域",
         "order": 1,
-        "number": "UI241-01",
+        "number": "UI242-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44781,10 +44832,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI241",
+        "groupId": "UI242",
         "name": "共通／sequence-ui／editの操作領域",
         "order": 2,
-        "number": "UI241-02",
+        "number": "UI242-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44832,10 +44883,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI241",
+        "groupId": "UI242",
         "name": "共通／sequence-ui／editの操作領域",
         "order": 3,
-        "number": "UI241-03",
+        "number": "UI242-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44883,10 +44934,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI241",
+        "groupId": "UI242",
         "name": "共通／sequence-ui／editの操作領域",
         "order": 4,
-        "number": "UI241-04",
+        "number": "UI242-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44934,10 +44985,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI241",
+        "groupId": "UI242",
         "name": "共通／sequence-ui／editの操作領域",
         "order": 5,
-        "number": "UI241-05",
+        "number": "UI242-05",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -44985,10 +45036,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI241",
+        "groupId": "UI242",
         "name": "共通／sequence-ui／editの操作領域",
         "order": 6,
-        "number": "UI241-06",
+        "number": "UI242-06",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45036,10 +45087,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI242",
+        "groupId": "UI243",
         "name": "共通／sequence-ui／groupの操作領域",
         "order": 1,
-        "number": "UI242-01",
+        "number": "UI243-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45087,10 +45138,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI242",
+        "groupId": "UI243",
         "name": "共通／sequence-ui／groupの操作領域",
         "order": 2,
-        "number": "UI242-02",
+        "number": "UI243-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45138,10 +45189,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI243",
+        "groupId": "UI244",
         "name": "共通／sequence-ui／boxesの操作領域",
         "order": 1,
-        "number": "UI243-01",
+        "number": "UI244-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45189,10 +45240,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI243",
+        "groupId": "UI244",
         "name": "共通／sequence-ui／boxesの操作領域",
         "order": 2,
-        "number": "UI243-02",
+        "number": "UI244-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45240,10 +45291,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI243",
+        "groupId": "UI244",
         "name": "共通／sequence-ui／boxesの操作領域",
         "order": 3,
-        "number": "UI243-03",
+        "number": "UI244-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45291,10 +45342,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI243",
+        "groupId": "UI244",
         "name": "共通／sequence-ui／boxesの操作領域",
         "order": 4,
-        "number": "UI243-04",
+        "number": "UI244-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45342,10 +45393,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI244",
+        "groupId": "UI245",
         "name": "共通／sequence-ui／rangeFieldsの操作領域",
         "order": 1,
-        "number": "UI244-01",
+        "number": "UI245-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45393,10 +45444,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI244",
+        "groupId": "UI245",
         "name": "共通／sequence-ui／rangeFieldsの操作領域",
         "order": 2,
-        "number": "UI244-02",
+        "number": "UI245-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45444,10 +45495,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI244",
+        "groupId": "UI245",
         "name": "共通／sequence-ui／rangeFieldsの操作領域",
         "order": 3,
-        "number": "UI244-03",
+        "number": "UI245-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45495,10 +45546,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI245",
+        "groupId": "UI246",
         "name": "共通／sequence-ui／fragmentの操作領域",
         "order": 1,
-        "number": "UI245-01",
+        "number": "UI246-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45546,10 +45597,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI245",
+        "groupId": "UI246",
         "name": "共通／sequence-ui／fragmentの操作領域",
         "order": 2,
-        "number": "UI245-02",
+        "number": "UI246-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45597,10 +45648,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI245",
+        "groupId": "UI246",
         "name": "共通／sequence-ui／fragmentの操作領域",
         "order": 3,
-        "number": "UI245-03",
+        "number": "UI246-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45648,10 +45699,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI245",
+        "groupId": "UI246",
         "name": "共通／sequence-ui／fragmentの操作領域",
         "order": 4,
-        "number": "UI245-04",
+        "number": "UI246-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45699,10 +45750,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI246",
+        "groupId": "UI247",
         "name": "共通／sequence-ui／boxAtの操作領域",
         "order": 1,
-        "number": "UI246-01",
+        "number": "UI247-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45750,10 +45801,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI246",
+        "groupId": "UI247",
         "name": "共通／sequence-ui／boxAtの操作領域",
         "order": 2,
-        "number": "UI246-02",
+        "number": "UI247-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45801,10 +45852,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI246",
+        "groupId": "UI247",
         "name": "共通／sequence-ui／boxAtの操作領域",
         "order": 3,
-        "number": "UI246-03",
+        "number": "UI247-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45852,10 +45903,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI246",
+        "groupId": "UI247",
         "name": "共通／sequence-ui／boxAtの操作領域",
         "order": 4,
-        "number": "UI246-04",
+        "number": "UI247-04",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45903,10 +45954,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI247",
+        "groupId": "UI248",
         "name": "共通／sequence-ui／activationの操作領域",
         "order": 1,
-        "number": "UI247-01",
+        "number": "UI248-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -45954,10 +46005,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI248",
+        "groupId": "UI249",
         "name": "共通／sequence-ui／lifelineの操作領域",
         "order": 1,
-        "number": "UI248-01",
+        "number": "UI249-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -46005,10 +46056,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI249",
+        "groupId": "UI250",
         "name": "共通／sequence-ui／editActivationの操作領域",
         "order": 1,
-        "number": "UI249-01",
+        "number": "UI250-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -46056,10 +46107,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI249",
+        "groupId": "UI250",
         "name": "共通／sequence-ui／editActivationの操作領域",
         "order": 2,
-        "number": "UI249-02",
+        "number": "UI250-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -46107,10 +46158,10 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI249",
+        "groupId": "UI250",
         "name": "共通／sequence-ui／editActivationの操作領域",
         "order": 3,
-        "number": "UI249-03",
+        "number": "UI250-03",
         "basis": "定義順（実表示順は要確認）"
       }
     }
@@ -47699,7 +47750,7 @@
       "id": "f441e4f388aa0f34",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.code-actions",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 507,
+      "line": 510,
       "values": [
         "gap:0.35rem"
       ],
@@ -47709,7 +47760,7 @@
       "id": "abd59850f837d57a",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.code-copy, .code-run, .code-storage, .code-wrap, .diagram-action-button, .block-copy-menu",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 508,
+      "line": 511,
       "values": [
         "min-height:30px",
         "padding:4px 9px",
@@ -47724,7 +47775,7 @@
       "id": "e0964dc096769633",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.code-run-confirmation__directory input",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 535,
+      "line": 538,
       "values": [
         "padding:0.45rem 0.55rem",
         "color:var(--text-primary)",
@@ -47739,7 +47790,7 @@
       "id": "27fbbceaad6d03b0",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.code-run-confirmation footer button",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 541,
+      "line": 544,
       "values": [
         "padding:0.45rem 0.8rem",
         "color:var(--text-primary)",
@@ -47753,7 +47804,7 @@
       "id": "2a883a96bf70d6c0",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.diagram-block__header > .mermaid-toolbar",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 556,
+      "line": 559,
       "values": [
         "padding:0"
       ],
@@ -47763,7 +47814,7 @@
       "id": "f77d45b0d2851cd9",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.diagram-edit-button",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 557,
+      "line": 560,
       "values": [
         "height:30px",
         "min-height:30px",
@@ -47777,7 +47828,7 @@
       "id": "35bfdf214ca679ba",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.plantuml-container > .mermaid-toolbar strong",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 561,
+      "line": 564,
       "values": [
         "color:var(--text-secondary)",
         "font-size:12px"
@@ -47788,7 +47839,7 @@
       "id": "9557cb9f024975b3",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.mermaid-toolbar",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 580,
+      "line": 583,
       "values": [
         "gap:6px",
         "padding:6px 0"
@@ -47799,7 +47850,7 @@
       "id": "15349772cb20afca",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.mermaid-toolbar button[aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 581,
+      "line": 584,
       "values": [
         "color:var(--accent-contrast, #fff)",
         "background:var(--accent-color)"
@@ -47810,7 +47861,7 @@
       "id": "9b8a0de5efcfeb0c",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.mermaid-toolbar__view",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 583,
+      "line": 586,
       "values": [
         "gap:6px"
       ],
@@ -47820,7 +47871,7 @@
       "id": "720711467f33b093",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.mermaid-toolbar__copy",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 584,
+      "line": 587,
       "values": [
         "gap:6px"
       ],
@@ -47830,7 +47881,7 @@
       "id": "3c2f42378700ed43",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.media-preview__toolbar",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 596,
+      "line": 599,
       "values": [
         "gap:0.55rem"
       ],
@@ -47840,7 +47891,7 @@
       "id": "5427a43a26c32327",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.media-preview__toolbar .mermaid-toolbar",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 603,
+      "line": 606,
       "values": [
         "padding:0"
       ],
@@ -47850,7 +47901,7 @@
       "id": "151af10d25629a0e",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.image-metadata-editor input",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 621,
+      "line": 624,
       "values": [
         "padding:0.4rem 0.55rem",
         "color:#f8fafc",
@@ -47864,7 +47915,7 @@
       "id": "e34d7be9a5c356bd",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.image-metadata-editor button",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 622,
+      "line": 625,
       "values": [
         "min-height:2.1rem"
       ],
@@ -47874,7 +47925,7 @@
       "id": "fca78e2ae6e26f90",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.media-preview__toolbar button",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 624,
+      "line": 627,
       "values": [
         "min-height:2.5rem",
         "padding:0.45rem 0.9rem",
@@ -47889,7 +47940,7 @@
       "id": "ebeb4d947fe1afa7",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.media-preview__toolbar button:hover",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 633,
+      "line": 636,
       "values": [
         "background:rgba(51, 65, 85, 0.98)"
       ],
@@ -47899,7 +47950,7 @@
       "id": "8a5e476fb2841f6d",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.btn-restore",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 813,
+      "line": 816,
       "values": [
         "background-color:var(--accent-color)",
         "color:white",
@@ -47912,7 +47963,7 @@
       "id": "148d976440bf587d",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.btn-restore:hover",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 820,
+      "line": 823,
       "values": [
         "background-color:var(--accent-hover)"
       ],
@@ -47922,7 +47973,7 @@
       "id": "2b4426370323eadb",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.btn-toast-action",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 824,
+      "line": 827,
       "values": [
         "padding:4px 10px",
         "font-size:12px"
@@ -47933,7 +47984,7 @@
       "id": "00a4f27ee1f09ce4",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.btn-close",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 829,
+      "line": 832,
       "values": [
         "background:none",
         "border:none",
@@ -47946,7 +47997,7 @@
       "id": "22851a8ff751a769",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.btn-close:hover",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 837,
+      "line": 840,
       "values": [
         "color:var(--text-primary)"
       ],
@@ -47956,7 +48007,7 @@
       "id": "7090063074db2ce0",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.diagram-block__header .responsive-toolbar__label,\r\n.code-block__header .code-block__heading,\r\n.data-grid-toolbar .responsive-toolbar__label",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 909,
+      "line": 912,
       "values": [
         "font-size:12px"
       ],
@@ -47966,7 +48017,7 @@
       "id": "e98d782977e1355c",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.responsive-toolbar select",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 912,
+      "line": 915,
       "values": [
         "min-height:30px",
         "padding:3px 6px",
@@ -47982,7 +48033,7 @@
       "id": "cdc8b904ca049137",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.editor-mode-controls > .document-action-button[aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 914,
+      "line": 917,
       "values": [
         "color:#fff",
         "background:var(--accent-color)"
@@ -47993,7 +48044,7 @@
       "id": "5f16b9473e170cf1",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.view-controls .document-actions button,\r\n.view-controls .document-action-button,\r\n.view-controls .editor-mode-segments button,\r\n.view-controls .external-actions button,\r\n.view-controls .codex-toolbar-action,\r\n.view-controls select,\r\n.responsive-toolbar .diagram-action-button,\r\n.responsive-toolbar .block-copy-menu,\r\n.responsive-toolbar .code-copy,\r\n.responsive-toolbar .code-run,\r\n.responsive-toolbar .code-storage,\r\n.responsive-toolbar .code-wrap,\r\n.responsive-toolbar select",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 917,
+      "line": 920,
       "values": [
         "min-height:var(--toolbar-control-height)",
         "font-family:inherit",
@@ -48006,7 +48057,7 @@
       "id": "27276b20ae93499e",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.preview-panel-toolbar",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 936,
+      "line": 939,
       "values": [
         "gap:8px",
         "padding:6px 12px",
@@ -48020,7 +48071,7 @@
       "id": "0de2bb7d12eee17a",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.preview-panel-toolbar label",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 937,
+      "line": 940,
       "values": [
         "gap:5px"
       ],
@@ -48030,7 +48081,7 @@
       "id": "43dca56c227f47f1",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.preview-panel-toolbar select",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 938,
+      "line": 941,
       "values": [
         "min-height:26px",
         "padding:2px 5px",
@@ -48045,7 +48096,7 @@
       "id": "a01b103035e0daa4",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.document-action-button[aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 945,
+      "line": 948,
       "values": [
         "background:var(--accent-color)",
         "color:#fff"

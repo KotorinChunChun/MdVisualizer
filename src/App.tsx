@@ -1851,6 +1851,15 @@ export function App() {
         return;
       }
 
+      if (event.key === "F2") {
+        const focusedElement = document.activeElement instanceof Element ? document.activeElement : null;
+        if (activeTab && editorRef.current?.contains(focusedElement)) {
+          event.preventDefault();
+          void renameTab(activeTab.id).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
+        }
+        return;
+      }
+
       if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "s") {
         event.preventDefault();
         if (activeTab) void saveTab(activeTab.id);
@@ -1911,7 +1920,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, editorMode, goBack, goForward, openSearch, printDocument, reload, saveTab, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
+  }, [activeTab, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, editorMode, goBack, goForward, openSearch, printDocument, reload, renameTab, saveTab, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
 
   useEffect(() => {
     const onMouseUp = (event: MouseEvent) => {
