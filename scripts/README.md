@@ -38,7 +38,7 @@ SPFx系統（共通リリースエンジンとは別系統）
 
 betaの工程別入口はすべてbetaに固定している。stableを正式公開するときだけ、`full-release-stable-MdVisualizer.ps1`を使用する。stable入口は、設定がbetaのままではビルドを開始せず、`packaging/release-config.json`をstable用Versionへ更新するよう停止する。
 
-バージョン更新は`update-version-MdVisualizer.ps1`を使用する。現在のbeta版を表示した後、4桁版を入力すると、公開表示版、内部版、MSIX版、SPFx版、lockファイル、配布ページを各用途の表記へ変換して更新する。更新前の整合性検査と、更新後の旧版表記検索も自動で行う。履歴版は4桁目を除いた`vX.Y.Z`として扱う。
+バージョン更新は`update-version-MdVisualizer.ps1`を使用する。現在のbeta版を表示した後、4桁版を入力すると、公開表示版、内部版、MSIX版、SPFx版、lockファイル、配布ページを各用途の表記へ変換して更新する。更新前の整合性検査と、更新後の旧版表記検索も自動で行う。履歴版は4桁目を除いた`vX.Y.Z`として扱う。Node.js生成器の詳細出力は画面へ表示せず、`dev/history/vX.Y.Z/logs/version-update/`のログへ保存する。`-WhatIf`では一時フォルダーへ保存する。
 
 ## 起動用スクリプト
 

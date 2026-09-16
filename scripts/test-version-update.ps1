@@ -71,6 +71,8 @@ try {
         $fixtureConfig.application.msixVersion -ne '0.0.18.2') {
         throw "fixtureの変換結果が不正です。`n$fixtureOutput"
     }
+    $fixtureLogs = @(Get-ChildItem -LiteralPath (Join-Path $fixtureRoot 'dev/history/v0.0.18/logs/version-update') -Filter '*.log' -File)
+    if ($fixtureLogs.Count -ne 1) { throw "fixtureのNode.js実行ログが1件ではありません: $($fixtureLogs.Count)" }
     $oldVersionResidues = Get-ChildItem -LiteralPath $fixtureRoot -File -Recurse |
         Select-String -SimpleMatch -Pattern @('0.0.18.1 beta', '0.0.18+beta.1', '0.0.18.1')
     if ($oldVersionResidues) {

@@ -265,7 +265,8 @@ function Find-OldVersionResidues {
 function Invoke-NodeScript {
     param(
         [Parameter(Mandatory)][string]$ScriptPath,
-        [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$Arguments
+        [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$Arguments,
+        [Parameter(Mandatory)][string]$LogPath
     )
     Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
     $runtime = Get-MdVisualizerNodeRuntime -ProjectRoot $projectRootFullPath
@@ -273,11 +274,13 @@ function Invoke-NodeScript {
     $previousConsoleOutputEncoding = [Console]::OutputEncoding
     $previousPowerShellOutputEncoding = $OutputEncoding
     try {
+        New-Item -ItemType Directory -Path (Split-Path -Parent $LogPath) -Force -WhatIf:$false | Out-Null
+        [IO.File]::AppendAllText($LogPath, "`n--- $([DateTime]::Now.ToString('s')) $([IO.Path]::GetFileName($ScriptPath)) $($Arguments -join ' ') ---`n", $utf8)
         [Console]::OutputEncoding = $utf8
         $OutputEncoding = $utf8
-        & $runtime.NodeExecutable $ScriptPath @Arguments | ForEach-Object { Write-Host $_ }
+        & $runtime.NodeExecutable $ScriptPath @Arguments *>&1 | Out-File -LiteralPath $LogPath -Append -Encoding utf8 -WhatIf:$false
         if ($LASTEXITCODE -ne 0) {
-            throw "Nodeスクリプトが終了コード $LASTEXITCODE で失敗しました: $ScriptPath"
+            throw "Nodeスクリプトが終了コード $LASTEXITCODE で失敗しました。ログ: $LogPath"
         }
     }
     finally {
@@ -296,7 +299,8 @@ function Restore-FileBackups {
 function Update-VersionFiles {
     param(
         [Parameter(Mandatory)]$Snapshot,
-        [Parameter(Mandatory)]$Plan
+        [Parameter(Mandatory)]$Plan,
+        [Parameter(Mandatory)][string]$LogPath
     )
 
     $filesToSnapshot = @(
@@ -349,7 +353,7 @@ function Update-VersionFiles {
         $targets.targets.spfx.version = $Plan.PackageVersion
         $targets.targets.spfx.solutionVersion = $Plan.MsixVersion
         Write-TextFile -Path $webTargetsPath -Content (ConvertTo-JsonText -Value $targets)
-        Invoke-NodeScript -ScriptPath (Join-Path $webRoot 'scripts\generate-targets.mjs') -Arguments @()
+        Invoke-NodeScript -ScriptPath (Join-Path $webRoot 'scripts\generate-targets.mjs') -Arguments @() -LogPath $LogPath
 
         foreach ($file in $siteFiles) {
             $site = Get-Content -LiteralPath $file -Raw
@@ -372,7 +376,16 @@ function Update-VersionFiles {
 Write-Host 'MdVisualizer beta版更新'
 $snapshot = Get-VersionSnapshot
 Assert-VersionSnapshot -Snapshot $snapshot
-Invoke-NodeScript -ScriptPath (Join-Path $webRoot 'scripts\generate-targets.mjs') -Arguments @('--check')
+$currentHistoryVersion = "v$(($snapshot.PackageVersion -split '[+-]', 2)[0])"
+$logRoot = if ($WhatIfPreference) {
+    Join-Path ([IO.Path]::GetTempPath()) 'MdVisualizer-version-update-logs'
+}
+else {
+    Join-Path $projectRootFullPath "dev\history\$currentHistoryVersion\logs\version-update"
+}
+$logPath = Join-Path $logRoot "version-update-$((Get-Date).ToString('yyyyMMdd-HHmmss'))-$PID.log"
+Write-Host "Node.js実行ログ: $logPath"
+Invoke-NodeScript -ScriptPath (Join-Path $webRoot 'scripts\generate-targets.mjs') -Arguments @('--check') -LogPath $logPath
 Write-Host "現在の公開表示版: $($snapshot.PublicVersion)"
 Write-Host "現在のアプリケーション版: $($snapshot.PackageVersion)"
 Write-Host "現在のMSIX版: $($snapshot.MsixVersion)"
@@ -417,7 +430,7 @@ if (-not $PSCmdlet.ShouldProcess($projectRootFullPath, "MdVisualizerを$($plan.M
 }
 
 $oldVersions = @($snapshot.PublicVersion, $snapshot.PackageVersion, $snapshot.MsixVersion)
- $backups = Update-VersionFiles -Snapshot $snapshot -Plan $plan
+$backups = Update-VersionFiles -Snapshot $snapshot -Plan $plan -LogPath $logPath
 try {
     $updatedSnapshot = Get-VersionSnapshot
     Assert-VersionSnapshot -Snapshot $updatedSnapshot
@@ -433,7 +446,7 @@ try {
         throw "旧版表記の残骸を検出しました。更新結果を確認してください。`n$details"
     }
 
-    Invoke-NodeScript -ScriptPath (Join-Path $webRoot 'scripts\generate-targets.mjs') -Arguments @('--check')
+    Invoke-NodeScript -ScriptPath (Join-Path $webRoot 'scripts\generate-targets.mjs') -Arguments @('--check') -LogPath $logPath
 }
 catch {
     Restore-FileBackups -Backups $backups
