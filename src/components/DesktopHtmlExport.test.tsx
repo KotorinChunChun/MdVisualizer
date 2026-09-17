@@ -2,10 +2,10 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ save: vi.fn(), invoke: vi.fn(), readDocumentAsset: vi.fn(), exportHtmlInBrowser: vi.fn() }));
+const mocks = vi.hoisted(() => ({ save: vi.fn(), invoke: vi.fn(), readDocumentAsset: vi.fn(), openContainingFolder: vi.fn(), openExternalEditor: vi.fn(), exportHtmlInBrowser: vi.fn() }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ save: mocks.save }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke }));
-vi.mock('../lib/commands', () => ({ readDocumentAsset: mocks.readDocumentAsset }));
+vi.mock('../lib/commands', () => ({ readDocumentAsset: mocks.readDocumentAsset, openContainingFolder: mocks.openContainingFolder, openExternalEditor: mocks.openExternalEditor }));
 vi.mock('../lib/htmlExport', () => ({ exportHtmlInBrowser: mocks.exportHtmlInBrowser }));
 import { DesktopHtmlExport, type DesktopExportSnapshot } from './DesktopHtmlExport';
 
@@ -39,6 +39,24 @@ describe('DesktopHtmlExport', () => {
     fireEvent.click(screen.getByRole('button', { name: 'HTMLを出力' }));
     await waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith('save_html_export', expect.objectContaining({ path: 'C:/out/note.html', documentPath: 'spmd://tenant/drive/folder/note.md', html: '<!doctype html><title>snapshot</title>' })));
     expect(getSnapshot).toHaveBeenCalledOnce();
+  });
+
+  it('adds folder and file actions to the completion notification', async () => {
+    const events: CustomEvent[] = [];
+    const listener = (event: Event) => events.push(event as CustomEvent);
+    window.addEventListener('markdown-toast', listener);
+    mocks.save.mockResolvedValue('C:/out/note.html');
+    mocks.exportHtmlInBrowser.mockResolvedValue({ html: '<!doctype html><p>ok</p>', mode: 'static', bytes: 1, items: 1, diagrams: 0, tables: 0, rasterized: 0 });
+    render(<DesktopHtmlExport disabled={false} getSnapshot={snapshot} />);
+    fireEvent.click(screen.getByRole('button', { name: 'HTML出力' })); fireEvent.click(screen.getByRole('button', { name: 'HTMLを出力' }));
+    await waitFor(() => expect(events.some(event => event.detail?.message === 'HTMLを出力しました')).toBe(true));
+    const completion = events.find(event => event.detail?.message === 'HTMLを出力しました')!;
+    expect(completion.detail.actions.map((action: { label: string }) => action.label)).toEqual(['フォルダを開く', 'ファイルを開く']);
+    await completion.detail.actions[0].onAction();
+    await completion.detail.actions[1].onAction();
+    expect(mocks.openContainingFolder).toHaveBeenCalledWith('C:/out/note.html');
+    expect(mocks.openExternalEditor).toHaveBeenCalledWith('C:/out/note.html');
+    window.removeEventListener('markdown-toast', listener);
   });
 
   it('does not render or save when the native dialog is cancelled, and does not save after an export error', async () => {

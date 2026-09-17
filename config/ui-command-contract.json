@@ -2811,14 +2811,14 @@
       "orderScope": {
         "component": "DesktopHtmlExport",
         "sourceFile": "src/components/DesktopHtmlExport.tsx",
-        "sourceLine": 83,
+        "sourceLine": 86,
         "sourceColumn": 5,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/DesktopHtmlExport.tsx",
-        "line": 83,
+        "line": 86,
         "column": 5
       },
       "interactions": [
@@ -16601,14 +16601,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 232,
+        "sourceLine": 217,
         "sourceColumn": 5,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 232,
+        "line": 217,
         "column": 5
       },
       "interactions": [
@@ -16652,14 +16652,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 233,
+        "sourceLine": 218,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 233,
+        "line": 218,
         "column": 5
       },
       "interactions": [
@@ -16703,14 +16703,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 234,
+        "sourceLine": 219,
         "sourceColumn": 5,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 234,
+        "line": 219,
         "column": 5
       },
       "interactions": [
@@ -16754,14 +16754,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 235,
+        "sourceLine": 220,
         "sourceColumn": 5,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 235,
+        "line": 220,
         "column": 5
       },
       "interactions": [
@@ -16805,14 +16805,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 240,
+        "sourceLine": 225,
         "sourceColumn": 116,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 240,
+        "line": 225,
         "column": 116
       },
       "interactions": [
@@ -16856,14 +16856,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 241,
+        "sourceLine": 226,
         "sourceColumn": 69,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 241,
+        "line": 226,
         "column": 69
       },
       "interactions": [
@@ -16907,14 +16907,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 244,
+        "sourceLine": 229,
         "sourceColumn": 44,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 244,
+        "line": 229,
         "column": 44
       },
       "interactions": [
@@ -16958,14 +16958,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 244,
+        "sourceLine": 229,
         "sourceColumn": 205,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 244,
+        "line": 229,
         "column": 205
       },
       "interactions": [
@@ -17009,14 +17009,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 244,
+        "sourceLine": 229,
         "sourceColumn": 326,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 244,
+        "line": 229,
         "column": 326
       },
       "interactions": [
@@ -17060,14 +17060,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 244,
+        "sourceLine": 229,
         "sourceColumn": 423,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 244,
+        "line": 229,
         "column": 423
       },
       "interactions": [],
@@ -17109,14 +17109,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 244,
+        "sourceLine": 229,
         "sourceColumn": 461,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 244,
+        "line": 229,
         "column": 461
       },
       "interactions": [],
@@ -17158,14 +17158,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 245,
+        "sourceLine": 230,
         "sourceColumn": 60,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 245,
+        "line": 230,
         "column": 60
       },
       "interactions": [
@@ -17209,14 +17209,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 246,
+        "sourceLine": 231,
         "sourceColumn": 59,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 246,
+        "line": 231,
         "column": 59
       },
       "interactions": [
@@ -17260,14 +17260,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 247,
+        "sourceLine": 232,
         "sourceColumn": 59,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 247,
+        "line": 232,
         "column": 59
       },
       "interactions": [
@@ -17311,14 +17311,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 248,
+        "sourceLine": 233,
         "sourceColumn": 58,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 248,
+        "line": 233,
         "column": 58
       },
       "interactions": [
@@ -17362,14 +17362,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 249,
+        "sourceLine": 234,
         "sourceColumn": 97,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 249,
+        "line": 234,
         "column": 97
       },
       "interactions": [
@@ -17413,14 +17413,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 254,
+        "sourceLine": 239,
         "sourceColumn": 134,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 254,
+        "line": 239,
         "column": 134
       },
       "interactions": [
@@ -17464,14 +17464,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 259,
+        "sourceLine": 244,
         "sourceColumn": 53,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 259,
+        "line": 244,
         "column": 53
       },
       "interactions": [
@@ -17509,21 +17509,72 @@
       "controlKind": "input",
       "tag": "input",
       "role": null,
+      "displayName": "{{header}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{header}}",
+      "orderScope": {
+        "component": "DelimitedTableBlock",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
+        "sourceLine": 244,
+        "sourceColumn": 201,
+        "ordinal": 19
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
+        "line": 244,
+        "column": 201
+      },
+      "interactions": [
+        "onChange"
+      ],
+      "signature": "sha256:c722bcb6b5a1d914a0e7d503bf6120eb85a4d5505e2137606fcd311cf49ac7f7",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI093",
+        "name": "共通／DelimitedTableBlock／DelimitedTableBlockの操作領域",
+        "order": 17,
+        "number": "UI093-17",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
+      "id": "ui-7d75d8808f8f",
+      "featureGroup": "components",
+      "controlKind": "input",
+      "tag": "input",
+      "role": null,
       "displayName": null,
       "labelKind": "missing",
       "labelExpression": null,
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 259,
-        "sourceColumn": 353,
-        "ordinal": 19
+        "sourceLine": 244,
+        "sourceColumn": 471,
+        "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 259,
-        "column": 353
+        "line": 244,
+        "column": 471
       },
       "interactions": [
         "onChange"
@@ -17549,13 +17600,13 @@
       "location": {
         "groupId": "UI093",
         "name": "共通／DelimitedTableBlock／DelimitedTableBlockの操作領域",
-        "order": 17,
-        "number": "UI093-17",
+        "order": 18,
+        "number": "UI093-18",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-ae24295bb799",
+      "id": "ui-7c7ac7dd69af",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -17566,14 +17617,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 273,
+        "sourceLine": 258,
         "sourceColumn": 10,
-        "ordinal": 20
+        "ordinal": 21
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 273,
+        "line": 258,
         "column": 10
       },
       "interactions": [
@@ -17600,13 +17651,13 @@
       "location": {
         "groupId": "UI093",
         "name": "共通／DelimitedTableBlock／DelimitedTableBlockの操作領域",
-        "order": 18,
-        "number": "UI093-18",
+        "order": 19,
+        "number": "UI093-19",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-11571a9a5e68",
+      "id": "ui-57f3437994a4",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "select",
@@ -17617,14 +17668,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 280,
+        "sourceLine": 265,
         "sourceColumn": 132,
-        "ordinal": 21
+        "ordinal": 22
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 280,
+        "line": 265,
         "column": 132
       },
       "interactions": [
@@ -17651,13 +17702,13 @@
       "location": {
         "groupId": "UI093",
         "name": "共通／DelimitedTableBlock／DelimitedTableBlockの操作領域",
-        "order": 19,
-        "number": "UI093-19",
+        "order": 20,
+        "number": "UI093-20",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-cd11e3fb52b2",
+      "id": "ui-3d885d313503",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -17668,14 +17719,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 280,
+        "sourceLine": 265,
         "sourceColumn": 219,
-        "ordinal": 22
+        "ordinal": 23
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 280,
+        "line": 265,
         "column": 219
       },
       "interactions": [],
@@ -17706,7 +17757,7 @@
       }
     },
     {
-      "id": "ui-3d885d313503",
+      "id": "ui-543a0df9f606",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -17717,14 +17768,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 280,
+        "sourceLine": 265,
         "sourceColumn": 249,
-        "ordinal": 23
+        "ordinal": 24
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 280,
+        "line": 265,
         "column": 249
       },
       "interactions": [],
@@ -17755,7 +17806,7 @@
       }
     },
     {
-      "id": "ui-543a0df9f606",
+      "id": "ui-d9b616dff9f4",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -17766,14 +17817,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 280,
+        "sourceLine": 265,
         "sourceColumn": 279,
-        "ordinal": 24
+        "ordinal": 25
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 280,
+        "line": 265,
         "column": 279
       },
       "interactions": [],
@@ -17804,7 +17855,7 @@
       }
     },
     {
-      "id": "ui-d9b616dff9f4",
+      "id": "ui-8e7973d25462",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -17815,14 +17866,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 280,
+        "sourceLine": 265,
         "sourceColumn": 309,
-        "ordinal": 25
+        "ordinal": 26
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 280,
+        "line": 265,
         "column": 309
       },
       "interactions": [],
@@ -17853,7 +17904,7 @@
       }
     },
     {
-      "id": "ui-1db2fd448641",
+      "id": "ui-38f1e68f5268",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -17864,14 +17915,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 280,
+        "sourceLine": 265,
         "sourceColumn": 421,
-        "ordinal": 26
+        "ordinal": 27
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 280,
+        "line": 265,
         "column": 421
       },
       "interactions": [
@@ -17898,13 +17949,13 @@
       "location": {
         "groupId": "UI093",
         "name": "共通／DelimitedTableBlock／DelimitedTableBlockの操作領域",
-        "order": 20,
-        "number": "UI093-20",
+        "order": 21,
+        "number": "UI093-21",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-38f1e68f5268",
+      "id": "ui-65fc8a5d2af6",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -17915,14 +17966,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 280,
+        "sourceLine": 265,
         "sourceColumn": 585,
-        "ordinal": 27
+        "ordinal": 28
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 280,
+        "line": 265,
         "column": 585
       },
       "interactions": [
@@ -17949,13 +18000,13 @@
       "location": {
         "groupId": "UI093",
         "name": "共通／DelimitedTableBlock／DelimitedTableBlockの操作領域",
-        "order": 21,
-        "number": "UI093-21",
+        "order": 22,
+        "number": "UI093-22",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-9a787fd3d51e",
+      "id": "ui-ad9adc6343f0",
       "featureGroup": "components",
       "controlKind": "menu",
       "tag": "div",
@@ -17966,14 +18017,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 281,
+        "sourceLine": 266,
         "sourceColumn": 21,
-        "ordinal": 28
+        "ordinal": 29
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 281,
+        "line": 266,
         "column": 21
       },
       "interactions": [
@@ -18000,13 +18051,13 @@
       "location": {
         "groupId": "UI093",
         "name": "共通／DelimitedTableBlock／DelimitedTableBlockの操作領域",
-        "order": 22,
-        "number": "UI093-22",
+        "order": 23,
+        "number": "UI093-23",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-962a9549737c",
+      "id": "ui-dcde48630443",
       "featureGroup": "components",
       "controlKind": "menu",
       "tag": "button",
@@ -18017,14 +18068,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 283,
+        "sourceLine": 268,
         "sourceColumn": 9,
-        "ordinal": 29
+        "ordinal": 30
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 283,
+        "line": 268,
         "column": 9
       },
       "interactions": [
@@ -18057,7 +18108,7 @@
       }
     },
     {
-      "id": "ui-dcde48630443",
+      "id": "ui-35e7e8f6d0f3",
       "featureGroup": "components",
       "controlKind": "menu",
       "tag": "button",
@@ -18068,14 +18119,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 287,
+        "sourceLine": 272,
         "sourceColumn": 9,
-        "ordinal": 30
+        "ordinal": 31
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 287,
+        "line": 272,
         "column": 9
       },
       "interactions": [
@@ -18108,7 +18159,7 @@
       }
     },
     {
-      "id": "ui-35e7e8f6d0f3",
+      "id": "ui-c8959b6ebf4f",
       "featureGroup": "components",
       "controlKind": "menu",
       "tag": "button",
@@ -18119,14 +18170,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 288,
+        "sourceLine": 273,
         "sourceColumn": 9,
-        "ordinal": 31
+        "ordinal": 32
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 288,
+        "line": 273,
         "column": 9
       },
       "interactions": [
@@ -18159,7 +18210,7 @@
       }
     },
     {
-      "id": "ui-c8959b6ebf4f",
+      "id": "ui-c0bceba253b6",
       "featureGroup": "components",
       "controlKind": "menu",
       "tag": "button",
@@ -18170,14 +18221,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 299,
+        "sourceLine": 284,
         "sourceColumn": 9,
-        "ordinal": 32
+        "ordinal": 33
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 299,
+        "line": 284,
         "column": 9
       },
       "interactions": [
@@ -18210,7 +18261,7 @@
       }
     },
     {
-      "id": "ui-c0bceba253b6",
+      "id": "ui-021b5fa5fe61",
       "featureGroup": "components",
       "controlKind": "menu",
       "tag": "button",
@@ -18221,14 +18272,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 300,
+        "sourceLine": 285,
         "sourceColumn": 9,
-        "ordinal": 33
+        "ordinal": 34
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 300,
+        "line": 285,
         "column": 9
       },
       "interactions": [
@@ -18261,7 +18312,7 @@
       }
     },
     {
-      "id": "ui-021b5fa5fe61",
+      "id": "ui-622f6dac7963",
       "featureGroup": "components",
       "controlKind": "menu",
       "tag": "button",
@@ -18272,14 +18323,14 @@
       "orderScope": {
         "component": "DelimitedTableBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "sourceLine": 310,
+        "sourceLine": 295,
         "sourceColumn": 9,
-        "ordinal": 34
+        "ordinal": 35
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
-        "line": 310,
+        "line": 295,
         "column": 9
       },
       "interactions": [
@@ -24980,14 +25031,14 @@
       "orderScope": {
         "component": "MarkdownInput",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 352,
+        "sourceLine": 353,
         "sourceColumn": 21,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 352,
+        "line": 353,
         "column": 21
       },
       "interactions": [],
@@ -25029,14 +25080,14 @@
       "orderScope": {
         "component": "MarkdownInput",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 353,
+        "sourceLine": 354,
         "sourceColumn": 10,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 353,
+        "line": 354,
         "column": 10
       },
       "interactions": [
@@ -25081,14 +25132,14 @@
       "orderScope": {
         "component": "InlineCodeCopyButton",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 391,
+        "sourceLine": 392,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 391,
+        "line": 392,
         "column": 10
       },
       "interactions": [
@@ -25132,14 +25183,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 696,
+        "sourceLine": 699,
         "sourceColumn": 18,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 696,
+        "line": 699,
         "column": 18
       },
       "interactions": [
@@ -25183,14 +25234,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 728,
+        "sourceLine": 725,
         "sourceColumn": 27,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 728,
+        "line": 725,
         "column": 27
       },
       "interactions": [
@@ -25234,14 +25285,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 728,
+        "sourceLine": 725,
         "sourceColumn": 101,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 728,
+        "line": 725,
         "column": 101
       },
       "interactions": [
@@ -25285,14 +25336,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 728,
+        "sourceLine": 725,
         "sourceColumn": 175,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 728,
+        "line": 725,
         "column": 175
       },
       "interactions": [
@@ -25336,14 +25387,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 728,
+        "sourceLine": 725,
         "sourceColumn": 259,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 728,
+        "line": 725,
         "column": 259
       },
       "interactions": [
@@ -25387,14 +25438,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 763,
+        "sourceLine": 760,
         "sourceColumn": 135,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 763,
+        "line": 760,
         "column": 135
       },
       "interactions": [
@@ -25438,14 +25489,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 764,
+        "sourceLine": 761,
         "sourceColumn": 95,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 764,
+        "line": 761,
         "column": 95
       },
       "interactions": [
@@ -25489,14 +25540,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 767,
+        "sourceLine": 764,
         "sourceColumn": 58,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 767,
+        "line": 764,
         "column": 58
       },
       "interactions": [
@@ -25540,14 +25591,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 767,
+        "sourceLine": 764,
         "sourceColumn": 219,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 767,
+        "line": 764,
         "column": 219
       },
       "interactions": [
@@ -25591,14 +25642,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 767,
+        "sourceLine": 764,
         "sourceColumn": 340,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 767,
+        "line": 764,
         "column": 340
       },
       "interactions": [
@@ -25642,14 +25693,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 767,
+        "sourceLine": 764,
         "sourceColumn": 459,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 767,
+        "line": 764,
         "column": 459
       },
       "interactions": [],
@@ -25691,14 +25742,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 767,
+        "sourceLine": 764,
         "sourceColumn": 497,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 767,
+        "line": 764,
         "column": 497
       },
       "interactions": [],
@@ -25740,14 +25791,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 768,
+        "sourceLine": 765,
         "sourceColumn": 60,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 768,
+        "line": 765,
         "column": 60
       },
       "interactions": [
@@ -25791,14 +25842,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 769,
+        "sourceLine": 766,
         "sourceColumn": 59,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 769,
+        "line": 766,
         "column": 59
       },
       "interactions": [
@@ -25842,14 +25893,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 770,
+        "sourceLine": 767,
         "sourceColumn": 58,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 770,
+        "line": 767,
         "column": 58
       },
       "interactions": [
@@ -25893,14 +25944,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 772,
+        "sourceLine": 769,
         "sourceColumn": 145,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 772,
+        "line": 769,
         "column": 145
       },
       "interactions": [
@@ -25944,14 +25995,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 777,
+        "sourceLine": 774,
         "sourceColumn": 53,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 777,
+        "line": 774,
         "column": 53
       },
       "interactions": [
@@ -25989,21 +26040,72 @@
       "controlKind": "input",
       "tag": "input",
       "role": null,
+      "displayName": "{{header}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{header}}",
+      "orderScope": {
+        "component": "MarkdownTable",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
+        "sourceLine": 774,
+        "sourceColumn": 191,
+        "ordinal": 18
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
+        "line": 774,
+        "column": 191
+      },
+      "interactions": [
+        "onChange"
+      ],
+      "signature": "sha256:c722bcb6b5a1d914a0e7d503bf6120eb85a4d5505e2137606fcd311cf49ac7f7",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI143",
+        "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
+        "order": 16,
+        "number": "UI143-16",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
+      "id": "ui-44b4634b448a",
+      "featureGroup": "components",
+      "controlKind": "input",
+      "tag": "input",
+      "role": null,
       "displayName": null,
       "labelKind": "missing",
       "labelExpression": null,
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 777,
-        "sourceColumn": 358,
-        "ordinal": 18
+        "sourceLine": 774,
+        "sourceColumn": 461,
+        "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 777,
-        "column": 358
+        "line": 774,
+        "column": 461
       },
       "interactions": [
         "onChange"
@@ -26029,13 +26131,13 @@
       "location": {
         "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
-        "order": 16,
-        "number": "UI143-16",
+        "order": 17,
+        "number": "UI143-17",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-a5e2db20f21c",
+      "id": "ui-b240887d2726",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -26046,20 +26148,20 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 782,
-        "sourceColumn": 506,
-        "ordinal": 19
+        "sourceLine": 783,
+        "sourceColumn": 111,
+        "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 782,
-        "column": 506
+        "line": 783,
+        "column": 111
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:f09051358f23091df64c72ef74bc9973a7b1ba85726d400828461882f88ebb35",
+      "signature": "sha256:f30b29a71a48f6959ccc830ea0db9d5912f582381a97950bbcc1dd5e5f791e33",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -26080,8 +26182,8 @@
       "location": {
         "groupId": "UI143",
         "name": "共通／MarkdownPreview／MarkdownTableの操作領域",
-        "order": 17,
-        "number": "UI143-17",
+        "order": 18,
+        "number": "UI143-18",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -26097,14 +26199,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 824,
+        "sourceLine": 826,
         "sourceColumn": 72,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 824,
+        "line": 826,
         "column": 72
       },
       "interactions": [
@@ -26149,14 +26251,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 833,
+        "sourceLine": 835,
         "sourceColumn": 33,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 833,
+        "line": 835,
         "column": 33
       },
       "interactions": [
@@ -26200,14 +26302,14 @@
       "orderScope": {
         "component": "UnsupportedFileCard",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 841,
+        "sourceLine": 843,
         "sourceColumn": 19,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 841,
+        "line": 843,
         "column": 19
       },
       "interactions": [
@@ -26251,14 +26353,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1222,
+        "sourceLine": 1224,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1222,
+        "line": 1224,
         "column": 7
       },
       "interactions": [
@@ -26304,14 +26406,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1230,
+        "sourceLine": 1232,
         "sourceColumn": 22,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1230,
+        "line": 1232,
         "column": 22
       },
       "interactions": [],
@@ -48214,7 +48316,7 @@
       "id": "c56f3b0f86ea971b",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-table th button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 37,
+      "line": 41,
       "values": [
         "gap:8px",
         "padding:0",
@@ -48229,7 +48331,7 @@
       "id": "11311d5e65230918",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-table .is-selected-column",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 38,
+      "line": 42,
       "values": [
         "background:inherit"
       ],
@@ -48239,7 +48341,7 @@
       "id": "5b2476b3a57b3cdf",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-table .is-selected-row > td, .data-grid-table .is-range-selected",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 39,
+      "line": 43,
       "values": [
         "background:color-mix(in srgb, var(--accent-color) 18%, var(--panel-bg))"
       ],
@@ -48249,7 +48351,7 @@
       "id": "fe2a1f7c9be58493",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-footer select",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 44,
+      "line": 48,
       "values": [
         "min-height:28px",
         "color:var(--text-primary)",
@@ -48262,7 +48364,7 @@
       "id": "cd582b1e12dbd9aa",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-aggregate-menu [role=\"menu\"]",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 51,
+      "line": 55,
       "values": [
         "gap:4px",
         "padding:6px",
@@ -48276,7 +48378,7 @@
       "id": "3b38e5e6368b563a",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid input, .table-editor-grid select",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 57,
+      "line": 61,
       "values": [
         "min-height:34px",
         "padding:5px 7px",
@@ -48290,7 +48392,7 @@
       "id": "1acf15843ff9be03",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid input[readonly]",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 59,
+      "line": 63,
       "values": [
         "color:var(--text-secondary)",
         "background:color-mix(in srgb, var(--bg-color) 86%, var(--accent-color))"
@@ -48301,7 +48403,7 @@
       "id": "4f089a4bc4d52abf",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid th.is-selected, .table-editor-grid td.is-selected",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 61,
+      "line": 65,
       "values": [
         "background:color-mix(in srgb, var(--accent-color) 14%, var(--bg-color))"
       ],
@@ -48311,7 +48413,7 @@
       "id": "3c7c63a5cde8b6d4",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid th button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 65,
+      "line": 69,
       "values": [
         "padding:2px 6px"
       ],
@@ -48321,7 +48423,7 @@
       "id": "49c9114dee7400bf",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid .table-editor-row-action",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 66,
+      "line": 70,
       "values": [
         "padding:4px",
         "background:var(--table-header-bg)"
@@ -48332,7 +48434,7 @@
       "id": "06dae6f96008d7a4",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-row-buttons",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 67,
+      "line": 71,
       "values": [
         "gap:3px"
       ],
@@ -48342,7 +48444,7 @@
       "id": "74863787fc3c807e",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-alignment-button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 72,
+      "line": 76,
       "values": [
         "min-height:34px",
         "padding:2px 5px!important",
@@ -48354,7 +48456,7 @@
       "id": "fba8a56681aae197",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-alignment-button.active",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 74,
+      "line": 78,
       "values": [
         "color:#fff",
         "background:var(--accent-color)"
@@ -48365,7 +48467,7 @@
       "id": "84a398bc1f06396c",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-context-menu [role=\"separator\"]",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 97,
+      "line": 101,
       "values": [
         "height:1px",
         "background:var(--border-color)"
@@ -48376,7 +48478,7 @@
       "id": "307efc01b932ffca",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-context-menu button.is-danger",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 98,
+      "line": 102,
       "values": [
         "color:#c62828"
       ],
@@ -48386,7 +48488,7 @@
       "id": "9f9b0976d5d3b93a",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-confirm button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 103,
+      "line": 107,
       "values": [
         "min-height:32px",
         "padding:5px 12px",
@@ -48401,7 +48503,7 @@
       "id": "e0fef35da2988d76",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-confirm button.is-danger",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 104,
+      "line": 108,
       "values": [
         "color:#fff",
         "background:#c62828"

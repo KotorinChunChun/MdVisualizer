@@ -3,7 +3,7 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { HtmlExportDialog, type HtmlExportDialogSubmit } from './HtmlExportDialog';
 import { exportHtmlInBrowser, type HtmlExportAsset } from '../lib/htmlExport';
-import { readDocumentAsset } from '../lib/commands';
+import { openContainingFolder, openExternalEditor, readDocumentAsset } from '../lib/commands';
 import type { MarkdownLoadResult, StagedDocumentAsset } from '../types/app';
 import '../styles/html-export.css';
 
@@ -36,7 +36,7 @@ export function DesktopHtmlExport({ disabled, getSnapshot }: { disabled: boolean
   const [progress, setProgress] = useState('');
   const controller = useRef<AbortController | null>(null);
   const busy = useRef(false);
-  const notify = (type: string, message: string) => window.dispatchEvent(new CustomEvent('markdown-toast', { detail: { type, message } }));
+  const notify = (type: string, message: string, actions?: Array<{ label: string; onAction: () => void | Promise<void> }>) => window.dispatchEvent(new CustomEvent('markdown-toast', { detail: { type, message, actions } }));
   const execute = async ({ mode, filename }: HtmlExportDialogSubmit) => {
     if (!snapshot || busy.current) return;
     busy.current = true; setRunning(true);
@@ -74,7 +74,10 @@ export function DesktopHtmlExport({ disabled, getSnapshot }: { disabled: boolean
       abort.signal.throwIfAborted();
       setProgress('ファイルへ保存しています');
       await invoke('save_html_export', { path: target, html: result.html, documentPath: snapshot.document.path });
-      notify('success', `HTMLを保存しました: ${target}`); setSnapshot(null);
+      notify('success', 'HTMLを出力しました', [
+        { label: 'フォルダを開く', onAction: async () => { try { await openContainingFolder(target); } catch (error) { notify('error', `保存フォルダーを開けませんでした: ${error instanceof Error ? error.message : String(error)}`); } } },
+        { label: 'ファイルを開く', onAction: async () => { try { await openExternalEditor(target); } catch (error) { notify('error', `HTMLファイルを開けませんでした: ${error instanceof Error ? error.message : String(error)}`); } } },
+      ]); setSnapshot(null);
     } catch (error) {
       notify(abort.signal.aborted ? 'info' : 'error', abort.signal.aborted ? 'HTML出力を中止しました。' : error instanceof Error ? error.message : String(error));
     } finally { busy.current = false; setRunning(false); controller.current = null; setProgress(''); }
