@@ -1719,7 +1719,7 @@ export function App() {
         ? latestOccurrence.expected.replace(latestOccurrence.source, staged.filename)
         : `![SVG](${staged.filename})`;
       try {
-        await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: context.occurrence, replacement, committedAssetIds: [staged.id] });
+        await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: latestOccurrence, replacement, committedAssetIds: [staged.id] });
       } catch (error) {
         await discardStagedAssets([staged.id]);
         throw error;
@@ -1742,7 +1742,7 @@ export function App() {
       if (!text) throw new Error("SVG XMLを読み込めませんでした。");
       replacement = sanitizeSvgXml(text);
     }
-    await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: context.occurrence, replacement });
+    await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: latestOccurrence, replacement });
     setMediaPreview(null);
     setToast({ id: String(Date.now()), message: "埋め込み形式へ切り替え、Markdownへ即時保存しました。", type: "success", actions: [{ label: "外部ファイルを削除", onAction: () => deleteConvertedExternalAsset(tab.document!.path, latestOccurrence.source, loaded.revision ?? undefined) }] });
   }, [confirmStorageConversion, deleteConvertedExternalAsset, persistImmediateOccurrence]);
@@ -1990,7 +1990,7 @@ export function App() {
           documentPath: tab.document.path,
           draft: tab.draft,
           latest,
-          occurrence: context.occurrence,
+          occurrence: latestOccurrence,
           replacement: drawioExternalReference(staged.filename, context.alt),
           committedAssetIds: [staged.id],
         });
@@ -2018,7 +2018,7 @@ export function App() {
       documentPath: tab.document.path,
       draft: tab.draft,
       latest,
-      occurrence: context.occurrence,
+      occurrence: latestOccurrence,
       replacement: embeddedFenceWithPath({
         language: "drawio",
         body: asset.text,
@@ -2056,7 +2056,7 @@ export function App() {
           documentPath: tab.document.path,
           draft: tab.draft,
           latest,
-          occurrence: context.occurrence,
+          occurrence: latestOccurrence,
           replacement: mermaidExternalReference(staged.filename, context.alt),
           committedAssetIds: [staged.id],
         });
@@ -2084,7 +2084,7 @@ export function App() {
       documentPath: tab.document.path,
       draft: tab.draft,
       latest,
-      occurrence: context.occurrence,
+      occurrence: latestOccurrence,
       replacement: embeddedFenceWithPath({
         language: "mermaid",
         body: asset.text,
@@ -2122,7 +2122,7 @@ export function App() {
           documentPath: tab.document.path,
           draft: tab.draft,
           latest,
-          occurrence: context.occurrence,
+          occurrence: latestOccurrence,
           replacement: `![${context.language.toUpperCase()}表](${staged.filename})`,
           committedAssetIds: [staged.id],
         });
@@ -2144,7 +2144,7 @@ export function App() {
       documentPath: tab.document.path,
       draft: tab.draft,
       latest,
-      occurrence: context.occurrence,
+      occurrence: latestOccurrence,
       replacement: embeddedFenceWithPath({
         language: context.language,
         body,
@@ -2182,7 +2182,7 @@ export function App() {
           documentPath: tab.document.path,
           draft: tab.draft,
           latest,
-          occurrence: context.occurrence,
+          occurrence: latestOccurrence,
           replacement: textExternalReference(staged.filename),
           committedAssetIds: [staged.id],
         });
@@ -2202,7 +2202,7 @@ export function App() {
       documentPath: tab.document.path,
       draft: tab.draft,
       latest,
-      occurrence: context.occurrence,
+      occurrence: latestOccurrence,
       replacement: embeddedFenceWithPath({
         language: context.language,
         body: asset.text.replace(/^\uFEFF/, ""),

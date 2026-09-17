@@ -96,7 +96,7 @@ describe("DelimitedTableBlock", () => {
     const firstItem = items.firstElementChild!;
 
     expect(firstItem.querySelector('input[type="search"]')).toBe(screen.getByRole("searchbox", { name: "検索キーワードを入力" }));
-    expect(firstItem.nextElementSibling?.querySelector("button")?.textContent).toBe("CSVコピー");
+    expect(firstItem.nextElementSibling?.querySelector("button")?.textContent).toContain("コピー");
     expect(firstItem.querySelector(".data-grid-search")).toBeTruthy();
     expect(screen.queryByText("検索")).toBeNull();
     expect(screen.getByPlaceholderText("検索キーワードを入力")).toBeTruthy();
@@ -168,6 +168,7 @@ describe("DelimitedTableBlock", () => {
     const setData = vi.fn();
     fireEvent.copy(screen.getByRole("region", { name: "TSV表" }), { clipboardData: { setData } });
     expect(setData).toHaveBeenCalledWith("text/plain", "name\tcity\nAlice\tTokyo\nBob\tOsaka");
+    fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
     expect(screen.getByRole("button", { name: "Markdownコピー" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "プレーンテキストコピー" })).toBeTruthy();
   });
@@ -218,7 +219,7 @@ describe("DelimitedTableBlock", () => {
     expect(onSave).toHaveBeenCalledWith(source);
   });
 
-  it("offers separate CSV and TSV copies without the old CSV menu", async () => {
+  it("offers CSV and TSV copies from one unified copy menu", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     const notices: Array<{ message: string; actions?: Array<{ label: string; onAction: () => Promise<void> }> }> = [];
@@ -227,6 +228,7 @@ describe("DelimitedTableBlock", () => {
     render(<DelimitedTableBlock language="csv" source={"name,score\nAlice,10"} />);
 
     expect(screen.queryByRole("button", { name: "CSV" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
     fireEvent.click(screen.getByRole("button", { name: "CSVコピー" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("name,score\nAlice,10"));
     const csvActions = notices[notices.length - 1]?.actions;
@@ -235,6 +237,7 @@ describe("DelimitedTableBlock", () => {
     await csvActions?.[0].onAction();
     expect(nativeMocks.copyTextFile).toHaveBeenLastCalledWith({ filename: "table.csv", content: "name,score\nAlice,10", utf8Bom: true });
 
+    fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
     fireEvent.click(screen.getByRole("button", { name: "TSVコピー" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("name\tscore\nAlice\t10"));
     const tsvActions = notices[notices.length - 1]?.actions;
