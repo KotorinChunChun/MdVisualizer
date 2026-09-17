@@ -133,7 +133,9 @@ function collectErrors(config, readFile) {
   const desktopBlockActions = desktopPreview?.get('allowBlockActions')?.getText() ?? '';
   expect(['canEditActive', '!printing', '!activeTab.saving'].every(marker => desktopBlockActions.includes(marker)), 'Desktop: allowBlockActionsが編集可・非印刷・非保存中の条件へ接続されていない');
   const webPreview = jsxProperties(source.webApp, 'MarkdownPreview').find(properties => properties.has('allowBlockActions'));
-  expect(Boolean(webPreview) && source.webApp.includes('allowBlockActions content={markdown}') && !source.webApp.includes('allowBlockActions={false}'), 'Web: allowBlockActionsが現在承認済みの明示的有効化ではない');
+  const webBlockActions = webPreview?.get('allowBlockActions')?.getText() ?? '';
+  const webEditCondition = webBlockActions.includes('interactionMode === "edit"') || source.webApp.includes('allowBlockActions content={markdown}');
+  expect(Boolean(webPreview) && webEditCondition && !source.webApp.includes('allowBlockActions={false}'), 'Web: allowBlockActionsが現在承認済みの明示的有効化ではない');
   // 定義表の現状欄には過去の比較記録もある。ここは現在の未実装判定ではなく、
   // 実画面または個別調査で再確認すべき記録として出力する。
   const historicalReviewNotes = definition.filter(row => /要整備|要確認|未対応/.test(Object.values(row).join('\t'))).map(row => ({ level: row['レベル'], id: row['共通ID'], note: Object.values(row).find(value => /要整備|要確認|未対応/.test(value)) })).filter((row, index, all) => all.findIndex(other => other.id === row.id && other.note === row.note) === index);
