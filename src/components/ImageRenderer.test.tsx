@@ -170,6 +170,15 @@ describe("ImageRenderer inline resize", () => {
     expect(screen.getByText("画像").className).toContain("caption");
   });
 
+  it("defers preview image loading and decoding while keeping presentation eager", () => {
+    const { container, rerender } = render(<ImageRenderer src="image.png" alt="画像" baseDir="C:\\docs" imageVersions={{}} />);
+    const image = container.querySelector("img")!;
+    expect(image.getAttribute("loading")).toBe("lazy");
+    expect(image.getAttribute("decoding")).toBe("async");
+    rerender(<ImageRenderer src="image.png" alt="画像" baseDir="C:\\docs" imageVersions={{}} presentationMode />);
+    expect(container.querySelector("img")?.getAttribute("loading")).toBe("eager");
+  });
+
   it("shows a simple image filename without a format label", () => {
     render(<ImageRenderer
       src="photo.png"
