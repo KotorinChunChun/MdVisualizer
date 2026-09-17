@@ -416,6 +416,12 @@ export function App() {
   }, [activeTab?.id, activeTab?.untitled, editorMode]);
   const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
   const previewContent = useDeferredValue(activeMarkdownContent);
+  const isHeavyMarkdown = Boolean(activeTab?.document?.kind === "markdown" && (activeTab.document.size_bytes ?? activeMarkdownContent.length) >= 100 * 1024);
+  const [heavyPreviewReady, setHeavyPreviewReady] = useState(false);
+  useEffect(() => { setHeavyPreviewReady(false); }, [activeTab?.id, activeTab?.generation, activeMarkdownContent]);
+  useEffect(() => {
+    if (previewContent === activeMarkdownContent) setHeavyPreviewReady(true);
+  }, [activeMarkdownContent, previewContent]);
 
   useEffect(() => {
     void getCurrentWindow().setTitle(applicationWindowTitle(activeTab)).catch(() => {
@@ -2440,6 +2446,7 @@ export function App() {
         />
       </Suspense>}
       {(editorMode !== "edit" || !canEditActive) && <section className="preview-pane">
+        {isHeavyMarkdown && !heavyPreviewReady && <div className="document-processing-status" role="status" aria-live="polite">重い文書を表示しています…画像とコードを順に処理中です。</div>}
         {activeTab?.kind !== "settings" && activeTab?.document && <div className="preview-panel-toolbar" aria-label="プレビューの操作">
           {viewMode !== "presentation" && <label className="preview-panel-toolbar__heading">見出し
             <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {

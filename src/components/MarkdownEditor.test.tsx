@@ -95,6 +95,17 @@ describe("MarkdownEditor", () => {
     expect(restoredScroller.scrollLeft).toBe(24);
   });
 
+  it("folds multiple base64 images on the same table row without blanking the editor", async () => {
+    const first = "A".repeat(80);
+    const second = "B".repeat(96);
+    const value = `| A | B |\n| --- | --- |\n| ![a](data:image/png;base64,${first}) | ![b](data:image/svg+xml;base64,${second}) |`;
+    const { container } = render(<MarkdownEditor documentId="tab-base64-row:1" value={value} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+
+    await waitFor(() => expect(container.querySelectorAll(".cm-foldPlaceholder")).toHaveLength(2));
+    expect(container.querySelector(".cm-content")?.textContent).toContain("A");
+    expect(container.querySelector(".cm-content")?.textContent).toContain("B");
+  });
+
   it("keeps an unaffected fold and both scroll axes on an external reload without recreating the editor", async () => {
     const value = ["```text", ...Array.from({ length: 10 }, (_, index) => `line ${index + 1}`), "```"].join("\n");
     const { container, rerender } = render(<MarkdownEditor documentId="tab-reload:1" value={value} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
