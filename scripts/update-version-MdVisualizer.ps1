@@ -30,6 +30,7 @@ $siteFiles = @(
     (Join-Path $projectRootFullPath 'packaging\site\index.html'),
     (Join-Path $projectRootFullPath 'packaging\site\MdVisualizer.html')
 )
+$scriptReadmePath = Join-Path $projectRootFullPath 'scripts\README.md'
 
 function Assert-FileExists {
     param([Parameter(Mandatory)][string]$Path)
@@ -333,7 +334,7 @@ function Update-VersionFiles {
         $releaseConfigPath, $packageJsonPath, $packageLockPath, $tauriConfigPath,
         $cargoTomlPath, $cargoLockPath, $webTargetsPath, $webGeneratedPath,
         $webSpfxPackagePath, $webSpfxLockPath, $webSolutionPath, $webPackagePath,
-        $webPackageLockPath, $webMarkdownCorePackagePath
+        $webPackageLockPath, $webMarkdownCorePackagePath, $scriptReadmePath
     ) + $siteFiles
     $backups = @{}
     foreach ($file in $filesToSnapshot) {
@@ -388,6 +389,12 @@ function Update-VersionFiles {
             }
             Write-TextFile -Path $file -Content $site.Replace($Snapshot.MsixVersion, $Plan.MsixVersion)
         }
+
+        $scriptReadme = Get-Content -LiteralPath $scriptReadmePath -Raw
+        $scriptReadme = $scriptReadme.Replace($Snapshot.PublicVersion, $Plan.PublicVersion)
+        $scriptReadme = $scriptReadme.Replace($Snapshot.PackageVersion, $Plan.PackageVersion)
+        $scriptReadme = $scriptReadme.Replace($Snapshot.MsixVersion, $Plan.MsixVersion)
+        Write-TextFile -Path $scriptReadmePath -Content $scriptReadme
 
         return ,$backups
     }

@@ -76,7 +76,8 @@ try {
         'web-platform/apps/spfx/package.json',
         'web-platform/apps/spfx/package-lock.json',
         'web-platform/apps/spfx/config/package-solution.json',
-        'web-platform/scripts/generate-targets.mjs'
+        'web-platform/scripts/generate-targets.mjs',
+        'scripts/README.md'
     )) {
         Copy-FixtureFile -RelativePath $relativePath
     }
@@ -91,6 +92,10 @@ try {
         $fixtureConfig.application.packageVersion -ne $targetPackageVersion -or
         $fixtureConfig.application.msixVersion -ne $targetVersion) {
         throw "fixtureの変換結果が不正です。`n$fixtureOutput"
+    }
+    $fixtureReadme = Get-Content -LiteralPath (Join-Path $fixtureRoot 'scripts/README.md') -Raw
+    if (-not $fixtureReadme.Contains($targetVersion) -or $fixtureReadme.Contains($currentMsixVersion)) {
+        throw "scripts/README.mdの版表記が更新されていません。`n$fixtureOutput"
     }
     $fixtureLogs = @(Get-ChildItem -LiteralPath (Join-Path $fixtureRoot "dev/history/$historyVersion/logs/version-update") -Filter '*.log' -File)
     if ($fixtureLogs.Count -ne 1) { throw "fixtureのNode.js実行ログが1件ではありません: $($fixtureLogs.Count)" }
