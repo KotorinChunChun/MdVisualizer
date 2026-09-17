@@ -40,8 +40,10 @@ describe("表示切替", () => {
     expect(controls[1].getAttribute("role")).toBe("separator");
     expect(controls[2].querySelector('[data-ui-command="view.browse"]')).toBeTruthy();
     expect(controls[2].querySelector('[data-ui-command="view.edit"]')).toBeTruthy();
-    expect(controls[3].textContent).toBe("差分");
-    expect(controls[4].getAttribute("data-ui-command")).toBe("view.direction");
+    expect(controls[3].getAttribute("role")).toBe("separator");
+    expect(controls[4].textContent).toBe("差分");
+    expect(controls[5].getAttribute("role")).toBe("separator");
+    expect(controls[6].getAttribute("data-ui-command")).toBe("view.direction");
   });
   it("表示と操作モードを切り替え、状態別の青色classを保つ", () => {
     render(<Fixture code={true} preview="off" />);

@@ -214,14 +214,14 @@ describe("MarkdownEditor", () => {
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("[report.bin](assets/report.bin)before"));
   });
 
-  it("inserts a relative link for a dropped file through the host adapter", async () => {
+  it("inserts an image reference for a dropped file through the host adapter", async () => {
     const onChange = vi.fn();
     const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "assets/report.bin" });
     const file = new File(["binary"], "report.bin", { type: "application/octet-stream" });
     const { container } = render(<MarkdownEditor documentId="file-drop:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolveFileAttachment={onResolveFileAttachment} />);
     fireEvent.drop(container.querySelector<HTMLElement>(".cm-content")!, { dataTransfer: { files: [file] } });
-    await waitFor(() => expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "link"));
-    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("[report.bin](assets/report.bin)before"));
+    await waitFor(() => expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "image"));
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("![](assets/report.bin)before"));
   });
 
   it("reflects an externally edited Base64 occurrence in CodeMirror without emitting another change", async () => {
@@ -330,7 +330,7 @@ describe("MarkdownEditor", () => {
       },
     });
 
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith("![クリップボード画像](data:image/png;base64,AAEC)before"));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("![](data:image/png;base64,AAEC)before"));
     expect(onResolvePastedImage).toHaveBeenCalledWith({ mediaType: "image/png", base64: "AAEC" });
   });
 
@@ -344,6 +344,27 @@ describe("MarkdownEditor", () => {
       clipboardData: { items: [{ kind: "file", type: "image/png", getAsFile: () => file }], files: [file], getData: () => "" },
     });
 
-    await waitFor(() => expect(onStagedAssetAdded).toHaveBeenCalledWith("![クリップボード画像](images/20260824_090507.png)", asset));
+    await waitFor(() => expect(onStagedAssetAdded).toHaveBeenCalledWith("![](images/20260824_090507.png)", asset));
+  });
+
+  it("prioritizes an image clipboard item over the generic file attachment handler", async () => {
+    const onChange = vi.fn();
+    const onResolvePastedImage = vi.fn().mockResolvedValue({ source: "data:image/png;base64,AAEC" });
+    const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "clipboard.png" });
+    const { container } = render(<MarkdownEditor documentId="image-priority:1" value="" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolvePastedImage={onResolvePastedImage} onResolveFileAttachment={onResolveFileAttachment} />);
+    const file = new File([new Uint8Array([0, 1, 2])], "clipboard.png", { type: "image/png" });
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, { clipboardData: { items: [{ kind: "file", type: "image/png", getAsFile: () => file }], files: [file], getData: () => "clipboard text" } });
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("![](data:image/png;base64,AAEC)"));
+    expect(onResolveFileAttachment).not.toHaveBeenCalled();
+  });
+
+  it("inserts dropped files as image references with an optional external filename", async () => {
+    const onChange = vi.fn();
+    const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "assets/report.bin", alt: "report.bin" });
+    const file = new File(["binary"], "report.bin", { type: "application/octet-stream" });
+    const { container } = render(<MarkdownEditor documentId="image-drop:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolveFileAttachment={onResolveFileAttachment} />);
+    fireEvent.drop(container.querySelector<HTMLElement>(".cm-content")!, { dataTransfer: { files: [file] } });
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("![report.bin](assets/report.bin)before"));
+    expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "image");
   });
 });

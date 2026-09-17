@@ -66,6 +66,7 @@ import { moveHeadingBlock } from "./lib/markdownEditing";
 import { buildPresentationModel } from "./lib/presentationModel";
 import { buildDebugWindowState } from "./lib/debugState";
 import { clipboardImageDestination, formatClipboardImageFilename, referencedStagedAssetIds, type ClipboardImageData, type ResolvedClipboardImage } from "./lib/clipboardImage";
+import { droppedFilePath, droppedFileReference } from "./lib/fileAttachment";
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { drawioExternalReference, markdownLineEnding, type DrawioStorageConversionContext } from "./lib/drawioStorage";
@@ -2426,9 +2427,17 @@ export function App() {
           onChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
           onSave={() => void saveTab(activeTab.id)}
           onResolvePastedImage={resolvePastedImage}
-          onResolveFileAttachment={async (file) => {
+          onResolveFileAttachment={async (file, placement) => {
             const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
             if (!tab?.document || tab.untitled) throw new Error("添付ファイルの保存先を決めるため、先に本文を保存してください。");
+            if (placement === "image") {
+              const nativePath = droppedFilePath(file);
+              if (!nativePath) throw new Error("ドロップしたファイルのパスを取得できませんでした。");
+              return {
+                source: droppedFileReference(tab.document.path, nativePath),
+                alt: clipboardImage.externalFileDisplayName ? file.name : undefined,
+              };
+            }
             const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); });
             const asset = await stageDocumentAsset({ documentPath: tab.document.path, preferredFilename: file.name, base64: data.slice(data.indexOf(",") + 1) });
             return { source: asset.filename, asset };
