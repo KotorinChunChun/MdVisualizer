@@ -50,7 +50,7 @@ betaの工程別入口はすべてbetaに固定している。stableを正式公
 pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\update-version-MdVisualizer.ps1"
 ```
 
-入力は4桁の数値版（`0.0.18.3`または`v0.0.18.3`）とする。4つ目の番号がbetaリビジョンになる。入力版は現在版より新しくなければならないため、現在版が`0.0.18.2`のときに同じ`0.0.18.2`を再指定すると、更新不要としてエラーになる。確認だけ行う場合は次を使う。
+入力は4桁の数値版（`0.0.18.3`または`v0.0.18.3`）とする。4つ目の番号がbetaリビジョンになる。入力版は現在版より新しくなければならないため、現在版が`0.0.18.3`のときに同じ`0.0.18.3`を再指定すると、更新不要としてエラーになる。確認だけ行う場合は次を使う。
 
 ```powershell
 pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\update-version-MdVisualizer.ps1" -TargetVersion "0.0.18.3" -WhatIf
