@@ -24,7 +24,7 @@ try {
     await assertButtonLayoutHelperSelfTest(page);
     await page.goto(target, { waitUntil: "domcontentloaded" });
     await page.locator(".web-app").waitFor();
-    assert.equal(await page.locator('[data-ui-command="view.preview"]').inputValue(), 'preview', 'WebAppの初期表示はプレビュー');
+    assert.equal(await page.locator('[data-ui-command="view.visual"]').getAttribute('aria-pressed'), 'true', 'WebAppの初期表示はビジュアル閲覧');
     const initial = await collectButtonLayoutAudit(page, WEB_BUTTON_LAYOUT_SCOPES);
     assertButtonLayoutAudit(initial);
 
@@ -33,7 +33,7 @@ try {
     if (await page.locator('.web-command-area').isHidden()) await optionsToggle.click();
     const commands = await collectButtonLayoutAudit(page, [{ id: 'web-command-area-open', selector: '.web-command-area', required: true }]);
     assertButtonLayoutAudit(commands);
-    await page.locator('[data-ui-command="view.preview"]').selectOption('off');
+    await page.locator('[data-ui-command="view.code"]').click();
     const toolbarSummary = page.locator('.markdown-editor__toolbar-details > summary');
     if (await toolbarSummary.isVisible()) await toolbarSummary.click();
     const editor = await collectButtonLayoutAudit(page, [{ id: 'web-editor-toolbar', selector: '.markdown-editor__toolbar', required: true }]);

@@ -11,6 +11,7 @@ assert.deepEqual(desktop.map(r=>r.displayName?.startsWith('診断')?'診断':r.d
 const format = rows.filter(r=>r.place.name==='共通／コード書式ツールバー');
 assert.equal(format.length,17);
 assert.deepEqual(format.map(r=>r.place.order),Array.from({length:17},(_,i)=>i+1));
-assert(rows.some(r=>r.tag==='option'&&r.place.name.includes('プレビュー')));
+assert(rows.some(r=>r.tag==='button'&&r.displayName==='コード｜ビジュアル'&&r.place.name.includes('表示モード')));
+assert(rows.some(r=>r.tag==='button'&&r.displayName==='閲覧'&&r.place.name.includes('操作モード')));
 for(const row of rows) assert(row.place.name && row.place.order>0 && row.place.basis);
 console.log('UI所属・採番検査成功: 全登録、番号重複なし、文書8操作、書式17操作、子メニュー');

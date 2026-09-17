@@ -8,7 +8,7 @@ import { PreviewContextMenu } from "./components/PreviewContextMenu";
 import { StatusBar } from "./components/StatusBar";
 import { MarkdownPreview, type ExternalFileRenameContext, type ExternalTableChangeContext } from "./components/MarkdownPreview";
 import { StandaloneDocumentPreview } from "./components/StandaloneDocumentPreview";
-import { WorkspaceViewControls, type PreviewMode, type SplitDirection } from "./components/WorkspaceViewControls";
+import { WorkspaceViewControls, type InteractionMode, type PreviewMode, type SplitDirection } from "./components/WorkspaceViewControls";
 import { DocumentSaveContext } from "./contexts/DocumentSaveContext";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
@@ -344,8 +344,9 @@ export function App() {
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedTabs, setClosedTabs] = useState<ClosedTabState[]>([]);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("preview");
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>("browse");
   const [splitDirection, setSplitDirection] = useState<SplitDirection>("auto");
-  const visualEditing = previewMode === "visual";
+  const visualEditing = previewMode === "visual" && interactionMode === "edit";
   const [tabsState, reactDispatch] = useReducer(tabsReducer, initialTabsState);
   const tabsStateRef = useRef(tabsState);
   tabsStateRef.current = tabsState;
@@ -2352,7 +2353,7 @@ export function App() {
           <button data-ui-command="document.save" type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
-          <WorkspaceViewControls betweenPreviewAndDirection={<button data-ui-command="document.diff" type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>} code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : previewMode === "off" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />
+          <WorkspaceViewControls interactionMode={interactionMode} onInteractionModeChange={setInteractionMode} betweenPreviewAndDirection={<button data-ui-command="document.diff" type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>} code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : editorMode === "split" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />
         </div>
         <ExternalActions
           apps={activeSharePoint ? [] : externalApps.filter((app) => app.target === "document")}
@@ -2549,10 +2550,10 @@ export function App() {
           <MarkdownPreview
             enablePointerBlockReorder={visualEditing}
             readOnly={!visualEditing}
-            allowBlockActions={canEditActive && !printing && !activeTab.saving}
+            allowBlockActions={canEditActive && interactionMode === "edit" && !printing && !activeTab.saving}
             content={previewContent}
             baseDir={activeTab.document.base_dir}
-            onTextEdit={canEditActive && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
+            onTextEdit={canEditActive && interactionMode === "edit" && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
               const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
               if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation || tab.saving) return false;
               const documentId = `${tab.id}:${tab.generation}`;

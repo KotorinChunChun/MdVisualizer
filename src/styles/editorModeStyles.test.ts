@@ -10,19 +10,23 @@ const viewControlsSource = readFileSync(join(process.cwd(), "src/components/Work
 const viewControlsCss = readFileSync(join(process.cwd(), "src/styles/workspace-view-controls.css"), "utf8");
 
 describe("workspace view controls", () => {
-  it("groups the independent code and preview controls for assistive technology", () => {
+  it("groups the display and interaction mode controls for assistive technology", () => {
     expect(appSource).toContain("<WorkspaceViewControls");
     expect(viewControlsSource).toContain('className="workspace-view-controls" role="group" aria-label="表示切替"');
     expect(viewControlsSource).toContain(">コード</button>");
-    expect(viewControlsSource).toContain("プレビュー限定");
-    expect(viewControlsSource).toContain("ビジュアル編集");
-    expect(viewControlsSource).toContain("<option value=\"off\"");
+    expect(viewControlsSource).toContain(">コード｜ビジュアル</button>");
+    expect(viewControlsSource).toContain(">ビジュアル</button>");
+    expect(viewControlsSource).toContain(">閲覧</button>");
+    expect(viewControlsSource).toContain(">編集</button>");
+    expect(viewControlsSource).toContain("workspace-view-controls__separator");
   });
 
-  it("defines code, preview, visual editing, and direction states", () => {
+  it("defines display, interaction, and direction states", () => {
     expect(viewControlsCss).toContain(".workspace-view-controls { display:flex;");
-    expect(viewControlsCss).toContain(".workspace-preview-control.is-preview");
-    expect(viewControlsCss).toContain(".workspace-preview-control.is-visual,.workspace-view-controls button.is-active");
+    expect(viewControlsCss).toContain(".workspace-view-controls__display,.workspace-view-controls__interaction");
+    expect(viewControlsCss).toContain(".workspace-view-controls__separator");
+    expect(viewControlsCss).toContain('[data-ui-command="view.split"][aria-pressed="true"]');
+    expect(viewControlsCss).toContain('[data-ui-command="view.visual"][aria-pressed="true"]');
     expect(viewControlsCss).toContain('.workspace-view-controls [data-ui-command="document.diff"][aria-pressed="true"]');
     expect(viewControlsSource).toContain('aria-label="分割方向"');
     expect(viewControlsSource).toContain(">自動分割</option>");

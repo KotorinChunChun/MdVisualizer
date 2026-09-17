@@ -36,9 +36,9 @@ describe("document workspace controls", () => {
     expect(capability).toContain('"dialog:allow-open"');
   });
 
-  it("places Diff between preview selection and split direction", () => {
+  it("places Diff between interaction controls and split direction", () => {
     const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
-    expect(source).toContain("<WorkspaceViewControls betweenPreviewAndDirection={<button data-ui-command=\"document.diff\"");
+    expect(source).toContain("<WorkspaceViewControls interactionMode={interactionMode} onInteractionModeChange={setInteractionMode} betweenPreviewAndDirection={<button data-ui-command=\"document.diff\"");
   });
 
   it("keeps the side rail when code is visible and keeps preview actions outside the scrolled body", () => {
