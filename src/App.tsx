@@ -72,6 +72,7 @@ import { saveUntitledDocument } from "./lib/untitledDocument";
 import { drawioExternalReference, markdownLineEnding, type DrawioStorageConversionContext } from "./lib/drawioStorage";
 import { mermaidExternalReference, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
+import { insertPreviewBlockAfter } from "./lib/previewBlockReorder";
 
 import { previewClipboardData } from "./lib/previewClipboard";
 import { PreviewEditHistory, replaceDocumentText } from "./lib/documentTextEdit";
@@ -1305,6 +1306,17 @@ export function App() {
     selection?.removeAllRanges();
     selection?.addRange(range);
   }, [previewContext]);
+
+  const addPreviewBlockAfter = useCallback(() => {
+    if (!previewContext || !activeTab || !canEditActive || !visualEditing || activeTab.saving) return;
+    const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
+    if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation) return;
+    const content = insertPreviewBlockAfter(tab.draft, previewContext.line);
+    if (content === tab.draft) return;
+    previewEditHistory.current.record(`${tab.id}:${tab.generation}`, tab.draft, content);
+    setPreviewContext(null);
+    dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+  }, [activeTab, canEditActive, previewContext, visualEditing]);
 
   useEffect(() => {
     if (editorMode === "preview" || pendingEditorLine.current === null) return;
@@ -2836,6 +2848,7 @@ export function App() {
         rowTsv={previewContext.rowTsv}
         canEdit={canEditActive && visualEditing}
         onEdit={editPreviewContextLine}
+        onAddBlockAfter={addPreviewBlockAfter}
         onSelectLine={() => selectPreviewContent(previewContext.line)}
         onSelectRow={previewContext.rowElement ? selectPreviewRow : undefined}
         onSelectAll={() => selectPreviewContent()}

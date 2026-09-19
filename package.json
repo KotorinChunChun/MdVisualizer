@@ -44,6 +44,8 @@
     "pretest": "npm run build:embedded && npm run typecheck:incremental && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./web-platform/scripts/check-ui-styles.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract && npm run check:block-commands",
     "test": "vitest run",
     "test:diff-layout": "tsc --project tests/diff-layout/tsconfig.json && node ./scripts/test-diff-layout.mjs",
+    "fixture:embedded-images": "node ./scripts/generate-embedded-image-load-fixture.mjs",
+    "test:embedded-images": "node ./scripts/test-embedded-image-load.mjs",
     "test:button-style-rules": "node ./scripts/test-button-style-rules.mjs",
     "test:button-layout-web": "node ./scripts/test-web-button-layout.mjs",
     "test:css-style-stats": "node ./scripts/test-css-style-stats.mjs",

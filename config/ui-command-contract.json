@@ -39,14 +39,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2348,
+        "sourceLine": 2360,
         "sourceColumn": 11,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2348,
+        "line": 2360,
         "column": 11
       },
       "interactions": [
@@ -91,14 +91,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2349,
+        "sourceLine": 2361,
         "sourceColumn": 11,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2349,
+        "line": 2361,
         "column": 11
       },
       "interactions": [
@@ -143,14 +143,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2350,
+        "sourceLine": 2362,
         "sourceColumn": 11,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2350,
+        "line": 2362,
         "column": 11
       },
       "interactions": [
@@ -195,14 +195,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2353,
+        "sourceLine": 2365,
         "sourceColumn": 11,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2353,
+        "line": 2365,
         "column": 11
       },
       "interactions": [
@@ -247,14 +247,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2354,
+        "sourceLine": 2366,
         "sourceColumn": 11,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2354,
+        "line": 2366,
         "column": 11
       },
       "interactions": [
@@ -299,14 +299,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2357,
+        "sourceLine": 2369,
         "sourceColumn": 141,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2357,
+        "line": 2369,
         "column": 141
       },
       "interactions": [
@@ -351,14 +351,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2368,
+        "sourceLine": 2380,
         "sourceColumn": 67,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2368,
+        "line": 2380,
         "column": 67
       },
       "interactions": [
@@ -403,14 +403,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2369,
+        "sourceLine": 2381,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2369,
+        "line": 2381,
         "column": 9
       },
       "interactions": [
@@ -455,14 +455,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2462,
+        "sourceLine": 2474,
         "sourceColumn": 13,
         "ordinal": 9
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2462,
+        "line": 2474,
         "column": 13
       },
       "interactions": [
@@ -507,14 +507,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2467,
+        "sourceLine": 2479,
         "sourceColumn": 15,
         "ordinal": 10
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2467,
+        "line": 2479,
         "column": 15
       },
       "interactions": [],
@@ -557,14 +557,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2467,
+        "sourceLine": 2479,
         "sourceColumn": 55,
         "ordinal": 11
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2467,
+        "line": 2479,
         "column": 55
       },
       "interactions": [],
@@ -607,14 +607,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2467,
+        "sourceLine": 2479,
         "sourceColumn": 92,
         "ordinal": 12
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2467,
+        "line": 2479,
         "column": 92
       },
       "interactions": [],
@@ -657,14 +657,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2467,
+        "sourceLine": 2479,
         "sourceColumn": 134,
         "ordinal": 13
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2467,
+        "line": 2479,
         "column": 134
       },
       "interactions": [],
@@ -707,14 +707,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2467,
+        "sourceLine": 2479,
         "sourceColumn": 168,
         "ordinal": 14
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2467,
+        "line": 2479,
         "column": 168
       },
       "interactions": [],
@@ -757,14 +757,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2467,
+        "sourceLine": 2479,
         "sourceColumn": 202,
         "ordinal": 15
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2467,
+        "line": 2479,
         "column": 202
       },
       "interactions": [],
@@ -807,14 +807,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2467,
+        "sourceLine": 2479,
         "sourceColumn": 236,
         "ordinal": 16
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2467,
+        "line": 2479,
         "column": 236
       },
       "interactions": [],
@@ -857,14 +857,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2467,
+        "sourceLine": 2479,
         "sourceColumn": 281,
         "ordinal": 17
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2467,
+        "line": 2479,
         "column": 281
       },
       "interactions": [],
@@ -907,14 +907,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2471,
+        "sourceLine": 2483,
         "sourceColumn": 13,
         "ordinal": 18
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2471,
+        "line": 2483,
         "column": 13
       },
       "interactions": [
@@ -959,14 +959,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2472,
+        "sourceLine": 2484,
         "sourceColumn": 41,
         "ordinal": 19
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2472,
+        "line": 2484,
         "column": 41
       },
       "interactions": [],
@@ -1009,14 +1009,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2472,
+        "sourceLine": 2484,
         "sourceColumn": 74,
         "ordinal": 20
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2472,
+        "line": 2484,
         "column": 74
       },
       "interactions": [],
@@ -1059,14 +1059,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2472,
+        "sourceLine": 2484,
         "sourceColumn": 114,
         "ordinal": 21
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2472,
+        "line": 2484,
         "column": 114
       },
       "interactions": [],
@@ -1109,14 +1109,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2473,
+        "sourceLine": 2485,
         "sourceColumn": 39,
         "ordinal": 22
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2473,
+        "line": 2485,
         "column": 39
       },
       "interactions": [],
@@ -1159,14 +1159,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2473,
+        "sourceLine": 2485,
         "sourceColumn": 81,
         "ordinal": 23
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2473,
+        "line": 2485,
         "column": 81
       },
       "interactions": [],
@@ -4353,24 +4353,24 @@
       "controlKind": "menu",
       "tag": "div",
       "role": "menu",
-      "displayName": "{{onSelectRow && <button type=\"button\" role=\"menuitem\" disabled={!rowTsv} onClick={() => copy(rowTsv ?? \"\", \"行\")}>選択した行をTSVでコピー</button>}}",
+      "displayName": "{{onAddBlockAfter && <button type=\"button\" role=\"menuitem\" disabled={!canEdit} onClick={() => run(onAddBlockAfter)}>下にブロックを追加</button>}} {{onSelectRow && <button type=\"button\" role=\"menuitem\" disabled={!rowTsv} onClick={() => copy(rowTsv ?? \"\", \"行\")}>選択した行をTSVでコピー</button>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{onSelectRow && <button type=\"button\" role=\"menuitem\" disabled={!rowTsv} onClick={() => copy(rowTsv ?? \"\", \"行\")}>選択した行をTSVでコピー</button>}}",
+      "labelExpression": "{{onAddBlockAfter && <button type=\"button\" role=\"menuitem\" disabled={!canEdit} onClick={() => run(onAddBlockAfter)}>下にブロックを追加</button>}} {{onSelectRow && <button type=\"button\" role=\"menuitem\" disabled={!rowTsv} onClick={() => copy(rowTsv ?? \"\", \"行\")}>選択した行をTSVでコピー</button>}}",
       "orderScope": {
         "component": "PreviewContextMenu",
         "sourceFile": "src/components/PreviewContextMenu.tsx",
-        "sourceLine": 46,
+        "sourceLine": 48,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/PreviewContextMenu.tsx",
-        "line": 46,
+        "line": 48,
         "column": 10
       },
       "interactions": [],
-      "signature": "sha256:cb76103aabc016d493d9b3d8025247a4a4c9a12d933e8d1fe2e2d76061565d6e",
+      "signature": "sha256:7ed4dae55ca518f3434f7273c0c35995e249fee8c33f564720d8fe2c6e87630c",
       "targetSourcePresence": {
         "desktop": "present-in-host-source",
         "html": "not-in-host-source",
@@ -4409,14 +4409,14 @@
       "orderScope": {
         "component": "PreviewContextMenu",
         "sourceFile": "src/components/PreviewContextMenu.tsx",
-        "sourceLine": 54,
+        "sourceLine": 56,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/PreviewContextMenu.tsx",
-        "line": 54,
+        "line": 56,
         "column": 5
       },
       "interactions": [
@@ -4461,14 +4461,14 @@
       "orderScope": {
         "component": "PreviewContextMenu",
         "sourceFile": "src/components/PreviewContextMenu.tsx",
-        "sourceLine": 55,
+        "sourceLine": 57,
         "sourceColumn": 5,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/PreviewContextMenu.tsx",
-        "line": 55,
+        "line": 57,
         "column": 5
       },
       "interactions": [
@@ -4513,14 +4513,14 @@
       "orderScope": {
         "component": "PreviewContextMenu",
         "sourceFile": "src/components/PreviewContextMenu.tsx",
-        "sourceLine": 56,
+        "sourceLine": 58,
         "sourceColumn": 5,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/PreviewContextMenu.tsx",
-        "line": 56,
+        "line": 58,
         "column": 5
       },
       "interactions": [
@@ -4559,26 +4559,26 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "行選択",
+      "displayName": "下にブロックを追加",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "PreviewContextMenu",
         "sourceFile": "src/components/PreviewContextMenu.tsx",
-        "sourceLine": 58,
-        "sourceColumn": 5,
+        "sourceLine": 59,
+        "sourceColumn": 25,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/PreviewContextMenu.tsx",
-        "line": 58,
-        "column": 5
+        "line": 59,
+        "column": 25
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:7f64445d68c3ba33282ca1c126cd676e430fd439398d802666e6d013a39e030a",
+      "signature": "sha256:897c712962160cd6e86b3c45924c96d951d04dcc12bf71dc7af8547442e1df8f",
       "targetSourcePresence": {
         "desktop": "present-in-host-source",
         "html": "not-in-host-source",
@@ -4611,26 +4611,26 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "選択した行をTSVでコピー",
+      "displayName": "行選択",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "PreviewContextMenu",
         "sourceFile": "src/components/PreviewContextMenu.tsx",
-        "sourceLine": 59,
-        "sourceColumn": 21,
+        "sourceLine": 61,
+        "sourceColumn": 5,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/PreviewContextMenu.tsx",
-        "line": 59,
-        "column": 21
+        "line": 61,
+        "column": 5
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:06a3340151ab58c590173d4d7e0b0a38b38b7a0fa2e010319039c820231585fe",
+      "signature": "sha256:7f64445d68c3ba33282ca1c126cd676e430fd439398d802666e6d013a39e030a",
       "targetSourcePresence": {
         "desktop": "present-in-host-source",
         "html": "not-in-host-source",
@@ -4663,26 +4663,26 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "ブロック全体を選択",
+      "displayName": "選択した行をTSVでコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "PreviewContextMenu",
         "sourceFile": "src/components/PreviewContextMenu.tsx",
-        "sourceLine": 60,
-        "sourceColumn": 5,
+        "sourceLine": 62,
+        "sourceColumn": 21,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/PreviewContextMenu.tsx",
-        "line": 60,
-        "column": 5
+        "line": 62,
+        "column": 21
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:a972c63de71b17ed939794062f2759f8716eee2e6d3d85be5dce4fe040ae946f",
+      "signature": "sha256:06a3340151ab58c590173d4d7e0b0a38b38b7a0fa2e010319039c820231585fe",
       "targetSourcePresence": {
         "desktop": "present-in-host-source",
         "html": "not-in-host-source",
@@ -4715,20 +4715,72 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "すべて選択",
+      "displayName": "ブロック全体を選択",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "PreviewContextMenu",
         "sourceFile": "src/components/PreviewContextMenu.tsx",
-        "sourceLine": 61,
+        "sourceLine": 63,
         "sourceColumn": 5,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/PreviewContextMenu.tsx",
-        "line": 61,
+        "line": 63,
+        "column": 5
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:a972c63de71b17ed939794062f2759f8716eee2e6d3d85be5dce4fe040ae946f",
+      "targetSourcePresence": {
+        "desktop": "present-in-host-source",
+        "html": "not-in-host-source",
+        "php": "not-in-host-source",
+        "spfx": "not-in-host-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "実装: デスクトッププレビューの右クリック編集・コピー",
+        "html": "未対応: WebAppにPreviewContextMenuの利用を確認できない",
+        "php": "未対応: WebAppにPreviewContextMenuの利用を確認できない",
+        "spfx": "未対応: WebPartにPreviewContextMenuの利用を確認できない"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "ホスト内ソース順序",
+      "designCheck": "ホストCSSを別検査",
+      "evidence": "src/App.tsx:1223/2777、src/components/PreviewContextMenu.tsx。",
+      "location": {
+        "groupId": "UI030",
+        "name": "Desktop／PreviewContextMenu／View操作",
+        "order": 7,
+        "number": "UI030-07",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-28ea48959b79",
+      "featureGroup": "components",
+      "controlKind": "menu",
+      "tag": "button",
+      "role": "menuitem",
+      "displayName": "すべて選択",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "PreviewContextMenu",
+        "sourceFile": "src/components/PreviewContextMenu.tsx",
+        "sourceLine": 64,
+        "sourceColumn": 5,
+        "ordinal": 9
+      },
+      "source": {
+        "kind": "desktop",
+        "file": "src/components/PreviewContextMenu.tsx",
+        "line": 64,
         "column": 5
       },
       "interactions": [
@@ -4756,8 +4808,8 @@
       "location": {
         "groupId": "UI030",
         "name": "Desktop／PreviewContextMenu／View操作",
-        "order": 7,
-        "number": "UI030-07",
+        "order": 8,
+        "number": "UI030-08",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -48215,7 +48267,7 @@
       "id": "7090063074db2ce0",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.diagram-block__header .responsive-toolbar__label,\r\n.code-block__header .code-block__heading,\r\n.data-grid-toolbar .responsive-toolbar__label",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 912,
+      "line": 914,
       "values": [
         "font-size:12px"
       ],
@@ -48225,7 +48277,7 @@
       "id": "e98d782977e1355c",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.responsive-toolbar select",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 915,
+      "line": 917,
       "values": [
         "min-height:30px",
         "padding:3px 6px",
@@ -48241,7 +48293,7 @@
       "id": "cdc8b904ca049137",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.editor-mode-controls > .document-action-button[aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 917,
+      "line": 919,
       "values": [
         "color:#fff",
         "background:var(--accent-color)"
@@ -48252,7 +48304,7 @@
       "id": "5f16b9473e170cf1",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.view-controls .document-actions button,\r\n.view-controls .document-action-button,\r\n.view-controls .editor-mode-segments button,\r\n.view-controls .external-actions button,\r\n.view-controls .codex-toolbar-action,\r\n.view-controls select,\r\n.responsive-toolbar .diagram-action-button,\r\n.responsive-toolbar .block-copy-menu,\r\n.responsive-toolbar .code-copy,\r\n.responsive-toolbar .code-run,\r\n.responsive-toolbar .code-storage,\r\n.responsive-toolbar .code-wrap,\r\n.responsive-toolbar select",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 920,
+      "line": 922,
       "values": [
         "min-height:var(--toolbar-control-height)",
         "font-family:inherit",
@@ -48265,7 +48317,7 @@
       "id": "27276b20ae93499e",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.preview-panel-toolbar",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 939,
+      "line": 941,
       "values": [
         "gap:8px",
         "padding:6px 12px",
@@ -48279,7 +48331,7 @@
       "id": "0de2bb7d12eee17a",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.preview-panel-toolbar label",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 940,
+      "line": 942,
       "values": [
         "gap:5px"
       ],
@@ -48289,7 +48341,7 @@
       "id": "43dca56c227f47f1",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.preview-panel-toolbar select",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 941,
+      "line": 943,
       "values": [
         "min-height:26px",
         "padding:2px 5px",
@@ -48304,7 +48356,7 @@
       "id": "a01b103035e0daa4",
       "key": "web-platform/packages/editor-ui/src/styles/app.css||.document-action-button[aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
-      "line": 952,
+      "line": 954,
       "values": [
         "background:var(--accent-color)",
         "color:#fff"

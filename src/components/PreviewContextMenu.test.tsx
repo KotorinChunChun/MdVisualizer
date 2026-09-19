@@ -27,10 +27,15 @@ describe("PreviewContextMenu", () => {
     const onEdit = vi.fn();
     const onSelectLine = vi.fn();
     const onSelectAll = vi.fn();
-    const props = { x: 0, y: 0, plainText: "text", markdownText: "text", canEdit: true, onEdit, onSelectLine, onSelectAll, onResult: vi.fn(), onError: vi.fn(), onDismiss: vi.fn() };
+    const onAddBlockAfter = vi.fn();
+    const props = { x: 0, y: 0, plainText: "text", markdownText: "text", canEdit: true, onEdit, onAddBlockAfter, onSelectLine, onSelectAll, onResult: vi.fn(), onError: vi.fn(), onDismiss: vi.fn() };
     const { rerender } = render(<PreviewContextMenu {...props} />);
     fireEvent.click(screen.getByRole("menuitem", { name: "編集" }));
     expect(onEdit).toHaveBeenCalledOnce();
+
+    rerender(<PreviewContextMenu {...props} />);
+    fireEvent.click(screen.getByRole("menuitem", { name: "下にブロックを追加" }));
+    expect(onAddBlockAfter).toHaveBeenCalledOnce();
 
     rerender(<PreviewContextMenu {...props} />);
     fireEvent.click(screen.getByRole("menuitem", { name: "行選択" }));
