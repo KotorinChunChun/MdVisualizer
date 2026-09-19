@@ -23,10 +23,12 @@ describe("表示切替", () => {
   it("表示3択、閲覧編集、方向選択を公開する", () => {
     render(<Fixture />);
     expect(screen.getByRole("group", { name: "表示切替" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "表示モード" }).className).toContain("workspace-view-controls__segmented");
     expect(screen.getByRole("button", { name: "コード" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "コード｜ビジュアル" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "ビジュアル" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "操作モード" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "操作モード" }).className).toContain("workspace-view-controls__segmented");
     expect(screen.getByRole("button", { name: "閲覧" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "編集" }).getAttribute("aria-pressed")).toBe("false");
     expect((screen.getByLabelText("分割方向") as HTMLSelectElement).value).toBe("auto");

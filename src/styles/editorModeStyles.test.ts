@@ -24,10 +24,13 @@ describe("workspace view controls", () => {
   it("defines display, interaction, and direction states", () => {
     expect(viewControlsCss).toContain(".workspace-view-controls { display:flex;");
     expect(viewControlsCss).toContain(".workspace-view-controls__display,.workspace-view-controls__interaction");
+    expect(viewControlsCss).toContain(".workspace-view-controls__segmented { gap:0;");
+    expect(viewControlsCss).toContain(".workspace-view-controls__segmented button { border:0;");
     expect(viewControlsCss).toContain(".workspace-view-controls__separator");
     expect(viewControlsCss).toContain('[data-ui-command="view.split"][aria-pressed="true"]');
     expect(viewControlsCss).toContain('[data-ui-command="view.visual"][aria-pressed="true"]');
     expect(viewControlsCss).toContain('.workspace-view-controls [data-ui-command="document.diff"][aria-pressed="true"]');
+    expect(appSource).toContain('className={`document-action-button${documentDiff !== null ? " is-active" : ""}`}');
     expect(viewControlsSource).toContain('aria-label="分割方向"');
     expect(viewControlsSource).toContain(">自動分割</option>");
     expect(viewControlsSource).toContain(">上下分割</option>");

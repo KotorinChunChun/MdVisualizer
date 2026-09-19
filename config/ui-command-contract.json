@@ -312,7 +312,7 @@
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:b179d7d2c7867370a52d53820afe2ff954b2e590a858abb0b74b75056b491e9c",
+      "signature": "sha256:9fbfa3d293f8f5e75b1ea017bdfa2f21064505f356b548a6f837b1122cf4618b",
       "targetSourcePresence": {
         "desktop": "present-in-host-source",
         "html": "not-in-host-source",
@@ -49234,10 +49234,33 @@
       "signature": "ab5acf201aa3e7c6560e30681ff2376201d7b91cbbe69c3b58abb07c55668bde"
     },
     {
+      "id": "5a982a3abd48602a",
+      "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls__segmented",
+      "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
+      "line": 4,
+      "values": [
+        "gap:0",
+        "border:1px solid var(--border-color,#9fb0c4)",
+        "border-radius:4px"
+      ],
+      "signature": "68fb809dcef849c298f81abc874905bd0dc7b28801cd2bd662b7131fac37b244"
+    },
+    {
+      "id": "77bb52e689ff663a",
+      "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls__segmented button",
+      "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
+      "line": 5,
+      "values": [
+        "border:0",
+        "border-radius:0"
+      ],
+      "signature": "b74ed5b0ff392b41b5cd6be061b0ff0052ee7e30c2c15951ceb92200c096e5d3"
+    },
+    {
       "id": "387804c7f411e7ba",
       "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls__separator",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
-      "line": 4,
+      "line": 7,
       "values": [
         "min-height:24px",
         "background:var(--border-color,#9fb0c4)"
@@ -49248,7 +49271,7 @@
       "id": "e1724a4a582a309c",
       "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls button.is-active",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
-      "line": 5,
+      "line": 8,
       "values": [
         "background:var(--accent-color,#3b82f6)",
         "color:white"
@@ -49259,7 +49282,7 @@
       "id": "5bb06660b4bb7ac5",
       "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.app-container .view-controls button[data-ui-command],\n.app-container .document-actions button,\n.app-container .view-controls select[data-ui-command],\n.web-app>header button,\n.web-app>header select[data-ui-command],\n.spfxMdVisualizer [data-ui-command]",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
-      "line": 12,
+      "line": 15,
       "values": [
         "min-height:34px",
         "padding:4px 8px",
@@ -49276,7 +49299,7 @@
       "id": "a92dd41e75b83c07",
       "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.app-container .workspace-view-controls [data-ui-command=\"view.code\"][aria-pressed=\"true\"],\n.workspace-view-controls [data-ui-command=\"view.code\"][aria-pressed=\"true\"],\n.app-container .workspace-view-controls [data-ui-command=\"view.split\"][aria-pressed=\"true\"],\n.workspace-view-controls [data-ui-command=\"view.split\"][aria-pressed=\"true\"],\n.app-container .workspace-view-controls [data-ui-command=\"view.visual\"][aria-pressed=\"true\"],\n.workspace-view-controls [data-ui-command=\"view.visual\"][aria-pressed=\"true\"],\n.app-container .workspace-view-controls [data-ui-command^=\"view.\"][aria-pressed=\"true\"],\n.workspace-view-controls [data-ui-command^=\"view.\"][aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
-      "line": 28,
+      "line": 31,
       "values": [
         "background:var(--accent-color,#3b82f6)",
         "color:#fff"
@@ -49284,10 +49307,10 @@
       "signature": "ee2d200b9453164cee42654258cff51565932372d4e5d511490bad5646370e2b"
     },
     {
-      "id": "5231a3a61596d05d",
-      "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls [data-ui-command=\"document.diff\"][aria-pressed=\"true\"]",
+      "id": "bf88b5536952b1a6",
+      "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls [data-ui-command=\"document.diff\"].is-active,\n.workspace-view-controls [data-ui-command=\"document.diff\"][aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
-      "line": 36,
+      "line": 39,
       "values": [
         "background:var(--accent-color,#3b82f6)",
         "color:#fff"
@@ -49298,7 +49321,7 @@
       "id": "202c67724169d93f",
       "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css|@media (max-width:720px)|.app-container .view-controls [data-ui-command],.app-container .document-actions button,.web-app>header button,.web-app>header select[data-ui-command],.spfxMdVisualizer [data-ui-command]",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
-      "line": 39,
+      "line": 43,
       "values": [
         "min-height:44px"
       ],
