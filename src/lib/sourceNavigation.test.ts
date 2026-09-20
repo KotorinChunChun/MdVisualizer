@@ -1,7 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { foldIdsForElement, headingIdForSourceLine, nearestRenderedSourceBlock, normalizeSourceLines, presentationPageIdForSourceLine, sourceAnchorForLine, sourceLineAtTextOffset } from "./sourceNavigation";
+import { foldIdsForElement, headingIdForSourceLine, nearestRenderedSourceBlock, normalizeSourceLines, presentationPageIdForSourceLine, scrollSourceTarget, sourceAnchorForLine, sourceLineAtTextOffset } from "./sourceNavigation";
 
 describe("source navigation", () => {
+  it.each([1, 2])("末尾見出しへの移動は本文の範囲内に収まり祖先を動かさない（zoom %s）", scale => {
+    const outer = document.createElement("div");
+    const container = document.createElement("main");
+    const target = document.createElement("h2");
+    outer.append(container); container.append(target);
+    outer.scrollTop = 17;
+    Object.defineProperties(container, { clientHeight: { value: 400 }, offsetHeight: { value: 400 }, scrollHeight: { value: 1000 } });
+    container.getBoundingClientRect = () => new DOMRect(0, 100, 300, 400 * scale);
+    target.getBoundingClientRect = () => new DOMRect(0, 100 + 920 * scale, 200, 30 * scale);
+    expect(scrollSourceTarget(container, target, "start")).toBe(true);
+    expect(container.scrollTop).toBe(600);
+    expect(outer.scrollTop).toBe(17);
+  });
+
+  it("中央配置・先頭の上限と対象外の要素を扱う", () => {
+    const container = document.createElement("main"), target = document.createElement("h2");
+    container.append(target);
+    Object.defineProperties(container, { clientHeight: { value: 400 }, offsetHeight: { value: 400 }, scrollHeight: { value: 1000 } });
+    container.getBoundingClientRect = () => new DOMRect(0, 100, 300, 400);
+    target.getBoundingClientRect = () => new DOMRect(0, 400, 200, 40);
+    expect(scrollSourceTarget(container, target)).toBe(true);
+    expect(container.scrollTop).toBe(120);
+    target.getBoundingClientRect = () => new DOMRect(0, -200, 200, 40);
+    scrollSourceTarget(container, target, "start");
+    expect(container.scrollTop).toBe(0);
+    expect(scrollSourceTarget(container, document.createElement("h2"))).toBe(false);
+    expect(scrollSourceTarget(null, target)).toBe(false);
+  });
   it("normalizes LF and CRLF without changing source line numbers", () => {
     expect(normalizeSourceLines("a\r\nb\nc\r")).toEqual(["a", "b", "c", ""]);
   });

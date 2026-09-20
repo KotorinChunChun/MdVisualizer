@@ -76,7 +76,7 @@ import { insertPreviewBlockAfter } from "./lib/previewBlockReorder";
 
 import { previewClipboardData } from "./lib/previewClipboard";
 import { replaceDocumentText } from "./lib/documentTextEdit";
-import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } from "./lib/sourceNavigation";
+import { foldIdsForElement, nearestRenderedSourceBlock, scrollSourceTarget, sourceAnchorForLine } from "./lib/sourceNavigation";
 import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
 import { createDocumentStorageRefresh } from "./lib/documentStorageRefresh";
@@ -559,7 +559,7 @@ export function App() {
             return { ...current, [activeTab.path]: nextForPath };
           });
         }
-        requestAnimationFrame(() => section.scrollIntoView({ block: "start" }));
+        requestAnimationFrame(() => scrollSourceTarget(containerRef.current, section, "start"));
       });
     });
     return () => {
@@ -980,7 +980,7 @@ export function App() {
     navigationHistoryRef.current = recordNavigation(navigationHistoryRef.current, captureNavigationSnapshot());
   }, [captureNavigationSnapshot]);
 
-  const navigateToSourceLine = useCallback((line: number, options: { headingId?: string; blockId?: string; targetElement?: HTMLElement; closePanel?: boolean; block?: ScrollLogicalPosition } = {}): boolean => {
+  const navigateToSourceLine = useCallback((line: number, options: { headingId?: string; blockId?: string; targetElement?: HTMLElement; closePanel?: boolean; block?: "start" | "center" } = {}): boolean => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
     const root = markdownRef.current;
     if (!tab?.document || !root || !Number.isFinite(line) || line < 1) return false;
@@ -1036,7 +1036,7 @@ export function App() {
       if (!target) return;
       target.classList.add("source-navigation-target");
       window.setTimeout(() => target.classList.remove("source-navigation-target"), 1400);
-      target.scrollIntoView({ block: options.block ?? "center", behavior: "auto" });
+      scrollSourceTarget(containerRef.current, target, options.block ?? "center");
     };
     window.requestAnimationFrame(() => window.requestAnimationFrame(scroll));
     return true;
