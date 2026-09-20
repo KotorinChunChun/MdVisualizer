@@ -210,3 +210,5 @@ web/tests/.php-zip-fixtures/
 /src/lib/editorToolbarActions.ts
 /scripts/__pycache__/
 /src/styles/selection-state.css
+/src/lib/diffPresentation.ts
+/src/lib/selectionDecoration.ts

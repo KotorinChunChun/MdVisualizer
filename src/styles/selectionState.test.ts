@@ -13,3 +13,11 @@ it("現在位置と範囲選択は共通トークンへ集約し目次・検索�
   expect(read("styles/document-toc.css")).toContain("20%");
   expect(read("styles/app.css")).toContain("background: #fbbf24");
 });
+it("差分にオレンジを使わず共通の選択色と赤緑を参照する", () => {
+  const css = read("styles/document-diff.css");
+  expect(css).not.toMatch(/#f59e0b|#d97706|is-changed/);
+  expect(css).toMatch(/\.diff-unified-line \{ display: block;/);
+  for (const token of ["selection-current-bg", "selection-current-edge", "selection-range-bg", "diff-add-bg", "diff-delete-bg", "diff-add-word", "diff-delete-word"]) expect(css).toContain(`var(--${token})`);
+  expect(read("styles/app.css")).toContain('.editor-mode-controls .workspace-view-controls > .document-action-button[aria-pressed="true"]');
+  for (const bridge of ["spfxDiffBridge.tsx", "spfxDelimitedTableBridge.tsx"]) expect(read(bridge)).toContain('import selectionCss from "./styles/selection-state.css"');
+});

@@ -18668,6 +18668,59 @@
       }
     },
     {
+      "id": "ui-0e9bf394ab5d",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "span",
+      "role": null,
+      "displayName": "{{marker}} {{markedText(text, ranges, kind)}} {{diffLineEnd}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{marker}} {{markedText(text, ranges, kind)}} {{diffLineEnd}}",
+      "orderScope": {
+        "component": "append",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
+        "sourceLine": 53,
+        "sourceColumn": 100,
+        "ordinal": 1
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
+        "line": 53,
+        "column": 100
+      },
+      "interactions": [
+        "onFocus",
+        "onClick",
+        "onKeyDown"
+      ],
+      "signature": "sha256:b5f752f89f29579118780f76508397420c2cabe235d9c57b9f6ab2127c1f3297",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI100",
+        "name": "共通／DocumentDiffWorkspace／appendの操作領域",
+        "order": 1,
+        "number": "UI100-01",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
       "id": "ui-c38259121280",
       "featureGroup": "components",
       "controlKind": "button",
@@ -18679,14 +18732,14 @@
       "orderScope": {
         "component": "action",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 60,
+        "sourceLine": 77,
         "sourceColumn": 389,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 60,
+        "line": 77,
         "column": 389
       },
       "interactions": [
@@ -18711,213 +18764,15 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI100",
+        "groupId": "UI101",
         "name": "共通／DocumentDiffWorkspace／actionの操作領域",
         "order": 1,
-        "number": "UI100-01",
+        "number": "UI101-01",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
       "id": "ui-25d672120113",
-      "featureGroup": "components",
-      "controlKind": "select",
-      "tag": "select",
-      "role": null,
-      "displayName": "差分の分割方向",
-      "labelKind": "static",
-      "labelExpression": null,
-      "orderScope": {
-        "component": "DocumentDiffWorkspace",
-        "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 67,
-        "sourceColumn": 16,
-        "ordinal": 1
-      },
-      "source": {
-        "kind": "shared",
-        "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 67,
-        "column": 16
-      },
-      "interactions": [
-        "onChange"
-      ],
-      "signature": "sha256:dc1ed1cc09b4905cb1bf9088e76584e686e0d44a1a9c7791520d31a4f5e35129",
-      "targetSourcePresence": {
-        "desktop": "shared-source",
-        "html": "shared-source",
-        "php": "shared-source",
-        "spfx": "shared-source"
-      },
-      "comparisonStatus": "unmapped",
-      "exclusionReason": null,
-      "hosts": {
-        "desktop": "共通正本",
-        "html": "共通正本",
-        "php": "共通正本",
-        "spfx": "共有部品:ホストでの使用条件確認"
-      },
-      "nameCheck": "静的照合",
-      "orderCheck": "共通ソース順序",
-      "designCheck": "共有CSS+ホスト上書きを別検査",
-      "location": {
-        "groupId": "UI101",
-        "name": "共通／DocumentDiffWorkspace／主ツールバー",
-        "order": 1,
-        "number": "UI101-01",
-        "basis": "コンテナー内のソース順（条件付き項目も含む）"
-      }
-    },
-    {
-      "id": "ui-67db79be910c",
-      "featureGroup": "components",
-      "controlKind": "select",
-      "tag": "option",
-      "role": null,
-      "displayName": "自動",
-      "labelKind": "static",
-      "labelExpression": null,
-      "orderScope": {
-        "component": "DocumentDiffWorkspace",
-        "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 67,
-        "sourceColumn": 127,
-        "ordinal": 2
-      },
-      "source": {
-        "kind": "shared",
-        "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 67,
-        "column": 127
-      },
-      "interactions": [],
-      "signature": "sha256:62235eb22c911f225dcc5446517a16a11b119b9cb10e246ecbc8bdce5d2eba80",
-      "targetSourcePresence": {
-        "desktop": "shared-source",
-        "html": "shared-source",
-        "php": "shared-source",
-        "spfx": "shared-source"
-      },
-      "comparisonStatus": "unmapped",
-      "exclusionReason": null,
-      "hosts": {
-        "desktop": "共通正本",
-        "html": "共通正本",
-        "php": "共通正本",
-        "spfx": "共有部品:ホストでの使用条件確認"
-      },
-      "nameCheck": "静的照合",
-      "orderCheck": "共通ソース順序",
-      "designCheck": "共有CSS+ホスト上書きを別検査",
-      "location": {
-        "groupId": "UI102",
-        "name": "共通／DocumentDiffWorkspace／差分の分割方向",
-        "order": 1,
-        "number": "UI102-01",
-        "basis": "コンテナー内のソース順（条件付き項目も含む）"
-      }
-    },
-    {
-      "id": "ui-9c0f2637f8e8",
-      "featureGroup": "components",
-      "controlKind": "select",
-      "tag": "option",
-      "role": null,
-      "displayName": "上下",
-      "labelKind": "static",
-      "labelExpression": null,
-      "orderScope": {
-        "component": "DocumentDiffWorkspace",
-        "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 67,
-        "sourceColumn": 159,
-        "ordinal": 3
-      },
-      "source": {
-        "kind": "shared",
-        "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 67,
-        "column": 159
-      },
-      "interactions": [],
-      "signature": "sha256:91762509d25c399409e833e05cb8d931a6ed2f98c76b40c0d1fe25aaab5fce86",
-      "targetSourcePresence": {
-        "desktop": "shared-source",
-        "html": "shared-source",
-        "php": "shared-source",
-        "spfx": "shared-source"
-      },
-      "comparisonStatus": "unmapped",
-      "exclusionReason": null,
-      "hosts": {
-        "desktop": "共通正本",
-        "html": "共通正本",
-        "php": "共通正本",
-        "spfx": "共有部品:ホストでの使用条件確認"
-      },
-      "nameCheck": "静的照合",
-      "orderCheck": "共通ソース順序",
-      "designCheck": "共有CSS+ホスト上書きを別検査",
-      "location": {
-        "groupId": "UI102",
-        "name": "共通／DocumentDiffWorkspace／差分の分割方向",
-        "order": 2,
-        "number": "UI102-02",
-        "basis": "コンテナー内のソース順（条件付き項目も含む）"
-      }
-    },
-    {
-      "id": "ui-a9ad4d160e37",
-      "featureGroup": "components",
-      "controlKind": "select",
-      "tag": "option",
-      "role": null,
-      "displayName": "左右",
-      "labelKind": "static",
-      "labelExpression": null,
-      "orderScope": {
-        "component": "DocumentDiffWorkspace",
-        "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 67,
-        "sourceColumn": 195,
-        "ordinal": 4
-      },
-      "source": {
-        "kind": "shared",
-        "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 67,
-        "column": 195
-      },
-      "interactions": [],
-      "signature": "sha256:7456d440bf9a4bfbb450924bf8e975dd1a9b212bed4753e8a1f3edf57ca434b3",
-      "targetSourcePresence": {
-        "desktop": "shared-source",
-        "html": "shared-source",
-        "php": "shared-source",
-        "spfx": "shared-source"
-      },
-      "comparisonStatus": "unmapped",
-      "exclusionReason": null,
-      "hosts": {
-        "desktop": "共通正本",
-        "html": "共通正本",
-        "php": "共通正本",
-        "spfx": "共有部品:ホストでの使用条件確認"
-      },
-      "nameCheck": "静的照合",
-      "orderCheck": "共通ソース順序",
-      "designCheck": "共有CSS+ホスト上書きを別検査",
-      "location": {
-        "groupId": "UI102",
-        "name": "共通／DocumentDiffWorkspace／差分の分割方向",
-        "order": 3,
-        "number": "UI102-03",
-        "basis": "コンテナー内のソース順（条件付き項目も含む）"
-      }
-    },
-    {
-      "id": "ui-b40e56a5e888",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "select",
@@ -18928,14 +18783,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 68,
+        "sourceLine": 86,
         "sourceColumn": 16,
-        "ordinal": 5
+        "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 68,
+        "line": 86,
         "column": 16
       },
       "interactions": [
@@ -18960,15 +18815,15 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI101",
+        "groupId": "UI102",
         "name": "共通／DocumentDiffWorkspace／主ツールバー",
-        "order": 2,
-        "number": "UI101-02",
+        "order": 1,
+        "number": "UI102-01",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
     {
-      "id": "ui-f5721b1b41ea",
+      "id": "ui-67db79be910c",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -18979,14 +18834,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 68,
+        "sourceLine": 86,
         "sourceColumn": 119,
-        "ordinal": 6
+        "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 68,
+        "line": 86,
         "column": 119
       },
       "interactions": [],
@@ -19017,7 +18872,7 @@
       }
     },
     {
-      "id": "ui-2bf74cfd243b",
+      "id": "ui-9c0f2637f8e8",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -19028,14 +18883,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 68,
+        "sourceLine": 86,
         "sourceColumn": 154,
-        "ordinal": 7
+        "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 68,
+        "line": 86,
         "column": 154
       },
       "interactions": [],
@@ -19066,7 +18921,7 @@
       }
     },
     {
-      "id": "ui-ffa1e5d53000",
+      "id": "ui-fdf21a446977",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "select",
@@ -19077,14 +18932,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 69,
+        "sourceLine": 87,
         "sourceColumn": 75,
-        "ordinal": 8
+        "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 69,
+        "line": 87,
         "column": 75
       },
       "interactions": [
@@ -19109,15 +18964,15 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI101",
+        "groupId": "UI102",
         "name": "共通／DocumentDiffWorkspace／主ツールバー",
-        "order": 3,
-        "number": "UI101-03",
+        "order": 2,
+        "number": "UI102-02",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
     {
-      "id": "ui-6a45ef87da92",
+      "id": "ui-92ff033a252b",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -19128,14 +18983,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 69,
+        "sourceLine": 87,
         "sourceColumn": 175,
-        "ordinal": 9
+        "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 69,
+        "line": 87,
         "column": 175
       },
       "interactions": [],
@@ -19166,7 +19021,7 @@
       }
     },
     {
-      "id": "ui-eb4cc7f475b5",
+      "id": "ui-f5721b1b41ea",
       "featureGroup": "components",
       "controlKind": "select",
       "tag": "option",
@@ -19177,14 +19032,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 69,
+        "sourceLine": 87,
         "sourceColumn": 219,
-        "ordinal": 10
+        "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 69,
+        "line": 87,
         "column": 219
       },
       "interactions": [],
@@ -19215,7 +19070,7 @@
       }
     },
     {
-      "id": "ui-ec3aa0fa595c",
+      "id": "ui-5285d4f12c06",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -19226,14 +19081,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 70,
+        "sourceLine": 88,
         "sourceColumn": 7,
-        "ordinal": 11
+        "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 70,
+        "line": 88,
         "column": 7
       },
       "interactions": [
@@ -19258,15 +19113,15 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI101",
+        "groupId": "UI102",
         "name": "共通／DocumentDiffWorkspace／主ツールバー",
-        "order": 4,
-        "number": "UI101-04",
+        "order": 3,
+        "number": "UI102-03",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
     {
-      "id": "ui-9d884731b2e3",
+      "id": "ui-623f9b779255",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -19277,14 +19132,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 70,
+        "sourceLine": 88,
         "sourceColumn": 119,
-        "ordinal": 12
+        "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 70,
+        "line": 88,
         "column": 119
       },
       "interactions": [
@@ -19309,15 +19164,15 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI101",
+        "groupId": "UI102",
         "name": "共通／DocumentDiffWorkspace／主ツールバー",
-        "order": 5,
-        "number": "UI101-05",
+        "order": 4,
+        "number": "UI102-04",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
     {
-      "id": "ui-8f30dacd86e1",
+      "id": "ui-a384d69b3695",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -19328,14 +19183,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 70,
+        "sourceLine": 88,
         "sourceColumn": 211,
-        "ordinal": 13
+        "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 70,
+        "line": 88,
         "column": 211
       },
       "interactions": [
@@ -19360,15 +19215,15 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI101",
+        "groupId": "UI102",
         "name": "共通／DocumentDiffWorkspace／主ツールバー",
-        "order": 6,
-        "number": "UI101-06",
+        "order": 5,
+        "number": "UI102-05",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
     {
-      "id": "ui-d1ad69a327de",
+      "id": "ui-eae75c5afe06",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -19379,14 +19234,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 70,
+        "sourceLine": 88,
         "sourceColumn": 317,
-        "ordinal": 14
+        "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 70,
+        "line": 88,
         "column": 317
       },
       "interactions": [
@@ -19411,15 +19266,15 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI101",
+        "groupId": "UI102",
         "name": "共通／DocumentDiffWorkspace／主ツールバー",
-        "order": 7,
-        "number": "UI101-07",
+        "order": 6,
+        "number": "UI102-06",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
     {
-      "id": "ui-4b2040348d29",
+      "id": "ui-ec3aa0fa595c",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -19430,14 +19285,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 70,
+        "sourceLine": 88,
         "sourceColumn": 416,
-        "ordinal": 15
+        "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 70,
+        "line": 88,
         "column": 416
       },
       "interactions": [
@@ -19462,15 +19317,15 @@
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
-        "groupId": "UI101",
+        "groupId": "UI102",
         "name": "共通／DocumentDiffWorkspace／主ツールバー",
-        "order": 8,
-        "number": "UI101-08",
+        "order": 7,
+        "number": "UI102-07",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
     {
-      "id": "ui-71af3328dd04",
+      "id": "ui-9d884731b2e3",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "button",
@@ -19481,14 +19336,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 71,
+        "sourceLine": 89,
         "sourceColumn": 28,
-        "ordinal": 16
+        "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 71,
+        "line": 89,
         "column": 28
       },
       "interactions": [
@@ -24679,14 +24534,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 552,
+        "sourceLine": 554,
         "sourceColumn": 5,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 552,
+        "line": 554,
         "column": 5
       },
       "interactions": [
@@ -24730,14 +24585,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 553,
+        "sourceLine": 555,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 553,
+        "line": 555,
         "column": 5
       },
       "interactions": [
@@ -24781,14 +24636,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 554,
+        "sourceLine": 556,
         "sourceColumn": 5,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 554,
+        "line": 556,
         "column": 5
       },
       "interactions": [
@@ -24832,14 +24687,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 555,
+        "sourceLine": 557,
         "sourceColumn": 5,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 555,
+        "line": 557,
         "column": 5
       },
       "interactions": [
@@ -24883,14 +24738,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 557,
+        "sourceLine": 559,
         "sourceColumn": 19,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 557,
+        "line": 559,
         "column": 19
       },
       "interactions": [],
@@ -24932,14 +24787,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 558,
+        "sourceLine": 560,
         "sourceColumn": 38,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 558,
+        "line": 560,
         "column": 38
       },
       "interactions": [
@@ -24983,14 +24838,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 560,
+        "sourceLine": 562,
         "sourceColumn": 7,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 560,
+        "line": 562,
         "column": 7
       },
       "interactions": [
@@ -25034,14 +24889,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 561,
+        "sourceLine": 563,
         "sourceColumn": 7,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 561,
+        "line": 563,
         "column": 7
       },
       "interactions": [
@@ -25085,14 +24940,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 564,
+        "sourceLine": 566,
         "sourceColumn": 81,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 564,
+        "line": 566,
         "column": 81
       },
       "interactions": [],
@@ -25134,14 +24989,14 @@
       "orderScope": {
         "component": "MarkdownInput",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 358,
+        "sourceLine": 361,
         "sourceColumn": 21,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 358,
+        "line": 361,
         "column": 21
       },
       "interactions": [],
@@ -25183,14 +25038,14 @@
       "orderScope": {
         "component": "MarkdownInput",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 359,
+        "sourceLine": 362,
         "sourceColumn": 10,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 359,
+        "line": 362,
         "column": 10
       },
       "interactions": [
@@ -25235,14 +25090,14 @@
       "orderScope": {
         "component": "InlineCodeCopyButton",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 397,
+        "sourceLine": 400,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 397,
+        "line": 400,
         "column": 10
       },
       "interactions": [
@@ -25286,14 +25141,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 705,
+        "sourceLine": 708,
         "sourceColumn": 18,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 705,
+        "line": 708,
         "column": 18
       },
       "interactions": [
@@ -25337,14 +25192,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 731,
+        "sourceLine": 734,
         "sourceColumn": 27,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 731,
+        "line": 734,
         "column": 27
       },
       "interactions": [
@@ -25388,14 +25243,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 731,
+        "sourceLine": 734,
         "sourceColumn": 101,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 731,
+        "line": 734,
         "column": 101
       },
       "interactions": [
@@ -25439,14 +25294,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 731,
+        "sourceLine": 734,
         "sourceColumn": 175,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 731,
+        "line": 734,
         "column": 175
       },
       "interactions": [
@@ -25490,14 +25345,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 731,
+        "sourceLine": 734,
         "sourceColumn": 259,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 731,
+        "line": 734,
         "column": 259
       },
       "interactions": [
@@ -25541,14 +25396,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 766,
+        "sourceLine": 769,
         "sourceColumn": 135,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 766,
+        "line": 769,
         "column": 135
       },
       "interactions": [
@@ -25592,14 +25447,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 767,
+        "sourceLine": 770,
         "sourceColumn": 95,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 767,
+        "line": 770,
         "column": 95
       },
       "interactions": [
@@ -25643,14 +25498,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 770,
+        "sourceLine": 773,
         "sourceColumn": 58,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 770,
+        "line": 773,
         "column": 58
       },
       "interactions": [
@@ -25694,14 +25549,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 770,
+        "sourceLine": 773,
         "sourceColumn": 219,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 770,
+        "line": 773,
         "column": 219
       },
       "interactions": [
@@ -25745,14 +25600,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 770,
+        "sourceLine": 773,
         "sourceColumn": 340,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 770,
+        "line": 773,
         "column": 340
       },
       "interactions": [
@@ -25796,14 +25651,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 770,
+        "sourceLine": 773,
         "sourceColumn": 459,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 770,
+        "line": 773,
         "column": 459
       },
       "interactions": [],
@@ -25845,14 +25700,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 770,
+        "sourceLine": 773,
         "sourceColumn": 497,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 770,
+        "line": 773,
         "column": 497
       },
       "interactions": [],
@@ -25894,14 +25749,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 771,
+        "sourceLine": 774,
         "sourceColumn": 60,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 771,
+        "line": 774,
         "column": 60
       },
       "interactions": [
@@ -25945,14 +25800,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 772,
+        "sourceLine": 775,
         "sourceColumn": 59,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 772,
+        "line": 775,
         "column": 59
       },
       "interactions": [
@@ -25996,14 +25851,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 773,
+        "sourceLine": 776,
         "sourceColumn": 58,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 773,
+        "line": 776,
         "column": 58
       },
       "interactions": [
@@ -26047,14 +25902,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 775,
+        "sourceLine": 778,
         "sourceColumn": 145,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 775,
+        "line": 778,
         "column": 145
       },
       "interactions": [
@@ -26098,14 +25953,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 783,
         "sourceColumn": 53,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 783,
         "column": 53
       },
       "interactions": [
@@ -26149,14 +26004,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 783,
         "sourceColumn": 191,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 783,
         "column": 191
       },
       "interactions": [
@@ -26200,14 +26055,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 783,
         "sourceColumn": 461,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 783,
         "column": 461
       },
       "interactions": [
@@ -26251,14 +26106,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 789,
+        "sourceLine": 792,
         "sourceColumn": 111,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 789,
+        "line": 792,
         "column": 111
       },
       "interactions": [
@@ -26302,14 +26157,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 843,
+        "sourceLine": 846,
         "sourceColumn": 72,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 843,
+        "line": 846,
         "column": 72
       },
       "interactions": [
@@ -26354,14 +26209,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 852,
+        "sourceLine": 855,
         "sourceColumn": 33,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 852,
+        "line": 855,
         "column": 33
       },
       "interactions": [
@@ -26405,14 +26260,14 @@
       "orderScope": {
         "component": "UnsupportedFileCard",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 860,
+        "sourceLine": 863,
         "sourceColumn": 19,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 860,
+        "line": 863,
         "column": 19
       },
       "interactions": [
@@ -26456,14 +26311,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1241,
+        "sourceLine": 1245,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1241,
+        "line": 1245,
         "column": 7
       },
       "interactions": [
@@ -26509,14 +26364,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1249,
+        "sourceLine": 1253,
         "sourceColumn": 22,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1249,
+        "line": 1253,
         "column": 22
       },
       "interactions": [],
@@ -48290,8 +48145,8 @@
       "signature": "cf11d9ee12f51cb2602517d328fe65037e13c637c93e14ac49268eba3e5ed802"
     },
     {
-      "id": "cdc8b904ca049137",
-      "key": "web-platform/packages/editor-ui/src/styles/app.css||.editor-mode-controls > .document-action-button[aria-pressed=\"true\"]",
+      "id": "83c46cc60b3ecd61",
+      "key": "web-platform/packages/editor-ui/src/styles/app.css||.editor-mode-controls .workspace-view-controls > .document-action-button[aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/app.css",
       "line": 919,
       "values": [
@@ -48614,10 +48469,26 @@
       "signature": "1ef936c14589a630da3a7c5d71c92d185378865be1e5f679eedfbbfda88595b7"
     },
     {
+      "id": "ac40d8e5ac638777",
+      "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.document-diff-workspace__header select",
+      "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
+      "line": 3,
+      "values": [
+        "min-height:30px",
+        "padding:.2rem .45rem",
+        "color:var(--text-primary)",
+        "background:var(--btn-bg)",
+        "border:1px solid var(--border-color)",
+        "border-radius:5px",
+        "font:inherit"
+      ],
+      "signature": "1c08e29345c4c0f12c8ac8bbed6e82531ede5eec8fb8e56b714dc0d73f7f2ebf"
+    },
+    {
       "id": "96e1ecc9f71f7349",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.document-diff-workspace button",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 4,
+      "line": 6,
       "values": [
         "color:var(--text-primary)",
         "background:var(--btn-bg)",
@@ -48630,7 +48501,7 @@
       "id": "e5a757be024c8efa",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.document-diff-workspace button:hover:not(:disabled), .document-diff-workspace button:focus-visible",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 5,
+      "line": 7,
       "values": [
         "background:var(--btn-hover)"
       ],
@@ -48640,7 +48511,7 @@
       "id": "8095cf0586cf7214",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.document-diff-workspace__header button",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 7,
+      "line": 9,
       "values": [
         "min-height:28px",
         "padding:.2rem .5rem"
@@ -48651,7 +48522,7 @@
       "id": "c30952a3b9d04841",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.document-diff__pane, .diff-action-column",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 10,
+      "line": 12,
       "values": [
         "min-height:0"
       ],
@@ -48661,7 +48532,7 @@
       "id": "1a6bce026ce59969",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.document-diff__pane > header, .diff-action-heading",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 11,
+      "line": 13,
       "values": [
         "height:36px",
         "padding:0 8px",
@@ -48674,7 +48545,7 @@
       "id": "c5da440f6915e110",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-action-heading",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 12,
+      "line": 14,
       "values": [
         "padding:0",
         "font-size:11px"
@@ -48685,28 +48556,39 @@
       "id": "7d647b94ab50633b",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-code-editor .cm-selectionBackground",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 25,
+      "line": 37,
       "values": [
-        "background:color-mix(in srgb, var(--accent-color) 28%, transparent)!important"
+        "background:var(--selection-range-bg)!important"
       ],
-      "signature": "d9610c65326eb9096b0c6652d1d3efcfb90acae027e08769b5c6cd1f7c074345"
+      "signature": "3fd2ec942f3696a1b6266bef8d80039ae589a741beb68c36f3ee4ace7f9ef001"
+    },
+    {
+      "id": "ce99768368ba76bb",
+      "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-unified ::selection",
+      "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
+      "line": 38,
+      "values": [
+        "background:var(--selection-range-bg)"
+      ],
+      "signature": "229a25c275723afb68480d48faf39022fe149ec0e812768f80e5f93bbdeed643"
     },
     {
       "id": "658f3d5192f2d5ae",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-row-actions",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 27,
+      "line": 40,
       "values": [
         "min-height:0",
+        "padding-top:36px",
         "background:var(--panel-bg)"
       ],
-      "signature": "b6acb08d0c23444529121bbdc62ad88d0d910223e693fdd1b3323eca61dfe33a"
+      "signature": "7fb70a5e7be26e79fa24c3cf0940068df4dadf61820bcabb2a521e2de5c6f0fe"
     },
     {
       "id": "85078a66b95f15cc",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-row-actions__content",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 28,
+      "line": 41,
       "values": [
         "min-height:100%"
       ],
@@ -48716,7 +48598,7 @@
       "id": "a703d4ee492094e8",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-row-actions__row",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 29,
+      "line": 42,
       "values": [
         "height:22px"
       ],
@@ -48726,7 +48608,7 @@
       "id": "7b4040901e5a1bf5",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-row-actions button",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 30,
+      "line": 43,
       "values": [
         "gap:1px",
         "height:22px",
@@ -48741,7 +48623,7 @@
       "id": "69d050ebb4944e34",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-row-actions button small",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 31,
+      "line": 44,
       "values": [
         "font-size:10px"
       ],
@@ -48751,7 +48633,7 @@
       "id": "d424b66d1bc2e26d",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-preview-resize--action",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 46,
+      "line": 59,
       "values": [
         "background:var(--panel-bg)"
       ],
@@ -48761,7 +48643,7 @@
       "id": "d22cefe38f8f9f76",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-columns--vertical .diff-row-actions",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 48,
+      "line": 61,
       "values": [
         "min-height:88px"
       ],
@@ -48771,7 +48653,7 @@
       "id": "420ba93dda67bc7f",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.diff-fold-summary",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 49,
+      "line": 62,
       "values": [
         "padding:.2rem .5rem"
       ],
@@ -48781,7 +48663,7 @@
       "id": "d659852bb9cc4137",
       "key": "web-platform/packages/editor-ui/src/styles/document-diff.css||.document-actions button[aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/document-diff.css",
-      "line": 52,
+      "line": 65,
       "values": [
         "color:#fff",
         "background:var(--accent-color)"
@@ -49238,7 +49120,7 @@
       "id": "d144458cc1a02fe3",
       "key": "web-platform/packages/editor-ui/src/styles/selection-state.css||.markdown-body ::selection, .markdown-body::selection, .preview-inline-editor::selection",
       "file": "web-platform/packages/editor-ui/src/styles/selection-state.css",
-      "line": 22,
+      "line": 24,
       "values": [
         "background:var(--selection-range-bg)",
         "color:var(--text-primary)"
@@ -49246,20 +49128,30 @@
       "signature": "677a7ec016b75091ff7d7a6f5770589e9a8cde0d21a263381210086f6c027336"
     },
     {
+      "id": "1bbef9709d474945",
+      "key": "web-platform/packages/editor-ui/src/styles/selection-state.css||.cm-selection-range, .cm-selection-range span",
+      "file": "web-platform/packages/editor-ui/src/styles/selection-state.css",
+      "line": 28,
+      "values": [
+        "background:var(--selection-range-bg)!important"
+      ],
+      "signature": "3fd2ec942f3696a1b6266bef8d80039ae589a741beb68c36f3ee4ace7f9ef001"
+    },
+    {
       "id": "71fc5bbfd03d7ffd",
       "key": "web-platform/packages/editor-ui/src/styles/selection-state.css|@media print|.markdown-body .is-editor-current-line, .markdown-body .preview-block-reorder-picked, .markdown-body .preview-block-reorder-hovered,\n  .data-grid-table .is-selected-row > td, .data-grid-table .is-range-selected,\n  .table-editor-grid .is-selected, .cm-line.cm-activeLine, .cm-line.is-current",
       "file": "web-platform/packages/editor-ui/src/styles/selection-state.css",
-      "line": 27,
+      "line": 30,
       "values": [
         "background:transparent!important"
       ],
       "signature": "49d928df892e86dfc22037bebdd9d4a9558357c2a9ccdc29bd3b4fd6b1c2fa0c"
     },
     {
-      "id": "22e1582c444865b4",
-      "key": "web-platform/packages/editor-ui/src/styles/selection-state.css|@media print|.cm-selectionBackground",
+      "id": "b3e244e4c0ef7bcd",
+      "key": "web-platform/packages/editor-ui/src/styles/selection-state.css|@media print|.cm-selectionBackground, .cm-selection-range, .cm-selection-range span",
       "file": "web-platform/packages/editor-ui/src/styles/selection-state.css",
-      "line": 32,
+      "line": 35,
       "values": [
         "background:transparent!important"
       ],
@@ -49390,8 +49282,8 @@
       "signature": "ee2d200b9453164cee42654258cff51565932372d4e5d511490bad5646370e2b"
     },
     {
-      "id": "bf88b5536952b1a6",
-      "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls [data-ui-command=\"document.diff\"].is-active,\n.workspace-view-controls [data-ui-command=\"document.diff\"][aria-pressed=\"true\"]",
+      "id": "b9cdf83f71bdbb98",
+      "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css||.workspace-view-controls [data-ui-command=\"document.diff\"].is-active,\n.app-container .workspace-view-controls [data-ui-command=\"document.diff\"][aria-pressed=\"true\"],\n.workspace-view-controls [data-ui-command=\"document.diff\"][aria-pressed=\"true\"]",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
       "line": 39,
       "values": [
@@ -49404,7 +49296,7 @@
       "id": "202c67724169d93f",
       "key": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css|@media (max-width:720px)|.app-container .view-controls [data-ui-command],.app-container .document-actions button,.web-app>header button,.web-app>header select[data-ui-command],.spfxMdVisualizer [data-ui-command]",
       "file": "web-platform/packages/editor-ui/src/styles/workspace-view-controls.css",
-      "line": 43,
+      "line": 44,
       "values": [
         "min-height:44px"
       ],

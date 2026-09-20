@@ -4,17 +4,17 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { DocumentDiffWorkspace, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
 
 afterEach(cleanup);
-it.each([false, true].flatMap(threeWay => ["single", "split"].flatMap(display => ["auto", "vertical", "horizontal"].map(direction => ({ threeWay, display, direction })))))
-("差分状態 $threeWay/$display/$direction の列構成を保つ", ({ threeWay, display, direction }) => {
+it.each([false, true].flatMap(threeWay => ["single", "split"].map(display => ({ threeWay, display }))))
+("差分状態 $threeWay/$display の列構成を保つ", ({ threeWay, display }) => {
   render(<Fixture source={{ ...target, storageContent: threeWay ? target.storageContent : target.openedContent }} />);
   fireEvent.change(screen.getByLabelText("差分の表示"), { target: { value: display } });
-  fireEvent.change(screen.getByLabelText("差分の分割方向"), { target: { value: direction } });
+  expect(screen.queryByLabelText("差分の分割方向")).toBeNull();
   if (display === "single") {
     expect(screen.getByLabelText("統合差分")).toBeTruthy();
     expect(document.querySelectorAll('.diff-columns').length).toBe(0);
   } else {
     expect(document.querySelectorAll('.diff-columns > article').length).toBe(threeWay ? 3 : 2);
-    expect(document.querySelector(`.diff-columns--${direction === 'auto' ? 'vertical' : direction}`)).toBeTruthy();
+    expect(document.querySelector('.diff-columns--horizontal')).toBeTruthy();
   }
 });
 beforeAll(() => { Range.prototype.getClientRects = () => [] as unknown as DOMRectList; Range.prototype.getBoundingClientRect = () => new DOMRect(); });
@@ -22,6 +22,12 @@ const target: DocumentDiffTarget = { path: "C:\\docs\\note.md", baseDir: "C:\\do
 function Fixture({ content = target.editingContent, source = target }: { content?: string; source?: DocumentDiffTarget }) { const [draft, setDraft] = useState(content); return <><DocumentDiffWorkspace target={{ ...source, editingContent: draft }} editorMode="edit" theme="dark" onEditingChange={setDraft} /><output data-testid="draft">{draft}</output></>; }
 
 describe("差分の表示と採用", () => {
+  it("コード併用時はプレビューと同じ列幅を使い行操作用の列を確保する", () => {
+    render(<DocumentDiffWorkspace target={target} editorMode="split" theme="light" />);
+    const code = document.querySelector<HTMLElement>(".diff-columns")!, preview = document.querySelector<HTMLElement>(".diff-previews__columns")!;
+    expect(code.style.gridTemplateColumns).toBe(preview.style.gridTemplateColumns);
+    expect(code.style.gridTemplateColumns).toContain("64px");
+  });
   it("3-wayを開始時・編集中・ストレージ順に表示する", () => {
     render(<Fixture />);
     expect([...document.querySelectorAll("[data-pane-key]")].map((node) => node.getAttribute("data-pane-key"))).toEqual(["base", "result", "storage"]);
@@ -35,10 +41,8 @@ describe("差分の表示と採用", () => {
     fireEvent.click(screen.getByRole("button", { name: "ストレージの2行目を採用" }));
     expect(screen.getByTestId("draft").textContent).toBe("a\nS\nc");
   });
-  it("自動は上下、選択で左右と1画面の比較対象を切り替える", () => {
+  it("左右分割固定で1画面の比較対象を切り替える", () => {
     render(<Fixture />);
-    expect(document.querySelector(".diff-columns--vertical")).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("差分の分割方向"), { target: { value: "horizontal" } });
     expect(document.querySelector(".diff-columns--horizontal")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("差分の表示"), { target: { value: "single" } });
     expect(screen.getByLabelText("1画面の比較対象")).toBeTruthy();
@@ -51,7 +55,12 @@ describe("差分の表示と採用", () => {
     fireEvent.change(screen.getByLabelText("差分の表示"), { target: { value: "single" } });
     expect(document.querySelector(".diff-columns")).toBeNull();
     expect(screen.queryByLabelText("1画面の比較対象")).toBeNull();
-    expect(screen.getByLabelText("統合差分").textContent).toContain("- L\n+ S");
+    expect(screen.getByLabelText("統合差分").textContent).toContain("- S\n+ L");
+    expect(screen.getByLabelText("統合差分").querySelector(".is-deleted .diff-word-deleted")?.textContent).toBe("S");
+    expect(screen.getByLabelText("統合差分").querySelector(".is-added .diff-word-added")?.textContent).toBe("L");
+    const removed = screen.getByLabelText("統合差分").querySelector<HTMLElement>(".is-deleted")!;
+    fireEvent.keyDown(removed, { key: "ArrowDown" });
+    expect(document.activeElement?.classList.contains("is-added")).toBe(true);
   });
   it("5行以上の一致部分をまとめ、クリックで展開する", () => {
     const source = { ...target, openedContent: "a\nb\nc\nd\ne\nf\ng\nh", storageContent: "a\nS\nc\nd\ne\nf\ng\nh" };
