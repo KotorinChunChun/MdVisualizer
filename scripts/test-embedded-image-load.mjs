@@ -24,7 +24,13 @@ const result = await evaluate(`new Promise((resolve) => {
       const before = performance.now();
       if (preview) { preview.scrollTop = preview.scrollHeight; preview.dispatchEvent(new Event('scroll')); preview.scrollTop = 0; preview.dispatchEvent(new Event('scroll')); }
       resolve({ imageCount: images.length, brokenImages: images.filter((image) => image.naturalWidth === 0).length, loadMs: Math.round(performance.now() - started), scrollMs: Math.round(performance.now() - before), scrollHeight: preview?.scrollHeight ?? 0 });
-    } else if (performance.now() - started > 60000) resolve({ imageCount: images.length, pendingImages: pending, timeout: true });
+    } else if (performance.now() - started > 60000) resolve({
+      imageCount: images.length,
+      pendingImages: pending,
+      brokenImages: images.filter((image) => image.complete && image.naturalWidth === 0).length,
+      samples: images.slice(0, 3).map((image) => ({ src: image.getAttribute('src')?.slice(0, 80), complete: image.complete, naturalWidth: image.naturalWidth, currentSrc: image.currentSrc?.slice(0, 80) })),
+      timeout: true,
+    });
     else setTimeout(waitForImages, 50);
   };
   const preview = document.querySelector('.preview-container');
