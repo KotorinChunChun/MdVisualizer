@@ -1,0 +1,48 @@
+:root {
+  color-scheme: light;
+  --accent-color: #3b82f6;
+  --selection-surface: #fff;
+  --selection-current-bg: color-mix(in srgb, var(--accent-color) 10%, var(--selection-surface));
+  --selection-range-bg: color-mix(in srgb, var(--accent-color) 28%, var(--selection-surface));
+  --selection-current-edge: #2563eb;
+  --page: #eef2f7; --panel: #f5f7fb; --ink: #18212f; --muted: #526279; --border: #cbd5e1;
+  --toc-bg: color-mix(in srgb, var(--accent-color) 20%, var(--panel));
+  --diff-bg: color-mix(in srgb, #f59e0b 16%, transparent);
+  --diff-edge: #d97706;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --selection-surface: #202630; --page: #131820; --panel: #272f3b;
+  --ink: #eceff4; --muted: #b6c2d3; --border: #485569; --selection-current-edge: #60a5fa;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.65 "Segoe UI", "Yu Gothic UI", sans-serif; }
+main { max-width: 1120px; margin: auto; padding: 28px 24px 50px; }
+h1 { font-size: 26px; margin: 0; } h2 { font-size: 18px; margin: 0 0 8px; }
+p { margin: 8px 0 16px; } .muted { color: var(--muted); }
+.top { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+button, select { font:inherit; color:var(--ink); background:var(--selection-surface); border:1px solid var(--border); border-radius:6px; padding:6px 10px; }
+button { cursor:pointer; } :focus-visible { outline:2px solid var(--selection-current-edge); outline-offset:3px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+section { background:var(--selection-surface); border:1px solid var(--border); border-radius:10px; padding:20px; min-width:0; }
+.wide { grid-column:1/-1; } .num { color:var(--selection-current-edge); font-variant-numeric:tabular-nums; margin-right:8px; }
+.sample { border:1px solid var(--border); border-radius:6px; overflow:hidden; background:var(--selection-surface); }
+.row { padding:8px 12px; border-left:3px solid transparent; min-height:40px; }
+.current { background:var(--selection-current-bg); border-left-color:var(--selection-current-edge); }
+.range { background:var(--selection-range-bg); }
+.text-example::selection, .text-example *::selection { background:var(--selection-range-bg); color:var(--ink); }
+.move { padding:12px; border:2px solid var(--accent-color); background:var(--selection-current-bg); cursor:grab; }
+.hover-example { margin-top:10px; padding:10px; border:1px dashed var(--border); }
+.hover-example:hover, .hover-example:focus-visible { background:var(--selection-current-bg); }
+.toc { background:var(--toc-bg); border:1px solid color-mix(in srgb, var(--accent-color) 65%, var(--border)); border-radius:5px; padding:6px 12px; font-weight:750; }
+mark { background:#fbbf24; color:#111827; padding:0 2px; border-radius:2px; }
+.changed { background:var(--diff-bg); border-left-color:var(--diff-edge); }
+.change-badge { display:inline-block; color:var(--ink); background:var(--diff-bg); border:1px solid var(--diff-edge); padding:0 5px; margin-left:12px; font:12px/1.8 sans-serif; border-radius:3px; }
+table { width:100%; border-collapse:collapse; margin-top:10px; } th,td { padding:7px 12px; border:1px solid var(--border); text-align:left; } th { background:var(--panel); }
+code { font-family:Consolas,monospace; } .pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.pane-title { padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--border); }
+.demo-row { width:100%; display:block; text-align:left; border-radius:0; border-top:0; border-right:0; border-bottom:0; border-left:3px solid transparent; background:var(--selection-surface); }
+.demo-row[aria-pressed="true"] { background:var(--selection-current-bg); border-left-color:var(--selection-current-edge); }
+.hint { font-size:13px; color:var(--muted); } .swatches { display:flex; gap:12px; flex-wrap:wrap; margin:18px 0; }
+.swatch { border:1px solid var(--border); border-radius:5px; padding:7px 14px; }
+@media(max-width:720px) { .grid,.pair { grid-template-columns:1fr; } main { padding:18px 12px; } }
