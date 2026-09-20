@@ -7,7 +7,8 @@
 - [内部PDF](/docs/developer/testing/03-internal-pdf.md)、[Diff](/docs/developer/testing/04-document-diff.md)は各手順に従う。
 - ボタン静的検査: npm.cmd run test:button-style-rules。
 - 編集テスト結果HTML: npm.cmd run report:editing -- --version v0.0.18。版は今回の対象に置き換える。
-- デバッグ実画面: npm.cmd run debug:smoke -- -TargetVersion v0.0.18。既存の未保存文書を保護する。
+- 日常の実画面確認: `run-debug-MdVisualizer-all.ps1`を継続起動しHMRで反映する。詳細は[ビルド・検証](/docs/developer/BUILD_COMMANDS.md)へ。
+- 機能完了時・公開前のGUI受入: npm.cmd run debug:smoke -- -TargetVersion v0.0.18。例の版を対象版へ置き換え、既存の未保存文書を保護する。
 - 埋め込み画像の性能回帰: [性能回帰測定](/docs/developer/testing/06-performance-regression.md)。100枚・500×500画像のロード時間とスクロール時間を基準値と比較する。
 - ローカルリンク、対象版・ブランチ、AIメニューの対象範囲も変更に応じて確認する。
 

@@ -89,7 +89,7 @@ pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-MdVisualizerReleas
 
 | スクリプト | 用途 |
 |---|---|
-| `run-debug-MdVisualizer-all.ps1` | 全機能をデバッグビルドして起動する。 |
+| `run-debug-MdVisualizer-all.ps1` | 日常開発用。`tauri dev`を継続起動しfrontendはHMRで反映、Rust変更時は再コンパイルする。 |
 | `run-debug-MdVisualizer-all-sample.ps1` | `samples/sample.md`を使用して全機能をデバッグ起動する。`-TestFile`で変更できる。 |
 | `run-debug-MdVisualizer-all-smoke.ps1` | デバッグ再ビルド後に実画面スモークを実行する。実行可否と未保存文書保護は最新のAGENTS.mdに従う。 |
 | `run-release-MdVisualizer-all.ps1` | 全機能をリリースビルドし、生成した実行ファイルを起動する。 |

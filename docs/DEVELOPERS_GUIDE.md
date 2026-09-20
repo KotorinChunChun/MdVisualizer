@@ -44,6 +44,8 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 
 ## GUI受入
 
+日常のfrontend修正は既存の`tauri dev`起動を維持し、HMRで確認します。機能単位の完了時にフルビルドとGUI受入を行い、公開指示後はproduction成果物を検証します。[起動・受入・リリースの手順](/docs/developer/BUILD_COMMANDS.md)と[性能回帰測定](/docs/developer/testing/06-performance-regression.md)を工程選択の入口にしてください。
+
 実画面確認の可否、操作対象、未保存文書の保護は[AGENTS.md](../AGENTS.md)のGUIテスト方針を正本とします。確認手順は[検証手順](/docs/developer/testing/01-test-strategy.md)を参照し、実施結果と未確認事項は対象版の実装報告へ記録します。
 
 ## 配布との境界
