@@ -39,14 +39,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2360,
+        "sourceLine": 2380,
         "sourceColumn": 11,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2360,
+        "line": 2380,
         "column": 11
       },
       "interactions": [
@@ -91,14 +91,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2361,
+        "sourceLine": 2381,
         "sourceColumn": 11,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2361,
+        "line": 2381,
         "column": 11
       },
       "interactions": [
@@ -143,14 +143,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2362,
+        "sourceLine": 2382,
         "sourceColumn": 11,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2362,
+        "line": 2382,
         "column": 11
       },
       "interactions": [
@@ -195,14 +195,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2365,
+        "sourceLine": 2385,
         "sourceColumn": 11,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2365,
+        "line": 2385,
         "column": 11
       },
       "interactions": [
@@ -247,14 +247,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2366,
+        "sourceLine": 2386,
         "sourceColumn": 11,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2366,
+        "line": 2386,
         "column": 11
       },
       "interactions": [
@@ -299,14 +299,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2369,
+        "sourceLine": 2389,
         "sourceColumn": 141,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2369,
+        "line": 2389,
         "column": 141
       },
       "interactions": [
@@ -351,14 +351,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2380,
+        "sourceLine": 2400,
         "sourceColumn": 67,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2380,
+        "line": 2400,
         "column": 67
       },
       "interactions": [
@@ -403,14 +403,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2381,
+        "sourceLine": 2401,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2381,
+        "line": 2401,
         "column": 9
       },
       "interactions": [
@@ -455,14 +455,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2474,
+        "sourceLine": 2495,
         "sourceColumn": 13,
         "ordinal": 9
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2474,
+        "line": 2495,
         "column": 13
       },
       "interactions": [
@@ -507,14 +507,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2479,
+        "sourceLine": 2500,
         "sourceColumn": 15,
         "ordinal": 10
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2479,
+        "line": 2500,
         "column": 15
       },
       "interactions": [],
@@ -557,14 +557,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2479,
+        "sourceLine": 2500,
         "sourceColumn": 55,
         "ordinal": 11
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2479,
+        "line": 2500,
         "column": 55
       },
       "interactions": [],
@@ -607,14 +607,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2479,
+        "sourceLine": 2500,
         "sourceColumn": 92,
         "ordinal": 12
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2479,
+        "line": 2500,
         "column": 92
       },
       "interactions": [],
@@ -657,14 +657,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2479,
+        "sourceLine": 2500,
         "sourceColumn": 134,
         "ordinal": 13
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2479,
+        "line": 2500,
         "column": 134
       },
       "interactions": [],
@@ -707,14 +707,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2479,
+        "sourceLine": 2500,
         "sourceColumn": 168,
         "ordinal": 14
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2479,
+        "line": 2500,
         "column": 168
       },
       "interactions": [],
@@ -757,14 +757,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2479,
+        "sourceLine": 2500,
         "sourceColumn": 202,
         "ordinal": 15
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2479,
+        "line": 2500,
         "column": 202
       },
       "interactions": [],
@@ -807,14 +807,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2479,
+        "sourceLine": 2500,
         "sourceColumn": 236,
         "ordinal": 16
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2479,
+        "line": 2500,
         "column": 236
       },
       "interactions": [],
@@ -857,14 +857,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2479,
+        "sourceLine": 2500,
         "sourceColumn": 281,
         "ordinal": 17
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2479,
+        "line": 2500,
         "column": 281
       },
       "interactions": [],
@@ -907,14 +907,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2483,
+        "sourceLine": 2504,
         "sourceColumn": 13,
         "ordinal": 18
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2483,
+        "line": 2504,
         "column": 13
       },
       "interactions": [
@@ -959,14 +959,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2484,
+        "sourceLine": 2505,
         "sourceColumn": 41,
         "ordinal": 19
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2484,
+        "line": 2505,
         "column": 41
       },
       "interactions": [],
@@ -1009,14 +1009,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2484,
+        "sourceLine": 2505,
         "sourceColumn": 74,
         "ordinal": 20
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2484,
+        "line": 2505,
         "column": 74
       },
       "interactions": [],
@@ -1059,14 +1059,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2484,
+        "sourceLine": 2505,
         "sourceColumn": 114,
         "ordinal": 21
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2484,
+        "line": 2505,
         "column": 114
       },
       "interactions": [],
@@ -1109,14 +1109,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2485,
+        "sourceLine": 2506,
         "sourceColumn": 39,
         "ordinal": 22
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2485,
+        "line": 2506,
         "column": 39
       },
       "interactions": [],
@@ -1159,14 +1159,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2485,
+        "sourceLine": 2506,
         "sourceColumn": 81,
         "ordinal": 23
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2485,
+        "line": 2506,
         "column": 81
       },
       "interactions": [],
@@ -24679,14 +24679,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 526,
+        "sourceLine": 552,
         "sourceColumn": 5,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 526,
+        "line": 552,
         "column": 5
       },
       "interactions": [
@@ -24730,14 +24730,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 527,
+        "sourceLine": 553,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 527,
+        "line": 553,
         "column": 5
       },
       "interactions": [
@@ -24781,14 +24781,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 528,
+        "sourceLine": 554,
         "sourceColumn": 5,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 528,
+        "line": 554,
         "column": 5
       },
       "interactions": [
@@ -24832,14 +24832,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 529,
+        "sourceLine": 555,
         "sourceColumn": 5,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 529,
+        "line": 555,
         "column": 5
       },
       "interactions": [
@@ -24883,14 +24883,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 531,
+        "sourceLine": 557,
         "sourceColumn": 19,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 531,
+        "line": 557,
         "column": 19
       },
       "interactions": [],
@@ -24932,14 +24932,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 532,
+        "sourceLine": 558,
         "sourceColumn": 38,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 532,
+        "line": 558,
         "column": 38
       },
       "interactions": [
@@ -24983,14 +24983,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 534,
+        "sourceLine": 560,
         "sourceColumn": 7,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 534,
+        "line": 560,
         "column": 7
       },
       "interactions": [
@@ -25034,14 +25034,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 535,
+        "sourceLine": 561,
         "sourceColumn": 7,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 535,
+        "line": 561,
         "column": 7
       },
       "interactions": [
@@ -25085,14 +25085,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 538,
+        "sourceLine": 564,
         "sourceColumn": 81,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 538,
+        "line": 564,
         "column": 81
       },
       "interactions": [],
@@ -25134,14 +25134,14 @@
       "orderScope": {
         "component": "MarkdownInput",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 353,
+        "sourceLine": 358,
         "sourceColumn": 21,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 353,
+        "line": 358,
         "column": 21
       },
       "interactions": [],
@@ -25183,14 +25183,14 @@
       "orderScope": {
         "component": "MarkdownInput",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 354,
+        "sourceLine": 359,
         "sourceColumn": 10,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 354,
+        "line": 359,
         "column": 10
       },
       "interactions": [
@@ -25235,14 +25235,14 @@
       "orderScope": {
         "component": "InlineCodeCopyButton",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 392,
+        "sourceLine": 397,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 392,
+        "line": 397,
         "column": 10
       },
       "interactions": [
@@ -25286,14 +25286,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 699,
+        "sourceLine": 705,
         "sourceColumn": 18,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 699,
+        "line": 705,
         "column": 18
       },
       "interactions": [
@@ -25337,14 +25337,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 725,
+        "sourceLine": 731,
         "sourceColumn": 27,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 725,
+        "line": 731,
         "column": 27
       },
       "interactions": [
@@ -25388,14 +25388,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 725,
+        "sourceLine": 731,
         "sourceColumn": 101,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 725,
+        "line": 731,
         "column": 101
       },
       "interactions": [
@@ -25439,14 +25439,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 725,
+        "sourceLine": 731,
         "sourceColumn": 175,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 725,
+        "line": 731,
         "column": 175
       },
       "interactions": [
@@ -25490,14 +25490,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 725,
+        "sourceLine": 731,
         "sourceColumn": 259,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 725,
+        "line": 731,
         "column": 259
       },
       "interactions": [
@@ -25541,14 +25541,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 760,
+        "sourceLine": 766,
         "sourceColumn": 135,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 760,
+        "line": 766,
         "column": 135
       },
       "interactions": [
@@ -25592,14 +25592,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 761,
+        "sourceLine": 767,
         "sourceColumn": 95,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 761,
+        "line": 767,
         "column": 95
       },
       "interactions": [
@@ -25643,14 +25643,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 764,
+        "sourceLine": 770,
         "sourceColumn": 58,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 764,
+        "line": 770,
         "column": 58
       },
       "interactions": [
@@ -25694,14 +25694,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 764,
+        "sourceLine": 770,
         "sourceColumn": 219,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 764,
+        "line": 770,
         "column": 219
       },
       "interactions": [
@@ -25745,14 +25745,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 764,
+        "sourceLine": 770,
         "sourceColumn": 340,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 764,
+        "line": 770,
         "column": 340
       },
       "interactions": [
@@ -25796,14 +25796,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 764,
+        "sourceLine": 770,
         "sourceColumn": 459,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 764,
+        "line": 770,
         "column": 459
       },
       "interactions": [],
@@ -25845,14 +25845,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 764,
+        "sourceLine": 770,
         "sourceColumn": 497,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 764,
+        "line": 770,
         "column": 497
       },
       "interactions": [],
@@ -25894,14 +25894,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 765,
+        "sourceLine": 771,
         "sourceColumn": 60,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 765,
+        "line": 771,
         "column": 60
       },
       "interactions": [
@@ -25945,14 +25945,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 766,
+        "sourceLine": 772,
         "sourceColumn": 59,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 766,
+        "line": 772,
         "column": 59
       },
       "interactions": [
@@ -25996,14 +25996,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 767,
+        "sourceLine": 773,
         "sourceColumn": 58,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 767,
+        "line": 773,
         "column": 58
       },
       "interactions": [
@@ -26047,14 +26047,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 769,
+        "sourceLine": 775,
         "sourceColumn": 145,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 769,
+        "line": 775,
         "column": 145
       },
       "interactions": [
@@ -26098,14 +26098,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 774,
+        "sourceLine": 780,
         "sourceColumn": 53,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 774,
+        "line": 780,
         "column": 53
       },
       "interactions": [
@@ -26149,14 +26149,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 774,
+        "sourceLine": 780,
         "sourceColumn": 191,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 774,
+        "line": 780,
         "column": 191
       },
       "interactions": [
@@ -26200,14 +26200,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 774,
+        "sourceLine": 780,
         "sourceColumn": 461,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 774,
+        "line": 780,
         "column": 461
       },
       "interactions": [
@@ -26251,14 +26251,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 783,
+        "sourceLine": 789,
         "sourceColumn": 111,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 783,
+        "line": 789,
         "column": 111
       },
       "interactions": [
@@ -26302,14 +26302,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 826,
+        "sourceLine": 843,
         "sourceColumn": 72,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 826,
+        "line": 843,
         "column": 72
       },
       "interactions": [
@@ -26354,14 +26354,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 835,
+        "sourceLine": 852,
         "sourceColumn": 33,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 835,
+        "line": 852,
         "column": 33
       },
       "interactions": [
@@ -26405,14 +26405,14 @@
       "orderScope": {
         "component": "UnsupportedFileCard",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 843,
+        "sourceLine": 860,
         "sourceColumn": 19,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 843,
+        "line": 860,
         "column": 19
       },
       "interactions": [
@@ -26456,14 +26456,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1224,
+        "sourceLine": 1241,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1224,
+        "line": 1241,
         "column": 7
       },
       "interactions": [
@@ -26509,14 +26509,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1232,
+        "sourceLine": 1249,
         "sourceColumn": 22,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1232,
+        "line": 1249,
         "column": 22
       },
       "interactions": [],
@@ -48367,7 +48367,7 @@
       "id": "21fdfadd46489ef5",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-toolbar, .data-grid-footer, .table-editor-toolbar, .table-editor-footer",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 2,
+      "line": 3,
       "values": [
         "gap:6px",
         "padding:8px",
@@ -48379,7 +48379,7 @@
       "id": "016e54380de7e832",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-toolbar button, .data-grid-footer button, .table-editor-dialog button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 8,
+      "line": 9,
       "values": [
         "min-height:30px",
         "padding:4px 9px",
@@ -48394,7 +48394,7 @@
       "id": "fb329af95088f665",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-toolbar button.active",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 9,
+      "line": 10,
       "values": [
         "color:#fff",
         "background:var(--accent-color)"
@@ -48405,7 +48405,7 @@
       "id": "611ee0ae7959dd44",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-search input",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 12,
+      "line": 13,
       "values": [
         "min-height:30px",
         "color:var(--text-primary)",
@@ -48419,7 +48419,7 @@
       "id": "c56f3b0f86ea971b",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-table th button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 41,
+      "line": 42,
       "values": [
         "gap:8px",
         "padding:0",
@@ -48434,7 +48434,7 @@
       "id": "11311d5e65230918",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-table .is-selected-column",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 42,
+      "line": 43,
       "values": [
         "background:inherit"
       ],
@@ -48444,17 +48444,17 @@
       "id": "5b2476b3a57b3cdf",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-table .is-selected-row > td, .data-grid-table .is-range-selected",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 43,
+      "line": 44,
       "values": [
-        "background:color-mix(in srgb, var(--accent-color) 18%, var(--panel-bg))"
+        "background:var(--selection-range-bg)"
       ],
-      "signature": "3abfc91238dcb9371e5577ecda169f8a6f69f15507228c1497a2010791c320c8"
+      "signature": "229a25c275723afb68480d48faf39022fe149ec0e812768f80e5f93bbdeed643"
     },
     {
       "id": "fe2a1f7c9be58493",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.data-grid-footer select",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 48,
+      "line": 49,
       "values": [
         "min-height:28px",
         "color:var(--text-primary)",
@@ -48467,7 +48467,7 @@
       "id": "cd582b1e12dbd9aa",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-aggregate-menu [role=\"menu\"]",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 55,
+      "line": 56,
       "values": [
         "gap:4px",
         "padding:6px",
@@ -48481,7 +48481,7 @@
       "id": "3b38e5e6368b563a",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid input, .table-editor-grid select",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 61,
+      "line": 62,
       "values": [
         "min-height:34px",
         "padding:5px 7px",
@@ -48495,7 +48495,7 @@
       "id": "1acf15843ff9be03",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid input[readonly]",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 63,
+      "line": 64,
       "values": [
         "color:var(--text-secondary)",
         "background:color-mix(in srgb, var(--bg-color) 86%, var(--accent-color))"
@@ -48503,20 +48503,20 @@
       "signature": "ba254ab1ba9bb78109978ddc1a01b32350a1e1714baa1fe7220173e0928c3c5a"
     },
     {
-      "id": "4f089a4bc4d52abf",
-      "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid th.is-selected, .table-editor-grid td.is-selected",
+      "id": "85aecb4af05c5560",
+      "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid th.is-selected, .table-editor-grid td.is-selected, .table-editor-grid .is-selected input, .table-editor-grid input.is-selected",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 65,
+      "line": 66,
       "values": [
-        "background:color-mix(in srgb, var(--accent-color) 14%, var(--bg-color))"
+        "background:var(--selection-range-bg)"
       ],
-      "signature": "554ced55b455f22add88d92808e84d352a03e22c6aa2643d99596a00bca23f22"
+      "signature": "229a25c275723afb68480d48faf39022fe149ec0e812768f80e5f93bbdeed643"
     },
     {
       "id": "3c7c63a5cde8b6d4",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid th button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 69,
+      "line": 70,
       "values": [
         "padding:2px 6px"
       ],
@@ -48526,7 +48526,7 @@
       "id": "49c9114dee7400bf",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-grid .table-editor-row-action",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 70,
+      "line": 71,
       "values": [
         "padding:4px",
         "background:var(--table-header-bg)"
@@ -48537,7 +48537,7 @@
       "id": "06dae6f96008d7a4",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-row-buttons",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 71,
+      "line": 72,
       "values": [
         "gap:3px"
       ],
@@ -48547,7 +48547,7 @@
       "id": "74863787fc3c807e",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-alignment-button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 76,
+      "line": 77,
       "values": [
         "min-height:34px",
         "padding:2px 5px!important",
@@ -48559,7 +48559,7 @@
       "id": "fba8a56681aae197",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-alignment-button.active",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 78,
+      "line": 79,
       "values": [
         "color:#fff",
         "background:var(--accent-color)"
@@ -48570,7 +48570,7 @@
       "id": "84a398bc1f06396c",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-context-menu [role=\"separator\"]",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 101,
+      "line": 102,
       "values": [
         "height:1px",
         "background:var(--border-color)"
@@ -48581,7 +48581,7 @@
       "id": "307efc01b932ffca",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-context-menu button.is-danger",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 102,
+      "line": 103,
       "values": [
         "color:#c62828"
       ],
@@ -48591,7 +48591,7 @@
       "id": "9f9b0976d5d3b93a",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-confirm button",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 107,
+      "line": 108,
       "values": [
         "min-height:32px",
         "padding:5px 12px",
@@ -48606,7 +48606,7 @@
       "id": "e0fef35da2988d76",
       "key": "web-platform/packages/editor-ui/src/styles/delimited-table.css||.table-editor-confirm button.is-danger",
       "file": "web-platform/packages/editor-ui/src/styles/delimited-table.css",
-      "line": 108,
+      "line": 109,
       "values": [
         "color:#fff",
         "background:#c62828"
@@ -49129,7 +49129,7 @@
       "id": "0b7dbfe66bbd3c5e",
       "key": "web-platform/packages/editor-ui/src/styles/markdown-editor.css||.markdown-editor__toolbar",
       "file": "web-platform/packages/editor-ui/src/styles/markdown-editor.css",
-      "line": 10,
+      "line": 11,
       "values": [
         "gap:4px",
         "padding:6px 8px",
@@ -49141,7 +49141,7 @@
       "id": "cbff4cee74854abc",
       "key": "web-platform/packages/editor-ui/src/styles/markdown-editor.css||.markdown-editor__toolbar button",
       "file": "web-platform/packages/editor-ui/src/styles/markdown-editor.css",
-      "line": 23,
+      "line": 24,
       "values": [
         "min-height:30px",
         "font-family:inherit",
@@ -49159,7 +49159,7 @@
       "id": "6fe65e2d4fce68c8",
       "key": "web-platform/packages/editor-ui/src/styles/markdown-editor.css||.markdown-editor__toolbar button:hover:not(:disabled)",
       "file": "web-platform/packages/editor-ui/src/styles/markdown-editor.css",
-      "line": 38,
+      "line": 39,
       "values": [
         "background:var(--btn-hover)"
       ],
@@ -49169,7 +49169,7 @@
       "id": "34eed32606af6265",
       "key": "web-platform/packages/editor-ui/src/styles/markdown-editor.css||.markdown-editor__toolbar .markdown-editor__save",
       "file": "web-platform/packages/editor-ui/src/styles/markdown-editor.css",
-      "line": 40,
+      "line": 41,
       "values": [
         "color:var(--accent-contrast, #fff)",
         "background:var(--accent-color)"
@@ -49233,6 +49233,37 @@
         "background:var(--btn-hover)"
       ],
       "signature": "e203c6147f325486609e817c2d12fef4eb78651413e4722cf73ac308ee08a353"
+    },
+    {
+      "id": "d144458cc1a02fe3",
+      "key": "web-platform/packages/editor-ui/src/styles/selection-state.css||.markdown-body ::selection, .markdown-body::selection, .preview-inline-editor::selection",
+      "file": "web-platform/packages/editor-ui/src/styles/selection-state.css",
+      "line": 22,
+      "values": [
+        "background:var(--selection-range-bg)",
+        "color:var(--text-primary)"
+      ],
+      "signature": "677a7ec016b75091ff7d7a6f5770589e9a8cde0d21a263381210086f6c027336"
+    },
+    {
+      "id": "71fc5bbfd03d7ffd",
+      "key": "web-platform/packages/editor-ui/src/styles/selection-state.css|@media print|.markdown-body .is-editor-current-line, .markdown-body .preview-block-reorder-picked, .markdown-body .preview-block-reorder-hovered,\n  .data-grid-table .is-selected-row > td, .data-grid-table .is-range-selected,\n  .table-editor-grid .is-selected, .cm-line.cm-activeLine, .cm-line.is-current",
+      "file": "web-platform/packages/editor-ui/src/styles/selection-state.css",
+      "line": 27,
+      "values": [
+        "background:transparent!important"
+      ],
+      "signature": "49d928df892e86dfc22037bebdd9d4a9558357c2a9ccdc29bd3b4fd6b1c2fa0c"
+    },
+    {
+      "id": "22e1582c444865b4",
+      "key": "web-platform/packages/editor-ui/src/styles/selection-state.css|@media print|.cm-selectionBackground",
+      "file": "web-platform/packages/editor-ui/src/styles/selection-state.css",
+      "line": 32,
+      "values": [
+        "background:transparent!important"
+      ],
+      "signature": "49d928df892e86dfc22037bebdd9d4a9558357c2a9ccdc29bd3b4fd6b1c2fa0c"
     },
     {
       "id": "53474972bdcc56c0",

@@ -46,7 +46,8 @@ describe("workspace view controls", () => {
 
   it("highlights the View block corresponding to the active Edit line", () => {
     expect(appCss).toContain(".markdown-body [data-source-line].is-editor-current-line");
-    expect(appCss).toContain("#fde68a");
+    expect(appCss).toContain("background: var(--selection-current-bg)");
+    expect(appCss).toContain("box-shadow: inset 3px 0 var(--selection-current-edge)");
   });
 
   // Diffの書式・行位置はtest:diff-layoutで実ブラウザーのcomputed styleと座標を検証する。

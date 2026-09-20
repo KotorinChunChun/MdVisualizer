@@ -4,6 +4,15 @@ import { afterEach, expect, it, vi } from "vitest";
 import { PreviewPointerReorder } from "./PreviewPointerReorder";
 
 afterEach(cleanup);
+it("ホバーで移動可能な対象だけを示し、離れたら消す", () => {
+  const root = createRef<HTMLDivElement>();
+  const { container } = render(<><div ref={root}><p data-source-line="1">first</p><p data-source-line="3">second</p></div><PreviewPointerReorder root={root} markdown={"first\n\nsecond"} enabled onChange={vi.fn()} /></>);
+  const first = container.querySelector("p")!;
+  fireEvent.pointerOver(first);
+  expect(first.classList.contains("preview-block-reorder-hovered")).toBe(true);
+  fireEvent.pointerOut(first);
+  expect(first.classList.contains("preview-block-reorder-hovered")).toBe(false);
+});
 it("表のセルからドラッグするとヘッダーを保持して本文行を移動する", () => {
   const root = createRef<HTMLDivElement>();
   const change = vi.fn().mockReturnValue(true);

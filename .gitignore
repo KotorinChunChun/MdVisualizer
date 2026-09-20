@@ -209,3 +209,4 @@ web/tests/.php-zip-fixtures/
 /src/contexts/DocumentSaveContext.ts
 /src/lib/editorToolbarActions.ts
 /scripts/__pycache__/
+/src/styles/selection-state.css
