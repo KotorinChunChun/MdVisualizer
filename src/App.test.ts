@@ -21,6 +21,15 @@ describe("new Markdown shortcut wiring", () => {
 });
 
 describe("document workspace controls", () => {
+  it("表示形式とは独立した編集フラグと表示切替時の共通Undo・スクロールを配線する", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    expect(source).toContain('const visualEditing = interactionMode === "edit";');
+    expect(source).toContain('hidden={editorMode === "preview"}');
+    expect(source).toContain('editorRef.current?.undo(redo)');
+    expect(source).toContain('editorRef.current?.scrollToLine(pending.line)');
+    expect(source).toContain('handleEditorScrollLine(pending.line)');
+    expect(source).not.toContain('canEditActive && editorMode !== "preview" && activeTab?.document && <Suspense');
+  });
   it("opens every supported local document through the native file dialog", () => {
     const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
     const capability = readFileSync(join(process.cwd(), "src-tauri", "capabilities", "default.json"), "utf8");

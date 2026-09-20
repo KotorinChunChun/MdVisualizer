@@ -5,6 +5,16 @@ import { MarkdownPreview } from "./MarkdownPreview";
 describe("MarkdownPreview Markdown tables", () => {
   afterEach(cleanup);
 
+  it("ビジュアル編集ではセルのクリックで行を選択し、空セルのダブルクリックも編集できる", () => {
+    const content = "| name | score |\n| --- | --- |\n| Alice | |\n| Bob | 20 |";
+    const { container } = render(<MarkdownPreview content={content} baseDir="C:/docs" documentPath="C:/docs/test.md" imageVersions={{}} onTextEdit={vi.fn()} onMarkdownTableChange={vi.fn()} />);
+    const cells = container.querySelectorAll("tbody tr:first-child td");
+    fireEvent.mouseDown(cells[0]);
+    expect(container.querySelectorAll("td.is-range-selected")).toHaveLength(2);
+    fireEvent.doubleClick(cells[1]);
+    expect(screen.getByRole("dialog", { name: "表を編集" })).toBeTruthy();
+  });
+
   it("opens the shared GUI editor from the top-right pencil and returns a safe replacement", () => {
     const content = "| name | score |\r\n| :--- | ---: |\r\n| Alice | 10 |";
     const onMarkdownTableChange = vi.fn().mockReturnValue(true);

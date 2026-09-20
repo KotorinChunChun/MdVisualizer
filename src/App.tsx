@@ -75,7 +75,7 @@ import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtView
 import { insertPreviewBlockAfter } from "./lib/previewBlockReorder";
 
 import { previewClipboardData } from "./lib/previewClipboard";
-import { PreviewEditHistory, replaceDocumentText } from "./lib/documentTextEdit";
+import { replaceDocumentText } from "./lib/documentTextEdit";
 import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } from "./lib/sourceNavigation";
 import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
@@ -203,7 +203,6 @@ export function App() {
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const [codexOpen, setCodexOpen] = useState(false);
   const [codexMaximized, setCodexMaximized] = useState(false);
-  const previewEditHistory = useRef(new PreviewEditHistory());
   const [codexTarget, setCodexTarget] = useState<CodexTarget | null>(null);
   const [codexImageTarget, setCodexImageTarget] = useState<{ documentId: string; offset: number } | null>(null);
   const codexButtonRef = useRef<HTMLButtonElement>(null);
@@ -348,7 +347,7 @@ export function App() {
   const [previewMode, setPreviewMode] = useState<PreviewMode>("preview");
   const [interactionMode, setInteractionMode] = useState<InteractionMode>("browse");
   const [splitDirection, setSplitDirection] = useState<SplitDirection>("auto");
-  const visualEditing = previewMode === "visual" && interactionMode === "edit";
+  const visualEditing = interactionMode === "edit";
   const [tabsState, reactDispatch] = useReducer(tabsReducer, initialTabsState);
   const tabsStateRef = useRef(tabsState);
   tabsStateRef.current = tabsState;
@@ -1239,9 +1238,10 @@ export function App() {
     if (!Number.isFinite(line) || line < 1) return;
     if (editorMode === "preview") return;
     paneSyncOrigin.current = "view";
-    editorRef.current?.focusLine(line);
+    if (visualEditing) editorRef.current?.scrollToLine(line);
+    else editorRef.current?.focusLine(line);
     releasePaneSync();
-  }, [canEditActive, editorMode, releasePaneSync]);
+  }, [canEditActive, editorMode, releasePaneSync, visualEditing]);
 
   const handlePreviewContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
     const targetElement = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : null;
@@ -1313,7 +1313,6 @@ export function App() {
     if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation) return;
     const content = insertPreviewBlockAfter(tab.draft, previewContext.line);
     if (content === tab.draft) return;
-    previewEditHistory.current.record(`${tab.id}:${tab.generation}`, tab.draft, content);
     setPreviewContext(null);
     dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
   }, [activeTab, canEditActive, previewContext, visualEditing]);
@@ -1641,11 +1640,32 @@ export function App() {
     });
   }, [activeTab?.document?.path, recordNavigationPoint]);
 
+  const pendingModeScroll = useRef<{ line: number; mode: EditorWorkspaceMode } | null>(null);
   const changeEditorMode = useCallback((mode: EditorWorkspaceMode) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
     if (!tab?.document || tab.document.kind !== "markdown") return;
+    if (tab.editorMode === mode) return;
+    const container = containerRef.current;
+    const fromPreview = tab.editorMode === "preview" || (tab.editorMode === "split" && !editorRef.current?.contains(document.activeElement));
+    const blocks = fromPreview ? [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])].filter(block => block.getClientRects().length > 0) : [];
+    const line = fromPreview && container
+      ? sourceLineAtViewportTop(blocks.map(block => ({ line: Number(block.dataset.sourceLine) || 1, top: block.getBoundingClientRect().top })), container.getBoundingClientRect().top + container.clientHeight / 2)
+      : editorRef.current?.topLine(true) ?? 1;
+    pendingModeScroll.current = { line, mode };
     dispatch({ type: "EDITOR_MODE", id: tab.id, mode });
   }, []);
+
+  useEffect(() => {
+    const pending = pendingModeScroll.current;
+    if (!pending || pending.mode !== editorMode) return;
+    const frame = requestAnimationFrame(() => {
+      pendingModeScroll.current = null;
+      paneSyncOrigin.current = null;
+      if (editorMode !== "preview") editorRef.current?.scrollToLine(pending.line);
+      if (editorMode !== "edit") handleEditorScrollLine(pending.line);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [editorMode, handleEditorScrollLine]);
 
   const updateCodeFenceBody = useCallback((occurrence: CodeFenceOccurrence, body: string): boolean => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
@@ -2426,8 +2446,9 @@ export function App() {
         />}
       />}
       <div className={`document-panes editor-workspace-${editorMode}`} data-direction={splitDirection}>
-      {canEditActive && editorMode !== "preview" && activeTab?.document && <Suspense fallback={<div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
+      {canEditActive && activeTab?.document && <Suspense fallback={editorMode === "preview" ? null : <div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
         <MarkdownEditor
+          hidden={editorMode === "preview"}
           onCodexConsult={!printing && !activeTab.saving ? (target) => { setCodexTarget(target); setCodexOpen(true); } : undefined}
           ref={editorRef}
           documentId={`${activeTab.id}:${activeTab.generation}`}
@@ -2580,15 +2601,13 @@ export function App() {
               const documentId = `${tab.id}:${tab.generation}`;
               const content = replaceDocumentText({ documentId, content: tab.draft, from: 0, to: tab.draft.length }, { documentId, content: baseContent, from, to }, replacement);
               if (content === null) return false;
-              previewEditHistory.current.record(documentId, tab.draft, content);
               dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
               return true;
             } : undefined}
             onTextUndo={canEditActive && !printing ? redo => {
               const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
               if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation || tab.saving) return;
-              const content = previewEditHistory.current.restore(`${tab.id}:${tab.generation}`, tab.draft, redo);
-              if (content !== null) dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+              editorRef.current?.undo(redo);
             } : undefined}
             imageVersions={imageVersions}
             contentRef={markdownRef}
@@ -2680,7 +2699,6 @@ export function App() {
             if (!tab || tab.saving) return false;
             const content = replaceDocumentText({ documentId: `${tab.id}:${tab.generation}`, content: tab.draft, from: 0, to: tab.draft.length }, base, replacement);
             if (content === null) return false;
-            previewEditHistory.current.record(`${tab.id}:${tab.generation}`, tab.draft, content);
             dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
             return true;
           }

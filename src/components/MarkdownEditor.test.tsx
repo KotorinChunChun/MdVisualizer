@@ -11,6 +11,28 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("MarkdownEditor", () => {
+  it("表示切替をまたいでコードとビジュアルの編集を同じ履歴でUndo・Redoする", () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const onChange = vi.fn();
+    const props = { ref, documentId: "mode:1", value: "元の文", dirty: false, saving: false, onChange, onSave: () => {} };
+    const { container, rerender } = render(<MarkdownEditor {...props} />);
+    const dom = container.querySelector(".cm-editor");
+    act(() => { ref.current!.applyProposal({ ...ref.current!.snapshot()!, from: 0, to: 3 }, "コード編集"); });
+    rerender(<MarkdownEditor {...props} hidden value="コード編集" />);
+    expect(container.querySelector(".cm-editor")).toBe(dom);
+    expect(container.querySelector<HTMLElement>(".markdown-editor")!.style.display).toBe("none");
+    rerender(<MarkdownEditor {...props} hidden value="ビジュアル編集" />);
+    act(() => { expect(ref.current!.undo()).toBe(true); });
+    expect(onChange).toHaveBeenLastCalledWith("コード編集");
+    rerender(<MarkdownEditor {...props} value="コード編集" />);
+    fireEvent.keyDown(container.querySelector<HTMLElement>(".cm-content")!, { key: "z", ctrlKey: true });
+    expect(onChange).toHaveBeenLastCalledWith("元の文");
+    act(() => { expect(ref.current!.undo(true)).toBe(true); });
+    expect(onChange).toHaveBeenLastCalledWith("コード編集");
+    act(() => { expect(ref.current!.undo(true)).toBe(true); });
+    expect(onChange).toHaveBeenLastCalledWith("ビジュアル編集");
+  });
+
   it("AIの選択範囲採用はCRLFを保持し、一度のUndoで戻せる", async () => {
     const ref = createRef<MarkdownEditorHandle>();
     const onChange = vi.fn();
