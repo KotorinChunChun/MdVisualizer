@@ -117,12 +117,12 @@ const viewContext = await evaluate(`new Promise((resolve) => {
 })`);
 const viewContextScreenshot = await screenshot("view-context-menu-edit.png");
 if (!viewContext.ok || !viewContext.stayedPreview || !viewContext.selectedText
-  || JSON.stringify(viewContext.labels) !== JSON.stringify(['コピー', 'Markdownでコピー', '編集', '行選択', 'すべて選択'])
+  || JSON.stringify(viewContext.labels) !== JSON.stringify(['マークダウンでコピー', 'プレーンテキストでコピー', '編集', '下にブロックを追加', '行選択', 'ブロック全体を選択', 'すべて選択'])
   || viewContext.highlightedLine > viewContext.requestedLine) {
   throw new Error(`View context verification failed: ${JSON.stringify(viewContext)}`);
 }
 await evaluate(`new Promise((resolve) => {
-  [...document.querySelectorAll('.editor-mode-segments button')].find((candidate) => candidate.textContent.trim() === '閲覧のみ')?.click();
+  [...document.querySelectorAll('.editor-mode-segments button')].find((candidate) => candidate.textContent.trim() === '閲覧')?.click();
   setTimeout(resolve, 150);
 })`);
 

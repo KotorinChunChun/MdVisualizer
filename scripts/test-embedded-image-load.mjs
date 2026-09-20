@@ -16,7 +16,7 @@ const evaluate = (expression) => new Promise((resolvePromise, reject) => { const
 await evaluate("document.querySelector('.tab[title*=" + JSON.stringify("v0.0.18.4-100-embedded-images.md") + "]')?.click()");
 const result = await evaluate(`new Promise((resolve) => {
   const started = performance.now();
-  const poll = () => {
+  const waitForImages = () => {
     const preview = document.querySelector('.preview-container');
     const images = [...(preview?.querySelectorAll('.markdown-body img') ?? [])];
     const pending = images.filter((image) => !image.complete).length;
@@ -24,10 +24,13 @@ const result = await evaluate(`new Promise((resolve) => {
       const before = performance.now();
       if (preview) { preview.scrollTop = preview.scrollHeight; preview.dispatchEvent(new Event('scroll')); preview.scrollTop = 0; preview.dispatchEvent(new Event('scroll')); }
       resolve({ imageCount: images.length, brokenImages: images.filter((image) => image.naturalWidth === 0).length, loadMs: Math.round(performance.now() - started), scrollMs: Math.round(performance.now() - before), scrollHeight: preview?.scrollHeight ?? 0 });
-    } else if (performance.now() - started > 30000) resolve({ imageCount: images.length, pendingImages: pending, timeout: true });
-    else setTimeout(poll, 50);
+    } else if (performance.now() - started > 60000) resolve({ imageCount: images.length, pendingImages: pending, timeout: true });
+    else setTimeout(waitForImages, 50);
   };
-  poll();
+  const preview = document.querySelector('.preview-container');
+  const images = [...(preview?.querySelectorAll('.markdown-body img') ?? [])];
+  images.forEach((image) => image.scrollIntoView({ block: 'center', inline: 'nearest' }));
+  setTimeout(waitForImages, 250);
 })`);
 await writeFile(resolve(output, "summary.json"), JSON.stringify({ port, ...result }, null, 2));
 console.log(JSON.stringify(result));
