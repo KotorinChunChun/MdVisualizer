@@ -7,9 +7,6 @@
   --selection-current-edge: #2563eb;
   --page: #eef2f7; --panel: #f5f7fb; --ink: #18212f; --muted: #526279; --border: #cbd5e1;
   --toc-bg: color-mix(in srgb, var(--accent-color) 20%, var(--panel));
-  --diff-bg: color-mix(in srgb, #f59e0b 16%, transparent);
-  --diff-edge: #d97706;
-  --diff-change-word: color-mix(in srgb, #f59e0b 40%, var(--selection-surface));
   --diff-add-bg: #e6ffec; --diff-add-word: #abf2bc; --diff-add-edge: #1a7f37;
   --diff-delete-bg: #ffebe9; --diff-delete-word: rgba(255,129,130,.4); --diff-delete-edge: #cf222e;
 }
@@ -43,8 +40,6 @@ section { background:var(--selection-surface); border:1px solid var(--border); b
 .hover-example:hover, .hover-example:focus-visible { background:var(--selection-current-bg); }
 .toc { background:var(--toc-bg); border:1px solid color-mix(in srgb, var(--accent-color) 65%, var(--border)); border-radius:5px; padding:6px 12px; font-weight:750; }
 mark { background:#fbbf24; color:#111827; padding:0 2px; border-radius:2px; }
-.changed { background:var(--diff-bg); border-left-color:var(--diff-edge); }
-.changed-word { background:var(--diff-change-word); padding:0 2px; }
 .added { background:var(--diff-add-bg); border-left-color:var(--diff-add-edge); }
 .deleted { background:var(--diff-delete-bg); border-left-color:var(--diff-delete-edge); }
 .added-word { background:var(--diff-add-word); padding:0 2px; }
@@ -55,7 +50,6 @@ mark { background:#fbbf24; color:#111827; padding:0 2px; border-radius:2px; }
 .diff-kind { display:inline-block; border:1px solid; padding:0 6px; margin-left:10px; border-radius:4px; font-size:12px; }
 .diff-kind.added { border-color:var(--diff-add-edge); }
 .diff-kind.deleted { border-color:var(--diff-delete-edge); }
-.change-badge { display:inline-block; color:var(--ink); background:var(--diff-bg); border:1px solid var(--diff-edge); padding:0 5px; margin-left:12px; font:12px/1.8 sans-serif; border-radius:3px; }
 table { width:100%; border-collapse:collapse; margin-top:10px; } th,td { padding:7px 12px; border:1px solid var(--border); text-align:left; } th { background:var(--panel); }
 code { font-family:Consolas,monospace; } .pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .pane-title { padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--border); }
