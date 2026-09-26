@@ -42,6 +42,7 @@ try {
   await stage('fast-shared', 'scripts/sync-desktop-shared.mjs', ['--check']);
   await stage('fast-command-inventory', 'scripts/ui-command-contract.mjs');
   await stage('fast-command-semantics', 'scripts/check-block-command-semantics.mjs');
+  await stage('fast-command-self-test', 'scripts/test-block-command-semantics.mjs');
   await stage('fast-design', 'web-platform/scripts/check-ui-styles.mjs');
   if (typecheck || related.length) {
     await stage('fast-embedded', 'scripts/build-embedded-tools.mjs', [], false);

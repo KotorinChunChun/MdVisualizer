@@ -1,3 +1,4 @@
+import { previewOperationPolicy } from "./lib/previewOperationPolicy";
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as showOpenDialog, save as showSaveDialog } from "@tauri-apps/plugin-dialog";
@@ -2590,9 +2591,10 @@ export function App() {
           />
         ) : activeTab?.document ? (
           <MarkdownPreview
+            actionContractHost="desktop"
             enablePointerBlockReorder={visualEditing}
-            readOnly={!visualEditing}
-            allowBlockActions={canEditActive && !printing && !activeTab.saving}
+            readOnly={!previewOperationPolicy({ writable: canEditActive, interactionMode, printing, saving: activeTab.saving }).directEditing}
+            allowBlockActions={previewOperationPolicy({ writable: canEditActive, interactionMode, printing, saving: activeTab.saving }).editBlocks}
             content={previewContent}
             baseDir={activeTab.document.base_dir}
             onTextEdit={canEditActive && interactionMode === "edit" && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {

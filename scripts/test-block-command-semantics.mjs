@@ -28,7 +28,10 @@ assert(auditBlockCommandSemantics({ files: mutate(tableFile, '...(onSave ? [{ id
 assert(auditBlockCommandSemantics({ files: mutate(mermaidFile, '...(editable ? [{ id: "edit"', '...(false ? [{ id: "edit"') }).errors.some(error => error.includes('Mermaid: 編集表示がeditable')), 'Mermaid編集itemの削除を検知');
 assert(auditBlockCommandSemantics({ files: mutate(mermaidFile, '...(onCodexSave && capabilities.canUseCodexActions && hasCodexActions ? [{ id: "ai"', '...(false ? [{ id: "ai"') }).errors.some(error => error.includes('Mermaid: AI itemのhost capability条件')), 'Mermaid AI itemの削除を検知');
 assert(auditBlockCommandSemantics({ files: mutate(previewFile, '=> context.onCodeFenceBodyChange?.(occurrence, body)', '=> undefined') }).errors.some(error => error.includes('MarkdownPreview: MermaidのAI/GUI保存props接続')), 'MarkdownPreviewからMermaid AI保存接続を外す欠落を検知');
-assert(auditBlockCommandSemantics({ files: mutate(desktopAppFile, 'allowBlockActions={canEditActive && interactionMode === "edit" && !printing && !activeTab.saving}', 'allowBlockActions={false}') }).errors.some(error => error.includes('Desktop: allowBlockActions')), 'Desktopのblock actionをfalse化する欠落を検知');
-assert(auditBlockCommandSemantics({ files: mutate(webAppFile, 'allowBlockActions={interactionMode === "edit"}', 'allowBlockActions={false}') }).errors.some(error => error.includes('Web: allowBlockActions')), 'Webのblock actionをfalse化する欠落を検知');
+assert(auditBlockCommandSemantics({ files: mutate(desktopAppFile, 'allowBlockActions={previewOperationPolicy({ writable: canEditActive, interactionMode, printing, saving: activeTab.saving }).editBlocks}', 'allowBlockActions={false}') }).errors.some(error => error.includes('Desktop: 共通操作ポリシー')), 'Desktopのblock actionをfalse化する欠落を検知');
+assert(auditBlockCommandSemantics({ files: mutate(webAppFile, 'allowBlockActions={previewOperationPolicy({ writable: true, interactionMode, presentation: layout === "presentation" }).editBlocks}', 'allowBlockActions={false}') }).errors.some(error => error.includes('Web: 共通操作ポリシー')), 'Webのblock actionをfalse化する欠落を検知');
 
-console.log(`ブロックコマンド意味契約: 実assert ${baseline.checks}件、意図的ミューテーション9件を検知（${baseline.elapsedMs}ms）`);
+
+assert(auditBlockCommandSemantics({ files: mutate(desktopAppFile, '}).editBlocks}', '}).editBlocks && interactionMode === "edit"}') }).errors.some(error => error.includes('Desktop: 共通操作ポリシー')), '閲覧操作を消す条件の追加を検知');
+assert(auditBlockCommandSemantics({ files: mutate(webAppFile, '}).editBlocks}', '}).editBlocks && false}') }).errors.some(error => error.includes('Web: 共通操作ポリシー')), 'Webの余分な抑止条件を検知');
+console.log(`ブロックコマンド意味契約: 実assert ${baseline.checks}件、意図的ミューテーション11件を検知（${baseline.elapsedMs}ms）`);

@@ -44,7 +44,7 @@ $plans = @{
     Desktop = @('vitest-json', 'frontend-build', 'rust-tests')
     Web = @('vitest-json', 'web-build')
     SPFx = @('embedded-tools', 'heft-test', 'production-package')
-    Static = @('shared-check', 'source-boundaries', 'ui-contract', 'command-contract', 'development-docs', 'root-connection', 'typescript')
+    Static = @('shared-check', 'source-boundaries', 'ui-contract', 'command-contract', 'block-semantics', 'block-self-test', 'development-docs', 'root-connection', 'typescript')
 }
 $plannedStages = foreach ($selected in $Target) {
     foreach ($stage in $plans[$selected]) { "$selected/$stage" }
@@ -88,6 +88,8 @@ try {
                 Invoke-MdVisualizerValidationProcess -Run $run -Target $selected -Stage 'source-boundaries' -FilePath $runtime.NodeExecutable -ArgumentList @((Join-Path $web 'scripts/check-source-boundaries.mjs')) -WorkingDirectory $web | Out-Null
                 Invoke-MdVisualizerValidationProcess -Run $run -Target $selected -Stage 'ui-contract' -FilePath $runtime.NodeExecutable -ArgumentList @((Join-Path $web 'scripts/check-ui-styles.mjs')) -WorkingDirectory $web | Out-Null
                 Invoke-MdVisualizerValidationProcess -Run $run -Target $selected -Stage 'command-contract' -FilePath $runtime.NodeExecutable -ArgumentList @((Join-Path $PSScriptRoot 'ui-command-contract.mjs')) -WorkingDirectory $projectRoot | Out-Null
+                Invoke-MdVisualizerValidationProcess -Run $run -Target $selected -Stage 'block-semantics' -FilePath $runtime.NodeExecutable -ArgumentList @((Join-Path $PSScriptRoot 'check-block-command-semantics.mjs')) -WorkingDirectory $projectRoot | Out-Null
+                Invoke-MdVisualizerValidationProcess -Run $run -Target $selected -Stage 'block-self-test' -FilePath $runtime.NodeExecutable -ArgumentList @((Join-Path $PSScriptRoot 'test-block-command-semantics.mjs')) -WorkingDirectory $projectRoot | Out-Null
                 Invoke-MdVisualizerValidationProcess -Run $run -Target $selected -Stage 'development-docs' -FilePath $runtime.NodeExecutable -ArgumentList @((Join-Path $PSScriptRoot 'check-development-docs.mjs'), $Version) -WorkingDirectory $projectRoot | Out-Null
                 Invoke-NpmStage $run $selected 'root-connection' $runtime @('run', 'test:web-platform') $projectRoot $null | Out-Null
                 Invoke-MdVisualizerValidationProcess -Run $run -Target $selected -Stage 'typescript' -FilePath $runtime.NodeExecutable -ArgumentList @((Join-Path $projectRoot 'node_modules/typescript/bin/tsc'), '--noEmit') -WorkingDirectory $projectRoot | Out-Null

@@ -211,4 +211,7 @@ web/tests/.php-zip-fixtures/
 /scripts/__pycache__/
 /src/styles/selection-state.css
 /src/lib/diffPresentation.ts
+/src/lib/previewOperationPolicy.ts
+/src/lib/previewActionContract.ts
+/src/lib/copyOperation.ts
 /src/lib/selectionDecoration.ts

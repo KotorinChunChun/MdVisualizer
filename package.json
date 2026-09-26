@@ -41,7 +41,7 @@
     "version:test": "pwsh -NoProfile -File ./scripts/test-version-update.ps1",
     "test:run-scripts": "pwsh -NoProfile -File ./scripts/test-run-script-naming.ps1",
     "release:test-safety": "pwsh -NoProfile -File ./scripts/test-release-automation.ps1",
-    "pretest": "npm run build:embedded && npm run typecheck:incremental && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./web-platform/scripts/check-ui-styles.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract && npm run check:block-commands",
+    "pretest": "npm run build:embedded && npm run typecheck:incremental && npm run test:web-platform && node ./scripts/test-button-style-rules.mjs && node ./web-platform/scripts/check-ui-styles.mjs && node ./scripts/test-css-style-stats.mjs && npm run check:ui-contract && npm run check:block-commands && npm run test:block-commands",
     "test": "vitest run",
     "test:diff-layout": "tsc --project tests/diff-layout/tsconfig.json && node ./scripts/test-diff-layout.mjs",
     "fixture:embedded-images": "node ./scripts/generate-embedded-image-load-fixture.mjs",
