@@ -15,6 +15,40 @@ function selectContents(element: Element): void {
 }
 
 describe("プレビューのコピー", () => {
+  it.each(["text", "element", "parent"])("見出し全選択の終端が次の%s先頭でも見出し文字だけコピーする", (endpoint) => {
+    const root = document.createElement("div");
+    root.innerHTML = '<h2 data-source-line="1"><button>折り畳み</button><span>見出し</span></h2><p data-source-line="2">次の行</p>';
+    document.body.append(root);
+    const range = document.createRange();
+    range.setStart(root.querySelector("span")!.firstChild!, 0);
+    if (endpoint === "text") range.setEnd(root.querySelector("p")!.firstChild!, 0);
+    else if (endpoint === "element") range.setEnd(root.querySelector("p")!, 0);
+    else range.setEnd(root, 1);
+    window.getSelection()!.addRange(range);
+    const clipboardData = { setData: vi.fn() };
+    copyPreviewSelection({ target: root, currentTarget: root, clipboardData: clipboardData as unknown as DataTransfer, preventDefault: vi.fn() }, "## 見出し\n次の行");
+    expect(clipboardData.setData).toHaveBeenCalledExactlyOnceWith("text/plain", "見出し");
+  });
+
+  it("見出しの一部だけの選択を見出し全体へ拡張しない", () => {
+    const root = document.createElement("div");
+    root.innerHTML = '<h2 data-source-line="1">前半と後半</h2>';
+    document.body.append(root);
+    const range = document.createRange();
+    range.setStart(root.firstChild!.firstChild!, 3);
+    range.setEnd(root.firstChild!.firstChild!, 5);
+    window.getSelection()!.addRange(range);
+    const clipboardData = { setData: vi.fn() };
+    copyPreviewSelection({ target: root, currentTarget: root, clipboardData: clipboardData as unknown as DataTransfer, preventDefault: vi.fn() }, "## 前半と後半");
+    expect(clipboardData.setData).toHaveBeenCalledExactlyOnceWith("text/plain", "後半");
+  });
+
+  it("子の表コピーが書いたクリップボードを上書きしない", () => {
+    const root = document.createElement("div");
+    const clipboardData = { setData: vi.fn() };
+    copyPreviewSelection({ target: root, currentTarget: root, clipboardData: clipboardData as unknown as DataTransfer, defaultPrevented: true, preventDefault: vi.fn() }, "本文");
+    expect(clipboardData.setData).not.toHaveBeenCalled();
+  });
   it("キーのSVGを単一文字列にして段落の改行だけ残す", () => {
     const root = document.createElement("div");
     root.innerHTML = '<p>押す <span><svg data-shortcut-source="Ctrl+X → Ctrl+V"><text>Ctrl</text><text>+</text><text>X</text></svg></span></p><p>次の段落</p>';

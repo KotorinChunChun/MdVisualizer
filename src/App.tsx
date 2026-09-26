@@ -2648,6 +2648,7 @@ export function App() {
             }}
             onMarkdownTableChange={updateMarkdownTable}
             onDrawioStorageConvert={convertDrawioStorage}
+            onAssetStorageConvert={convertDocumentAsset}
             onMermaidStorageConvert={convertMermaidStorage}
             onTableStorageConvert={convertTableStorage}
             onTextStorageConvert={convertTextStorage}

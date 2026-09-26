@@ -19,6 +19,24 @@ vi.mock("./ExternalDrawioBlock", () => ({
 describe("MarkdownPreview draw.io fences", () => {
   afterEach(cleanup);
 
+  it("閲覧中のSVGコード・本文SVG・外部SVGから既存の格納形態変換へ接続する", () => {
+    const onTextStorageConvert = vi.fn();
+    const onAssetStorageConvert = vi.fn();
+    const props = { baseDir: "C:/docs", documentPath: "C:/docs/note.md", imageVersions: {}, readOnly: true, allowBlockActions: true, onCodeFenceBodyChange: vi.fn(), onInlineSvgChange: vi.fn(), onTextStorageConvert, onAssetStorageConvert };
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>';
+    const { rerender } = render(<MarkdownPreview {...props} content={'```svg\n' + svg + '\n```'} />);
+    fireEvent.click(screen.getByRole("button", { name: "fence storage" }));
+    expect(onTextStorageConvert).toHaveBeenCalledWith(expect.objectContaining({ storage: "embedded", language: "svg", occurrence: expect.objectContaining({ kind: "code-fence" }) }));
+    rerender(<MarkdownPreview {...props} content={svg} />);
+    fireEvent.click(screen.getByRole("button", { name: "fence storage" }));
+    expect(onAssetStorageConvert).toHaveBeenCalledWith(expect.objectContaining({ storage: "embedded", assetKind: "svg", occurrence: expect.objectContaining({ kind: "inline-svg" }) }));
+    rerender(<MarkdownPreview {...props} content="![図](diagram.svg)" />);
+    fireEvent.click(screen.getByRole("button", { name: "external storage" }));
+    expect(onAssetStorageConvert).toHaveBeenCalledWith(expect.objectContaining({ storage: "external", assetKind: "svg", occurrence: expect.objectContaining({ kind: "image" }) }));
+    rerender(<MarkdownPreview {...props} allowBlockActions={false} content="![図](diagram.svg)" />);
+    expect(screen.queryByRole("button", { name: "external storage" })).toBeNull();
+  });
+
   it("keeps external SVG block actions in preview-only while preserving genuine read-only", () => {
     const props = { content: "![図](diagram.svg)", baseDir: "C:/docs", documentPath: "C:/docs/note.md", imageVersions: {}, readOnly: true };
     const { rerender } = render(<MarkdownPreview {...props} allowBlockActions />);

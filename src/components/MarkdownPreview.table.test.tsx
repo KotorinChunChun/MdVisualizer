@@ -1,9 +1,31 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MarkdownPreview } from "./MarkdownPreview";
 
 describe("MarkdownPreview Markdown tables", () => {
   afterEach(cleanup);
+
+  it.each([false, true])("表コピーの成功・失敗を通知する（失敗=%s）", async (fails) => {
+    const writeText = vi.fn().mockImplementation(() => fails ? Promise.reject(new Error("denied")) : Promise.resolve());
+    const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    const notifications: unknown[] = [];
+    const listener = (event: Event) => notifications.push((event as CustomEvent).detail);
+    window.addEventListener("markdown-toast", listener);
+    try {
+      render(<MarkdownPreview content={"| A |\n| --- |\n| B |"} baseDir="" imageVersions={{}} />);
+      fireEvent.click(screen.getByRole("button", { name: "コピー形式を選択" }));
+      fireEvent.click(screen.getByRole("button", { name: "TSVコピー" }));
+      await waitFor(() => expect(notifications).toEqual([expect.objectContaining({
+        type: fails ? "error" : "success", message: fails ? "表をコピーできませんでした" : "TSVで表をコピーしました",
+      })]));
+      expect(writeText).toHaveBeenCalledOnce();
+    } finally {
+      window.removeEventListener("markdown-toast", listener);
+      if (original) Object.defineProperty(navigator, "clipboard", original);
+      else Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
 
   it("ビジュアル編集ではセルのクリックで行を選択し、空セルのダブルクリックも編集できる", () => {
     const content = "| name | score |\n| --- | --- |\n| Alice | |\n| Bob | 20 |";
