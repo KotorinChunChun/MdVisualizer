@@ -34,4 +34,5 @@ assert(auditBlockCommandSemantics({ files: mutate(webAppFile, 'allowBlockActions
 
 assert(auditBlockCommandSemantics({ files: mutate(desktopAppFile, '}).editBlocks}', '}).editBlocks && interactionMode === "edit"}') }).errors.some(error => error.includes('Desktop: 共通操作ポリシー')), '閲覧操作を消す条件の追加を検知');
 assert(auditBlockCommandSemantics({ files: mutate(webAppFile, '}).editBlocks}', '}).editBlocks && false}') }).errors.some(error => error.includes('Web: 共通操作ポリシー')), 'Webの余分な抑止条件を検知');
-console.log(`ブロックコマンド意味契約: 実assert ${baseline.checks}件、意図的ミューテーション11件を検知（${baseline.elapsedMs}ms）`);
+assert(auditBlockCommandSemantics({ files: mutate(desktopAppFile, 'actionContractHost="desktop"', '') }).errors.some(error => error.includes('Desktop: 必須操作契約')), '契約そのものの無効化を検知');
+console.log(`ブロックコマンド意味契約: 実assert ${baseline.checks}件、意図的ミューテーション12件を検知（${baseline.elapsedMs}ms）`);

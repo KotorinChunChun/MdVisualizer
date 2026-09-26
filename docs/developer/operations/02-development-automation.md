@@ -127,3 +127,5 @@ draw.io exportの応答形は `web-platform/tests/fixtures/drawio-embed-protocol
 - worker増加で遅くなる: 同じ対象でworker数を比較する。全CPU使用を無条件に高速とはみなさない。
 
 自動化自体は `npm run test:validation-cache`、`npm run test:block-commands` と既存のUI静的検査に内蔵した破壊fixtureで確認する。
+
+`test:block-commands` は通常の `npm test` のpretest、高速検証、統合検証のStaticに組み込む。固定項目の退避、保存処理の未接続、閲覧時操作を消す追加条件、ホスト契約の無効化を意図的に与え、検出器が失敗を返すことを検査する。基準の操作数が一致するだけでは合格にしない。操作ポリシーと必須接続契約、幅別の描画、コピー共通処理の動作はVitestでも確認する。

@@ -17,6 +17,13 @@ const formats = [
   ["GFM表", "|名前|値|\n|---|---|\n|項目|1|", /表を編集/, false],
 ] as const;
 
+it("開発描画では必要な変換処理の欠落を明示し、読み取り専用は除外", () => {
+  vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const props = { ...bindings, content: "```tsv\nA\tB\n```", baseDir: "", documentPath: "sample.md", imageVersions: {} };
+  expect(() => render(<MarkdownPreview {...props} actionContractHost="desktop" readOnly allowBlockActions onTableStorageConvert={undefined} />)).toThrow("onTableStorageConvert");
+  expect(() => render(<MarkdownPreview {...props} actionContractHost="desktop" readOnly allowBlockActions={false} onTableStorageConvert={undefined} />)).not.toThrow();
+});
+
 for (const [name, content, edit, converts] of formats) {
   for (const interactionMode of ["browse", "edit"] as const) {
     for (const width of [1600, 260, 60]) {

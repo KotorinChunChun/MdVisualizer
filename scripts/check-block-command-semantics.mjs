@@ -128,6 +128,7 @@ function collectErrors(config, readFile) {
     const previews = jsxProperties(text, 'MarkdownPreview');
     expect(previews.some(properties => properties.has('allowBlockActions')), `${label}: MarkdownPreviewへallowBlockActionsを渡していない`);
     expect(previews.some(properties => properties.has('onCodeFenceBodyChange')), `${label}: MarkdownPreviewへonCodeFenceBodyChangeを渡していない`);
+    expect(previews.some(properties => properties.get('actionContractHost')?.getText() === `"${label === 'Desktop' ? 'desktop' : 'web'}"`), `${label}: 必須操作契約が有効化されていない`);
   }
   const desktopPreview = jsxProperties(source.desktopApp, 'MarkdownPreview').find(properties => properties.has('allowBlockActions'));
   const desktopBlockActions = desktopPreview?.get('allowBlockActions')?.getText() ?? '';
