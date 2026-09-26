@@ -21,6 +21,11 @@ describe("new Markdown shortcut wiring", () => {
 });
 
 describe("document workspace controls", () => {
+  it("閲覧モードでも更新可能な文書の明示的なブロック操作を提供する", () => {
+    const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
+    expect(source).toContain('allowBlockActions={canEditActive && !printing && !activeTab.saving}');
+    expect(source).toContain('readOnly={!visualEditing}');
+  });
   it("表示形式とは独立した編集フラグと表示切替時の共通Undo・スクロールを配線する", () => {
     const source = readFileSync(join(process.cwd(), "src", "App.tsx"), "utf8");
     expect(source).toContain('const visualEditing = interactionMode === "edit";');

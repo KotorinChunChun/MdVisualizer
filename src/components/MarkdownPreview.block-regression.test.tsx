@@ -5,6 +5,14 @@ vi.mock("./MermaidBlock", () => ({ MermaidBlock: ({ editable, source }: { editab
 afterEach(cleanup);
 const table = "| Name | Link |\n| --- | --- |\n| **Alpha** | [First](https://example.test/first) |\n| Beta | [Second](https://example.test/second) |";
 describe("ブロックの閲覧専用と表操作", () => {
+  it("本文閲覧中でも明示的な表編集を開き、真の読み取り専用では隠す", () => {
+    const props = { content: table, documentPath: "sample.md", baseDir: "", imageVersions: {}, onMarkdownTableChange: vi.fn() };
+    const { rerender } = render(<MarkdownPreview {...props} readOnly allowBlockActions />);
+    fireEvent.click(screen.getByRole("button", { name: "表を編集" }));
+    expect(screen.getByRole("dialog", { name: "表を編集" })).toBeTruthy();
+    rerender(<MarkdownPreview {...props} readOnly allowBlockActions={false} />);
+    expect(screen.queryByRole("button", { name: "表を編集" })).toBeNull();
+  });
   it("プレビュー限定でもMermaidを描画し、編集は提供しない", () => {
     render(<MarkdownPreview content={'```mermaid\ngraph TD; A-->B\n```'} documentPath="sample.md" readOnly baseDir="" imageVersions={{}} onCodeFenceBodyChange={vi.fn()} />);
     expect(screen.getByTestId("mermaid-preview").getAttribute("data-editable")).toBe("false");

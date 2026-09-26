@@ -2592,7 +2592,7 @@ export function App() {
           <MarkdownPreview
             enablePointerBlockReorder={visualEditing}
             readOnly={!visualEditing}
-            allowBlockActions={canEditActive && interactionMode === "edit" && !printing && !activeTab.saving}
+            allowBlockActions={canEditActive && !printing && !activeTab.saving}
             content={previewContent}
             baseDir={activeTab.document.base_dir}
             onTextEdit={canEditActive && interactionMode === "edit" && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
