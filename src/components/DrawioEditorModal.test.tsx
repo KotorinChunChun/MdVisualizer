@@ -7,7 +7,7 @@ describe("DrawioEditorModal", () => {
   afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
   it("loads and saves only messages from the expected diagrams.net frame", async () => {
-    const onSave = vi.fn(() => true);
+    const onSave = vi.fn((_source: string) => true);
     const onCancel = vi.fn();
     render(<DrawioEditorModal source="<mxGraphModel><root/></mxGraphModel>" onSave={onSave} onCancel={onCancel} />);
     const iframe = screen.getByTitle("draw.io editor") as HTMLIFrameElement;
@@ -42,6 +42,41 @@ describe("DrawioEditorModal", () => {
     window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "exit", modified: true } }));
     expect(onSave).not.toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("SVG入力は要求したxmlsvg書出しだけをサニタイズして元形式のまま保存する", async () => {
+    const onSave = vi.fn((_source: string) => true);
+    const onCancel = vi.fn();
+    render(<DrawioEditorModal source={'<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>'} onSave={onSave} onCancel={onCancel} />);
+    const frame = (screen.getByTitle("draw.io editor") as HTMLIFrameElement).contentWindow!;
+    const postMessage = vi.spyOn(frame, "postMessage").mockImplementation(() => undefined);
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "save", xml: "<mxGraphModel><root/></mxGraphModel>", exit: true } }));
+    const exportCall = postMessage.mock.calls.map(([value]) => JSON.parse(String(value))).find((value) => value.action === "export");
+    expect(exportCall).toMatchObject({ action: "export", format: "xmlsvg", xml: "<mxGraphModel><root/></mxGraphModel>" });
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "exit" } }));
+    expect(onCancel).not.toHaveBeenCalled();
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "export", format: "svg", message: { action: "export", format: "xmlsvg", message: "stale" }, data: "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E" } }));
+    expect(onSave).not.toHaveBeenCalled();
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" content="%3CmxGraphModel%2F%3E"><script>bad()</script><rect width="10" height="10"/></svg>';
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "export", format: "svg", message: { action: "export", format: "xmlsvg", message: exportCall.message }, data: `data:image/svg+xml,${encodeURIComponent(svg)}` } }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    expect(onSave).toHaveBeenCalledWith(expect.stringContaining('content="%3CmxGraphModel%2F%3E"'));
+    expect(onSave.mock.calls[0][0]).not.toContain("<script");
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("未要求または不正なSVG書出しを保存しない", async () => {
+    const onSave = vi.fn();
+    render(<DrawioEditorModal source={'<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>'} onSave={onSave} onCancel={vi.fn()} />);
+    const frame = (screen.getByTitle("draw.io editor") as HTMLIFrameElement).contentWindow!;
+    const calls = vi.spyOn(frame, "postMessage").mockImplementation(() => undefined);
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "export", format: "svg", message: { action: "export", format: "xmlsvg", message: "unrequested" }, data: "data:image/svg+xml,%3Csvg%2F%3E" } }));
+    expect(onSave).not.toHaveBeenCalled();
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "save", xml: "<mxGraphModel><root/></mxGraphModel>" } }));
+    const request = calls.mock.calls.map(([value]) => JSON.parse(String(value))).find((value) => value.action === "export");
+    window.dispatchEvent(new MessageEvent("message", { origin: DRAWIO_ORIGIN, source: frame, data: { event: "export", format: "svg", message: { action: "export", format: "xmlsvg", message: request.message }, data: "data:image/png;base64,YQ==" } }));
+    await screen.findByRole("alert");
+    expect(onSave).not.toHaveBeenCalled();
   });
 
   it("ignores delayed layout messages after the iframe window becomes unavailable", () => {

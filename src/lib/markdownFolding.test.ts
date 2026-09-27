@@ -17,8 +17,8 @@ describe("longFencedCodeBlockRanges", () => {
 
 describe("MarkdownEditor view state", () => {
   it("stores scroll, selection, and valid folds independently of the editor generation", () => {
-    rememberMarkdownEditorViewState("C:\\docs\\note.md", { content: "0123456789abcdef", scrollTop: 240, scrollLeft: 32, anchor: 8, head: 12, folds: [{ from: 2, to: 6 }, { from: 14, to: 24 }] });
-    expect(restoreMarkdownEditorViewState("C:\\docs\\note.md", "0123456789abcdef")).toEqual({ content: "0123456789abcdef", scrollTop: 240, scrollLeft: 32, anchor: 8, head: 12, folds: [{ from: 2, to: 6 }] });
+    rememberMarkdownEditorViewState("C:\\docs\\note.md", { content: "0123456789abcdef", scrollTop: 240, scrollLeft: 32, anchor: 8, head: 12, folds: [{ from: 2, to: 6 }, { from: 14, to: 24 }], focused: true });
+    expect(restoreMarkdownEditorViewState("C:\\docs\\note.md", "0123456789abcdef")).toEqual({ content: "0123456789abcdef", scrollTop: 240, scrollLeft: 32, anchor: 8, head: 12, folds: [{ from: 2, to: 6 }], focused: true });
   });
 
   it("maps an unaffected fold when an external update inserts lines before it and unfolds an edited range", () => {

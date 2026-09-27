@@ -8,6 +8,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 $resolvedDocuments = @($DocumentPath | ForEach-Object {
     (Resolve-Path -LiteralPath $_ -ErrorAction Stop).Path
 })
@@ -18,10 +19,7 @@ if (-not $PSCmdlet.ShouldProcess("MdVisualizer 全機能", "リリースビル�
 
 Push-Location $projectRoot
 try {
-    & npm.cmd run tauri -- build --no-bundle
-    if ($LASTEXITCODE -ne 0) {
-        throw "MdVisualizerのリリースビルドが終了コード $LASTEXITCODE で失敗しました。"
-    }
+    Invoke-MdVisualizerNpm -ProjectRoot $projectRoot -Arguments @('run', 'tauri', '--', 'build', '--no-bundle')
 } finally {
     Pop-Location
 }

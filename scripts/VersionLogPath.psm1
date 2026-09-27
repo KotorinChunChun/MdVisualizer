@@ -5,8 +5,17 @@ function Get-VersionLogDirectory {
         [string]$TargetVersion = $env:MDVISUALIZER_VERSION,
         [string]$OutputDirectory
     )
+    if ([string]::IsNullOrWhiteSpace($TargetVersion)) {
+        $packageJsonPath = Join-Path $ProjectRoot 'package.json'
+        if (Test-Path -LiteralPath $packageJsonPath -PathType Leaf) {
+            $packageVersion = (Get-Content -LiteralPath $packageJsonPath -Raw | ConvertFrom-Json).version
+            if ($packageVersion -match '^(\d+\.\d+\.\d+(?:\.\d+)?)') {
+                $TargetVersion = "v$($Matches[1])"
+            }
+        }
+    }
     if ($TargetVersion -notmatch '^v?\d+\.\d+\.\d+(?:\.\d+)?(?:[-+][a-zA-Z0-9.-]+)?$') {
-        throw '対象版を-TargetVersionまたはMDVISUALIZER_VERSIONで指定してください（例: v0.0.18）。'
+        throw '対象版を-TargetVersionまたはMDVISUALIZER_VERSIONで指定してください（例: v0.0.18）。package.jsonのversionも利用できます。'
     }
     if (-not $TargetVersion.StartsWith('v')) { $TargetVersion = 'v' + $TargetVersion }
     $base = [IO.Path]::GetFullPath((Join-Path $ProjectRoot "dev/history/$TargetVersion/logs"))

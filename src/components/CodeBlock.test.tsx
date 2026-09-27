@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CodeBlock, powerShellWorkingDirectory, syntaxHighlightLanguageName } from "./CodeBlock";
 import { copyTextFile, runPowerShell } from "../lib/commands";
+import { BrowserCapabilitiesContext, desktopBrowserCapabilities } from "./BrowserCapabilities";
 
 vi.mock("../lib/commands", () => ({ copyTextFile: vi.fn(), runPowerShell: vi.fn() }));
 
@@ -25,7 +26,7 @@ describe("CodeBlock", () => {
     const listener = vi.fn();
     window.addEventListener("markdown-toast", listener);
     render(<CodeBlock className="language-typescript">{"const answer = 42;\n"}</CodeBlock>);
-    const button = screen.getByRole("button", { name: "Copy" });
+    const button = screen.getByRole("button", { name: "コピー" });
     button.focus();
     fireEvent.click(button);
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("const answer = 42;"));
@@ -39,7 +40,7 @@ describe("CodeBlock", () => {
 
     const copyButtons = container.querySelectorAll(".code-block__header .code-copy");
     expect(copyButtons).toHaveLength(3);
-    expect(Array.from(copyButtons).map((button) => button.textContent)).toEqual(["Copy", "TXTコピー", "ソースファイルコピー"]);
+    expect(Array.from(copyButtons).map((button) => button.textContent)).toEqual(["コピー", "TXTコピー", "ソースファイルコピー"]);
   });
 
   it("emits an error notification when the clipboard rejects the copy", async () => {
@@ -47,7 +48,7 @@ describe("CodeBlock", () => {
     const listener = vi.fn();
     window.addEventListener("markdown-toast", listener);
     render(<CodeBlock className="language-json">{"{\"ok\":true}"}</CodeBlock>);
-    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    fireEvent.click(screen.getByRole("button", { name: "コピー" }));
     await waitFor(() => expect(listener).toHaveBeenCalledWith(expect.objectContaining({ detail: { type: "error", message: "コードをコピーできませんでした" } })));
     window.removeEventListener("markdown-toast", listener);
   });
@@ -76,6 +77,11 @@ describe("CodeBlock", () => {
     expect(screen.getByLabelText("PowerShell実行結果").textContent).toContain("終了コード: 0");
   });
 
+  it("does not expose PowerShell execution in a browser-only host", () => {
+    render(<BrowserCapabilitiesContext.Provider value={{ ...desktopBrowserCapabilities, canRunPowerShell: false }}><CodeBlock className="language-pwsh" documentPath="C:\\docs\\note.md">Write-Output no</CodeBlock></BrowserCapabilitiesContext.Provider>);
+    expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
+  });
+
   it("does not offer execution for unlabeled or non-PowerShell code", () => {
     const { rerender } = render(<CodeBlock className="language-bash" documentPath={String.raw`C:\docs\sample.md`}>echo no</CodeBlock>);
     expect(screen.queryByRole("button", { name: "PowerShellを実行" })).toBeNull();
@@ -92,7 +98,7 @@ describe("CodeBlock", () => {
     window.addEventListener("markdown-toast", listener);
     render(<CodeBlock className="language-typescript">{"const value = 1;"}</CodeBlock>);
 
-    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    fireEvent.click(screen.getByRole("button", { name: "コピー" }));
     await waitFor(() => expect(detail?.actions?.map((action) => action.label)).toEqual(["TXTファイルでコピー", "ソースファイルとしてコピー"]));
     const actions = detail?.actions;
     await actions?.[0].onAction();
@@ -118,6 +124,41 @@ describe("CodeBlock", () => {
     expect(container.querySelector("pre.code-block__pre--wrapped code")).not.toBeNull();
   });
 
+  it("edits a fenced code body and applies the replacement through its owner", async () => {
+    const onSourceChange = vi.fn().mockResolvedValue(true);
+    render(<CodeBlock className="language-javascript" onSourceChange={onSourceChange}>const oldValue = 1;</CodeBlock>);
+
+    fireEvent.click(screen.getByRole("button", { name: "編集" }));
+    const dialog = screen.getByRole("dialog", { name: "コードを編集" });
+    fireEvent.change(screen.getByRole("textbox", { name: "コード" }), { target: { value: "const newValue = 2;" } });
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+
+    await waitFor(() => expect(onSourceChange).toHaveBeenCalledWith("const newValue = 2;"));
+    expect(screen.queryByRole("dialog", { name: "コードを編集" })).toBeNull();
+    expect(dialog).toBeTruthy();
+  });
+
+  it("traps focus, restores it on Escape, and keeps the editor open after a rejected save", async () => {
+    const onSourceChange = vi.fn().mockResolvedValue(false);
+    const listener = vi.fn();
+    window.addEventListener("markdown-toast", listener);
+    render(<CodeBlock className="language-javascript" onSourceChange={onSourceChange}>const value = 1;</CodeBlock>);
+
+    const editButton = screen.getByRole("button", { name: "編集" });
+    editButton.focus();
+    fireEvent.click(editButton);
+    expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "コード" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "コード" }), { target: { value: "const value = 2;" } });
+    fireEvent.click(screen.getByRole("button", { name: "反映" }));
+    await waitFor(() => expect(listener).toHaveBeenCalledWith(expect.objectContaining({ detail: expect.objectContaining({ type: "error", message: "コードを保存できませんでした" }) })));
+    expect(screen.getByRole("dialog", { name: "コードを編集" })).toBeTruthy();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "コードを編集" })).toBeNull();
+    expect(document.activeElement).toBe(editButton);
+    window.removeEventListener("markdown-toast", listener);
+  });
+
   it.each([
     ["embedded", "外部ファイルへ切替"],
     ["external", "埋め込みへ切替"],
@@ -141,6 +182,6 @@ describe("CodeBlock", () => {
     expect(container.querySelector(".shortcut-key-block")).not.toBeNull();
     expect(container.querySelector("svg.shortcut-key-svg--block")).not.toBeNull();
     expect(screen.getByRole("img", { name: "キーボードショートカット: Ctrl + Shift + S" })).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Copy" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "コピー" })).not.toBeNull();
   });
 });

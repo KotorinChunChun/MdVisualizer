@@ -20,6 +20,7 @@ export interface StatusBarProps {
   changed?: boolean;
   theme?: string;
   onThemeChange?: (value: string) => void;
+  /** Layout selector lives in the preview toolbar; these compatibility props remain accepted. */
   viewMode?: ViewMode;
   onViewModeChange?: (value: ViewMode) => void;
   onOpenSettings?: () => void;
@@ -49,8 +50,6 @@ export function StatusBar({
   changed = false,
   theme = "system",
   onThemeChange,
-  viewMode = "auto",
-  onViewModeChange,
   onOpenSettings,
   onOpenShortcutHelp,
   onOpenEditingTests,
@@ -87,20 +86,6 @@ export function StatusBar({
             <option value="github">GitHub</option>
             <option value="solarized">Solarized</option>
             <option value="nord">Nord</option>
-          </select>
-        </label>
-        <label>
-          <span>レイアウト</span>
-          <select aria-label="レイアウト" value={viewMode} onChange={(event) => onViewModeChange?.(event.target.value as ViewMode)} disabled={!onViewModeChange}>
-            <optgroup label="本文レイアウト">
-              <option value="auto">オート</option>
-              <option value="a4-portrait">A4縦</option>
-              <option value="a3-portrait">A3縦</option>
-            </optgroup>
-            <optgroup label="表示モード">
-              <option value="presentation">プレゼン</option>
-              <option value="images">画像中心</option>
-            </optgroup>
           </select>
         </label>
         <label>

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TableEditorDialog, type EditableTableData } from "./TableEditorDialog";
+import { DocumentSaveContext } from "../contexts/DocumentSaveContext";
 
 describe("TableEditorDialog grid editing", () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -154,17 +155,44 @@ describe("TableEditorDialog grid editing", () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
-  it("selects every header and body cell with Ctrl+A", () => {
+  it("selects text in a single editing cell with Ctrl+A", () => {
     render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["1", "2"], ["3", "4"]]} onCancel={() => undefined} onSave={() => true} />);
     const cell = screen.getByRole("textbox", { name: "行 1 列 1" });
+    fireEvent.keyDown(cell, { key: "a", ctrlKey: true });
+    expect((cell as HTMLInputElement).selectionStart).toBe(0);
+    expect((cell as HTMLInputElement).selectionEnd).toBe(1);
+    expect(screen.getByRole("textbox", { name: "行 2 列 2" }).classList.contains("is-selected")).toBe(false);
+  });
+
+  it("keeps native Ctrl+C for selected text in one editing cell", () => {
+    render(<TableEditorDialog initialHeaders={["A", "B"]} initialRows={[["first", "second"]]} onCancel={() => undefined} onSave={() => true} />);
+    const cell = screen.getByRole("textbox", { name: "行 1 列 1" }) as HTMLInputElement;
+    fireEvent.keyDown(cell, { key: "a", ctrlKey: true });
     const setData = vi.fn();
 
-    fireEvent.keyDown(cell, { key: "a", ctrlKey: true });
-    fireEvent.copy(cell, { clipboardData: { setData } });
+    const wasNotCancelled = fireEvent.copy(cell, { clipboardData: { setData } });
 
-    expect(setData).toHaveBeenCalledWith("text/plain", "A\tB\n1\t2\n3\t4");
-    expect(screen.getByRole("textbox", { name: "列 1の見出し" }).classList.contains("is-selected")).toBe(true);
-    expect(screen.getByRole("textbox", { name: "行 2 列 2" }).classList.contains("is-selected")).toBe(true);
+    expect(wasNotCancelled).toBe(true);
+    expect(setData).not.toHaveBeenCalled();
+  });
+
+  it("reflects table edits before saving the document with Ctrl+S", async () => {
+    const sequence: string[] = [];
+    const onSave = vi.fn(() => { sequence.push("reflect"); return true; });
+    const onDocumentSave = vi.fn(async () => { sequence.push("document-save"); return true; });
+    const onCancel = vi.fn();
+    render(
+      <DocumentSaveContext.Provider value={onDocumentSave}>
+        <TableEditorDialog initialHeaders={["A"]} initialRows={[["value"]]} onCancel={onCancel} onSave={onSave} />
+      </DocumentSaveContext.Provider>,
+    );
+
+    const cell = screen.getByRole("textbox", { name: "行 1 列 1" });
+    fireEvent.keyDown(cell, { key: "s", ctrlKey: true });
+
+    await waitFor(() => expect(onDocumentSave).toHaveBeenCalledOnce());
+    expect(sequence).toEqual(["reflect", "document-save"]);
+    expect(onCancel).toHaveBeenCalledOnce();
   });
 
   it("edits and applies a 1,000-row table", () => {
@@ -240,6 +268,15 @@ describe("TableEditorDialog grid editing", () => {
     fireEvent.click(rowHandle);
     fireEvent.copy(rowHandle, { clipboardData: { setData } });
     expect(setData).toHaveBeenLastCalledWith("text/plain", "1\t2");
+  });
+
+  it("行のドラッグつまみは縦の三点で、列の横つまみと区別する", () => {
+    render(<TableEditorDialog initialHeaders={["A"]} initialRows={[["1"]]} onCancel={() => undefined} onSave={() => true} />);
+    const rowHandle = screen.getByRole("button", { name: "行 1をドラッグして並び替え" });
+    const columnHandle = screen.getByRole("button", { name: "列 1をドラッグして並び替え" });
+    expect(rowHandle.textContent).toBe("⋮");
+    expect(rowHandle.classList.contains("table-editor-row-drag-handle")).toBe(true);
+    expect(columnHandle.classList.contains("table-editor-column-drag-handle")).toBe(true);
   });
 
   it("places icon alignment toggles on both sides of the heading and treats release as center", () => {

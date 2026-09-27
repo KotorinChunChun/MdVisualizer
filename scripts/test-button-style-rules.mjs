@@ -16,11 +16,13 @@ async function sourceFiles(directory) {
   return nested.flat();
 }
 
-const [appStyles, appSource, files] = await Promise.all([
+const sourceDirectories = [join(root, "src"), join(root, "web", "src")];
+const [appStyles, appSource, fileSets] = await Promise.all([
   readFile(join(root, "src", "styles", "app.css"), "utf8"),
   readFile(join(root, "src", "App.tsx"), "utf8"),
-  sourceFiles(join(root, "src")),
+  Promise.all(sourceDirectories.map(sourceFiles)),
 ]);
+const files = fileSets.flat();
 
 // 全ボタンは共通の hover / focus / disabled 状態を継承し、ツールバーの例外は専用クラスで宣言する。
 for (const selector of ["button:not(:disabled)", "button:not(:disabled):hover", "button:focus-visible", "button:disabled"]) {
@@ -34,9 +36,9 @@ for (const property of ["color:var(--text-primary)", "background:var(--btn-bg)",
   assert(skillButtonRule.includes(property), `スキル設定ボタンの共通外観がありません: ${property}`);
 }
 assert.match(appStyles, /\.editor-mode-controls > \.document-action-button \{ margin-left: 8px; \}/, "差分ボタンの配置規則がありません");
-const diffButtonStart = appSource.indexOf('className="document-action-button"');
-const diffButtonEnd = appSource.indexOf("</button>", diffButtonStart);
-assert(diffButtonStart >= 0 && diffButtonEnd >= diffButtonStart && appSource.slice(diffButtonStart, diffButtonEnd).includes("差分"), "差分ボタンが共通クラスを使用していません");
+// 状態による追加classを許可し、共通IDで対象を特定する。
+const diffButton = appSource.match(/<button\b[^>]*data-ui-command="document\.diff"[\s\S]*?<\/button>/)?.[0] ?? "";
+assert(diffButton.includes("document-action-button") && diffButton.includes("aria-pressed=") && diffButton.includes("差分"), "差分ボタンの共通クラス・選択フラグがありません");
 
 function buttonStyleAudit(filename, source) {
   const sourceFile = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, filename.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);

@@ -6,6 +6,7 @@ describe("draw.io source handling", () => {
     expect(classifyDrawioSource("")).toBe("empty");
     expect(classifyDrawioSource("<mxGraphModel/>" )).toBe("xml");
     expect(classifyDrawioSource("<svg xmlns=\"http://www.w3.org/2000/svg\"/>" )).toBe("svg");
+    expect(classifyDrawioSource("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\"/>" )).toBe("svg");
     expect(classifyDrawioSource("flowchart LR\nA-->B")).toBe("mermaid");
     expect(classifyDrawioSource("tZVRT9swEMc/TR5B")).toBe("compressed");
   });
@@ -29,6 +30,11 @@ describe("draw.io source handling", () => {
     expect(result.xml.match(/<mxCell/g)).toHaveLength(4);
     expect(result.xml).toContain("shape=mxgraph.basic.polygon");
     expect(result.warnings).toEqual(["SVGの <path> 要素は個別図形へ変換できないためスキップしました。"]);
+  });
+
+  it("xmlsvgの埋め込みdraw.io原文を再編集用に優先する", () => {
+    const result = prepareDrawioLoad('<svg xmlns="http://www.w3.org/2000/svg" content="%3CmxGraphModel%3E%3Croot%2F%3E%3C%2FmxGraphModel%3E"><path d="M0 0"/></svg>');
+    expect(result).toMatchObject({ kind: "svg", xml: "<mxGraphModel><root/></mxGraphModel>", warnings: [] });
   });
 
   it("extracts nested and compressed page data from mxfile saves", () => {

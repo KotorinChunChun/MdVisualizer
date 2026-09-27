@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "specification": {
+    "markdown": "docs/developer/ui/BLOCK_UI_SPEC.md",
+    "definition": "docs/developer/ui/BLOCK_UI_DEFINITION.tsv",
+    "finalOrder": "docs/developer/ui/BLOCK_UI_FINAL_ORDER.tsv"
+  },
+  "requiredCommandIds": ["edit", "ai", "copy", "copy.text", "copy.vector", "copy.bitmap", "wrap", "search", "view", "columns", "header", "slicer", "print", "storage-switch", "run", "more"],
+  "implementationFiles": {
+    "toolbar": "web-platform/packages/editor-ui/src/components/ResponsiveToolbar.tsx",
+    "capabilities": "web-platform/packages/editor-ui/src/components/BrowserCapabilities.tsx",
+    "webHost": "web-platform/apps/web/src/main.tsx",
+    "code": "web-platform/packages/editor-ui/src/components/CodeBlock.tsx",
+    "table": "web-platform/packages/editor-ui/src/components/DelimitedTableBlock.tsx",
+    "diagram": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
+    "mermaid": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
+    "preview": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
+    "desktopApp": "src/App.tsx",
+    "webApp": "web-platform/apps/web/src/WebApp.tsx"
+  }
+}

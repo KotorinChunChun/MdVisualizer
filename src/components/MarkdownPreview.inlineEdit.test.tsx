@@ -5,6 +5,20 @@ import { MarkdownPreview } from "./MarkdownPreview";
 describe("MarkdownPreview direct text editing", () => {
   afterEach(cleanup);
 
+  it.each(["先頭\n次の行\n最後の行", "先頭  \n次の行  \n最後の行", "先頭\n\n次の行\n\n最後の行", "| 見出し |\n| --- |\n| 先頭 |\n| 次の行 |\n| 最後の行 |"])("2行目以降の本文・表セルを編集できる: %s", source => {
+    const onTextEdit = vi.fn().mockReturnValue(true);
+    const { container } = render(<MarkdownPreview content={source} baseDir="" imageVersions={{}} onTextEdit={onTextEdit} />);
+    const leaf = [...container.querySelectorAll(".preview-inline-editable")].find(element => element.textContent?.includes("最後の行"));
+    expect(leaf).toBeTruthy();
+    fireEvent.doubleClick(leaf!);
+    const input = screen.getByRole("textbox", { name: "プレビューのテキストを編集" });
+    fireEvent.change(input, { target: { value: "置換" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    const [, from, to] = onTextEdit.mock.calls[0];
+    expect(source.slice(from, to)).toContain("最後の行");
+    expect(onTextEdit).toHaveBeenLastCalledWith(source, from, to, "置換");
+  });
+
   it("opens an input for rendered text and preserves link syntax in the requested source range", () => {
     const source = "# 見出し\n\n[同じ](https://example.test)";
     const onTextEdit = vi.fn().mockReturnValue(true);

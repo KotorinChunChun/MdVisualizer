@@ -1,7 +1,0 @@
-.preview-inline-editable { cursor: text; }
-.preview-inline-editor-wrap { display: inline-block; max-width: 100%; }
-.preview-inline-editor { box-sizing: border-box; display: block; min-width: 4ch; width: min(100%, 36rem); padding: 0.08em 0.22em; color: inherit; font: inherit; line-height: inherit; background: var(--panel-bg); border: 1px solid var(--accent-color); border-radius: 3px; outline: none; resize: vertical; }
-.preview-inline-editor:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 35%, transparent); }
-.preview-inline-editor__error { display: block; margin-top: .25em; color: var(--danger-color, #dc2626); font-size: .82em; }
-.fold-toggle { width: auto; }
-.fold-heading__content { cursor: text; }

@@ -1,0 +1,3 @@
+[submodule "web-platform"]
+	path = web-platform
+	url = https://github.com/KotorinChunChun/MdVisualizerWebPlatform.git

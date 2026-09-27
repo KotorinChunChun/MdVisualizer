@@ -1,0 +1,30 @@
+import { afterEach, expect, it, vi } from "vitest";
+import { startDeletedDocumentRecovery } from "./deletedDocumentRecovery";
+afterEach(() => vi.useRealTimers());
+it("削除済みローカルタブを繰り返し確認し、復活後と停止後は取得しない", async () => {
+  vi.useFakeTimers();
+  const targets = [{ id: "deleted", deleted: true, local: true }, { id: "remote", deleted: true, local: false }];
+  const refresh = vi.fn(async () => {});
+  const stop = startDeletedDocumentRecovery(() => targets, refresh);
+  await vi.advanceTimersByTimeAsync(4000);
+  expect(refresh.mock.calls).toEqual([["deleted"], ["deleted"]]);
+  targets[0].deleted = false;
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(refresh).toHaveBeenCalledTimes(2);
+  stop();
+  targets[0].deleted = true;
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(refresh).toHaveBeenCalledTimes(2);
+});
+it("遅い取得を重複実行しない", async () => {
+  vi.useFakeTimers();
+  let finish!: () => void;
+  const refresh = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+  const stop = startDeletedDocumentRecovery(() => [{ id: "a", deleted: true, local: true }], refresh);
+  await vi.advanceTimersByTimeAsync(8000);
+  expect(refresh).toHaveBeenCalledTimes(1);
+  finish();
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(refresh).toHaveBeenCalledTimes(2);
+  stop();
+});

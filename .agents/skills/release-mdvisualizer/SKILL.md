@@ -35,3 +35,10 @@ description: MdVisualizerのproduction検証、SPFx sppkg、ポータブルZIP�
 7. `dev/history/vX.Y.Z/vX.Y.Z-imp.md`とtaskへ、版、署名、ハッシュ、公開先、各段階の成否、未実施GUI受入、コミットを記録する。
 
 PowerShellは必ず`pwsh`で実行する。秘密値、PFX、token、FTP資格情報を表示・記録しない。ローカル生成だけで製品リリース完了としない。
+
+## HTML/PHPテストサイトの限定公開
+
+- HTML/PHP画面だけの公開には `scripts/publish-web-MdVisualizer-limited.ps1 -Version <対象版> -Mode Plan` を使う。許可済みなら `-Mode Publish -PublishConfirmed` へ進める。継続した公開許可を改めて質問しない。
+- 対象は既存 `/test/mdvisualizer/` のmdvisualizer.htmlとapp.htmlのみ。MSIX等のbeta配布やApp Catalog公開と混同しない。
+- 先に必要なStatic/Web/SPFx等の検証を終え、manifest、FTP読み戻し、HTTP検証、result.jsonの工程別結果を確認する。部分成功はそのまま記録する。公開後の画面・認証検証は別途実施する。
+- Git pushの権限を公開許可から推測しない。詳細と自己テストは `docs/developer/operations/02-development-automation.md` を参照する。

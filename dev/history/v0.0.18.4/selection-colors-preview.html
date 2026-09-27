@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MdVisualizer 選択色設計案</title><link rel="stylesheet" href="selection-colors-preview.css"></head>
+<body><main>
+<div class="top"><div><div class="muted">MdVisualizer / デザインレビュー・製品へ未適用</div><h1>選択色の共通化</h1></div><label>見本のテーマ <select id="theme"><option value="light">ライト</option><option value="dark">ダーク</option></select></label></div>
+<p>番号で指示できます。例：「02の枠を弱く」「07の文字強調を調整」。差分は削除＝赤、追加＝緑。変更も削除＋追加として表示します。</p>
+<div class="swatches"><span class="swatch current">現在位置：青10%＋濃い青線</span><span class="swatch range">範囲選択：青28%</span><span class="swatch deleted">− 削除：赤</span><span class="swatch added">＋ 追加：緑</span></div>
+<div class="grid">
+<section class="wide"><h2><span class="num">01</span>現在行・対応ブロック｜青10%＋濃い青の左線</h2><p class="hint">コードとビジュアルと差分で共通。下の行をクリック、またはフォーカスして↑↓キーで移動できます。</p><div class="pair">
+<div class="sample" id="code-demo" aria-label="コード側の現在行見本"><div class="pane-title">コード</div><button class="row demo-row" aria-pressed="false" data-row="0"><code>01　# 製品紹介</code></button><button class="row demo-row" aria-pressed="true" data-row="1"><code>02　編集内容を確認します。</code></button><button class="row demo-row" aria-pressed="false" data-row="2"><code>03　次のセクションへ進みます。</code></button></div>
+<div class="sample" id="visual-demo"><div class="pane-title">ビジュアル（同じ色）</div><div class="row" data-row="0">製品紹介</div><div class="row current" data-row="1">編集内容を確認します。</div><div class="row" data-row="2">次のセクションへ進みます。</div></div></div></section>
+<section><h2><span class="num">02</span>移動対象｜青10%</h2><p class="hint">14%から統一。押下の枠は維持し、文字は薄くしない案。</p><div class="move">移動対象の段落です。（押下状態の見本）</div><div class="hover-example" tabindex="0">ホバーまたはキーボードフォーカスで青10%</div></section>
+<section><h2><span class="num">03</span>文字・表の範囲選択｜青28%</h2><p class="text-example">文章の中の<span class="range">選択した文字の範囲</span>です。実際のドラッグ選択も同じ色です。</p><table><thead><tr><th>項目</th><th>値</th></tr></thead><tbody><tr class="range"><td>選択行</td><td>28%</td></tr><tr><td>通常行</td><td>未選択</td></tr></tbody></table><p class="hint">表の18%を28%に変更。表編集ダイアログの14%も同じ28%へ統合する案。</p></section>
+<section><h2><span class="num">04</span>目次の現在位置｜変更なし</h2><p class="hint">青20%＋青系の枠＋太字。現在行用の左線は付けません。</p><div class="toc">3. 編集の使い方</div></section>
+<section><h2><span class="num">05</span>検索一致｜変更なし</h2><p>本文から<mark>検索に一致した文字</mark>を見つけます。</p><p class="hint">黄色 #fbbf24・暗色文字 #111827を維持。</p></section>
+<section><h2><span class="num">06</span>変更＝削除＋追加｜1画面で比較</h2><p class="hint">旧内容は赤、新内容は緑。変更された文字部分だけ背景を濃くします。</p><div class="sample"><div class="row deleted"><code><span class="diff-sign">−</span>表示件数：<span class="deleted-word">20</span>件</code></div><div class="row added"><code><span class="diff-sign">+</span>表示件数：<span class="added-word">50</span>件</code></div><div class="row">「表示件数：」「件」は共通部分のため濃くしません。</div></div></section>
+<section><h2><span class="num">07</span>変更行が現在行でもある場合</h2><p class="hint">行は青10%＋青い左線。変更された文字部分は削除側で赤、追加側で緑を維持します。</p><div class="sample"><div class="row current"><code><span class="diff-sign">−</span>表示件数：<span class="deleted-word">20</span>件</code><span class="diff-kind deleted">− 削除</span></div><div class="row current"><code><span class="diff-sign">+</span>表示件数：<span class="added-word">50</span>件</code><span class="diff-kind added">＋ 追加</span></div></div><p class="hint">削除側・追加側それぞれの現在行状態を並べた比較見本です。</p></section>
+<section><h2><span class="num">08</span>追加された行｜緑</h2><p class="hint">追加行を淡い緑、行内の追加部分を濃い緑で表示。「＋」でも追加と識別できます。</p><div class="sample"><div class="row">変更されていない行</div><div class="row added"><code><span class="diff-sign">+</span>新しい説明を追加しました。</code></div><div class="row added"><code><span class="diff-sign">+</span>対応形式：Markdown、<span class="added-word">TSV</span></code></div></div></section>
+<section><h2><span class="num">09</span>削除された行｜赤</h2><p class="hint">削除行を淡い赤、行内の削除部分を濃い赤で表示。「−」でも削除と識別できます。</p><div class="sample"><div class="row">変更されていない行</div><div class="row deleted"><code><span class="diff-sign">−</span>不要になった説明です。</code></div><div class="row deleted"><code><span class="diff-sign">−</span>対応形式：Markdown、<span class="deleted-word">CSV</span></code></div></div></section>
+<section class="wide"><h2><span class="num">10</span>GitHub型の置換比較｜左右分割</h2><p class="hint">06と同じ差分を左右に表示。旧内容は赤、新内容は緑に統一します。</p><div class="pair"><div class="sample"><div class="pane-title">変更前／削除</div><div class="row deleted"><code><span class="diff-sign">−</span>表示件数：<span class="deleted-word">20</span>件</code></div></div><div class="sample"><div class="pane-title">変更後／追加</div><div class="row added"><code><span class="diff-sign">+</span>表示件数：<span class="added-word">50</span>件</code></div></div></div></section>
+<section class="wide"><h2><span class="num">11</span>追加・削除と現在行が重なる場合｜比較案</h2><p class="hint">01・07と同じく青10%＋青い左線を優先。追加／削除の色と記号はラベルに残す案です。</p><div class="pair"><div class="sample"><div class="row current"><code><span class="diff-sign">+</span>現在位置の追加行</code><span class="diff-kind added">＋ 追加</span></div><div class="row added"><code><span class="diff-sign">+</span>他の追加行は緑のまま</code></div></div><div class="sample"><div class="row current"><code><span class="diff-sign">−</span>現在位置の削除行</code><span class="diff-kind deleted">− 削除</span></div><div class="row deleted"><code><span class="diff-sign">−</span>他の削除行は赤のまま</code></div></div></div><p class="hint">削除側の現在位置は比較対象の参照位置です。削除済みの行を編集できることは意味しません。</p></section>
+</div><p class="hint">設計見本です。編集・保存・実ファイルの差分計算は行いません。色は隣接する共通CSSの変数を参照しています。追加・削除の配色は<a href="https://primer.style/product/getting-started/react/theme-reference/">GitHub Primerのテーマ定義</a>を参考にしています（完全再現ではありません）。</p>
+</main><script>
+const theme = document.getElementById('theme');
+theme.addEventListener('change', () => { document.documentElement.dataset.theme = theme.value; });
+const demo = document.getElementById('code-demo');
+const buttons = Array.from(demo.querySelectorAll('[data-row]'));
+const visualRows = Array.from(document.getElementById('visual-demo').querySelectorAll('[data-row]'));
+function activate(index) {
+  buttons.forEach((button, i) => button.setAttribute('aria-pressed', String(i === index)));
+  visualRows.forEach((row, i) => row.classList.toggle('current', i === index));
+}
+buttons.forEach((button, index) => {
+  button.addEventListener('click', () => activate(index));
+  button.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const next = Math.max(0, Math.min(buttons.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)));
+    activate(next); buttons[next].focus();
+  });
+});
+</script></body></html>

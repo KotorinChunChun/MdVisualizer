@@ -23,7 +23,7 @@ async function send() {
   fireEvent.click(screen.getByRole("button", { name: "送信（Ctrl+Enter）" }));
 }
 async function openDiagram(action = "AIで見た目を改善") {
-  fireEvent.click(screen.getByRole("button", { name: "AIに図の編集を依頼" }));
+  fireEvent.click(screen.getByRole("button", { name: "AI" }));
   fireEvent.click(await screen.findByRole("menuitem", { name: action }));
 
 }
@@ -90,7 +90,7 @@ describe("図メニューのCodex連携", () => {
     vi.mocked(saveMarkdown).mockResolvedValue({ status: "conflict", latest: { ...document, revision: "r2" } });
     render(<FileSvgCodexAction path={document.path} />);
     expect(loadMarkdown).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("AIに図の編集を依頼"));
+    fireEvent.click(screen.getByRole("button", { name: "AI" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "AIで見た目を改善" }));
 
     await send(); await screen.findByText("採用");

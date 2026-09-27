@@ -11,6 +11,7 @@ vi.mock("./MermaidBlock", () => ({
 }));
 
 import { ExternalMermaidBlock } from "./ExternalMermaidBlock";
+import { BrowserCapabilitiesContext, desktopBrowserCapabilities } from "./BrowserCapabilities";
 
 describe("ExternalMermaidBlock", () => {
   afterEach(() => { cleanup(); loadMarkdown.mockReset(); });
@@ -41,5 +42,12 @@ describe("ExternalMermaidBlock", () => {
     expect(await screen.findByRole("alert")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "再読込" }));
     await waitFor(() => expect(loadMarkdown).toHaveBeenCalledTimes(2));
+  });
+
+  it("browser-only host does not add a Codex file action", async () => {
+    loadMarkdown.mockResolvedValue({ kind: "mermaid", content: "flowchart LR\nA --> B" });
+    const view = render(<BrowserCapabilitiesContext.Provider value={{ ...desktopBrowserCapabilities, canUseCodexActions: false }}><ExternalMermaidBlock source="flow.mmd" baseDir="C:\\docs" theme="light" blockId="mmd-4" version={0} /></BrowserCapabilitiesContext.Provider>);
+    await screen.findByTestId("external-mermaid");
+    expect(view.container.querySelector(".file-svg-codex-action")).toBeNull();
   });
 });

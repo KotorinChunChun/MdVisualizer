@@ -146,7 +146,8 @@ impl AssetStagingManager {
             .ok_or_else(|| AppError::IoError("Markdown parent folder is unavailable.".into()))?;
         let (parent, relative_prefix) = match destination {
             "document" => (document_parent.to_path_buf(), None),
-            "images" => (document_parent.join("images"), Some("images")),
+            "image" => (document_parent.join("image"), Some("image")),
+            "fixed" => (document_parent.to_path_buf(), None),
             "absolute" => {
                 let configured = absolute_directory.unwrap_or_default().trim();
                 let directory = PathBuf::from(configured);
@@ -176,7 +177,12 @@ impl AssetStagingManager {
                     .map(|value| value.to_string_lossy().to_lowercase())
             })
             .collect::<HashSet<_>>();
-        let filename = available_filename(&parent, preferred_filename, &reserved)?;
+        let overwrite = destination == "fixed";
+        let filename = if overwrite {
+            preferred_filename.to_string()
+        } else {
+            available_filename(&parent, preferred_filename, &reserved)?
+        };
         let file_destination = parent.join(&filename);
         let markdown_source = if destination == "absolute" {
             file_destination.to_string_lossy().replace('\\', "/")
@@ -186,7 +192,7 @@ impl AssetStagingManager {
             filename.clone()
         };
         drop(entries);
-        self.write_staged_entry(document, file_destination, markdown_source, false, bytes)
+        self.write_staged_entry(document, file_destination, markdown_source, overwrite, bytes)
     }
 
     fn write_staged_entry(
@@ -496,6 +502,25 @@ fn available_filename(
         .extension()
         .and_then(|value| value.to_str())
         .unwrap_or("png");
+    let numeric_start = stem
+        .char_indices()
+        .rev()
+        .find(|(_, value)| !value.is_ascii_digit())
+        .map(|(index, _)| index + 1)
+        .unwrap_or(0);
+    if numeric_start < stem.len() && stem[..numeric_start].eq_ignore_ascii_case("image") {
+        let prefix = &stem[..numeric_start];
+        let first = stem[numeric_start..].parse::<u32>().unwrap_or(1).max(1);
+        for number in first..=10_000 {
+            let candidate = format!("{prefix}{number}.{extension}");
+            if !parent.join(&candidate).exists() && !reserved.contains(&candidate.to_lowercase()) {
+                return Ok(candidate);
+            }
+        }
+        return Err(AppError::Conflict(
+            "Could not allocate an unused asset filename.".into(),
+        ));
+    }
     for number in 1..=10_000 {
         let candidate = if number == 1 {
             preferred.to_string()
@@ -722,7 +747,7 @@ mod tests {
     }
 
     #[test]
-    fn stages_images_subfolder_and_absolute_folder_references() {
+    fn stages_image_subfolder_and_absolute_folder_references() {
         let dir = tempdir().unwrap();
         let document = dir.path().join("note.md");
         let absolute = dir.path().join("Shared Images");
@@ -732,7 +757,7 @@ mod tests {
             .stage_at(
                 &document.to_string_lossy(),
                 "20260824_090507.png",
-                "images",
+                "image",
                 None,
                 b"relative",
             )
@@ -746,7 +771,7 @@ mod tests {
                 b"absolute",
             )
             .unwrap();
-        assert_eq!(relative.filename, "images/20260824_090507.png");
+        assert_eq!(relative.filename, "image/20260824_090507.png");
         assert!(external
             .filename
             .replace('\\', "/")
@@ -755,13 +780,50 @@ mod tests {
             .commit_with(&document, &[relative.id, external.id], || Ok(()))
             .unwrap();
         assert_eq!(
-            fs::read(dir.path().join("images/20260824_090507.png")).unwrap(),
+            fs::read(dir.path().join("image/20260824_090507.png")).unwrap(),
             b"relative"
         );
         assert_eq!(
             fs::read(absolute.join("20260824_090507.png")).unwrap(),
             b"absolute"
         );
+    }
+
+    #[test]
+    fn fixed_image_destination_overwrites_the_same_relative_file() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        fs::write(&document, "old").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let first = manager.stage_at(&document.to_string_lossy(), "test.png", "fixed", None, b"first").unwrap();
+        manager.commit_with(&document, &[first.id], || Ok(())).unwrap();
+        let second = manager.stage_at(&document.to_string_lossy(), "test.png", "fixed", None, b"second").unwrap();
+        manager.commit_with(&document, &[second.id], || Ok(())).unwrap();
+        assert_eq!(first.filename, "test.png");
+        assert_eq!(second.filename, "test.png");
+        assert_eq!(fs::read(dir.path().join("test.png")).unwrap(), b"second");
+    }
+
+    #[test]
+    fn numbered_image_destination_uses_the_lowest_unused_image_number() {
+        let dir = tempdir().unwrap();
+        let document = dir.path().join("note.md");
+        let image_folder = dir.path().join("image");
+        fs::create_dir_all(&image_folder).unwrap();
+        fs::write(&document, "old").unwrap();
+        fs::write(image_folder.join("image1.png"), b"existing").unwrap();
+        fs::write(image_folder.join("image3.png"), b"existing").unwrap();
+        let manager = AssetStagingManager::new().unwrap();
+        let staged = manager
+            .stage_at(
+                &document.to_string_lossy(),
+                "image1.png",
+                "image",
+                None,
+                b"new",
+            )
+            .unwrap();
+        assert_eq!(staged.filename, "image/image2.png");
     }
 
     #[test]
@@ -793,7 +855,7 @@ mod tests {
             .stage_at(
                 &document.to_string_lossy(),
                 "first.png",
-                "images",
+                "image",
                 None,
                 b"first",
             )
@@ -811,7 +873,7 @@ mod tests {
         assert!(manager
             .commit_with(&document, &[first.id, second.id], || Ok(()))
             .is_err());
-        assert!(!dir.path().join("images/first.png").exists());
+        assert!(!dir.path().join("image/first.png").exists());
     }
 }
 

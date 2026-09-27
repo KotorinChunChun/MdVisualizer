@@ -4,6 +4,8 @@
 
 本リポジトリは、Rust／TauriとReactで構成するWindowsデスクトップ版、SharePoint Framework版、両者が共有するMarkdown処理を管理します。
 
+Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`、`spfx/`、`packages/markdown-core/`、HTML export旧パスは `scripts/setup-web-platform.mjs` の互換リンクとして扱います。初回取得は `git clone --recurse-submodules`、既存環境の再接続は `node scripts/setup-web-platform.mjs` です。
+
 | 配置 | 内容 |
 |---|---|
 | `src/` | デスクトップ版のReact UI、状態、frontend adapter |
@@ -15,6 +17,8 @@
 | `dev/` | 版別要求、実装計画・報告、ロードマップ、開発記録 |
 | `release/` | 再生成可能な配布成果物。Git対象外 |
 
+共通UIの唯一の正本は `web-platform/packages/editor-ui/src/`（投影対象は`packages/editor-ui/source-map.json`で管理）です。投影先の手修正は避け、同期時のハッシュガードで検出します。Webの版番号は `web-platform/targets.json` で独立管理します。
+
 プロジェクト固有ルールと資料を読む条件はルートの`AGENTS.md`を正本とします。
 
 ## 開発環境
@@ -23,6 +27,8 @@
 - Rustup、Cargo、rustc
 - Windows向けRustビルドに必要なVisual Studio Build Tools
 - SPFxを扱う場合は、リポジトリが固定するNode.js／Heft環境
+
+子リポジトリの依存導入と予定ビルドは `npm.cmd --prefix web-platform ci`、`npm.cmd --prefix web-platform run build:web`、`npm.cmd --prefix web-platform run build:spfx` です。
 
 依存導入、ビルド、テストの再現可能な入口は[ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)にまとめています。PowerShellは`pwsh`を使用します。
 
@@ -37,6 +43,8 @@
 本書を開発資料の入口とします。機能別の詳細は以下の資料から確認できます。設計上の提案と現行の製品契約を区別します。
 
 ## GUI受入
+
+日常のfrontend修正は既存の`tauri dev`起動を維持し、HMRで確認します。機能単位の完了時にフルビルドとGUI受入を行い、公開指示後はproduction成果物を検証します。[起動・受入・リリースの手順](/docs/developer/BUILD_COMMANDS.md)と[性能回帰測定](/docs/developer/testing/06-performance-regression.md)を工程選択の入口にしてください。
 
 実画面確認の可否、操作対象、未保存文書の保護は[AGENTS.md](../AGENTS.md)のGUIテスト方針を正本とします。確認手順は[検証手順](/docs/developer/testing/01-test-strategy.md)を参照し、実施結果と未確認事項は対象版の実装報告へ記録します。
 
@@ -77,6 +85,30 @@
 
 ## 導入・操作と環境構築
 
+- [ボタンの外観・配置チェック](/docs/developer/testing/04-button-layout.md)：静的分布と補助の実寸監査
+- [Webモバイルの操作台帳](/docs/developer/testing/05-web-mobile-commands.md)：折りたたみ後の全コマンドの到達経路と検証
+
+- [Web版と共通編集・出力](/docs/developer/web/ARCHITECTURE.md)：単一HTML生成、共有GUI、資産・文字コード・検証
+- [PHP版の運用](/docs/developer/web/PHP_OPERATIONS.md)：SSO、暗号化ZIP、非公開設定、期限管理
+
 - [インストール手順](/docs/user/INSTALLATION.md)
 - [利用ガイド](/docs/USERS_GUIDE.md)：対応機能、編集、検索、印刷、SharePoint、ショートカット、データ保護
 - [開発環境のセットアップ](/docs/developer/DEVELOPMENT_SETUP.md)：初回起動、MSIX作成、署名環境
+
+## 表・表示切替の共通実装
+
+`WorkspaceViewControls`、`DelimitedTableBlock`、`DocumentDiffWorkspace`は共有正本です。SPFxは`spfx*Bridge.tsx`と`build-embedded-tools.mjs`からReact UIとCSSを生成し、WebPartがSharePointの認証・保存・eTagを所有します。生成ファイルは直接変更しません。コードのFile貼付とドロップは`onResolveFileAttachment` adapterでホストの保存モデルへ接続します。
+
+回帰サンプルは子Gitの`tests/fixtures/v0.0.18-ui-cases.json`、要求ID別の受入は版別test-requirementsへ記録します。表の空行・空ヘッダ・ヘッダOFF・文字コード・CRLFを保存契約として検証します。更新番号を未保存バッジの根拠にせず、ステージされた未保存資産の存在を用います。
+
+設定案内の同梱スキルは共有`features/codex/default-skills/app-settings/SKILL.md`です。デスクトップでは既存ユーザーへの一回限りの追加を行い、削除後に再配布しません。
+
+- [開発・検証・Web公開の自動化](/docs/developer/operations/02-development-automation.md)、[全UI機能対応表](/docs/developer/ui/UI_COMMAND_MATRIX.md)
+
+## ブロック・埋め込みファイルのメニュー変更
+
+コードブロック、Mermaid、SVG、draw.io、表、埋め込み／外部参照ファイルのメニュー変更では、最初に[共通メニュー仕様](/docs/developer/ui/BLOCK_UI_SPEC.md)と同書の定義表・最終配置順を参照する。形式ごとに独自の並び順を増やさず、共通ID・表示条件・幅別配置を更新して実装と照合する。
+
+- [Desktop/Webの画面配置](/docs/developer/ui/WORKSPACE_LAYOUT.md)：メイン、プレビュー上部・左端、フッターの役割と順序。
+
+- 日常の高速検証・増分型検査・関連テスト・性能計測は [開発・検証の自動化](/docs/developer/operations/02-development-automation.md) の「高速検証」を参照する。全件検証と公開時の実確認は省略しない。

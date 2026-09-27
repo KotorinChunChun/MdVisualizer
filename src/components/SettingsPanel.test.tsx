@@ -29,7 +29,7 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][4]).toMatchObject({ theme: "adaptive", customColors: false });
     expect(onSave.mock.calls[0][5]).toMatchObject({ headingColor: "#1f2328", monochrome: false });
     expect(onSave.mock.calls[0][6]).toMatchObject({ breakMode: "commonmark", useThemeColor: true, fontSize: 16, lineHeight: 1.65 });
-    expect(onSave.mock.calls[0][7]).toEqual({ storage: "base64", pngLocation: "images", absoluteDirectory: "" });
+    expect(onSave.mock.calls[0][7]).toEqual({ storage: "base64", pngLocation: "image", absoluteDirectory: "", fixedFilename: "test.png", externalFileDisplayName: false });
     expect(onSave.mock.calls[0][8]).toBe("fence-title");
   });
 
@@ -170,6 +170,26 @@ describe("SettingsPanel", () => {
     fireEvent.change(screen.getByLabelText("貼り付け画像の絶対保存フォルダー"), { target: { value: "C:\\Markdown Images" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0][7]).toEqual({ storage: "png", pngLocation: "absolute", absoluteDirectory: "C:\\Markdown Images" });
+    expect(onSave.mock.calls[0][7]).toEqual({ storage: "png", pngLocation: "absolute", absoluteDirectory: "C:\\Markdown Images", fixedFilename: "test.png", externalFileDisplayName: false });
+  });
+
+  it("configures a fixed PNG filename for overwrite", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText("貼り付け画像の保存形式"), { target: { value: "png" } });
+    fireEvent.change(screen.getByLabelText("貼り付け画像のPNG保存先"), { target: { value: "fixed" } });
+    fireEvent.change(screen.getByLabelText("貼り付け画像の固定ファイル名"), { target: { value: "test" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][7]).toEqual({ storage: "png", pngLocation: "fixed", absoluteDirectory: "", fixedFilename: "test", externalFileDisplayName: false });
+  });
+
+  it("allows external drop names without changing the clipboard image alt default", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+    fireEvent.click(screen.getByLabelText("外部ファイルの名前を表示"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][7]).toMatchObject({ storage: "base64", externalFileDisplayName: true });
   });
 });

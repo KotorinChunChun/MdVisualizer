@@ -1,19 +1,69 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { copyPreviewSelection, previewClipboardData, previewPlainText } from "./previewClipboard";
+import { copyPreviewSelection, hasPrecisePreviewTextSelection, previewClipboardData, previewPlainText } from "./previewClipboard";
 
-afterEach(() => { document.body.innerHTML = ""; window.getSelection()?.removeAllRanges(); });
+afterEach(() => {
+  window.getSelection()?.removeAllRanges();
+  document.body.replaceChildren();
+});
+
+function selectContents(element: Element): void {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}
+
 describe("プレビューのコピー", () => {
+  it.each(["text", "element", "parent"])("見出し全選択の終端が次の%s先頭でも見出し文字だけコピーする", (endpoint) => {
+    const root = document.createElement("div");
+    root.innerHTML = '<h2 data-source-line="1"><button>折り畳み</button><span>見出し</span></h2><p data-source-line="2">次の行</p>';
+    document.body.append(root);
+    const range = document.createRange();
+    range.setStart(root.querySelector("span")!.firstChild!, 0);
+    if (endpoint === "text") range.setEnd(root.querySelector("p")!.firstChild!, 0);
+    else if (endpoint === "element") range.setEnd(root.querySelector("p")!, 0);
+    else range.setEnd(root, 1);
+    window.getSelection()!.addRange(range);
+    const clipboardData = { setData: vi.fn() };
+    copyPreviewSelection({ target: root, currentTarget: root, clipboardData: clipboardData as unknown as DataTransfer, preventDefault: vi.fn() }, "## 見出し\n次の行");
+    expect(clipboardData.setData).toHaveBeenCalledExactlyOnceWith("text/plain", "見出し");
+  });
+
+  it("見出しの一部だけの選択を見出し全体へ拡張しない", () => {
+    const root = document.createElement("div");
+    root.innerHTML = '<h2 data-source-line="1">前半と後半</h2>';
+    document.body.append(root);
+    const range = document.createRange();
+    range.setStart(root.firstChild!.firstChild!, 3);
+    range.setEnd(root.firstChild!.firstChild!, 5);
+    window.getSelection()!.addRange(range);
+    const clipboardData = { setData: vi.fn() };
+    copyPreviewSelection({ target: root, currentTarget: root, clipboardData: clipboardData as unknown as DataTransfer, preventDefault: vi.fn() }, "## 前半と後半");
+    expect(clipboardData.setData).toHaveBeenCalledExactlyOnceWith("text/plain", "後半");
+  });
+
+  it("子の表コピーが書いたクリップボードを上書きしない", () => {
+    const root = document.createElement("div");
+    const clipboardData = { setData: vi.fn() };
+    copyPreviewSelection({ target: root, currentTarget: root, clipboardData: clipboardData as unknown as DataTransfer, defaultPrevented: true, preventDefault: vi.fn() }, "本文");
+    expect(clipboardData.setData).not.toHaveBeenCalled();
+  });
   it("キーのSVGを単一文字列にして段落の改行だけ残す", () => {
     const root = document.createElement("div");
     root.innerHTML = '<p>押す <span><svg data-shortcut-source="Ctrl+X → Ctrl+V"><text>Ctrl</text><text>+</text><text>X</text></svg></span></p><p>次の段落</p>';
     expect(previewPlainText(root)).toBe("押す Ctrl + X → Ctrl + V\n次の段落");
   });
+
   it("Ctrl+Cと右クリックのMarkdown取得を一致させる", () => {
-    const root = document.createElement("div"); document.body.append(root);
+    const root = document.createElement("div");
+    document.body.append(root);
     root.innerHTML = '<h2 data-source-line="1">見出し</h2><p data-source-line="3"><strong>本文</strong></p>';
     const content = "## 見出し\n\n**本文**";
     const p = root.querySelector("p")!;
-    const range = document.createRange(); range.selectNodeContents(p); window.getSelection()!.addRange(range);
+    const range = document.createRange();
+    range.selectNodeContents(p);
+    window.getSelection()!.addRange(range);
     const clipboardData = { setData: vi.fn() };
     const preventDefault = vi.fn();
     copyPreviewSelection({ target: p, currentTarget: root, clipboardData: clipboardData as unknown as DataTransfer, preventDefault }, content);
@@ -21,10 +71,32 @@ describe("プレビューのコピー", () => {
     expect(clipboardData.setData).toHaveBeenCalledWith("text/plain", "**本文**");
     expect(preventDefault).toHaveBeenCalledOnce();
   });
+
   it("入力欄や選択がない場合のコピーを横取りしない", () => {
-    const root = document.createElement("div"); root.innerHTML = '<textarea>入力</textarea>';
+    const root = document.createElement("div");
+    root.innerHTML = "<textarea>入力</textarea>";
     const preventDefault = vi.fn();
     copyPreviewSelection({ target: root.firstChild!, currentTarget: root, clipboardData: {} as DataTransfer, preventDefault }, "入力");
     expect(preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("見出しの選択を配下の本文まで拡張しない", () => {
+    const root = document.createElement("div");
+    root.innerHTML = "<section><h2>見出し</h2><p>選択していない本文</p></section>";
+    document.body.append(root);
+
+    selectContents(root.querySelector("h2")!);
+
+    expect(hasPrecisePreviewTextSelection(root, window.getSelection())).toBe(true);
+  });
+
+  it("表のセル選択を表全体のコピーに置き換えない", () => {
+    const root = document.createElement("div");
+    root.innerHTML = "<table><tbody><tr><td>選択セル</td><td>別セル</td></tr></tbody></table>";
+    document.body.append(root);
+
+    selectContents(root.querySelector("td")!);
+
+    expect(hasPrecisePreviewTextSelection(root, window.getSelection())).toBe(true);
   });
 });

@@ -83,6 +83,7 @@ pub fn save_markdown(request: SaveMarkdownRequest) -> AppResult<MarkdownLoadResu
         Some(
             DocumentKind::Markdown
                 | DocumentKind::Drawio
+                | DocumentKind::Tsv
                 | DocumentKind::Svg
                 | DocumentKind::Mermaid
         )
@@ -126,6 +127,7 @@ pub fn save_markdown_with_assets(
         Some(
             DocumentKind::Markdown
                 | DocumentKind::Drawio
+                | DocumentKind::Tsv
                 | DocumentKind::Svg
                 | DocumentKind::Mermaid
         )
@@ -423,6 +425,36 @@ mod tests {
         with_assets.staged_asset_ids.push("unexpected".into());
         assert!(save_markdown_with_assets(with_assets, &staging).is_err());
         assert_eq!(fs::read(&path).unwrap(), before);
+    }
+
+    #[test]
+    fn saves_shift_jis_crlf_tsv_and_rejects_stale_revisions_from_both_save_paths() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("table.tsv");
+        let (bytes, _, had_errors) = SHIFT_JIS.encode("名前\t数量\r\nりんご\t2\r\n");
+        assert!(!had_errors);
+        fs::write(&path, bytes.as_ref()).unwrap();
+        let stale_for_plain = request(&path, "名前\t数量\nみかん\t3\n");
+        let staging = crate::asset_staging::AssetStagingManager::new().unwrap();
+        let saved = save_markdown_with_assets(
+            request(&path, "名前\t数量\nりんご\t4\n"),
+            &staging,
+        )
+        .unwrap();
+        assert_eq!(saved.kind, DocumentKind::Tsv);
+        let written = fs::read(&path).unwrap();
+        let (decoded, _, decode_errors) = SHIFT_JIS.decode(&written);
+        assert!(!decode_errors);
+        assert_eq!(decoded, "名前\t数量\r\nりんご\t4\r\n");
+        assert!(matches!(save_markdown(stale_for_plain), Err(AppError::Conflict(_))));
+        let stale_for_assets = SaveMarkdownRequest {
+            path: path.to_string_lossy().into_owned(),
+            content: "名前\t数量\nぶどう\t5\n".into(),
+            expected_revision: content_revision(bytes.as_ref()),
+            staged_asset_ids: vec![],
+        };
+        assert!(matches!(save_markdown_with_assets(stale_for_assets, &staging), Err(AppError::Conflict(_))));
+        assert_eq!(fs::read(&path).unwrap(), written);
     }
 
     #[test]

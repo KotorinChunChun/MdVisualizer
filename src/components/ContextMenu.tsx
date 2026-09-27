@@ -28,11 +28,13 @@ export function ContextMenu({ tab, x, y, onClose, onCloseOthers, onCloseRight, o
     <button type="button" role="menuitem" disabled={renameDisabled} title={tab.dirty || tab.saving ? "未保存の編集を保存してから名前を変更できます" : undefined} onClick={() => onRename && run("ファイル名を変更しました", onRename)}>ファイル名を変更</button>
     <button type="button" role="menuitem" onClick={() => copy(tab.path.split(/[\\/]/).pop() ?? tab.path, "ファイル名")}>ファイル名をコピー</button>
     <button type="button" role="menuitem" onClick={() => copy(sharePoint ? tab.path : stripWindowsExtendedPathPrefix(tab.path), sharePoint ? "spmd URI" : "フルパス")}>{sharePoint ? "spmd URIをコピー" : "フルパスをコピー"}</button>
+    <div role="separator" />
     {sharePoint ? <button type="button" role="menuitem" onClick={() => sharePointUrl && run("SharePointをブラウザーで開きました", () => openExternalUrl(sharePointUrl))} disabled={!sharePointUrl}>SharePointで開く</button> : <>
       <button type="button" role="menuitem" disabled={untitled} onClick={() => run("フォルダーを開きました", () => openContainingFolder(tab.path))}>フォルダを開く</button>
       <button type="button" role="menuitem" disabled={untitled} onClick={() => run("VS Codeで開きました", () => openInEditor(tab.path, "vscode"))}>VS Code で開く</button>
       <button type="button" role="menuitem" disabled={untitled} onClick={() => run("メモ帳で開きました", () => openInEditor(tab.path, "notepad"))}>メモ帳で開く</button>
     </>}
+    <div role="separator" />
     <button type="button" role="menuitem" onClick={() => run("タブを閉じました", onClose)}>タブを閉じる</button>
     <button type="button" role="menuitem" onClick={() => run("他のタブを閉じました", onCloseOthers)}>他のタブを閉じる</button>
     <button type="button" role="menuitem" onClick={() => run("右側のタブを閉じました", onCloseRight)}>右側のタブを閉じる</button>

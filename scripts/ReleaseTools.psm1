@@ -244,6 +244,18 @@ function Get-ConfiguredMsixVersion {
     return ConvertTo-MsixVersion -Version (Get-ConfiguredApplicationVersion -Configuration $Configuration)
 }
 
+function Get-ConfiguredHistoryVersion {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][pscustomobject]$Configuration)
+
+    $applicationVersion = Get-ConfiguredApplicationVersion -Configuration $Configuration
+    $baseVersion = ($applicationVersion -split '[+-]', 2)[0]
+    if ($baseVersion -notmatch '^\d+\.\d+\.\d+$') {
+        throw "履歴版を決定できないApplication versionです: $applicationVersion"
+    }
+    return "v$baseVersion"
+}
+
 function Get-ReleaseArtifacts {
     [CmdletBinding()]
     param(
@@ -372,6 +384,7 @@ Export-ModuleMember -Function @(
     "Get-ConfiguredApplicationVersion",
     "Get-ConfiguredPublicVersion",
     "Get-ConfiguredMsixVersion",
+    "Get-ConfiguredHistoryVersion",
     "Get-ReleaseArtifacts",
     "Get-MsixIdentity",
     "Assert-MsixIdentityMatchesConfiguration"

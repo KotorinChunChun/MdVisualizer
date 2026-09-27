@@ -1,12 +1,16 @@
+import { previewOperationPolicy } from "./lib/previewOperationPolicy";
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { save as showSaveDialog } from "@tauri-apps/plugin-dialog";
+import { open as showOpenDialog, save as showSaveDialog } from "@tauri-apps/plugin-dialog";
 import { TabBar } from "./components/TabBar";
+import { DesktopHtmlExport } from "./components/DesktopHtmlExport";
 import { ContextMenu } from "./components/ContextMenu";
 import { PreviewContextMenu } from "./components/PreviewContextMenu";
 import { StatusBar } from "./components/StatusBar";
 import { MarkdownPreview, type ExternalFileRenameContext, type ExternalTableChangeContext } from "./components/MarkdownPreview";
 import { StandaloneDocumentPreview } from "./components/StandaloneDocumentPreview";
+import { WorkspaceViewControls, type InteractionMode, type PreviewMode, type SplitDirection } from "./components/WorkspaceViewControls";
+import { DocumentSaveContext } from "./contexts/DocumentSaveContext";
 import { CropOverlay } from "./components/CropOverlay";
 import { Toast } from "./components/Toast";
 import { SearchBar } from "./components/SearchBar";
@@ -63,18 +67,21 @@ import { moveHeadingBlock } from "./lib/markdownEditing";
 import { buildPresentationModel } from "./lib/presentationModel";
 import { buildDebugWindowState } from "./lib/debugState";
 import { clipboardImageDestination, formatClipboardImageFilename, referencedStagedAssetIds, type ClipboardImageData, type ResolvedClipboardImage } from "./lib/clipboardImage";
+import { droppedFilePath, droppedFileReference } from "./lib/fileAttachment";
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
 import { drawioExternalReference, markdownLineEnding, type DrawioStorageConversionContext } from "./lib/drawioStorage";
 import { mermaidExternalReference, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
+import { insertPreviewBlockAfter } from "./lib/previewBlockReorder";
 
 import { previewClipboardData } from "./lib/previewClipboard";
-import { PreviewEditHistory, replaceDocumentText } from "./lib/documentTextEdit";
-import { foldIdsForElement, nearestRenderedSourceBlock, sourceAnchorForLine } from "./lib/sourceNavigation";
+import { replaceDocumentText } from "./lib/documentTextEdit";
+import { foldIdsForElement, nearestRenderedSourceBlock, scrollSourceTarget, sourceAnchorForLine } from "./lib/sourceNavigation";
 import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
 import { createDocumentStorageRefresh } from "./lib/documentStorageRefresh";
+import { startDeletedDocumentRecovery } from "./lib/deletedDocumentRecovery";
 import { documentDiffTarget } from "./lib/documentDiffTarget";
 import { documentDiffProtectsDraft, documentDiffSavePermission } from "./lib/documentDiffSave";
 import "./styles/app.css";
@@ -118,7 +125,7 @@ export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: 
 }
 
 export function canEditMarkdownDocument(document: { kind: string } | null | undefined): boolean {
-  return document?.kind === "markdown";
+  return document?.kind === "markdown" || document?.kind === "tsv";
 }
 
 export function shouldBlockF5Reload(tab: { dirty: boolean } | null | undefined): boolean {
@@ -197,7 +204,6 @@ export function App() {
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const [codexOpen, setCodexOpen] = useState(false);
   const [codexMaximized, setCodexMaximized] = useState(false);
-  const previewEditHistory = useRef(new PreviewEditHistory());
   const [codexTarget, setCodexTarget] = useState<CodexTarget | null>(null);
   const [codexImageTarget, setCodexImageTarget] = useState<{ documentId: string; offset: number } | null>(null);
   const codexButtonRef = useRef<HTMLButtonElement>(null);
@@ -339,6 +345,10 @@ export function App() {
   }, []);
   const [contextTab, setContextTab] = useState<{ id: string; x: number; y: number } | null>(null);
   const [closedTabs, setClosedTabs] = useState<ClosedTabState[]>([]);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("preview");
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>("browse");
+  const [splitDirection, setSplitDirection] = useState<SplitDirection>("auto");
+  const visualEditing = interactionMode === "edit";
   const [tabsState, reactDispatch] = useReducer(tabsReducer, initialTabsState);
   const tabsStateRef = useRef(tabsState);
   tabsStateRef.current = tabsState;
@@ -351,9 +361,13 @@ export function App() {
   autoReloadRef.current = autoReload;
   const refreshTabStorage = useMemo(() => createDocumentStorageRefresh({
     getTab: (id) => tabsStateRef.current.tabs.find((tab) => tab.id === id),
-    load: loadMarkdown, dispatch, shouldReload: (id) => autoReloadRef.current === "on"
+    load: loadMarkdown, dispatch, shouldReload: (id) => (autoReloadRef.current === "on" || Boolean(tabsStateRef.current.tabs.find((tab) => tab.id === id)?.deleted))
       && !documentDiffProtectsDraft(tabsStateRef.current.tabs.find((tab) => tab.id === id), diffReviewRef.current),
   }), []);
+  useEffect(() => startDeletedDocumentRecovery(
+    () => tabsStateRef.current.tabs.map((tab) => ({ ...tab, local: Boolean(tab.document && !isSharePointDocument(tab.document)) })),
+    (id) => refreshTabStorage(id),
+  ), [refreshTabStorage]);
   const resolvePastedImage = useCallback(async (image: ClipboardImageData): Promise<ResolvedClipboardImage> => {
     const embedded = { source: `data:${image.mediaType};base64,${image.base64}` };
     if (clipboardImage.storage === "base64") return embedded;
@@ -364,7 +378,7 @@ export function App() {
     }
     const staged = await stageClipboardImage({
       documentPath: tab.document.path,
-      preferredFilename: formatClipboardImageFilename(new Date()),
+      preferredFilename: clipboardImage.pngLocation === "fixed" ? clipboardImage.fixedFilename : formatClipboardImageFilename(new Date()),
       base64: image.base64,
       ...clipboardImageDestination(clipboardImage.pngLocation, clipboardImage.absoluteDirectory),
     });
@@ -405,6 +419,12 @@ export function App() {
   }, [activeTab?.id, activeTab?.untitled, editorMode]);
   const activeMarkdownContent = activeTab?.document?.kind === "markdown" ? activeTab.draft : activeTab?.document?.content ?? "";
   const previewContent = useDeferredValue(activeMarkdownContent);
+  const isHeavyMarkdown = Boolean(activeTab?.document?.kind === "markdown" && (activeTab.document.size_bytes ?? activeMarkdownContent.length) >= 100 * 1024);
+  const [heavyPreviewReady, setHeavyPreviewReady] = useState(false);
+  useEffect(() => { setHeavyPreviewReady(false); }, [activeTab?.id, activeTab?.generation, activeMarkdownContent]);
+  useEffect(() => {
+    if (previewContent === activeMarkdownContent) setHeavyPreviewReady(true);
+  }, [activeMarkdownContent, previewContent]);
 
   useEffect(() => {
     void getCurrentWindow().setTitle(applicationWindowTitle(activeTab)).catch(() => {
@@ -540,7 +560,7 @@ export function App() {
             return { ...current, [activeTab.path]: nextForPath };
           });
         }
-        requestAnimationFrame(() => section.scrollIntoView({ block: "start" }));
+        requestAnimationFrame(() => scrollSourceTarget(containerRef.current, section, "start"));
       });
     });
     return () => {
@@ -738,6 +758,20 @@ export function App() {
     if (activeTab?.document && !activeTab.untitled) reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
 
+  const openDocument = useCallback(async () => {
+    try {
+    const selected = await showOpenDialog({
+      title: "ファイルを開く",
+      multiple: true,
+      filters: [{ name: "対応ファイル", extensions: ["md", "markdown", "tsv", "csv", "svg", "mmd", "mermaid", "drawio"] }],
+    });
+    const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
+    paths.forEach((path) => dispatch({ type: "OPEN", path }));
+    } catch (error) {
+      setToast({ id: crypto.randomUUID(), message: `ファイルを開けませんでした: ${String(error)}`, type: "error" });
+    }
+  }, []);
+
   const toggleDocumentDiff = useCallback(() => {
     if (documentDiff) {
       setDocumentDiff(null);
@@ -762,7 +796,7 @@ export function App() {
       return;
     }
     if (!tab.dirty && !permission.force) return;
-    if (tab.document.kind !== "markdown") {
+    if (!canEditMarkdownDocument(tab.document)) {
       setToast({ id: String(Date.now()), message: "この文書は閲覧専用です。", type: "error" });
       return;
     }
@@ -947,7 +981,7 @@ export function App() {
     navigationHistoryRef.current = recordNavigation(navigationHistoryRef.current, captureNavigationSnapshot());
   }, [captureNavigationSnapshot]);
 
-  const navigateToSourceLine = useCallback((line: number, options: { headingId?: string; blockId?: string; targetElement?: HTMLElement; closePanel?: boolean; block?: ScrollLogicalPosition } = {}): boolean => {
+  const navigateToSourceLine = useCallback((line: number, options: { headingId?: string; blockId?: string; targetElement?: HTMLElement; closePanel?: boolean; block?: "start" | "center" } = {}): boolean => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
     const root = markdownRef.current;
     if (!tab?.document || !root || !Number.isFinite(line) || line < 1) return false;
@@ -1003,7 +1037,7 @@ export function App() {
       if (!target) return;
       target.classList.add("source-navigation-target");
       window.setTimeout(() => target.classList.remove("source-navigation-target"), 1400);
-      target.scrollIntoView({ block: options.block ?? "center", behavior: "auto" });
+      scrollSourceTarget(containerRef.current, target, options.block ?? "center");
     };
     window.requestAnimationFrame(() => window.requestAnimationFrame(scroll));
     return true;
@@ -1141,7 +1175,7 @@ export function App() {
     const viewportScale = container.clientHeight > 0 ? containerBounds.height / container.clientHeight : 1;
     paneSyncOrigin.current = "edit";
     const previousScrollTop = container.scrollTop;
-    container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, 0, viewportScale);
+    container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, container.clientHeight / 2, viewportScale);
     if (Math.abs(container.scrollTop - previousScrollTop) > 0.5) pendingPreviewScrollTop.current = { value: container.scrollTop, until: performance.now() + 200 };
     releasePaneSync();
   }, [releasePaneSync]);
@@ -1167,7 +1201,7 @@ export function App() {
       container,
     );
     if (endScrollTop === null) {
-      container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, position.screenY - containerBounds.top, viewportScale);
+      container.scrollTop += scrollDeltaForViewportAnchor(targetTop, containerBounds.top, container.clientHeight / 2, viewportScale);
     } else {
       container.scrollTop = endScrollTop;
     }
@@ -1189,7 +1223,7 @@ export function App() {
     const line = sourceLineAtViewportTop(blocks.map((block) => ({
       line: Number(block.dataset.sourceLine) || 1,
       top: block.getBoundingClientRect().top,
-    })), element.getBoundingClientRect().top);
+    })), element.getBoundingClientRect().top + element.clientHeight / 2);
     paneSyncOrigin.current = "view";
     editorRef.current?.scrollToLine(line);
     releasePaneSync();
@@ -1205,9 +1239,10 @@ export function App() {
     if (!Number.isFinite(line) || line < 1) return;
     if (editorMode === "preview") return;
     paneSyncOrigin.current = "view";
-    editorRef.current?.focusLine(line);
+    if (visualEditing) editorRef.current?.scrollToLine(line);
+    else editorRef.current?.focusLine(line);
     releasePaneSync();
-  }, [canEditActive, editorMode, releasePaneSync]);
+  }, [canEditActive, editorMode, releasePaneSync, visualEditing]);
 
   const handlePreviewContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
     const targetElement = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : null;
@@ -1272,6 +1307,16 @@ export function App() {
     selection?.removeAllRanges();
     selection?.addRange(range);
   }, [previewContext]);
+
+  const addPreviewBlockAfter = useCallback(() => {
+    if (!previewContext || !activeTab || !canEditActive || !visualEditing || activeTab.saving) return;
+    const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
+    if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation) return;
+    const content = insertPreviewBlockAfter(tab.draft, previewContext.line);
+    if (content === tab.draft) return;
+    setPreviewContext(null);
+    dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+  }, [activeTab, canEditActive, previewContext, visualEditing]);
 
   useEffect(() => {
     if (editorMode === "preview" || pendingEditorLine.current === null) return;
@@ -1596,11 +1641,32 @@ export function App() {
     });
   }, [activeTab?.document?.path, recordNavigationPoint]);
 
+  const pendingModeScroll = useRef<{ line: number; mode: EditorWorkspaceMode } | null>(null);
   const changeEditorMode = useCallback((mode: EditorWorkspaceMode) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
     if (!tab?.document || tab.document.kind !== "markdown") return;
+    if (tab.editorMode === mode) return;
+    const container = containerRef.current;
+    const fromPreview = tab.editorMode === "preview" || (tab.editorMode === "split" && !editorRef.current?.contains(document.activeElement));
+    const blocks = fromPreview ? [...(markdownRef.current?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])].filter(block => block.getClientRects().length > 0) : [];
+    const line = fromPreview && container
+      ? sourceLineAtViewportTop(blocks.map(block => ({ line: Number(block.dataset.sourceLine) || 1, top: block.getBoundingClientRect().top })), container.getBoundingClientRect().top + container.clientHeight / 2)
+      : editorRef.current?.topLine(true) ?? 1;
+    pendingModeScroll.current = { line, mode };
     dispatch({ type: "EDITOR_MODE", id: tab.id, mode });
   }, []);
+
+  useEffect(() => {
+    const pending = pendingModeScroll.current;
+    if (!pending || pending.mode !== editorMode) return;
+    const frame = requestAnimationFrame(() => {
+      pendingModeScroll.current = null;
+      paneSyncOrigin.current = null;
+      if (editorMode !== "preview") editorRef.current?.scrollToLine(pending.line);
+      if (editorMode !== "edit") handleEditorScrollLine(pending.line);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [editorMode, handleEditorScrollLine]);
 
   const updateCodeFenceBody = useCallback((occurrence: CodeFenceOccurrence, body: string): boolean => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabsStateRef.current.activeId);
@@ -1687,7 +1753,7 @@ export function App() {
         ? latestOccurrence.expected.replace(latestOccurrence.source, staged.filename)
         : `![SVG](${staged.filename})`;
       try {
-        await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: context.occurrence, replacement, committedAssetIds: [staged.id] });
+        await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: latestOccurrence, replacement, committedAssetIds: [staged.id] });
       } catch (error) {
         await discardStagedAssets([staged.id]);
         throw error;
@@ -1710,7 +1776,7 @@ export function App() {
       if (!text) throw new Error("SVG XMLを読み込めませんでした。");
       replacement = sanitizeSvgXml(text);
     }
-    await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: context.occurrence, replacement });
+    await persistImmediateOccurrence({ tabId: tab.id, documentPath: tab.document.path, draft: tab.draft, latest, occurrence: latestOccurrence, replacement });
     setMediaPreview(null);
     setToast({ id: String(Date.now()), message: "埋め込み形式へ切り替え、Markdownへ即時保存しました。", type: "success", actions: [{ label: "外部ファイルを削除", onAction: () => deleteConvertedExternalAsset(tab.document!.path, latestOccurrence.source, loaded.revision ?? undefined) }] });
   }, [confirmStorageConversion, deleteConvertedExternalAsset, persistImmediateOccurrence]);
@@ -1826,6 +1892,15 @@ export function App() {
         return;
       }
 
+      if (event.key === "F2") {
+        const focusedElement = document.activeElement instanceof Element ? document.activeElement : null;
+        if (activeTab && editorRef.current?.contains(focusedElement)) {
+          event.preventDefault();
+          void renameTab(activeTab.id).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
+        }
+        return;
+      }
+
       if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "s") {
         event.preventDefault();
         if (activeTab) void saveTab(activeTab.id);
@@ -1886,7 +1961,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, editorMode, goBack, goForward, openSearch, printDocument, reload, saveTab, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
+  }, [activeTab, activateRelativeTab, annotationTarget, closeActiveTab, closeSearch, closedTabs, cropTarget, editorMode, goBack, goForward, openSearch, printDocument, reload, renameTab, saveTab, search, shortcutHelpOpen, toggleFoldAll, updateZoom]);
 
   useEffect(() => {
     const onMouseUp = (event: MouseEvent) => {
@@ -1949,7 +2024,7 @@ export function App() {
           documentPath: tab.document.path,
           draft: tab.draft,
           latest,
-          occurrence: context.occurrence,
+          occurrence: latestOccurrence,
           replacement: drawioExternalReference(staged.filename, context.alt),
           committedAssetIds: [staged.id],
         });
@@ -1977,7 +2052,7 @@ export function App() {
       documentPath: tab.document.path,
       draft: tab.draft,
       latest,
-      occurrence: context.occurrence,
+      occurrence: latestOccurrence,
       replacement: embeddedFenceWithPath({
         language: "drawio",
         body: asset.text,
@@ -2015,7 +2090,7 @@ export function App() {
           documentPath: tab.document.path,
           draft: tab.draft,
           latest,
-          occurrence: context.occurrence,
+          occurrence: latestOccurrence,
           replacement: mermaidExternalReference(staged.filename, context.alt),
           committedAssetIds: [staged.id],
         });
@@ -2043,7 +2118,7 @@ export function App() {
       documentPath: tab.document.path,
       draft: tab.draft,
       latest,
-      occurrence: context.occurrence,
+      occurrence: latestOccurrence,
       replacement: embeddedFenceWithPath({
         language: "mermaid",
         body: asset.text,
@@ -2081,7 +2156,7 @@ export function App() {
           documentPath: tab.document.path,
           draft: tab.draft,
           latest,
-          occurrence: context.occurrence,
+          occurrence: latestOccurrence,
           replacement: `![${context.language.toUpperCase()}表](${staged.filename})`,
           committedAssetIds: [staged.id],
         });
@@ -2103,7 +2178,7 @@ export function App() {
       documentPath: tab.document.path,
       draft: tab.draft,
       latest,
-      occurrence: context.occurrence,
+      occurrence: latestOccurrence,
       replacement: embeddedFenceWithPath({
         language: context.language,
         body,
@@ -2141,7 +2216,7 @@ export function App() {
           documentPath: tab.document.path,
           draft: tab.draft,
           latest,
-          occurrence: context.occurrence,
+          occurrence: latestOccurrence,
           replacement: textExternalReference(staged.filename),
           committedAssetIds: [staged.id],
         });
@@ -2161,7 +2236,7 @@ export function App() {
       documentPath: tab.document.path,
       draft: tab.draft,
       latest,
-      occurrence: context.occurrence,
+      occurrence: latestOccurrence,
       replacement: embeddedFenceWithPath({
         language: context.language,
         body: asset.text.replace(/^\uFEFF/, ""),
@@ -2291,6 +2366,12 @@ export function App() {
   const scopedMarkdownStyle = scopeMarkdownStyleCss(markdownStyleCss) ?? "";
 
   return (
+    <DocumentSaveContext.Provider value={async () => {
+      const id = activeTab?.id;
+      if (!id || id !== tabsStateRef.current.activeId) return false;
+      await saveTab(id);
+      return !tabsStateRef.current.tabs.find(tab => tab.id === id)?.dirty;
+    }}>
     <div className={`app-container${printing ? " is-printing" : ""}`} data-print-fold-mode={printStyle.foldMode}>
       <style data-markdown-custom-style>{scopedMarkdownStyle}</style>
       {printing && activeTab?.document && <PrintMetadata path={activeTab.document.path} startedAt={printStartedAt} settings={printStyle} />}
@@ -2298,30 +2379,16 @@ export function App() {
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
           <button type="button" disabled={printing} onClick={() => { focusNewDocumentRef.current = true; dispatch({ type: "NEW_MARKDOWN" }); }}>新規MD</button>
-          <button type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷/PDF</button>
+          <button type="button" disabled={printing} onClick={() => void openDocument()}>開く</button>
+          <button data-ui-command="document.print" type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷</button>
+          <DesktopHtmlExport disabled={!activeTab?.document || printing} getSnapshot={() => activeTab?.document ? { document: activeTab.document, content: activeMarkdownContent, theme: theme === "system" ? document.documentElement.dataset.theme ?? "light" : theme, css: markdownStyleCss, assets: activeTab.pendingAssets ?? [] } : null} />
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
           <button type="button" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
-          <button type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
+          <button data-ui-command="document.save" type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
-          <span className="control-group__title">画面</span>
-          <div className="editor-mode-segments" role="group" aria-label="編集画面の切り替え">
-            <button type="button" aria-pressed={editorMode === "edit"} className={editorMode === "edit" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("edit")}>編集のみ</button>
-            <button type="button" aria-pressed={editorMode === "split"} className={editorMode === "split" ? "is-active" : ""} disabled={!canEditActive} onClick={() => changeEditorMode("split")}>編集／閲覧</button>
-            <button type="button" aria-pressed={editorMode === "preview"} className={editorMode === "preview" ? "is-active" : ""} onClick={() => changeEditorMode("preview")}>閲覧のみ</button>
-          </div>
-          <button type="button" className="document-action-button" aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>
+          <WorkspaceViewControls interactionMode={interactionMode} onInteractionModeChange={setInteractionMode} betweenPreviewAndDirection={<button data-ui-command="document.diff" type="button" className={`document-action-button${documentDiff !== null ? " is-active" : ""}`} aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>} code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : editorMode === "split" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />
         </div>
-        {editorMode !== "edit" && viewMode !== "presentation" && <div className="control-group fold-controls">
-          <span className="control-group__title">見出し</span>
-          <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
-            const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset";
-            if (value) applyFoldPreset(value);
-            event.currentTarget.value = "";
-          }}>
-            <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
-          </select>
-        </div>}
         <ExternalActions
           apps={activeSharePoint ? [] : externalApps.filter((app) => app.target === "document")}
           disabled={!activeTab?.document || activeTab.untitled}
@@ -2338,7 +2405,7 @@ export function App() {
       </div>}
 
       <div className={`ai-document-layout${codexOpen && codexMaximized ? " ai-document-layout--maximized" : ""}`}>
-      <div className={`document-workspace editor-workspace-${editorMode}`}>
+      <div className={`document-workspace editor-workspace-${editorMode}`} data-direction={splitDirection}>
       {documentDiff && activeTab?.document?.kind === "markdown" && documentSourceIdentity(documentDiff.path) === documentSourceIdentity(activeTab.path) ? <DocumentDiffWorkspace
         key={activeTab.id}
         target={documentDiffTarget(activeTab, documentDiff.conflict)}
@@ -2350,7 +2417,7 @@ export function App() {
         onRefresh={() => void refreshTabStorage(activeTab.id, false)}
         saving={activeTab.saving}
       /> : <>
-      {editorMode === "preview" && activeTab?.document && <DocumentSidePanel
+      {activeTab?.document && <DocumentSidePanel
         activeTab={documentSidePanel}
         onTabChange={changeDocumentSidePanel}
         onClose={documentSidePanel === "search" ? closeSearch : closeDocumentSidePanel}
@@ -2379,8 +2446,10 @@ export function App() {
           onOpenChange={() => undefined}
         />}
       />}
-      {canEditActive && editorMode !== "preview" && activeTab?.document && <Suspense fallback={<div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
+      <div className={`document-panes editor-workspace-${editorMode}`} data-direction={splitDirection}>
+      {canEditActive && activeTab?.document && <Suspense fallback={editorMode === "preview" ? null : <div className="markdown-editor-loading">エディターを読み込んでいます…</div>}>
         <MarkdownEditor
+          hidden={editorMode === "preview"}
           onCodexConsult={!printing && !activeTab.saving ? (target) => { setCodexTarget(target); setCodexOpen(true); } : undefined}
           ref={editorRef}
           documentId={`${activeTab.id}:${activeTab.generation}`}
@@ -2392,6 +2461,21 @@ export function App() {
           onChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
           onSave={() => void saveTab(activeTab.id)}
           onResolvePastedImage={resolvePastedImage}
+          onResolveFileAttachment={async (file, placement) => {
+            const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
+            if (!tab?.document || tab.untitled) throw new Error("添付ファイルの保存先を決めるため、先に本文を保存してください。");
+            if (placement === "image") {
+              const nativePath = droppedFilePath(file);
+              if (!nativePath) throw new Error("ドロップしたファイルのパスを取得できませんでした。");
+              return {
+                source: droppedFileReference(tab.document.path, nativePath),
+                alt: clipboardImage.externalFileDisplayName ? file.name : undefined,
+              };
+            }
+            const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); });
+            const asset = await stageDocumentAsset({ documentPath: tab.document.path, preferredFilename: file.name, base64: data.slice(data.indexOf(",") + 1) });
+            return { source: asset.filename, asset };
+          }}
           onStagedAssetAdded={(content, asset) => dispatch({ type: "STAGED_ASSET_ADDED", id: activeTab.id, content, asset })}
           onStagedAssetAbandoned={(asset) => void discardStagedAssets([asset.id])}
           onPasteImageError={(error) => setToast({ id: crypto.randomUUID(), message: `画像の貼り付けに失敗しました: ${String(error)}`, type: "error" })}
@@ -2405,7 +2489,26 @@ export function App() {
           onCursorPositionChange={editorMode === "split" ? handleEditorCursorPosition : undefined}
         />
       </Suspense>}
-      {(editorMode !== "edit" || !canEditActive) && <main
+      {(editorMode !== "edit" || !canEditActive) && <section className="preview-pane">
+        {isHeavyMarkdown && !heavyPreviewReady && <div className="document-processing-status" role="status" aria-live="polite">重い文書を表示しています…画像とコードを順に処理中です。</div>}
+        {activeTab?.kind !== "settings" && activeTab?.document && <div className="preview-panel-toolbar" aria-label="プレビューの操作">
+          {viewMode !== "presentation" && <label className="preview-panel-toolbar__heading">見出し
+            <select aria-label="見出しの表示" defaultValue="" onChange={(event) => {
+              const value = event.target.value as "expand" | "collapse" | "h1" | "h2" | "h3" | "current" | "reset";
+              if (value) applyFoldPreset(value);
+              event.currentTarget.value = "";
+            }}>
+              <option value="" disabled>操作を選択</option><option value="expand">すべて展開</option><option value="collapse">すべて折りたたむ</option><option value="h1">H1のみ表示</option><option value="h2">H2まで表示</option><option value="h3">H3まで表示</option><option value="current">現在位置以外を折りたたむ</option><option value="reset">状態をリセット</option>
+            </select>
+          </label>}
+          <label>レイアウト
+            <select aria-label="レイアウト" value={viewMode} onChange={(event) => changeViewMode(event.target.value as ViewMode)}>
+              <optgroup label="本文レイアウト"><option value="auto">オート</option><option value="a4-portrait">A4縦</option><option value="a3-portrait">A3縦</option></optgroup>
+              <optgroup label="表示モード"><option value="presentation">プレゼン</option><option value="images">画像中心</option></optgroup>
+            </select>
+          </label>
+        </div>}
+      <main
         className={`preview-container ${activeTab?.kind === "settings" ? "view-settings" : `view-${viewMode}`}`}
         ref={containerRef}
         tabIndex={-1}
@@ -2449,7 +2552,7 @@ export function App() {
           </div>
         ) : activeTab?.document && activeTab.document.kind !== "markdown" ? (
           <StandaloneDocumentPreview
-            document={activeTab.document}
+            document={{ ...activeTab.document, content: activeTab.draft }}
             imageVersions={imageVersions}
             contentRef={markdownRef}
             theme={printing ? "light" : theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
@@ -2457,6 +2560,8 @@ export function App() {
             tabId={activeTab.id}
             onMediaOpen={openMediaPreview}
             onDrawioSave={activeTab.document.kind === "drawio" ? (content) => saveStandaloneDrawio(activeTab.id, content) : undefined}
+            onTextChange={canEditActive && !printing && ["tsv", "svg", "mermaid"].includes(activeTab.document.kind) ? (content) => { dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content }); } : undefined}
+            enableCodex={canEditActive && !printing}
           />
         ) : activeTab?.document && viewMode === "presentation" ? (
           <PresentationView
@@ -2486,23 +2591,25 @@ export function App() {
           />
         ) : activeTab?.document ? (
           <MarkdownPreview
+            actionContractHost="desktop"
+            enablePointerBlockReorder={visualEditing}
+            readOnly={!previewOperationPolicy({ writable: canEditActive, interactionMode, printing, saving: activeTab.saving }).directEditing}
+            allowBlockActions={previewOperationPolicy({ writable: canEditActive, interactionMode, printing, saving: activeTab.saving }).editBlocks}
             content={previewContent}
             baseDir={activeTab.document.base_dir}
-            onTextEdit={canEditActive && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
+            onTextEdit={canEditActive && interactionMode === "edit" && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
               const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
               if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation || tab.saving) return false;
               const documentId = `${tab.id}:${tab.generation}`;
               const content = replaceDocumentText({ documentId, content: tab.draft, from: 0, to: tab.draft.length }, { documentId, content: baseContent, from, to }, replacement);
               if (content === null) return false;
-              previewEditHistory.current.record(documentId, tab.draft, content);
               dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
               return true;
             } : undefined}
             onTextUndo={canEditActive && !printing ? redo => {
               const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
               if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation || tab.saving) return;
-              const content = previewEditHistory.current.restore(`${tab.id}:${tab.generation}`, tab.draft, redo);
-              if (content !== null) dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
+              editorRef.current?.undo(redo);
             } : undefined}
             imageVersions={imageVersions}
             contentRef={markdownRef}
@@ -2543,6 +2650,7 @@ export function App() {
             }}
             onMarkdownTableChange={updateMarkdownTable}
             onDrawioStorageConvert={convertDrawioStorage}
+            onAssetStorageConvert={convertDocumentAsset}
             onMermaidStorageConvert={convertMermaidStorage}
             onTableStorageConvert={convertTableStorage}
             onTextStorageConvert={convertTextStorage}
@@ -2553,6 +2661,7 @@ export function App() {
             stagedDrawioSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.drawio$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
             stagedMermaidSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.(?:mmd|mermaid)$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
             stagedTableSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined && /\.(?:csv|tsv)$/i.test(asset.filename) ? [[asset.filename, asset.text]] : []))}
+            stagedTextSources={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.text !== undefined ? [[asset.filename, asset.text]] : []))}
           />
         ) : (
           <div className="empty-state">
@@ -2563,7 +2672,8 @@ export function App() {
             </div>
           </div>
         )}
-      </main>}
+      </main></section>}
+      </div>
       </>}
       </div>
       {codexOpen && <CodexPanel
@@ -2592,7 +2702,6 @@ export function App() {
             if (!tab || tab.saving) return false;
             const content = replaceDocumentText({ documentId: `${tab.id}:${tab.generation}`, content: tab.draft, from: 0, to: tab.draft.length }, base, replacement);
             if (content === null) return false;
-            previewEditHistory.current.record(`${tab.id}:${tab.generation}`, tab.draft, content);
             dispatch({ type: "DRAFT_CHANGED", id: tab.id, content });
             return true;
           }
@@ -2758,8 +2867,9 @@ export function App() {
         plainText={previewContext.plainText}
         markdownText={previewContext.markdownText}
         rowTsv={previewContext.rowTsv}
-        canEdit={canEditActive}
+        canEdit={canEditActive && visualEditing}
         onEdit={editPreviewContextLine}
+        onAddBlockAfter={addPreviewBlockAfter}
         onSelectLine={() => selectPreviewContent(previewContext.line)}
         onSelectRow={previewContext.rowElement ? selectPreviewRow : undefined}
         onSelectAll={() => selectPreviewContent()}
@@ -2768,6 +2878,7 @@ export function App() {
         onError={(message) => setToast({ id: crypto.randomUUID(), message, type: "error" })}
       />}
     </div>
+    </DocumentSaveContext.Provider>
   );
 }
 

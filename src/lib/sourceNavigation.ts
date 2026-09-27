@@ -3,6 +3,21 @@ export interface SourcePosition {
   column?: number;
 }
 
+/** 本文だけをスクロールし、scrollIntoViewによる外側のレイアウト移動を避ける。 */
+export function scrollSourceTarget(container: HTMLElement | null, target: HTMLElement, block: "start" | "center" = "center"): boolean {
+  if (!container || !container.contains(target) || container.clientHeight <= 0) return false;
+  const bounds = container.getBoundingClientRect();
+  const targetBounds = target.getBoundingClientRect();
+  // getBoundingClientRectはCSS zoom適用後、scrollTop/clientHeightは適用前。
+  const scale = container.offsetHeight > 0 ? bounds.height / container.offsetHeight : 1;
+  if (!Number.isFinite(scale) || scale <= 0) return false;
+  const offset = (targetBounds.top - bounds.top) / scale - container.clientTop;
+  const alignment = block === "center" ? (container.clientHeight - Math.min(targetBounds.height / scale, container.clientHeight)) / 2 : 0;
+  const maximum = Math.max(0, container.scrollHeight - container.clientHeight);
+  container.scrollTop = Math.max(0, Math.min(maximum, container.scrollTop + offset - alignment));
+  return true;
+}
+
 export interface SourceAnchor {
   source: SourcePosition;
   headingId?: string;

@@ -15,8 +15,8 @@ $NodeArchiveName = "node-v$NodeVersion-win-x64.zip"
 $NodeArchiveSha256 = '1177B4137BA5ADAA56354AE40F1080C7450E8AE09CECB47DA459D1C52AC99F97'
 $NodeDownloadUrl = "https://nodejs.org/dist/v$NodeVersion/$NodeArchiveName"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$SpfxRoot = Join-Path $ProjectRoot 'spfx'
-$CoreRoot = Join-Path $ProjectRoot 'packages\markdown-core'
+$WebPlatformRoot = Join-Path $ProjectRoot 'web-platform'
+$SpfxRoot = Join-Path $WebPlatformRoot 'apps\spfx'
 $ToolsRoot = Join-Path $ProjectRoot '.tools'
 $DownloadsRoot = Join-Path $ToolsRoot 'downloads'
 $NodeRoot = Join-Path $ToolsRoot "node-v$NodeVersion-win-x64"
@@ -111,13 +111,11 @@ function Initialize-ProjectDependencies {
 }
 
 function Assert-SpfxVersion {
-    $desktop = (Get-Content -LiteralPath (Join-Path $ProjectRoot 'package.json') -Raw | ConvertFrom-Json).version
-    $release = Get-Content -LiteralPath (Join-Path $ProjectRoot 'packaging\release-config.json') -Raw | ConvertFrom-Json
+    $targets = Get-Content -LiteralPath (Join-Path $WebPlatformRoot 'targets.json') -Raw | ConvertFrom-Json
     $spfx = (Get-Content -LiteralPath (Join-Path $SpfxRoot 'package.json') -Raw | ConvertFrom-Json).version
-    $solution = (Get-Content -LiteralPath (Join-Path $SpfxRoot 'config\package-solution.json') -Raw | ConvertFrom-Json).solution.version
-    $expectedSolution = if ([string]::IsNullOrWhiteSpace([string]$release.application.msixVersion)) { "$desktop.0" } else { [string]$release.application.msixVersion }
-    if ($spfx -ne $desktop -or $solution -ne $expectedSolution) {
-        throw "バージョンが同期していません。desktop=$desktop / spfx=$spfx / solution=$solution / expectedSolution=$expectedSolution"
+    $solution = (Get-Content -LiteralPath (Join-Path $SpfxRoot 'config/package-solution.json') -Raw | ConvertFrom-Json).solution.version
+    if ($spfx -ne $targets.targets.spfx.version -or $solution -ne $targets.targets.spfx.solutionVersion) {
+        throw "SPFxの版がtargets.jsonと一致しません。generate-targets.mjsを実行してください。"
     }
 }
 
@@ -126,16 +124,17 @@ Initialize-NodeRuntime
 Assert-SpfxVersion
 
 if ($Action -in @('setup', 'build', 'test', 'start', 'clean')) {
-    Initialize-ProjectDependencies -WorkingDirectory $ProjectRoot -StampName 'desktop-dependencies.sha256'
-    Invoke-ProjectNpm -WorkingDirectory $CoreRoot -Arguments @('run', 'build')
+    # SPFxと共通UIは子Gitが正本である。親デスクトップのnode_modulesを
+    # 初期化しないことで、起動中のTauri native addonをnpm ciが置換しない。
+    Initialize-ProjectDependencies -WorkingDirectory $WebPlatformRoot -StampName 'web-platform-dependencies.sha256'
     Initialize-ProjectDependencies -WorkingDirectory $SpfxRoot -StampName 'spfx-dependencies.sha256'
 }
 
 switch ($Action) {
-    'setup' { Write-Host 'SPFx開発環境の準備が完了しました。' }
-    'build' { Invoke-ProjectNpm -WorkingDirectory $SpfxRoot -Arguments @('run', 'build') }
-    'test' { Invoke-ProjectNpm -WorkingDirectory $SpfxRoot -Arguments @('run', 'test') }
-    'start' { Invoke-ProjectNpm -WorkingDirectory $SpfxRoot -Arguments @('run', 'start') }
+    'setup' { Write-Host 'Web子GitのSPFx開発環境の準備が完了しました。' }
+    'build' { Invoke-ProjectNpm -WorkingDirectory $WebPlatformRoot -Arguments @('run', 'build:spfx') }
+    'test' { Invoke-ProjectNpm -WorkingDirectory $WebPlatformRoot -Arguments @('run', 'test:spfx') }
+    'start' { Invoke-ProjectNpm -WorkingDirectory $WebPlatformRoot -Arguments @('run', 'start:spfx') }
     'audit' { Invoke-ProjectNpm -WorkingDirectory $SpfxRoot -Arguments @('audit', '--omit=dev') }
-    'clean' { Invoke-ProjectNpm -WorkingDirectory $SpfxRoot -Arguments @('run', 'clean') }
+    'clean' { Invoke-ProjectNpm -WorkingDirectory $WebPlatformRoot -Arguments @('run', 'clean:spfx') }
 }

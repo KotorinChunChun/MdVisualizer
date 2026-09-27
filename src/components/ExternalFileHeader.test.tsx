@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ExternalFileHeader } from "./ExternalFileHeader";
+import { BrowserCapabilitiesContext, desktopBrowserCapabilities } from "./BrowserCapabilities";
 
 vi.mock("../lib/commands", () => ({ openContainingFolder: vi.fn() }));
 
@@ -47,5 +48,12 @@ describe("ExternalFileHeader", () => {
     expect(screen.getByRole("menu", { name: "old.pngのファイル操作" })).not.toBeNull();
     expect(screen.getByRole("menuitem", { name: "フォルダーを開く" })).not.toBeNull();
     expect(screen.queryByText("外部参照")).toBeNull();
+  });
+
+  it("browser-only host does not offer opening the containing folder", () => {
+    render(<BrowserCapabilitiesContext.Provider value={{ ...desktopBrowserCapabilities, canOpenContainingFolder: false }}><ExternalFileHeader source="old.png" path="C:\\docs\\old.png" onRename={vi.fn()} /></BrowserCapabilitiesContext.Provider>);
+    fireEvent.contextMenu(screen.getByRole("button", { name: "old.png" }), { clientX: 20, clientY: 30 });
+    expect(screen.queryByRole("menuitem", { name: "フォルダーを開く" })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: "保存場所を表示" })).not.toBeNull();
   });
 });

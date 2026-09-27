@@ -11,6 +11,28 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("MarkdownEditor", () => {
+  it("表示切替をまたいでコードとビジュアルの編集を同じ履歴でUndo・Redoする", () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const onChange = vi.fn();
+    const props = { ref, documentId: "mode:1", value: "元の文", dirty: false, saving: false, onChange, onSave: () => {} };
+    const { container, rerender } = render(<MarkdownEditor {...props} />);
+    const dom = container.querySelector(".cm-editor");
+    act(() => { ref.current!.applyProposal({ ...ref.current!.snapshot()!, from: 0, to: 3 }, "コード編集"); });
+    rerender(<MarkdownEditor {...props} hidden value="コード編集" />);
+    expect(container.querySelector(".cm-editor")).toBe(dom);
+    expect(container.querySelector<HTMLElement>(".markdown-editor")!.style.display).toBe("none");
+    rerender(<MarkdownEditor {...props} hidden value="ビジュアル編集" />);
+    act(() => { expect(ref.current!.undo()).toBe(true); });
+    expect(onChange).toHaveBeenLastCalledWith("コード編集");
+    rerender(<MarkdownEditor {...props} value="コード編集" />);
+    fireEvent.keyDown(container.querySelector<HTMLElement>(".cm-content")!, { key: "z", ctrlKey: true });
+    expect(onChange).toHaveBeenLastCalledWith("元の文");
+    act(() => { expect(ref.current!.undo(true)).toBe(true); });
+    expect(onChange).toHaveBeenLastCalledWith("コード編集");
+    act(() => { expect(ref.current!.undo(true)).toBe(true); });
+    expect(onChange).toHaveBeenLastCalledWith("ビジュアル編集");
+  });
+
   it("AIの選択範囲採用はCRLFを保持し、一度のUndoで戻せる", async () => {
     const ref = createRef<MarkdownEditorHandle>();
     const onChange = vi.fn();
@@ -70,10 +92,12 @@ describe("MarkdownEditor", () => {
     const { rerender } = render(<MarkdownEditor ref={first} documentId="tab-1:1" viewStateKey="C:\\docs\\note.md" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
     act(() => first.current?.focusLine(3));
     expect(first.current?.snapshot()?.from).toBe(8);
+    await waitFor(() => expect(first.current?.contains(document.activeElement)).toBe(true));
 
     const second = createRef<MarkdownEditorHandle>();
     rerender(<MarkdownEditor ref={second} documentId="tab-1:2" viewStateKey="C:\\docs\\note.md" value={"one\ntwo\nthree"} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
     await waitFor(() => expect(second.current?.snapshot()?.from).toBe(8));
+    await waitFor(() => expect(second.current?.contains(document.activeElement)).toBe(true));
   });
 
   it("keeps an unaffected long-code fold and both scroll axes when a save adds lines before it", async () => {
@@ -91,6 +115,17 @@ describe("MarkdownEditor", () => {
     const restoredScroller = container.querySelector<HTMLElement>(".cm-scroller")!;
     await waitFor(() => expect(restoredScroller.scrollTop).toBe(48));
     expect(restoredScroller.scrollLeft).toBe(24);
+  });
+
+  it("folds multiple base64 images on the same table row without blanking the editor", async () => {
+    const first = "A".repeat(80);
+    const second = "B".repeat(96);
+    const value = `| A | B |\n| --- | --- |\n| ![a](data:image/png;base64,${first}) | ![b](data:image/svg+xml;base64,${second}) |`;
+    const { container } = render(<MarkdownEditor documentId="tab-base64-row:1" value={value} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+
+    await waitFor(() => expect(container.querySelectorAll(".cm-foldPlaceholder")).toHaveLength(2));
+    expect(container.querySelector(".cm-content")?.textContent).toContain("A");
+    expect(container.querySelector(".cm-content")?.textContent).toContain("B");
   });
 
   it("keeps an unaffected fold and both scroll axes on an external reload without recreating the editor", async () => {
@@ -181,15 +216,34 @@ describe("MarkdownEditor", () => {
     expect(output.indexOf("```mermaid")).toBeLessThan(output.indexOf("after"));
   });
 
-  it("enables saving only for an unsaved draft", () => {
+  it("keeps Ctrl+S while removing the duplicate code-pane save button", () => {
     const onSave = vi.fn();
     const { rerender } = render(<MarkdownEditor documentId="tab-1:1" value="# Test" dirty={false} saving={false} onChange={() => {}} onSave={onSave} />);
-    expect((screen.getByRole("button", { name: "保存" }) as HTMLButtonElement).disabled).toBe(true);
-
+    expect(screen.queryByRole("button", { name: "保存" })).toBeNull();
     rerender(<MarkdownEditor documentId="tab-1:1" value="# Edited" dirty saving={false} onChange={() => {}} onSave={onSave} />);
-    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    fireEvent.keyDown(document.querySelector<HTMLElement>(".cm-content")!, { key: "s", ctrlKey: true });
 
     expect(onSave).toHaveBeenCalledOnce();
+  });
+
+  it("inserts a relative link for a clipboard file through the host adapter before legacy image paste", async () => {
+    const onChange = vi.fn();
+    const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "assets/report.bin" });
+    const file = new File(["binary"], "report.bin", { type: "application/octet-stream" });
+    const { container } = render(<MarkdownEditor documentId="file-paste:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolveFileAttachment={onResolveFileAttachment} />);
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, { clipboardData: { files: [file], items: [], getData: () => "" } });
+    await waitFor(() => expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "link"));
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("[report.bin](assets/report.bin)before"));
+  });
+
+  it("inserts an image reference for a dropped file through the host adapter", async () => {
+    const onChange = vi.fn();
+    const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "assets/report.bin" });
+    const file = new File(["binary"], "report.bin", { type: "application/octet-stream" });
+    const { container } = render(<MarkdownEditor documentId="file-drop:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolveFileAttachment={onResolveFileAttachment} />);
+    fireEvent.drop(container.querySelector<HTMLElement>(".cm-content")!, { dataTransfer: { files: [file] } });
+    await waitFor(() => expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "image"));
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("![](assets/report.bin)before"));
   });
 
   it("reflects an externally edited Base64 occurrence in CodeMirror without emitting another change", async () => {
@@ -298,7 +352,7 @@ describe("MarkdownEditor", () => {
       },
     });
 
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith("![クリップボード画像](data:image/png;base64,AAEC)before"));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("![](data:image/png;base64,AAEC)before"));
     expect(onResolvePastedImage).toHaveBeenCalledWith({ mediaType: "image/png", base64: "AAEC" });
   });
 
@@ -312,6 +366,27 @@ describe("MarkdownEditor", () => {
       clipboardData: { items: [{ kind: "file", type: "image/png", getAsFile: () => file }], files: [file], getData: () => "" },
     });
 
-    await waitFor(() => expect(onStagedAssetAdded).toHaveBeenCalledWith("![クリップボード画像](images/20260824_090507.png)", asset));
+    await waitFor(() => expect(onStagedAssetAdded).toHaveBeenCalledWith("![](images/20260824_090507.png)", asset));
+  });
+
+  it("prioritizes an image clipboard item over the generic file attachment handler", async () => {
+    const onChange = vi.fn();
+    const onResolvePastedImage = vi.fn().mockResolvedValue({ source: "data:image/png;base64,AAEC" });
+    const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "clipboard.png" });
+    const { container } = render(<MarkdownEditor documentId="image-priority:1" value="" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolvePastedImage={onResolvePastedImage} onResolveFileAttachment={onResolveFileAttachment} />);
+    const file = new File([new Uint8Array([0, 1, 2])], "clipboard.png", { type: "image/png" });
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, { clipboardData: { items: [{ kind: "file", type: "image/png", getAsFile: () => file }], files: [file], getData: () => "clipboard text" } });
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("![](data:image/png;base64,AAEC)"));
+    expect(onResolveFileAttachment).not.toHaveBeenCalled();
+  });
+
+  it("inserts dropped files as image references with an optional external filename", async () => {
+    const onChange = vi.fn();
+    const onResolveFileAttachment = vi.fn().mockResolvedValue({ source: "assets/report.bin", alt: "report.bin" });
+    const file = new File(["binary"], "report.bin", { type: "application/octet-stream" });
+    const { container } = render(<MarkdownEditor documentId="image-drop:1" value="before" dirty={false} saving={false} onChange={onChange} onSave={() => {}} onResolveFileAttachment={onResolveFileAttachment} />);
+    fireEvent.drop(container.querySelector<HTMLElement>(".cm-content")!, { dataTransfer: { files: [file] } });
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith("![report.bin](assets/report.bin)before"));
+    expect(onResolveFileAttachment).toHaveBeenCalledWith(file, "image");
   });
 });

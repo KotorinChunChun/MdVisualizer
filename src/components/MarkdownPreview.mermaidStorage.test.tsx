@@ -28,6 +28,8 @@ describe("MarkdownPreview Mermaid storage", () => {
       imageVersions={{}}
       stagedMermaidSources={{ "flow.mmd": "flowchart LR\nS --> T" }}
       onMermaidStorageConvert={onMermaidStorageConvert}
+      readOnly
+      allowBlockActions
     />);
 
     expect(screen.getByTestId("embedded-mermaid").dataset.storage).toBe("embedded");

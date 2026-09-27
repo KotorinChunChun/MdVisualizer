@@ -14,6 +14,7 @@ Import-Module (Join-Path $PSScriptRoot 'VersionLogPath.psm1') -Force
 $logProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $resolvedLogDirectory = Get-VersionLogDirectory -ProjectRoot $logProjectRoot -Scenario 'debug-smoke' -TargetVersion $TargetVersion -OutputDirectory $OutputDirectory
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+Import-Module (Join-Path $PSScriptRoot 'NodeRuntime.psm1') -Force
 $debugExecutable = Join-Path $projectRoot "src-tauri\target\debug\mdvisualizer.exe"
 $analyzer = Join-Path $PSScriptRoot "debug-preview-smoke.mjs"
 $sampleAnalyzer = Join-Path $PSScriptRoot "debug-sample-suite.mjs"
@@ -126,8 +127,7 @@ if (-not $SkipBuild) {
     try {
         Push-Location $projectRoot
         try {
-            & npm.cmd run tauri -- build --debug --no-bundle
-            if ($LASTEXITCODE -ne 0) { throw "デバッグビルドに失敗しました（終了コード: $LASTEXITCODE）。" }
+            Invoke-MdVisualizerNpm -ProjectRoot $projectRoot -Arguments @('run', 'tauri', '--', 'build', '--debug', '--no-bundle')
         } finally {
             Pop-Location
         }

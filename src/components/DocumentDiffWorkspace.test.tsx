@@ -1,110 +1,72 @@
 import { useState } from "react";
-import { EditorView } from "@codemirror/view";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { DocumentDiffWorkspace, type DocumentDiffTarget } from "./DocumentDiffWorkspace";
 
 afterEach(cleanup);
-beforeAll(() => {
-  Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
-  Range.prototype.getBoundingClientRect = () => new DOMRect();
+it.each([false, true].flatMap(threeWay => ["single", "split"].map(display => ({ threeWay, display }))))
+("差分状態 $threeWay/$display の列構成を保つ", ({ threeWay, display }) => {
+  render(<Fixture source={{ ...target, storageContent: threeWay ? target.storageContent : target.openedContent }} />);
+  fireEvent.change(screen.getByLabelText("差分の表示"), { target: { value: display } });
+  expect(screen.queryByLabelText("差分の分割方向")).toBeNull();
+  if (display === "single") {
+    expect(screen.getByLabelText("統合差分")).toBeTruthy();
+    expect(document.querySelectorAll('.diff-columns').length).toBe(0);
+  } else {
+    expect(document.querySelectorAll('.diff-columns > article').length).toBe(threeWay ? 3 : 2);
+    expect(document.querySelector('.diff-columns--horizontal')).toBeTruthy();
+  }
 });
-const target: DocumentDiffTarget = { path: "C:\\docs\\note.md", baseDir: "C:\\docs", openedContent: "a\nb\nc",
-  storageContent: "a\nb\nc", editingContent: "a\nL\nc", baselineRevision: "r1", storageRevision: "r1" };
-function Fixture({ storage = target.storageContent, mode = "edit", error = null, refreshing = false, onSave = () => {} }: {
-  storage?: string; mode?: "edit" | "split" | "preview"; error?: string | null; refreshing?: boolean; onSave?: () => void;
-}) {
-  const [content, setContent] = useState(target.editingContent);
-  return <><DocumentDiffWorkspace target={{ ...target, storageContent: storage, editingContent: content, storageError: error, refreshing }}
-    editorMode={mode} theme="dark" onEditingChange={setContent} onSave={onSave} />
-    <output data-testid="draft">{content}</output></>;
-}
-const draft = () => screen.getByTestId("draft").textContent;
-const choose = (side: "ストレージ" | "自分") => fireEvent.click(screen.getByRole("button", { name: new RegExp(`${side}側の2行目を採用`) }));
-const save = () => screen.getByRole<HTMLButtonElement>("button", { name: "採用結果を保存" });
-const editor = () => EditorView.findFromDOM(document.querySelector('[data-pane-key="result"] .cm-editor')!)!;
+beforeAll(() => { Range.prototype.getClientRects = () => [] as unknown as DOMRectList; Range.prototype.getBoundingClientRect = () => new DOMRect(); });
+const target: DocumentDiffTarget = { path: "C:\\docs\\note.md", baseDir: "C:\\docs", openedContent: "a\nb\nc", storageContent: "a\nS\nc", editingContent: "a\nL\nc", baselineRevision: "r1", storageRevision: "r2" };
+function Fixture({ content = target.editingContent, source = target }: { content?: string; source?: DocumentDiffTarget }) { const [draft, setDraft] = useState(content); return <><DocumentDiffWorkspace target={{ ...source, editingContent: draft }} editorMode="edit" theme="dark" onEditingChange={setDraft} /><output data-testid="draft">{draft}</output></>; }
 
-describe("Diffの選択と編集履歴", () => {
-  it.each(["edit", "split", "preview"] as const)("%sでも外部更新で2列から3列へ切り替え、自分の内容を保持する", (mode) => {
-    const { rerender } = render(<Fixture mode={mode} />);
-    expect(document.querySelectorAll(".cm-editor")).toHaveLength(mode === "preview" ? 0 : 2);
-    expect(document.querySelectorAll(".diff-previews__columns > article")).toHaveLength(mode === "edit" ? 0 : 2);
-    rerender(<Fixture mode={mode} storage={"a\nS\nc"} />);
-    expect(document.querySelectorAll(".cm-editor")).toHaveLength(mode === "preview" ? 0 : 3);
-    expect(document.querySelectorAll(".diff-previews__columns > article")).toHaveLength(mode === "edit" ? 0 : 3);
-    expect(screen.getByText(/3-way（ストレージ/)).toBeTruthy();
-    if (mode !== "preview") expect(document.querySelector('[data-pane-key="base"] .cm-content')?.textContent).toBe("abc");
-    expect(draft()).toBe("a\nL\nc");
-    expect(save().disabled).toBe(true);
-    expect(document.querySelectorAll('.cm-content[contenteditable="true"]')).toHaveLength(mode === "preview" ? 0 : 1);
+describe("差分の表示と採用", () => {
+  it("コード併用時はプレビューと同じ列幅を使い行操作用の列を確保する", () => {
+    render(<DocumentDiffWorkspace target={target} editorMode="split" theme="light" />);
+    const code = document.querySelector<HTMLElement>(".diff-columns")!, preview = document.querySelector<HTMLElement>(".diff-previews__columns")!;
+    expect(code.style.gridTemplateColumns).toBe(preview.style.gridTemplateColumns);
+    expect(code.style.gridTemplateColumns).toContain("64px");
   });
-  it("行の両側を採用でき、本文と判断をUndo/Redoし、明示保存まで書き込まない", () => {
-    const onSave = vi.fn();
-    render(<Fixture storage={"a\nS\nc"} onSave={onSave} />);
-    choose("ストレージ");
-    expect(draft()).toBe("a\nS\nc");
-    expect(save().disabled).toBe(false);
-    choose("自分");
-    expect(draft()).toBe("a\nL\nc");
-    fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
-    expect(draft()).toBe("a\nS\nc");
-    fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
-    expect(draft()).toBe("a\nL\nc");
-    expect(save().disabled).toBe(true);
-    fireEvent.keyDown(document.querySelector(".document-diff-workspace")!, { key: "y", ctrlKey: true });
-    expect(draft()).toBe("a\nS\nc");
-    expect(onSave).not.toHaveBeenCalled();
-    fireEvent.click(save());
-    expect(onSave).toHaveBeenCalledOnce();
+  it("3-wayを開始時・編集中・ストレージ順に表示する", () => {
+    render(<Fixture />);
+    expect([...document.querySelectorAll("[data-pane-key]")].map((node) => node.getAttribute("data-pane-key"))).toEqual(["base", "result", "storage"]);
+    expect(screen.getByRole("button", { name: "開始時の2行目を復元" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ストレージの2行目を採用" })).toBeTruthy();
   });
-  it("直接編集を手動採用とし、その編集と判断をUndoで戻す", () => {
-    render(<Fixture storage={"a\nS\nc"} />);
-    act(() => { editor().dispatch({ changes: { from: 2, to: 3, insert: "manual" } }); });
-    expect(draft()).toBe("a\nmanual\nc");
-    expect(save().disabled).toBe(false);
-    expect(screen.getByRole("button", { name: /ストレージ側の2行目を採用.*手動編集/ })).toBeTruthy();
-    fireEvent.keyDown(editor().contentDOM, { key: "z", ctrlKey: true });
-    expect(draft()).toBe("a\nL\nc");
-    expect(save().disabled).toBe(true);
+  it("開始時の復元とストレージ採用を編集結果へ反映する", () => {
+    render(<Fixture />);
+    fireEvent.click(screen.getByRole("button", { name: "開始時の2行目を復元" }));
+    expect(screen.getByTestId("draft").textContent).toBe("a\nb\nc");
+    fireEvent.click(screen.getByRole("button", { name: "ストレージの2行目を採用" }));
+    expect(screen.getByTestId("draft").textContent).toBe("a\nS\nc");
   });
-  it("再外部更新は影響行だけ判断を無効にし、採用結果と自分の原文を保持する", () => {
-    const { rerender } = render(<Fixture storage={"a\nS\nT"} />);
-    choose("自分");
-    fireEvent.click(screen.getByRole("button", { name: /ストレージ側の3行目を採用/ }));
-    expect(save().disabled).toBe(false);
-    rerender(<Fixture storage={"a\nS2\nT"} />);
-    expect(draft()).toBe("a\nL\nT");
-    expect(screen.getByText("未選択 1行")).toBeTruthy();
-    expect(document.querySelector('[data-pane-key="base"] .cm-content')?.textContent).toBe("abc");
-    expect(screen.getByRole("button", { name: /ストレージ側の3行目を採用/ }).getAttribute("aria-pressed")).toBe("true");
-    choose("自分");
-    expect(save().disabled).toBe(false);
+  it("左右分割固定で1画面の比較対象を切り替える", () => {
+    render(<Fixture />);
+    expect(document.querySelector(".diff-columns--horizontal")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("差分の表示"), { target: { value: "single" } });
+    expect(screen.getByLabelText("1画面の比較対象")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("1画面の比較対象"), { target: { value: "base-result" } });
+    expect(screen.getByLabelText("統合差分").textContent).toContain("- b\n+ L");
   });
-  it("2wayへ戻って再度3wayになった時点で自分の原文を採り直す", () => {
-    const { rerender } = render(<Fixture storage={"a\nS\nc"} />);
-    rerender(<Fixture />);
-    act(() => { editor().dispatch({ changes: { from: 2, to: 3, insert: "L2" } }); });
-    rerender(<Fixture storage={"a\nS2\nc"} />);
-    expect(document.querySelector('[data-pane-key="base"] .cm-content')?.textContent).toBe("abc");
+  it("2-wayでも1画面は編集中とストレージの統合差分を表示する", () => {
+    const source = { ...target, openedContent: "S", storageContent: "S" };
+    render(<Fixture source={source} content="L" />);
+    fireEvent.change(screen.getByLabelText("差分の表示"), { target: { value: "single" } });
+    expect(document.querySelector(".diff-columns")).toBeNull();
+    expect(screen.queryByLabelText("1画面の比較対象")).toBeNull();
+    expect(screen.getByLabelText("統合差分").textContent).toContain("- S\n+ L");
+    expect(screen.getByLabelText("統合差分").querySelector(".is-deleted .diff-word-deleted")?.textContent).toBe("S");
+    expect(screen.getByLabelText("統合差分").querySelector(".is-added .diff-word-added")?.textContent).toBe("L");
+    const removed = screen.getByLabelText("統合差分").querySelector<HTMLElement>(".is-deleted")!;
+    fireEvent.keyDown(removed, { key: "ArrowDown" });
+    expect(document.activeElement?.classList.contains("is-added")).toBe(true);
   });
-  it.each([{ refreshing: true }, { error: "ファイルが削除されました" }])("確認中・取得失敗でも本文を保持し採用と保存を禁止する %j", (props) => {
-    const { rerender } = render(<Fixture storage={"a\nS\nc"} />);
-    choose("自分");
-    rerender(<Fixture storage={"a\nS\nc"} {...props} />);
-    expect(save().disabled).toBe(true);
-    expect(screen.getByRole<HTMLButtonElement>("button", { name: /ストレージ側の2行目を採用/ }).disabled).toBe(true);
-    expect(draft()).toBe("a\nL\nc");
-  });
-  it("対応行のスクロール位置を全列へ同じピクセル数で伝える", () => {
-    render(<Fixture storage={"a\nS\nc"} />);
-    const scrollers = [...document.querySelectorAll<HTMLElement>(".cm-scroller, .diff-row-actions")];
-    scrollers[0].scrollTop = 44;
-    fireEvent.scroll(scrollers[0]);
-    expect(scrollers.every((node) => node.scrollTop === 44)).toBe(true);
-  });
-  it("編集/閲覧時だけプレビューを常時表示し、境界にはキーボードで識別できるドラッグハンドルを置く", () => {
-    render(<Fixture mode="split" storage={"a\nS\nc"} />);
-    expect(document.querySelector(".diff-previews")).toBeTruthy();
-    expect(screen.getAllByRole("separator")).toHaveLength(5);
+  it("5行以上の一致部分をまとめ、クリックで展開する", () => {
+    const source = { ...target, openedContent: "a\nb\nc\nd\ne\nf\ng\nh", storageContent: "a\nS\nc\nd\ne\nf\ng\nh" };
+    render(<Fixture source={source} content={"a\nL\nc\nd\ne\nf\ng\nh"} />);
+    expect(screen.getByRole("button", { name: /一致部分 6 行を表示/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /一致部分 6 行を表示/ }));
+    expect(screen.queryByRole("button", { name: /一致部分 6 行を表示/ })).toBeNull();
   });
 });

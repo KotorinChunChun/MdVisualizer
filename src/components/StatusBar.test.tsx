@@ -47,7 +47,7 @@ describe("StatusBar", () => {
     render(<StatusBar document={document} onAutoReloadChange={onAutoReloadChange} onZoomChange={onZoomChange} onThemeChange={onThemeChange} onViewModeChange={onViewModeChange} />);
 
     fireEvent.change(screen.getByLabelText("テーマ"), { target: { value: "light" } });
-    fireEvent.change(screen.getByLabelText("レイアウト"), { target: { value: "a3-portrait" } });
+    expect(screen.queryByLabelText("レイアウト")).toBeNull();
     fireEvent.change(screen.getByLabelText("Auto Reload"), { target: { value: "manual" } });
     fireEvent.change(screen.getByLabelText("Zoom"), { target: { value: "120" } });
 
@@ -55,7 +55,7 @@ describe("StatusBar", () => {
     expect(screen.queryByLabelText("Mermaid")).toBeNull();
     expect(onZoomChange).toHaveBeenCalledWith(120);
     expect(onThemeChange).toHaveBeenCalledWith("light");
-    expect(onViewModeChange).toHaveBeenCalledWith("a3-portrait");
+    expect(onViewModeChange).not.toHaveBeenCalled();
   });
 
   it("keeps legacy callers working while disabling unbound controls", () => {
@@ -66,7 +66,7 @@ describe("StatusBar", () => {
     expect(screen.queryByLabelText("Mermaid")).toBeNull();
     expect((screen.getByLabelText("Zoom") as HTMLSelectElement).disabled).toBe(true);
     expect((screen.getByLabelText("テーマ") as HTMLSelectElement).disabled).toBe(true);
-    expect((screen.getByLabelText("レイアウト") as HTMLSelectElement).disabled).toBe(true);
+    expect(screen.queryByLabelText("レイアウト")).toBeNull();
   });
 
   it("opens the settings tab from the rightmost gear button", () => {
