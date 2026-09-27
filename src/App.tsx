@@ -21,7 +21,7 @@ import { ExternalActions } from "./components/ExternalActions";
 import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget, type MediaPreviewViewState } from "./components/MediaPreviewModal";
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
-import { ImageAnnotationEditor } from "./components/ImageAnnotationEditor";
+import { ImageEditingDialog } from "./components/ImageEditingDialog";
 import { SvgSourceEditor, type SvgSourceEditTarget } from "./components/SvgSourceEditor";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
@@ -2720,7 +2720,7 @@ export function App() {
           equalPadding={imageEqualPadding}
         />
       )}
-      {annotationTarget && <ImageAnnotationEditor
+      {annotationTarget && <ImageEditingDialog
         target={annotationTarget}
         imageVersion={annotationTarget.fullPath ? imageVersions[annotationTarget.fullPath] ?? 0 : 0}
         onApply={async ({ filename, backupAvailable, dataUri }) => {

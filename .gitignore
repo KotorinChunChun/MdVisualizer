@@ -215,3 +215,9 @@ web/tests/.php-zip-fixtures/
 /src/lib/previewActionContract.ts
 /src/lib/copyOperation.ts
 /src/lib/selectionDecoration.ts
+
+/src/assets/screenpresso.html
+/src/lib/screenpressoHost.ts
+/src/components/ImageEditingDialog.tsx
+/src/components/ScreenpressoEditor.tsx
+/src/styles/screenpresso.css

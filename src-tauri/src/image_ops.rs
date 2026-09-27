@@ -81,6 +81,20 @@ pub fn save_rendered_image(
             ));
         }
         let format = ImageFormat::from_path(&original_path).unwrap_or(ImageFormat::Png);
+        // JPEGは透過非対応。注釈画面の余白・切抜きの透明部分を白背景へ合成する。
+        let rendered = if format == ImageFormat::Jpeg {
+            let rgba = rendered.to_rgba8();
+            let rgb = image::RgbImage::from_fn(width, height, |x, y| {
+                let pixel = rgba.get_pixel(x, y).0;
+                let alpha = u32::from(pixel[3]);
+                image::Rgb([0, 1, 2].map(|i| {
+                    ((u32::from(pixel[i]) * alpha + 255 * (255 - alpha) + 127) / 255) as u8
+                }))
+            });
+            image::DynamicImage::ImageRgb8(rgb)
+        } else {
+            rendered
+        };
         backup_mgr.ensure_backup(&original_path)?;
         let temp_path = unique_crop_temp_path(&original_path)?;
         if let Err(error) = rendered
@@ -431,6 +445,30 @@ mod tests {
             &manager,
         )
         .is_err());
+    }
+
+    #[test]
+    fn saves_rgba_annotation_as_jpeg_with_white_background() {
+        use std::io::Cursor;
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("annotated.jpg");
+        image::RgbImage::from_pixel(4, 3, image::Rgb([20, 40, 60]))
+            .save(&path).unwrap();
+        let original = fs::read(&path).unwrap();
+        let mut bytes = Vec::new();
+        image::DynamicImage::ImageRgba8(RgbaImage::from_pixel(8, 8, Rgba([255, 0, 0, 0])))
+            .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png).unwrap();
+        let result = save_rendered_image(SaveRenderedImageRequest {
+            path: path.to_string_lossy().into_owned(), png_bytes: bytes,
+            expected_source_width: 4, expected_source_height: 3,
+        }, &BackupManager::new().unwrap()).unwrap();
+        assert!(result.backup_available);
+        let saved = fs::read(&path).unwrap();
+        assert_ne!(saved, original);
+        assert_eq!(image::guess_format(&saved).unwrap(), ImageFormat::Jpeg);
+        let output = image::open(&path).unwrap().to_rgb8();
+        assert_eq!(output.dimensions(), (8, 8));
+        assert!(output.get_pixel(0, 0).0.iter().all(|c| *c > 250));
     }
 
     #[test]

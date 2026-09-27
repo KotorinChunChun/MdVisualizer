@@ -15,7 +15,7 @@ const targets = [
   { id: "mermaid-editor", root: path.join(root, "web-platform", "tools", "mermaid-editor"), sourceKind: "shared" },
 ];
 const sourceMap = JSON.parse(fs.readFileSync(path.join(root, "web-platform", "packages", "editor-ui", "source-map.json"), "utf8"));
-const sharedProjectedDesktopPaths = new Set(sourceMap.files.filter(file => /\.(?:ts|tsx)$/.test(file)).map(file => path.normalize(path.join(root, "src", file))));
+const sharedProjectedDesktopPaths = new Set(sourceMap.files.map(file => path.normalize(path.join(root, "src", file))));
 const ignoredPart = /(^|[\\/])(node_modules|vendor|generated|tests?|private|temp)([\\/]|$)/i;
 const interactiveTags = new Set(["button", "select", "option", "input", "textarea", "dialog", "menu", "summary", "a"]);
 const roleControls = new Set(["button", "menu", "menuitem", "menuitemcheckbox", "menuitemradio", "toolbar", "dialog", "alertdialog", "tab", "switch", "checkbox", "radio", "listbox", "combobox"]);
