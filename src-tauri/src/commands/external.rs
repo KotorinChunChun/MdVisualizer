@@ -38,16 +38,33 @@ pub(super) fn expand_external_app_value(
 
 #[tauri::command]
 pub fn open_external_app(request: OpenExternalAppRequest) -> Result<(), String> {
-    let file = PathBuf::from(&request.file);
+    let mut file = PathBuf::from(&request.file);
     if !file.exists() {
         return Err(AppError::FileNotFound(request.file).to_string());
     }
     if request.executable.trim().is_empty() {
         return Err("External application executable is required.".into());
     }
+    #[cfg(target_os = "windows")]
+    if request.executable.eq_ignore_ascii_case("mspaint.exe") {
+        // Paintはスラッシュ区切りのパスを正しく解釈しないためOS形式へ揃える。
+        file = normalize_powershell_path(&std::fs::canonicalize(&file).map_err(|error| error.to_string())?);
+    }
     let line = request.line.unwrap_or(1);
     let executable = expand_external_app_value(&request.executable, &file, line)?;
-    let mut command = Command::new(&executable);
+    let mut executable_path = PathBuf::from(&executable);
+    #[cfg(target_os = "windows")]
+    if executable.eq_ignore_ascii_case("mspaint.exe") {
+        // Store版の実行エイリアスがPATHに含まれない環境にも対応する。
+        let candidates = [
+            std::env::var_os("SystemRoot").map(|root| PathBuf::from(root).join("System32/mspaint.exe")),
+            std::env::var_os("LOCALAPPDATA").map(|root| PathBuf::from(root).join("Microsoft/WindowsApps/mspaint.exe")),
+        ];
+        if let Some(path) = candidates.into_iter().flatten().find(|path| std::fs::symlink_metadata(path).is_ok()) {
+            executable_path = path;
+        }
+    }
+    let mut command = Command::new(&executable_path);
     for argument in request.args {
         command.arg(expand_external_app_value(&argument, &file, line)?);
     }
