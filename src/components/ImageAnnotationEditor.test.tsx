@@ -4,6 +4,8 @@ import { ImageAnnotationEditor } from "./ImageAnnotationEditor";
 
 vi.mock("../lib/commands", () => ({
   saveRenderedImage: vi.fn(),
+  createRenderedImage: vi.fn(),
+  readImageForEdit: vi.fn(async () => "data:image/png;base64,c2FmZQ=="),
 }));
 
 const tauriDrop = vi.hoisted(() => ({
@@ -121,13 +123,13 @@ describe("ImageAnnotationEditor", () => {
     expect(apply.disabled).toBe(false);
   });
 
-  it("loads a pasted replacement path and keeps canvas margins around its dimensions", () => {
+  it("loads a pasted replacement path and keeps canvas margins around its dimensions", async () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     loadEditorImage(container);
     fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "420" } });
     const pathInput = screen.getByLabelText("代わりの画像パス");
     fireEvent.paste(pathInput, { clipboardData: { getData: () => "C:\\images\\new.png" } });
-    expect(container.querySelector("img")?.getAttribute("src")).toBe("asset://C:\\images\\new.png");
+    await waitFor(() => expect(container.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,c2FmZQ=="));
     loadEditorImage(container, 640, 480);
     expect((screen.getByLabelText("幅 (dot)") as HTMLInputElement).value).toBe("740");
     expect((screen.getByLabelText("高さ (dot)") as HTMLInputElement).value).toBe("480");
@@ -156,7 +158,7 @@ describe("ImageAnnotationEditor", () => {
     loadEditorImage(container);
     await waitFor(() => expect(tauriDrop.callback).not.toBeNull());
     act(() => tauriDrop.callback?.({ payload: { type: "drop", paths: ["C:\\images\\native.jpg"] } }));
-    expect(container.querySelector("img")?.getAttribute("src")).toBe("asset://C:\\images\\native.jpg");
+    await waitFor(() => expect(container.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,c2FmZQ=="));
   });
 
   it("changes stamp height with the wheel and width with Shift+wheel", () => {

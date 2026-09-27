@@ -39,14 +39,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2381,
+        "sourceLine": 2388,
         "sourceColumn": 11,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2381,
+        "line": 2388,
         "column": 11
       },
       "interactions": [
@@ -91,14 +91,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2382,
+        "sourceLine": 2389,
         "sourceColumn": 11,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2382,
+        "line": 2389,
         "column": 11
       },
       "interactions": [
@@ -143,14 +143,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2383,
+        "sourceLine": 2390,
         "sourceColumn": 11,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2383,
+        "line": 2390,
         "column": 11
       },
       "interactions": [
@@ -195,14 +195,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2386,
+        "sourceLine": 2393,
         "sourceColumn": 11,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2386,
+        "line": 2393,
         "column": 11
       },
       "interactions": [
@@ -247,14 +247,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2387,
+        "sourceLine": 2394,
         "sourceColumn": 11,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2387,
+        "line": 2394,
         "column": 11
       },
       "interactions": [
@@ -299,14 +299,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2390,
+        "sourceLine": 2397,
         "sourceColumn": 141,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2390,
+        "line": 2397,
         "column": 141
       },
       "interactions": [
@@ -351,14 +351,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2401,
+        "sourceLine": 2408,
         "sourceColumn": 67,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2401,
+        "line": 2408,
         "column": 67
       },
       "interactions": [
@@ -403,14 +403,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2402,
+        "sourceLine": 2409,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2402,
+        "line": 2409,
         "column": 9
       },
       "interactions": [
@@ -455,14 +455,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2496,
+        "sourceLine": 2503,
         "sourceColumn": 13,
         "ordinal": 9
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2496,
+        "line": 2503,
         "column": 13
       },
       "interactions": [
@@ -507,14 +507,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2501,
+        "sourceLine": 2508,
         "sourceColumn": 15,
         "ordinal": 10
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2501,
+        "line": 2508,
         "column": 15
       },
       "interactions": [],
@@ -557,14 +557,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2501,
+        "sourceLine": 2508,
         "sourceColumn": 55,
         "ordinal": 11
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2501,
+        "line": 2508,
         "column": 55
       },
       "interactions": [],
@@ -607,14 +607,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2501,
+        "sourceLine": 2508,
         "sourceColumn": 92,
         "ordinal": 12
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2501,
+        "line": 2508,
         "column": 92
       },
       "interactions": [],
@@ -657,14 +657,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2501,
+        "sourceLine": 2508,
         "sourceColumn": 134,
         "ordinal": 13
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2501,
+        "line": 2508,
         "column": 134
       },
       "interactions": [],
@@ -707,14 +707,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2501,
+        "sourceLine": 2508,
         "sourceColumn": 168,
         "ordinal": 14
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2501,
+        "line": 2508,
         "column": 168
       },
       "interactions": [],
@@ -757,14 +757,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2501,
+        "sourceLine": 2508,
         "sourceColumn": 202,
         "ordinal": 15
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2501,
+        "line": 2508,
         "column": 202
       },
       "interactions": [],
@@ -807,14 +807,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2501,
+        "sourceLine": 2508,
         "sourceColumn": 236,
         "ordinal": 16
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2501,
+        "line": 2508,
         "column": 236
       },
       "interactions": [],
@@ -857,14 +857,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2501,
+        "sourceLine": 2508,
         "sourceColumn": 281,
         "ordinal": 17
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2501,
+        "line": 2508,
         "column": 281
       },
       "interactions": [],
@@ -907,14 +907,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2505,
+        "sourceLine": 2512,
         "sourceColumn": 13,
         "ordinal": 18
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2505,
+        "line": 2512,
         "column": 13
       },
       "interactions": [
@@ -959,14 +959,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2506,
+        "sourceLine": 2513,
         "sourceColumn": 41,
         "ordinal": 19
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2506,
+        "line": 2513,
         "column": 41
       },
       "interactions": [],
@@ -1009,14 +1009,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2506,
+        "sourceLine": 2513,
         "sourceColumn": 74,
         "ordinal": 20
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2506,
+        "line": 2513,
         "column": 74
       },
       "interactions": [],
@@ -1059,14 +1059,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2506,
+        "sourceLine": 2513,
         "sourceColumn": 114,
         "ordinal": 21
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2506,
+        "line": 2513,
         "column": 114
       },
       "interactions": [],
@@ -1109,14 +1109,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2507,
+        "sourceLine": 2514,
         "sourceColumn": 39,
         "ordinal": 22
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2507,
+        "line": 2514,
         "column": 39
       },
       "interactions": [],
@@ -1159,14 +1159,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2507,
+        "sourceLine": 2514,
         "sourceColumn": 81,
         "ordinal": 23
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2507,
+        "line": 2514,
         "column": 81
       },
       "interactions": [],
@@ -30745,14 +30745,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 810,
+        "sourceLine": 813,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 810,
+        "line": 813,
         "column": 10
       },
       "interactions": [],
@@ -30794,14 +30794,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 814,
+        "sourceLine": 817,
         "sourceColumn": 9,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 814,
+        "line": 817,
         "column": 9
       },
       "interactions": [
@@ -30845,14 +30845,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 815,
+        "sourceLine": 818,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 815,
+        "line": 818,
         "column": 9
       },
       "interactions": [
@@ -30896,14 +30896,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 816,
+        "sourceLine": 819,
         "sourceColumn": 9,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 816,
+        "line": 819,
         "column": 9
       },
       "interactions": [
@@ -30947,14 +30947,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 817,
+        "sourceLine": 820,
         "sourceColumn": 9,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 817,
+        "line": 820,
         "column": 9
       },
       "interactions": [
@@ -30998,20 +30998,20 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 818,
+        "sourceLine": 821,
         "sourceColumn": 9,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 818,
+        "line": 821,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:bb74c924d721d1c75901155da20340a637f37a763ba95bcd5397f7eb68eedcb1",
+      "signature": "sha256:509ae825906040b43474bddcc8cf1fe5779b0621514625ef958f3d0a51cbcc2f",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -31049,14 +31049,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 819,
+        "sourceLine": 822,
         "sourceColumn": 9,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 819,
+        "line": 822,
         "column": 9
       },
       "interactions": [
@@ -31100,14 +31100,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 838,
+        "sourceLine": 841,
         "sourceColumn": 43,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 838,
+        "line": 841,
         "column": 43
       },
       "interactions": [
@@ -31151,14 +31151,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 858,
+        "sourceLine": 861,
         "sourceColumn": 19,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 858,
+        "line": 861,
         "column": 19
       },
       "interactions": [
@@ -31202,14 +31202,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 861,
+        "sourceLine": 864,
         "sourceColumn": 20,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 861,
+        "line": 864,
         "column": 20
       },
       "interactions": [
@@ -31253,14 +31253,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 870,
+        "sourceLine": 873,
         "sourceColumn": 53,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 870,
+        "line": 873,
         "column": 53
       },
       "interactions": [
@@ -31304,14 +31304,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 881,
+        "sourceLine": 884,
         "sourceColumn": 18,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 881,
+        "line": 884,
         "column": 18
       },
       "interactions": [
@@ -31355,14 +31355,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 887,
+        "sourceLine": 890,
         "sourceColumn": 18,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 887,
+        "line": 890,
         "column": 18
       },
       "interactions": [
@@ -31406,14 +31406,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 892,
+        "sourceLine": 895,
         "sourceColumn": 18,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 892,
+        "line": 895,
         "column": 18
       },
       "interactions": [
@@ -31457,14 +31457,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 897,
+        "sourceLine": 900,
         "sourceColumn": 18,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 897,
+        "line": 900,
         "column": 18
       },
       "interactions": [
@@ -31508,14 +31508,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 898,
+        "sourceLine": 901,
         "sourceColumn": 11,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 898,
+        "line": 901,
         "column": 11
       },
       "interactions": [],
@@ -31557,14 +31557,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 898,
+        "sourceLine": 901,
         "sourceColumn": 43,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 898,
+        "line": 901,
         "column": 43
       },
       "interactions": [],
@@ -31606,14 +31606,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 898,
+        "sourceLine": 901,
         "sourceColumn": 81,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 898,
+        "line": 901,
         "column": 81
       },
       "interactions": [],
@@ -31655,14 +31655,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 898,
+        "sourceLine": 901,
         "sourceColumn": 112,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 898,
+        "line": 901,
         "column": 112
       },
       "interactions": [],
@@ -31704,14 +31704,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 899,
+        "sourceLine": 902,
         "sourceColumn": 11,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 899,
+        "line": 902,
         "column": 11
       },
       "interactions": [],
@@ -31753,14 +31753,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 899,
+        "sourceLine": 902,
         "sourceColumn": 42,
         "ordinal": 21
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 899,
+        "line": 902,
         "column": 42
       },
       "interactions": [],
@@ -31802,14 +31802,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 899,
+        "sourceLine": 902,
         "sourceColumn": 77,
         "ordinal": 22
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 899,
+        "line": 902,
         "column": 77
       },
       "interactions": [],
@@ -31851,14 +31851,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 899,
+        "sourceLine": 902,
         "sourceColumn": 106,
         "ordinal": 23
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 899,
+        "line": 902,
         "column": 106
       },
       "interactions": [],
@@ -31900,14 +31900,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 905,
+        "sourceLine": 908,
         "sourceColumn": 18,
         "ordinal": 24
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 905,
+        "line": 908,
         "column": 18
       },
       "interactions": [
@@ -31951,14 +31951,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 906,
+        "sourceLine": 909,
         "sourceColumn": 11,
         "ordinal": 25
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 906,
+        "line": 909,
         "column": 11
       },
       "interactions": [],
@@ -32000,14 +32000,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 906,
+        "sourceLine": 909,
         "sourceColumn": 44,
         "ordinal": 26
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 906,
+        "line": 909,
         "column": 44
       },
       "interactions": [],
@@ -32049,14 +32049,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 906,
+        "sourceLine": 909,
         "sourceColumn": 77,
         "ordinal": 27
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 906,
+        "line": 909,
         "column": 77
       },
       "interactions": [],
@@ -32098,14 +32098,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 912,
+        "sourceLine": 915,
         "sourceColumn": 18,
         "ordinal": 28
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 912,
+        "line": 915,
         "column": 18
       },
       "interactions": [
@@ -32149,14 +32149,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 914,
+        "sourceLine": 917,
         "sourceColumn": 25,
         "ordinal": 29
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 914,
+        "line": 917,
         "column": 25
       },
       "interactions": [
@@ -32200,14 +32200,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 915,
+        "sourceLine": 918,
         "sourceColumn": 21,
         "ordinal": 30
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 915,
+        "line": 918,
         "column": 21
       },
       "interactions": [
@@ -32251,14 +32251,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 922,
+        "sourceLine": 925,
         "sourceColumn": 53,
         "ordinal": 31
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 922,
+        "line": 925,
         "column": 53
       },
       "interactions": [
@@ -32302,14 +32302,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 931,
+        "sourceLine": 934,
         "sourceColumn": 27,
         "ordinal": 32
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 931,
+        "line": 934,
         "column": 27
       },
       "interactions": [
@@ -32353,14 +32353,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 939,
+        "sourceLine": 942,
         "sourceColumn": 11,
         "ordinal": 33
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 939,
+        "line": 942,
         "column": 11
       },
       "interactions": [
@@ -32404,14 +32404,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 940,
+        "sourceLine": 943,
         "sourceColumn": 11,
         "ordinal": 34
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 940,
+        "line": 943,
         "column": 11
       },
       "interactions": [
@@ -32455,14 +32455,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 941,
+        "sourceLine": 944,
         "sourceColumn": 11,
         "ordinal": 35
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 941,
+        "line": 944,
         "column": 11
       },
       "interactions": [
@@ -32506,14 +32506,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 942,
+        "sourceLine": 945,
         "sourceColumn": 11,
         "ordinal": 36
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 942,
+        "line": 945,
         "column": 11
       },
       "interactions": [
@@ -32557,14 +32557,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 949,
+        "sourceLine": 952,
         "sourceColumn": 24,
         "ordinal": 37
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 949,
+        "line": 952,
         "column": 24
       },
       "interactions": [
@@ -32608,14 +32608,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 950,
+        "sourceLine": 953,
         "sourceColumn": 25,
         "ordinal": 38
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 950,
+        "line": 953,
         "column": 25
       },
       "interactions": [
@@ -32659,14 +32659,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 952,
+        "sourceLine": 955,
         "sourceColumn": 9,
         "ordinal": 39
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 952,
+        "line": 955,
         "column": 9
       },
       "interactions": [
@@ -32710,14 +32710,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 957,
+        "sourceLine": 960,
         "sourceColumn": 24,
         "ordinal": 40
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 957,
+        "line": 960,
         "column": 24
       },
       "interactions": [
@@ -32762,14 +32762,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 969,
+        "sourceLine": 972,
         "sourceColumn": 11,
         "ordinal": 41
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 969,
+        "line": 972,
         "column": 11
       },
       "interactions": [
@@ -32813,14 +32813,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 970,
+        "sourceLine": 973,
         "sourceColumn": 11,
         "ordinal": 42
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 970,
+        "line": 973,
         "column": 11
       },
       "interactions": [
@@ -32864,14 +32864,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 972,
+        "sourceLine": 975,
         "sourceColumn": 9,
         "ordinal": 43
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 972,
+        "line": 975,
         "column": 9
       },
       "interactions": [
@@ -32915,14 +32915,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 991,
+        "sourceLine": 994,
         "sourceColumn": 25,
         "ordinal": 44
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 991,
+        "line": 994,
         "column": 25
       },
       "interactions": [
@@ -32966,14 +32966,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 992,
+        "sourceLine": 995,
         "sourceColumn": 26,
         "ordinal": 45
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 992,
+        "line": 995,
         "column": 26
       },
       "interactions": [
@@ -33017,14 +33017,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1000,
+        "sourceLine": 1003,
         "sourceColumn": 5,
         "ordinal": 46
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1000,
+        "line": 1003,
         "column": 5
       },
       "interactions": [
@@ -33071,14 +33071,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1055,
+        "sourceLine": 1058,
         "sourceColumn": 11,
         "ordinal": 47
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1055,
+        "line": 1058,
         "column": 11
       },
       "interactions": [
@@ -33128,14 +33128,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1096,
+        "sourceLine": 1099,
         "sourceColumn": 72,
         "ordinal": 48
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1096,
+        "line": 1099,
         "column": 72
       },
       "interactions": [
@@ -33182,14 +33182,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1115,
+        "sourceLine": 1118,
         "sourceColumn": 22,
         "ordinal": 49
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1115,
+        "line": 1118,
         "column": 22
       },
       "interactions": [],
@@ -33231,14 +33231,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1116,
+        "sourceLine": 1119,
         "sourceColumn": 30,
         "ordinal": 50
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1116,
+        "line": 1119,
         "column": 30
       },
       "interactions": [
@@ -33282,14 +33282,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1118,
+        "sourceLine": 1121,
         "sourceColumn": 22,
         "ordinal": 51
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1118,
+        "line": 1121,
         "column": 22
       },
       "interactions": [
@@ -33333,14 +33333,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1119,
+        "sourceLine": 1122,
         "sourceColumn": 23,
         "ordinal": 52
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1119,
+        "line": 1122,
         "column": 23
       },
       "interactions": [
@@ -33384,14 +33384,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1120,
+        "sourceLine": 1123,
         "sourceColumn": 27,
         "ordinal": 53
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1120,
+        "line": 1123,
         "column": 27
       },
       "interactions": [
@@ -33435,14 +33435,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1129,
+        "sourceLine": 1132,
         "sourceColumn": 15,
         "ordinal": 54
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1129,
+        "line": 1132,
         "column": 15
       },
       "interactions": [
@@ -33486,14 +33486,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1136,
+        "sourceLine": 1139,
         "sourceColumn": 21,
         "ordinal": 55
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1136,
+        "line": 1139,
         "column": 21
       },
       "interactions": [
@@ -33537,14 +33537,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1143,
+        "sourceLine": 1146,
         "sourceColumn": 7,
         "ordinal": 56
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1143,
+        "line": 1146,
         "column": 7
       },
       "interactions": [
@@ -33588,14 +33588,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1144,
+        "sourceLine": 1147,
         "sourceColumn": 7,
         "ordinal": 57
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1144,
+        "line": 1147,
         "column": 7
       },
       "interactions": [
@@ -33639,14 +33639,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1145,
+        "sourceLine": 1148,
         "sourceColumn": 7,
         "ordinal": 58
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1145,
+        "line": 1148,
         "column": 7
       },
       "interactions": [
@@ -33690,14 +33690,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1147,
+        "sourceLine": 1150,
         "sourceColumn": 7,
         "ordinal": 59
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1147,
+        "line": 1150,
         "column": 7
       },
       "interactions": [
@@ -33741,14 +33741,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1158,
+        "sourceLine": 1161,
         "sourceColumn": 7,
         "ordinal": 60
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1158,
+        "line": 1161,
         "column": 7
       },
       "interactions": [
@@ -33792,14 +33792,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1172,
+        "sourceLine": 1175,
         "sourceColumn": 7,
         "ordinal": 61
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1172,
+        "line": 1175,
         "column": 7
       },
       "interactions": [
@@ -33843,14 +33843,14 @@
       "orderScope": {
         "component": "ImageEditingDialog",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
-        "sourceLine": 17,
+        "sourceLine": 59,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
-        "line": 17,
+        "line": 59,
         "column": 10
       },
       "interactions": [],
@@ -33882,31 +33882,31 @@
       }
     },
     {
-      "id": "ui-da728b7a0ac8",
+      "id": "ui-11188b0662d2",
       "featureGroup": "components",
-      "controlKind": "button",
-      "tag": "button",
+      "controlKind": "input",
+      "tag": "input",
       "role": null,
-      "displayName": "Screenpressoもどきで編集",
+      "displayName": "幅 px",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "ImageEditingDialog",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
-        "sourceLine": 21,
-        "sourceColumn": 7,
+        "sourceLine": 66,
+        "sourceColumn": 18,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
-        "line": 21,
-        "column": 7
+        "line": 66,
+        "column": 18
       },
       "interactions": [
-        "onClick"
+        "onChange"
       ],
-      "signature": "sha256:d8bb7edba4e80e9df179fc7a4285b0d6fcf77beed2179ad2764fa73d1026f088",
+      "signature": "sha256:0c5f39fdfdb9b96eba31b72e37764e0690514d14740bdb025d938c362ec0b62c",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -33934,31 +33934,31 @@
       }
     },
     {
-      "id": "ui-3c9710a51d47",
+      "id": "ui-a61c064e2d55",
       "featureGroup": "components",
-      "controlKind": "button",
-      "tag": "button",
+      "controlKind": "input",
+      "tag": "input",
       "role": null,
-      "displayName": "従来の画像編集",
+      "displayName": "高さ px",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "ImageEditingDialog",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
-        "sourceLine": 22,
-        "sourceColumn": 7,
+        "sourceLine": 67,
+        "sourceColumn": 19,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
-        "line": 22,
-        "column": 7
+        "line": 67,
+        "column": 19
       },
       "interactions": [
-        "onClick"
+        "onChange"
       ],
-      "signature": "sha256:77dc27c74740a557c068f4d74dd77ba473e0ba42b9c3d01df65dbc16d8bb4850",
+      "signature": "sha256:6ca91208b325922ffdea69805ae9d3ce3e8949aeab913d9d421aed895c6db581",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -33991,20 +33991,176 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "キャンセル",
+      "displayName": "画像編集1",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "ImageEditingDialog",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
-        "sourceLine": 23,
+        "sourceLine": 69,
         "sourceColumn": 7,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
-        "line": 23,
+        "line": 69,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:7a4ea2c6b7c529412e36a2e9f945c1e50a02a6a8fedd9c323749377691dccb41",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "実装: PNG/JPEGの画像編集から選択して起動",
+        "html": "実装: WebImageEditorから共通選択画面へ接続",
+        "php": "実装: HTML版と同じ共通選択画面",
+        "spfx": "未対応: SPFxには画像編集起動経路がない"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "evidence": "src/App.tsxとweb-platform/apps/web/src/WebImageEditor.tsx。HTML原本内部の操作は隔離iframeで実行。",
+      "location": {
+        "groupId": "UI152",
+        "name": "共通／ImageEditingDialog／画像編集を選択",
+        "order": 3,
+        "number": "UI152-03",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-3e65c7569be3",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "画像編集2",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "ImageEditingDialog",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
+        "sourceLine": 70,
+        "sourceColumn": 7,
+        "ordinal": 5
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
+        "line": 70,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:a4cb5509d779541f92f95e6c07aaa84dce8135792c09a9d9ccc69ac2c954d7cf",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "実装: PNG/JPEGの画像編集から選択して起動",
+        "html": "実装: WebImageEditorから共通選択画面へ接続",
+        "php": "実装: HTML版と同じ共通選択画面",
+        "spfx": "未対応: SPFxには画像編集起動経路がない"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "evidence": "src/App.tsxとweb-platform/apps/web/src/WebImageEditor.tsx。HTML原本内部の操作は隔離iframeで実行。",
+      "location": {
+        "groupId": "UI152",
+        "name": "共通／ImageEditingDialog／画像編集を選択",
+        "order": 4,
+        "number": "UI152-04",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-0611a08cdcc6",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "ペイント",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "ImageEditingDialog",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
+        "sourceLine": 71,
+        "sourceColumn": 7,
+        "ordinal": 6
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
+        "line": 71,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:033916b13b536cd9c8d33334fea642978601493501b5680f0cfaaf5bb02f23ce",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "実装: PNG/JPEGの画像編集から選択して起動",
+        "html": "実装: WebImageEditorから共通選択画面へ接続",
+        "php": "実装: HTML版と同じ共通選択画面",
+        "spfx": "未対応: SPFxには画像編集起動経路がない"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "evidence": "src/App.tsxとweb-platform/apps/web/src/WebImageEditor.tsx。HTML原本内部の操作は隔離iframeで実行。",
+      "location": {
+        "groupId": "UI152",
+        "name": "共通／ImageEditingDialog／画像編集を選択",
+        "order": 5,
+        "number": "UI152-05",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-2a04a3828eb7",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "キャンセル",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "ImageEditingDialog",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
+        "sourceLine": 72,
+        "sourceColumn": 7,
+        "ordinal": 7
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/ImageEditingDialog.tsx",
+        "line": 72,
         "column": 7
       },
       "interactions": [
@@ -34032,8 +34188,8 @@
       "location": {
         "groupId": "UI152",
         "name": "共通／ImageEditingDialog／画像編集を選択",
-        "order": 3,
-        "number": "UI152-03",
+        "order": 6,
+        "number": "UI152-06",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },
@@ -34242,7 +34398,58 @@
       }
     },
     {
-      "id": "ui-e570af9a0878",
+      "id": "ui-201885994a2f",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "画像を新規作成",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "ImageRenderer",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
+        "sourceLine": 246,
+        "sourceColumn": 9,
+        "ordinal": 1
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
+        "line": 246,
+        "column": 9
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:8ac7238befb2d32bab3ce920a2504c5e2c1a963e501a293457990c5725ecd234",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI154",
+        "name": "共通／ImageRenderer／ImageRendererの操作領域",
+        "order": 1,
+        "number": "UI154-01",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
+      "id": "ui-60968d4ed740",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "img",
@@ -34253,14 +34460,14 @@
       "orderScope": {
         "component": "ImageRenderer",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
-        "sourceLine": 277,
+        "sourceLine": 280,
         "sourceColumn": 9,
-        "ordinal": 1
+        "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
-        "line": 277,
+        "line": 280,
         "column": 9
       },
       "interactions": [
@@ -34291,8 +34498,8 @@
       "location": {
         "groupId": "UI154",
         "name": "共通／ImageRenderer／ImageRendererの操作領域",
-        "order": 1,
-        "number": "UI154-01",
+        "order": 2,
+        "number": "UI154-02",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -36137,14 +36344,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1265,
+        "sourceLine": 1266,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1265,
+        "line": 1266,
         "column": 7
       },
       "interactions": [
@@ -36190,14 +36397,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1273,
+        "sourceLine": 1274,
         "sourceColumn": 22,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1273,
+        "line": 1274,
         "column": 22
       },
       "interactions": [],

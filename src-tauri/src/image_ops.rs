@@ -7,6 +7,58 @@ use std::fs::{self, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+/// 表示用asset URLをCanvasへ渡さず、画像として検証した内容を同一生成元のData URIで返す。
+pub fn read_image_for_edit(path: &str) -> AppResult<Option<String>> {
+    use base64::Engine;
+    let path = Path::new(path);
+    let metadata = match fs::metadata(path) {
+        Ok(value) => value,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(AppError::IoError(error.to_string())),
+    };
+    if !metadata.is_file() || metadata.len() > 50 * 1024 * 1024 {
+        return Err(AppError::ImageError("編集画像は50 MiB以下のファイルを指定してください。".into()));
+    }
+    let image = image::open(path).map_err(|e| AppError::ImageError(e.to_string()))?;
+    let mut png = std::io::Cursor::new(Vec::new());
+    image.write_to(&mut png, ImageFormat::Png).map_err(|e| AppError::ImageError(e.to_string()))?;
+    Ok(Some(format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(png.into_inner()))))
+}
+
+/// 新規画像は排他的なcreate_newで作成し、編集中に現れた既存ファイルを上書きしない。
+pub fn create_rendered_image(path: &str, png_bytes: &[u8]) -> AppResult<CropImageResult> {
+    use std::io::Write;
+    let format = ImageFormat::from_path(path).map_err(|e| AppError::ImageError(e.to_string()))?;
+    if !matches!(format, ImageFormat::Png | ImageFormat::Jpeg) {
+        return Err(AppError::ImageError("新規作成はPNG/JPEGに対応しています。".into()));
+    }
+    let decoded = image::load_from_memory_with_format(png_bytes, ImageFormat::Png)
+        .map_err(|e| AppError::ImageError(e.to_string()))?;
+    let (width, height) = decoded.dimensions();
+    let rendered = render_for_format(decoded, format);
+    let mut output = std::io::Cursor::new(Vec::new());
+    rendered.write_to(&mut output, format).map_err(|e| AppError::ImageError(e.to_string()))?;
+    let mut file = OpenOptions::new().write(true).create_new(true).open(path)
+        .map_err(|e| AppError::IoError(format!("新規画像を作成できません（既存ファイルは上書きしません）: {e}")))?;
+    if let Err(error) = file.write_all(output.get_ref()).and_then(|_| file.sync_all()) {
+        drop(file);
+        let _ = fs::remove_file(path);
+        return Err(AppError::IoError(error.to_string()));
+    }
+    Ok(CropImageResult { path: path.into(), backup_available: false, width, height })
+}
+
+fn render_for_format(rendered: image::DynamicImage, format: ImageFormat) -> image::DynamicImage {
+    if format != ImageFormat::Jpeg { return rendered; }
+    let rgba = rendered.to_rgba8();
+    let rgb = image::RgbImage::from_fn(rgba.width(), rgba.height(), |x, y| {
+        let pixel = rgba.get_pixel(x, y).0;
+        let alpha = u32::from(pixel[3]);
+        image::Rgb([0, 1, 2].map(|i| ((u32::from(pixel[i]) * alpha + 255 * (255 - alpha) + 127) / 255) as u8))
+    });
+    image::DynamicImage::ImageRgb8(rgb)
+}
+
 #[derive(Clone, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct CropImageRequest {
@@ -82,19 +134,7 @@ pub fn save_rendered_image(
         }
         let format = ImageFormat::from_path(&original_path).unwrap_or(ImageFormat::Png);
         // JPEGは透過非対応。注釈画面の余白・切抜きの透明部分を白背景へ合成する。
-        let rendered = if format == ImageFormat::Jpeg {
-            let rgba = rendered.to_rgba8();
-            let rgb = image::RgbImage::from_fn(width, height, |x, y| {
-                let pixel = rgba.get_pixel(x, y).0;
-                let alpha = u32::from(pixel[3]);
-                image::Rgb([0, 1, 2].map(|i| {
-                    ((u32::from(pixel[i]) * alpha + 255 * (255 - alpha) + 127) / 255) as u8
-                }))
-            });
-            image::DynamicImage::ImageRgb8(rgb)
-        } else {
-            rendered
-        };
+        let rendered = render_for_format(rendered, format);
         backup_mgr.ensure_backup(&original_path)?;
         let temp_path = unique_crop_temp_path(&original_path)?;
         if let Err(error) = rendered
@@ -469,6 +509,35 @@ mod tests {
         let output = image::open(&path).unwrap().to_rgb8();
         assert_eq!(output.dimensions(), (8, 8));
         assert!(output.get_pixel(0, 0).0.iter().all(|c| *c > 250));
+    }
+
+    #[test]
+    fn image_edit_read_and_exclusive_creation_preserve_existing_files() {
+        use base64::Engine;
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("new.jpg");
+        let path_text = path.to_string_lossy();
+        assert!(read_image_for_edit(&path_text).unwrap().is_none());
+        let mut png = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::ImageRgba8(RgbaImage::from_pixel(32, 24, Rgba([255, 0, 0, 0])))
+            .write_to(&mut png, ImageFormat::Png).unwrap();
+        let result = create_rendered_image(&path_text, png.get_ref()).unwrap();
+        assert_eq!((result.width, result.height, result.backup_available), (32, 24, false));
+        let original = fs::read(&path).unwrap();
+        assert_eq!(image::guess_format(&original).unwrap(), ImageFormat::Jpeg);
+        assert!(create_rendered_image(&path_text, png.get_ref()).is_err());
+        assert_eq!(fs::read(&path).unwrap(), original);
+        let data_uri = read_image_for_edit(&path_text).unwrap().unwrap();
+        let decoded = base64::engine::general_purpose::STANDARD.decode(data_uri.strip_prefix("data:image/png;base64,").unwrap()).unwrap();
+        let image = image::load_from_memory(&decoded).unwrap();
+        assert_eq!(image.dimensions(), (32, 24));
+        assert!(image.to_rgb8().get_pixel(0, 0).0.iter().all(|c| *c > 250));
+        let invalid = dir.path().join("invalid.png");
+        assert!(create_rendered_image(&invalid.to_string_lossy(), b"invalid").is_err());
+        assert!(!invalid.exists());
+        fs::write(&invalid, "not an image").unwrap();
+        assert!(read_image_for_edit(&invalid.to_string_lossy()).is_err());
+        assert!(create_rendered_image(&dir.path().join("blocked.exe").to_string_lossy(), png.get_ref()).is_err());
     }
 
     #[test]

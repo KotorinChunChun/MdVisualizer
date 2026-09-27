@@ -22,6 +22,8 @@ import { PresentationView } from "./components/PresentationView";
 import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget, type MediaPreviewViewState } from "./components/MediaPreviewModal";
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { ImageEditingDialog } from "./components/ImageEditingDialog";
+import { createRenderedImage } from "./lib/commands";
+import { pngBytes } from "./lib/screenpressoHost";
 import { SvgSourceEditor, type SvgSourceEditTarget } from "./components/SvgSourceEditor";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";
@@ -1420,6 +1422,11 @@ export function App() {
   useFileDrop((paths) => paths.forEach(handleOpenDocument));
 
   const openMediaPreview = useCallback((target: MediaPreviewTarget) => {
+    if (target.editTarget?.createNew) {
+      setAnnotationReturnPreview(null);
+      setAnnotationTarget(target.editTarget);
+      return;
+    }
     recordNavigationPoint();
     mediaPreviewViewRef.current = null;
     setMediaPreviewInitialViewState(null);
@@ -2722,6 +2729,17 @@ export function App() {
       )}
       {annotationTarget && <ImageEditingDialog
         target={annotationTarget}
+        onPaint={annotationTarget.storage === "external" && annotationTarget.fullPath ? async (target) => {
+          if (!target.fullPath) throw new Error("画像パスがありません。");
+          if (target.createNew) {
+            await createRenderedImage(target.fullPath, pngBytes(target.rawSrc));
+            updateImageVersion(target.fullPath);
+          }
+          await openExternalApp({ executable: "mspaint.exe", args: ["${file}"], file: target.fullPath });
+          setAnnotationTarget(null);
+          setAnnotationReturnPreview(null);
+          setToast({ id: String(Date.now()), message: "ペイントで画像を開きました。保存後に画像へ反映されます。", type: "info" });
+        } : undefined}
         imageVersion={annotationTarget.fullPath ? imageVersions[annotationTarget.fullPath] ?? 0 : 0}
         onApply={async ({ filename, backupAvailable, dataUri }) => {
           if (annotationTarget.storage === "sharepoint" && dataUri && annotationTarget.sharePoint) {

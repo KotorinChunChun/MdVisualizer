@@ -25,7 +25,7 @@ test('Screenpresso iframe loads PNG/JPEG, annotates, cancels and returns the ren
       window.testRoot = createRoot(document.getElementById('test-root'));
       window.testRoot.render(React.createElement(WebImageEditor, { source: window.originalImage, filename: mime === 'image/png' ? 'test.png' : 'test.jpg', onApply: value => { window.imageResult = value; }, onClose: () => { window.imageClosed = true; }, onError: value => { window.imageError = value; } }));
     }, mime);
-    await page.getByRole('button', { name: 'Screenpressoもどきで編集' }).click();
+    await page.getByRole('button', { name: '画像編集2', exact: true }).click();
     const apply = page.getByRole('button', { name: '反映', exact: true });
     await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === '反映' && !b.disabled));
     const inner = page.frameLocator('iframe[title="Screenpressoもどき画像編集"]');

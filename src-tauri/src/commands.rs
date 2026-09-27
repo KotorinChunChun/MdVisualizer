@@ -1129,6 +1129,16 @@ pub fn save_rendered_image(
 }
 
 #[tauri::command]
+pub fn read_image_for_edit(path: String) -> Result<Option<String>, String> {
+    crate::image_ops::read_image_for_edit(&path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn create_rendered_image(path: String, png_bytes: Vec<u8>) -> Result<crate::image_ops::CropImageResult, String> {
+    crate::image_ops::create_rendered_image(&path, &png_bytes).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn restore_image(state: State<'_, AppState>, path: String) -> Result<bool, String> {
     let p = Path::new(&path);
     state.backup_mgr.restore(p).map_err(|e| e.to_string())

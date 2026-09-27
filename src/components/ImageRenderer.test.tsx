@@ -25,6 +25,17 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+it("欠落PNGから新規作成の編集対象を開き、更新後に画像を再試行する", () => {
+  const onMediaOpen = vi.fn();
+  const p = { src: "missing.png", baseDir: "C:/docs", imageVersions: {}, onMediaOpen, allowCreate: true };
+  const view = render(<ImageRenderer {...p} />);
+  fireEvent.error(view.container.querySelector("img")!);
+  fireEvent.click(screen.getByRole("button", { name: "画像を新規作成" }));
+  expect(onMediaOpen.mock.calls[0][0].editTarget.createNew).toBe(true);
+  view.rerender(<ImageRenderer {...p} imageVersions={{ "C:/docs/missing.png": 1 }} />);
+  expect(view.container.querySelector("img")).not.toBeNull();
+});
+
 function renderImage(onMediaOpen = vi.fn(), rect = imageRect, src = "photo.png") {
   vi.spyOn(HTMLImageElement.prototype, "getBoundingClientRect").mockReturnValue(rect);
   vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(320);

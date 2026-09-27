@@ -20,7 +20,7 @@ test('WebImageEditor reuses the annotation UI and returns a browser PNG without 
     window.webImageEditorResult = null; window.webImageEditorError = null;
     createRoot(document.getElementById('web-image-editor-test')).render(React.createElement(WebImageEditor, { source, filename: 'sample.png', onApply: (dataUri) => { window.webImageEditorResult = dataUri; }, onClose: () => { window.webImageEditorError = 'closed'; }, onError: (message) => { window.webImageEditorError = message; } }));
   }, { source });
-  await page.getByRole('button', { name: '従来の画像編集' }).click();
+  await page.getByRole('button', { name: '画像編集1', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '画像編集: sample.png' }); await dialog.waitFor();
   for (const name of ['鉛筆', 'ブラシ', '切り抜き', '四角', 'マスク']) await assert.doesNotReject(() => dialog.getByRole('button', { name: new RegExp(`^${name}$`) }).waitFor());
   await dialog.getByRole('button', { name: '四角', exact: true }).click();

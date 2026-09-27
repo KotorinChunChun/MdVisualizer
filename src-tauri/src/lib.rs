@@ -333,6 +333,8 @@ pub fn run() {
             remove_window_watch_targets,
             crop_image,
             save_rendered_image,
+            read_image_for_edit,
+            create_rendered_image,
             restore_image,
             has_image_backup,
             update_image_caption,
