@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { documentSourceIdentity, isMarkdownPath, isSupportedDocumentPath, localPathIdentity } from "./pathIdentity";
+import { displayDocumentPath, documentSourceIdentity, isMarkdownPath, isSupportedDocumentPath, localPathIdentity } from "./pathIdentity";
 
 describe("local path identity", () => {
+  it("拡張パスのドライブとUNCを通常表記と同一視する", () => {
+    for (const [extended, normal] of [[String.raw`\\?\C:\図\a.md`, String.raw`C:\図\a.md`], [String.raw`\\?\UNC\server\share\a.md`, String.raw`\\server\share\a.md`]]) {
+      expect(displayDocumentPath(extended)).toBe(normal);
+      expect(documentSourceIdentity(extended)).toBe(documentSourceIdentity(normal));
+    }
+    expect(displayDocumentPath("https://example.com/a.png")).toBe("https://example.com/a.png");
+    expect(displayDocumentPath("/tmp/a.md")).toBe("/tmp/a.md");
+  });
   it("normalizes Windows separators, dot segments, and case", () => {
     expect(localPathIdentity("C:/Docs/./Guide/../README.MD"))
       .toBe(localPathIdentity("c:\\docs\\readme.md"));

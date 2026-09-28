@@ -4403,7 +4403,7 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "マークダウンでコピー",
+      "displayName": "コードをMarkdownでコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
@@ -4422,7 +4422,7 @@
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:795bbbc23b5ecc78bd9ba5913eacb9079f53df8033a692d8636dd9f4290b232f",
+      "signature": "sha256:825f3a722d1cee7c0881216b3c0e1fdaad0b44a14fc31868a5d37bbba8821ea5",
       "targetSourcePresence": {
         "desktop": "present-in-host-source",
         "html": "not-in-host-source",
@@ -36654,14 +36654,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 195,
+        "sourceLine": 202,
         "sourceColumn": 23,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 195,
+        "line": 202,
         "column": 23
       },
       "interactions": [
@@ -36699,26 +36699,26 @@
       "controlKind": "button",
       "tag": "div",
       "role": null,
-      "displayName": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageContext?.source ?? content.src})`, { success: \"マークダウンをコピーしました\", failure: \"コピーできませんでした\" })}>マークダウンでコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(imageContext?.source ?? content.src, { success: \"画像の参照先をコピーしました\", failure: \"コピーできませんでした\" })}>画像の参照先をコピー</button>\r\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
+      "displayName": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageSource})`, { success: \"コードをMarkdownでコピーしました\", failure: \"コピーできませんでした\" })}>コードをMarkdownでコピー</button>\n        <button type=\"button\" disabled={embeddedImage} title={embeddedImage ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(imageSource, { success: \"画像のパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のパスをコピー</button>\n        <button type=\"button\" disabled={!absoluteImagePath} title={!absoluteImagePath ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(displayDocumentPath(absoluteImagePath), { success: \"画像のフルパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のフルパスをコピー</button>\n        <button type=\"button\" disabled={!caption.trim()} title={!caption.trim() ? \"画像の説明文がありません\" : undefined} onClick={() => void copyTextWithFeedback(caption, { success: \"画像の説明文をコピーしました\", failure: \"コピーできませんでした\" })}>画像の説明文をコピー</button>\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageContext?.source ?? content.src})`, { success: \"マークダウンをコピーしました\", failure: \"コピーできませんでした\" })}>マークダウンでコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(imageContext?.source ?? content.src, { success: \"画像の参照先をコピーしました\", failure: \"コピーできませんでした\" })}>画像の参照先をコピー</button>\r\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
+      "labelExpression": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageSource})`, { success: \"コードをMarkdownでコピーしました\", failure: \"コピーできませんでした\" })}>コードをMarkdownでコピー</button>\n        <button type=\"button\" disabled={embeddedImage} title={embeddedImage ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(imageSource, { success: \"画像のパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のパスをコピー</button>\n        <button type=\"button\" disabled={!absoluteImagePath} title={!absoluteImagePath ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(displayDocumentPath(absoluteImagePath), { success: \"画像のフルパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のフルパスをコピー</button>\n        <button type=\"button\" disabled={!caption.trim()} title={!caption.trim() ? \"画像の説明文がありません\" : undefined} onClick={() => void copyTextWithFeedback(caption, { success: \"画像の説明文をコピーしました\", failure: \"コピーできませんでした\" })}>画像の説明文をコピー</button>\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 204,
+        "sourceLine": 211,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 204,
+        "line": 211,
         "column": 5
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:8980d03828380c6c831e3ee735c0f66d69241f3ad00d257dcc5194b6b26d5f1e",
+      "signature": "sha256:b1c7afce3b67e3dcb7f3215921b79b4da5291f1b3419f3058935842248d44237",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36756,14 +36756,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 208,
+        "sourceLine": 215,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 208,
+        "line": 215,
         "column": 9
       },
       "interactions": [
@@ -36807,14 +36807,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 209,
+        "sourceLine": 216,
         "sourceColumn": 9,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 209,
+        "line": 216,
         "column": 9
       },
       "interactions": [
@@ -36852,26 +36852,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "マークダウンでコピー",
+      "displayName": "コードをMarkdownでコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 210,
+        "sourceLine": 217,
         "sourceColumn": 9,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 210,
+        "line": 217,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:b09a108d9e4964164f2f86b28e182aa5aff1345da6d9596b515a16b06fa27f4c",
+      "signature": "sha256:c1c1328e5be193127328f601615fc8dd202131170d680f7e12d311352685fd6c",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36903,26 +36903,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "画像の参照先をコピー",
+      "displayName": "画像のパスをコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 211,
+        "sourceLine": 218,
         "sourceColumn": 9,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 211,
+        "line": 218,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:602631ccceaa56ac6bd7f7b99d4735bf415370e30382bd12eedfd0ed391a1b1f",
+      "signature": "sha256:1b3b940c747c98e3b8dd6b7404b9fc1aec2f8c046ebc91949f8208695dbfaf9d",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36954,26 +36954,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "クロップ",
+      "displayName": "画像のフルパスをコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 215,
-        "sourceColumn": 18,
+        "sourceLine": 219,
+        "sourceColumn": 9,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 215,
-        "column": 18
+        "line": 219,
+        "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:76a755ee853b4c68202b27ad3f89e03081ae5de2f327f5eac2f696792e02fa47",
+      "signature": "sha256:419c03f985a2b861deecc2e276886ab80c497438992e9f20aa9361162ecabf37",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37005,26 +37005,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "画像編集",
+      "displayName": "画像の説明文をコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 216,
-        "sourceColumn": 46,
+        "sourceLine": 220,
+        "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 216,
-        "column": 46
+        "line": 220,
+        "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:710b642daac09f693f658e4535bb1cc2a925f45a893ca5e2854d9454d28cd5dd",
+      "signature": "sha256:c20002592151c8b0b189fe759da4095963dfdb2265d6666a48df671068bc4c9a",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37056,26 +37056,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "{{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}}",
-      "labelKind": "dynamic",
-      "labelExpression": "{{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}}",
+      "displayName": "クロップ",
+      "labelKind": "static",
+      "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 217,
-        "sourceColumn": 47,
+        "sourceLine": 224,
+        "sourceColumn": 18,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 217,
-        "column": 47
+        "line": 224,
+        "column": 18
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:e7500a8e0b452ef85a02a3f06d2bb10dfa82aab367ccccef5aa5736bd2454f8b",
+      "signature": "sha256:76a755ee853b4c68202b27ad3f89e03081ae5de2f327f5eac2f696792e02fa47",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37090,7 +37090,7 @@
         "php": "共通正本",
         "spfx": "共有部品:ホストでの使用条件確認"
       },
-      "nameCheck": "要実画面確認:動的表示/子要素",
+      "nameCheck": "静的照合",
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
@@ -37107,26 +37107,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "画像情報",
+      "displayName": "画像編集",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 221,
-        "sourceColumn": 41,
+        "sourceLine": 225,
+        "sourceColumn": 46,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 221,
-        "column": 41
+        "line": 225,
+        "column": 46
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:02a5b5e2b313c7165a77b9c1c757967ee834001219915ca0a9f6765752c9dadb",
+      "signature": "sha256:710b642daac09f693f658e4535bb1cc2a925f45a893ca5e2854d9454d28cd5dd",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37158,26 +37158,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "{{mode === \"fit\" ? \"1:1表示\" : \"全体表示\"}}",
+      "displayName": "{{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{mode === \"fit\" ? \"1:1表示\" : \"全体表示\"}}",
+      "labelExpression": "{{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}}",
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 222,
-        "sourceColumn": 7,
+        "sourceLine": 226,
+        "sourceColumn": 47,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 222,
-        "column": 7
+        "line": 226,
+        "column": 47
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:9678dd0345ab7bf4b8ebda0b628fdbd18f6917099b0ca4c834a56a9efb27aecf",
+      "signature": "sha256:e7500a8e0b452ef85a02a3f06d2bb10dfa82aab367ccccef5aa5736bd2454f8b",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37209,26 +37209,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "×",
+      "displayName": "画像情報",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 225,
-        "sourceColumn": 7,
+        "sourceLine": 230,
+        "sourceColumn": 41,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 225,
-        "column": 7
+        "line": 230,
+        "column": 41
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:0c35ed445e089e3f8e55821319588d677e59d3c54ae2cf85a27adbfe8151bc5e",
+      "signature": "sha256:02a5b5e2b313c7165a77b9c1c757967ee834001219915ca0a9f6765752c9dadb",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37255,7 +37255,109 @@
       }
     },
     {
-      "id": "ui-7592c1a44c1f",
+      "id": "ui-d09d50c2ac3f",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "{{mode === \"fit\" ? \"1:1表示\" : \"全体表示\"}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{mode === \"fit\" ? \"1:1表示\" : \"全体表示\"}}",
+      "orderScope": {
+        "component": "MediaPreviewModal",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "sourceLine": 231,
+        "sourceColumn": 7,
+        "ordinal": 13
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "line": 231,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:9678dd0345ab7bf4b8ebda0b628fdbd18f6917099b0ca4c834a56a9efb27aecf",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI169",
+        "name": "共通／MediaPreviewModal／media-preview__toolbar",
+        "order": 11,
+        "number": "UI169-11",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-5a20ddc9ced9",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "×",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "MediaPreviewModal",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "sourceLine": 234,
+        "sourceColumn": 7,
+        "ordinal": 14
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "line": 234,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:0c35ed445e089e3f8e55821319588d677e59d3c54ae2cf85a27adbfe8151bc5e",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI169",
+        "name": "共通／MediaPreviewModal／media-preview__toolbar",
+        "order": 12,
+        "number": "UI169-12",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-deac3f15057a",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "p",
@@ -37266,14 +37368,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 227,
+        "sourceLine": 236,
         "sourceColumn": 25,
-        "ordinal": 13
+        "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 227,
+        "line": 236,
         "column": 25
       },
       "interactions": [
@@ -37306,7 +37408,7 @@
       }
     },
     {
-      "id": "ui-f24b0b1789ae",
+      "id": "ui-bc164bd4ca25",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "div",
@@ -37317,14 +37419,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 228,
+        "sourceLine": 237,
         "sourceColumn": 55,
-        "ordinal": 14
+        "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 228,
+        "line": 237,
         "column": 55
       },
       "interactions": [
@@ -37357,7 +37459,7 @@
       }
     },
     {
-      "id": "ui-745d978ee4dc",
+      "id": "ui-10d246dc44cc",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "div",
@@ -37368,14 +37470,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 231,
+        "sourceLine": 240,
         "sourceColumn": 5,
-        "ordinal": 15
+        "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 231,
+        "line": 240,
         "column": 5
       },
       "interactions": [
@@ -37415,7 +37517,7 @@
       }
     },
     {
-      "id": "ui-bc164bd4ca25",
+      "id": "ui-be93d5898486",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "div",
@@ -37426,14 +37528,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 279,
+        "sourceLine": 288,
         "sourceColumn": 11,
-        "ordinal": 16
+        "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 279,
+        "line": 288,
         "column": 11
       },
       "interactions": [
@@ -42321,14 +42423,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 53,
+        "sourceLine": 54,
         "sourceColumn": 76,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 53,
+        "line": 54,
         "column": 76
       },
       "interactions": [
@@ -42372,14 +42474,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 60,
+        "sourceLine": 61,
         "sourceColumn": 20,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 60,
+        "line": 61,
         "column": 20
       },
       "interactions": [
@@ -42423,14 +42525,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 67,
+        "sourceLine": 68,
         "sourceColumn": 28,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 67,
+        "line": 68,
         "column": 28
       },
       "interactions": [
@@ -42475,15 +42577,15 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 72,
-        "sourceColumn": 183,
+        "sourceLine": 73,
+        "sourceColumn": 210,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 72,
-        "column": 183
+        "line": 73,
+        "column": 210
       },
       "interactions": [
         "onClick"
@@ -42526,15 +42628,15 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 72,
-        "sourceColumn": 259,
+        "sourceLine": 73,
+        "sourceColumn": 286,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 72,
-        "column": 259
+        "line": 73,
+        "column": 286
       },
       "interactions": [
         "onClick"
@@ -42577,14 +42679,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 81,
+        "sourceLine": 82,
         "sourceColumn": 22,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 81,
+        "line": 82,
         "column": 22
       },
       "interactions": [
@@ -42628,14 +42730,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 87,
+        "sourceLine": 88,
         "sourceColumn": 15,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 87,
+        "line": 88,
         "column": 15
       },
       "interactions": [
@@ -42679,14 +42781,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 87,
+        "sourceLine": 88,
         "sourceColumn": 169,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 87,
+        "line": 88,
         "column": 169
       },
       "interactions": [
@@ -42730,14 +42832,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 87,
+        "sourceLine": 88,
         "sourceColumn": 291,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 87,
+        "line": 88,
         "column": 291
       },
       "interactions": [
@@ -42827,20 +42929,71 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
+      "displayName": "既定の指示に戻す",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "CodexImageEdit",
+        "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
+        "sourceLine": 113,
+        "sourceColumn": 7,
+        "ordinal": 2
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
+        "line": 113,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:dadacf3bee81c061195e1eecfb896dac2e2174b4c76eb2b2d5e2a375edc5594e",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI209",
+        "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
+        "order": 2,
+        "number": "UI209-02",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
+      "id": "ui-a898365a8404",
+      "featureGroup": "codex",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
       "displayName": "{{busy ? saving ? \"保存中…\" : \"送信中…\" : \"送信\"}}",
       "labelKind": "dynamic",
       "labelExpression": "{{busy ? saving ? \"保存中…\" : \"送信中…\" : \"送信\"}}",
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 114,
+        "sourceLine": 115,
         "sourceColumn": 9,
-        "ordinal": 2
+        "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 114,
+        "line": 115,
         "column": 9
       },
       "interactions": [
@@ -42873,7 +43026,7 @@
       }
     },
     {
-      "id": "ui-a898365a8404",
+      "id": "ui-8875ec612f96",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -42884,14 +43037,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 115,
+        "sourceLine": 116,
         "sourceColumn": 9,
-        "ordinal": 3
+        "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 115,
+        "line": 116,
         "column": 9
       },
       "interactions": [
@@ -42924,7 +43077,7 @@
       }
     },
     {
-      "id": "ui-8875ec612f96",
+      "id": "ui-cd9181ee45a3",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -42935,14 +43088,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 121,
+        "sourceLine": 122,
         "sourceColumn": 49,
-        "ordinal": 4
+        "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 121,
+        "line": 122,
         "column": 49
       },
       "interactions": [
@@ -42969,13 +43122,13 @@
       "location": {
         "groupId": "UI209",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
-        "order": 2,
-        "number": "UI209-02",
+        "order": 3,
+        "number": "UI209-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-cd9181ee45a3",
+      "id": "ui-b871075ed38b",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -42986,71 +43139,20 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 121,
+        "sourceLine": 122,
         "sourceColumn": 163,
-        "ordinal": 5
+        "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 121,
+        "line": 122,
         "column": 163
       },
       "interactions": [
         "onClick"
       ],
       "signature": "sha256:365f1c62c22bbbe74948749da294d71283da5dc4ad4caad4b45472804ce2eee5",
-      "targetSourcePresence": {
-        "desktop": "shared-source",
-        "html": "shared-source",
-        "php": "shared-source",
-        "spfx": "shared-source"
-      },
-      "comparisonStatus": "unmapped",
-      "exclusionReason": null,
-      "hosts": {
-        "desktop": "共通正本",
-        "html": "対象外:デスクトップのAI/OS/設定/タブ機能",
-        "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
-        "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
-      },
-      "nameCheck": "静的照合",
-      "orderCheck": "共通ソース順序",
-      "designCheck": "共有CSS+ホスト上書きを別検査",
-      "location": {
-        "groupId": "UI209",
-        "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
-        "order": 3,
-        "number": "UI209-03",
-        "basis": "定義順（実表示順は要確認）"
-      }
-    },
-    {
-      "id": "ui-bf6658a6e2ff",
-      "featureGroup": "codex",
-      "controlKind": "input",
-      "tag": "input",
-      "role": null,
-      "displayName": "元画像を上書き",
-      "labelKind": "static",
-      "labelExpression": null,
-      "orderScope": {
-        "component": "CodexImageEdit",
-        "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 125,
-        "sourceColumn": 16,
-        "ordinal": 6
-      },
-      "source": {
-        "kind": "shared",
-        "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 125,
-        "column": 16
-      },
-      "interactions": [
-        "onChange"
-      ],
-      "signature": "sha256:df3f906035158dd98895be85b2eabb8b29977a83506a7d44f27fa89f107e3a73",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43082,7 +43184,7 @@
       "controlKind": "input",
       "tag": "input",
       "role": null,
-      "displayName": "別名で保存して参照を更新",
+      "displayName": "元画像を上書き",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
@@ -43101,7 +43203,7 @@
       "interactions": [
         "onChange"
       ],
-      "signature": "sha256:30b08e13d6da80149d66b19a0fdf65fd5a584d7bcf79a9e1848d44c62acc5a61",
+      "signature": "sha256:df3f906035158dd98895be85b2eabb8b29977a83506a7d44f27fa89f107e3a73",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43133,7 +43235,7 @@
       "controlKind": "input",
       "tag": "input",
       "role": null,
-      "displayName": "元画像をarchiveへ残して同じファイル名で置換",
+      "displayName": "別名で保存して参照を更新",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
@@ -43152,7 +43254,7 @@
       "interactions": [
         "onChange"
       ],
-      "signature": "sha256:4c6ba9ac0a0e05bab58b706885b33c797f0ee0b6a6f7e643291d40af0a65d0e7",
+      "signature": "sha256:30b08e13d6da80149d66b19a0fdf65fd5a584d7bcf79a9e1848d44c62acc5a61",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43184,26 +43286,26 @@
       "controlKind": "input",
       "tag": "input",
       "role": null,
-      "displayName": "保存ファイル名",
+      "displayName": "元画像をarchiveへ残して同じファイル名で置換",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
         "sourceLine": 128,
-        "sourceColumn": 42,
+        "sourceColumn": 16,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
         "line": 128,
-        "column": 42
+        "column": 16
       },
       "interactions": [
         "onChange"
       ],
-      "signature": "sha256:0f2bb69605544cc242df39e68f93bd4b0da67655223ebeed47fe43c0ccde4f49",
+      "signature": "sha256:4c6ba9ac0a0e05bab58b706885b33c797f0ee0b6a6f7e643291d40af0a65d0e7",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43230,31 +43332,31 @@
       }
     },
     {
-      "id": "ui-31ca67919d9f",
+      "id": "ui-7e4933f2ede2",
       "featureGroup": "codex",
-      "controlKind": "button",
-      "tag": "button",
+      "controlKind": "input",
+      "tag": "input",
       "role": null,
-      "displayName": "この画像を採用",
+      "displayName": "保存ファイル名",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 130,
-        "sourceColumn": 7,
+        "sourceLine": 129,
+        "sourceColumn": 42,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 130,
-        "column": 7
+        "line": 129,
+        "column": 42
       },
       "interactions": [
-        "onClick"
+        "onChange"
       ],
-      "signature": "sha256:2e5bd067ccb04d3964fc7e1bd98e04dd1b004504210d58dee05cc2327fa36a8d",
+      "signature": "sha256:0f2bb69605544cc242df39e68f93bd4b0da67655223ebeed47fe43c0ccde4f49",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43286,20 +43388,71 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
+      "displayName": "この画像を採用",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "CodexImageEdit",
+        "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
+        "sourceLine": 131,
+        "sourceColumn": 7,
+        "ordinal": 11
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
+        "line": 131,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:2e5bd067ccb04d3964fc7e1bd98e04dd1b004504210d58dee05cc2327fa36a8d",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI209",
+        "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
+        "order": 9,
+        "number": "UI209-09",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
+      "id": "ui-1241ce1ef736",
+      "featureGroup": "codex",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
       "displayName": "却下",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 130,
+        "sourceLine": 131,
         "sourceColumn": 89,
-        "ordinal": 11
+        "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 130,
+        "line": 131,
         "column": 89
       },
       "interactions": [
@@ -43326,8 +43479,8 @@
       "location": {
         "groupId": "UI209",
         "name": "共通／CodexImageEdit／CodexImageEditの操作領域",
-        "order": 9,
-        "number": "UI209-09",
+        "order": 10,
+        "number": "UI209-10",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -43651,14 +43804,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 433,
+        "sourceLine": 434,
         "sourceColumn": 31,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 433,
+        "line": 434,
         "column": 31
       },
       "interactions": [
@@ -43702,14 +43855,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 433,
+        "sourceLine": 434,
         "sourceColumn": 350,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 433,
+        "line": 434,
         "column": 350
       },
       "interactions": [],
@@ -43751,14 +43904,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 433,
+        "sourceLine": 434,
         "sourceColumn": 422,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 433,
+        "line": 434,
         "column": 422
       },
       "interactions": [],
@@ -43800,14 +43953,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 433,
+        "sourceLine": 434,
         "sourceColumn": 466,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 433,
+        "line": 434,
         "column": 466
       },
       "interactions": [],
@@ -43843,26 +43996,26 @@
       "controlKind": "button",
       "tag": "aside",
       "role": null,
-      "displayName": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value) => <CodexMarkdownPreview source={value} baseDir={baseDir}/>} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onAccept={accept} onReject={() => setProposal(null)} onClose={() => setProposal(null)} busy={applying} error={error}/></div>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\n        stop();\n        saveConversation(conversationRef.current, true);\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        replaceConversation(item.documentPath === documentPath && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
+      "displayName": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value) => <CodexMarkdownPreview source={value} baseDir={baseDir}/>} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onAccept={accept} onReject={() => setProposal(null)} onClose={() => setProposal(null)} busy={applying} error={error}/></div>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\n        stop();\n        saveConversation(conversationRef.current, true);\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        replaceConversation(documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value) => <CodexMarkdownPreview source={value} baseDir={baseDir}/>} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onAccept={accept} onReject={() => setProposal(null)} onClose={() => setProposal(null)} busy={applying} error={error}/></div>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\n        stop();\n        saveConversation(conversationRef.current, true);\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        replaceConversation(item.documentPath === documentPath && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
+      "labelExpression": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value) => <CodexMarkdownPreview source={value} baseDir={baseDir}/>} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onAccept={accept} onReject={() => setProposal(null)} onClose={() => setProposal(null)} busy={applying} error={error}/></div>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\n        stop();\n        saveConversation(conversationRef.current, true);\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        replaceConversation(documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 434,
+        "sourceLine": 435,
         "sourceColumn": 12,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 434,
+        "line": 435,
         "column": 12
       },
       "interactions": [
         "onKeyDown"
       ],
-      "signature": "sha256:c3bca049c74ea2625fc7e2c839fec415b079130e7f397b11ca07597297652fcb",
+      "signature": "sha256:6dea8998dad3dd991d9cbfb05f16f01365a4aa5d4ca241aaf2781dcf6db44f44",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43900,14 +44053,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 440,
+        "sourceLine": 441,
         "sourceColumn": 20,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 440,
+        "line": 441,
         "column": 20
       },
       "interactions": [
@@ -43953,14 +44106,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 444,
+        "sourceLine": 445,
         "sourceColumn": 124,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 444,
+        "line": 445,
         "column": 124
       },
       "interactions": [
@@ -44004,14 +44157,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 444,
+        "sourceLine": 445,
         "sourceColumn": 372,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 444,
+        "line": 445,
         "column": 372
       },
       "interactions": [
@@ -44055,14 +44208,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 444,
+        "sourceLine": 445,
         "sourceColumn": 448,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 444,
+        "line": 445,
         "column": 448
       },
       "interactions": [
@@ -44106,14 +44259,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 445,
+        "sourceLine": 446,
         "sourceColumn": 74,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 445,
+        "line": 446,
         "column": 74
       },
       "interactions": [
@@ -44157,14 +44310,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 445,
+        "sourceLine": 446,
         "sourceColumn": 265,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 445,
+        "line": 446,
         "column": 265
       },
       "interactions": [
@@ -44208,14 +44361,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 453,
+        "sourceLine": 454,
         "sourceColumn": 222,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 453,
+        "line": 454,
         "column": 222
       },
       "interactions": [
@@ -44259,14 +44412,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 457,
+        "sourceLine": 458,
         "sourceColumn": 7,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 457,
+        "line": 458,
         "column": 7
       },
       "interactions": [
@@ -44312,14 +44465,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 464,
+        "sourceLine": 465,
         "sourceColumn": 21,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 464,
+        "line": 465,
         "column": 21
       },
       "interactions": [
@@ -44364,14 +44517,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 469,
+        "sourceLine": 470,
         "sourceColumn": 54,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 469,
+        "line": 470,
         "column": 54
       },
       "interactions": [
@@ -44415,14 +44568,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 469,
+        "sourceLine": 470,
         "sourceColumn": 344,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 469,
+        "line": 470,
         "column": 344
       },
       "interactions": [
@@ -44466,14 +44619,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 484,
+        "sourceLine": 485,
         "sourceColumn": 23,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 484,
+        "line": 485,
         "column": 23
       },
       "interactions": [
@@ -44517,14 +44670,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 485,
+        "sourceLine": 486,
         "sourceColumn": 15,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 485,
+        "line": 486,
         "column": 15
       },
       "interactions": [],
@@ -44566,14 +44719,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 485,
+        "sourceLine": 486,
         "sourceColumn": 59,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 485,
+        "line": 486,
         "column": 59
       },
       "interactions": [],
@@ -44615,14 +44768,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 485,
+        "sourceLine": 486,
         "sourceColumn": 112,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 485,
+        "line": 486,
         "column": 112
       },
       "interactions": [],
@@ -44664,14 +44817,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 485,
+        "sourceLine": 486,
         "sourceColumn": 163,
         "ordinal": 21
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 485,
+        "line": 486,
         "column": 163
       },
       "interactions": [],
@@ -44713,14 +44866,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 485,
+        "sourceLine": 486,
         "sourceColumn": 214,
         "ordinal": 22
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 485,
+        "line": 486,
         "column": 214
       },
       "interactions": [],
@@ -44762,14 +44915,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 485,
+        "sourceLine": 486,
         "sourceColumn": 267,
         "ordinal": 23
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 485,
+        "line": 486,
         "column": 267
       },
       "interactions": [],
@@ -44811,14 +44964,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 487,
+        "sourceLine": 488,
         "sourceColumn": 23,
         "ordinal": 24
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 487,
+        "line": 488,
         "column": 23
       },
       "interactions": [
@@ -44862,14 +45015,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 487,
+        "sourceLine": 488,
         "sourceColumn": 277,
         "ordinal": 25
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 487,
+        "line": 488,
         "column": 277
       },
       "interactions": [],
@@ -44911,14 +45064,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 490,
+        "sourceLine": 491,
         "sourceColumn": 31,
         "ordinal": 26
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 490,
+        "line": 491,
         "column": 31
       },
       "interactions": [
@@ -44962,14 +45115,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 496,
+        "sourceLine": 497,
         "sourceColumn": 13,
         "ordinal": 27
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 496,
+        "line": 497,
         "column": 13
       },
       "interactions": [
@@ -45013,14 +45166,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 498,
+        "sourceLine": 499,
         "sourceColumn": 168,
         "ordinal": 28
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 498,
+        "line": 499,
         "column": 168
       },
       "interactions": [
@@ -45065,14 +45218,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 498,
+        "sourceLine": 499,
         "sourceColumn": 818,
         "ordinal": 29
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 498,
+        "line": 499,
         "column": 818
       },
       "interactions": [
@@ -45116,14 +45269,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 500,
+        "sourceLine": 501,
         "sourceColumn": 13,
         "ordinal": 30
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 500,
+        "line": 501,
         "column": 13
       },
       "interactions": [
@@ -45167,14 +45320,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 501,
+        "sourceLine": 502,
         "sourceColumn": 13,
         "ordinal": 31
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 501,
+        "line": 502,
         "column": 13
       },
       "interactions": [
@@ -45218,14 +45371,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 502,
+        "sourceLine": 503,
         "sourceColumn": 39,
         "ordinal": 32
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 502,
+        "line": 503,
         "column": 39
       },
       "interactions": [
@@ -45269,14 +45422,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 504,
+        "sourceLine": 505,
         "sourceColumn": 346,
         "ordinal": 33
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 504,
+        "line": 505,
         "column": 346
       },
       "interactions": [
@@ -45321,14 +45474,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 504,
+        "sourceLine": 505,
         "sourceColumn": 869,
         "ordinal": 34
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 504,
+        "line": 505,
         "column": 869
       },
       "interactions": [
@@ -45372,14 +45525,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 513,
+        "sourceLine": 514,
         "sourceColumn": 18,
         "ordinal": 35
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 513,
+        "line": 514,
         "column": 18
       },
       "interactions": [],
@@ -46692,9 +46845,9 @@
       "controlKind": "menu",
       "tag": "div",
       "role": "menu",
-      "displayName": "{{!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role=\"separator\" />}<button type=\"button\" role=\"menuitem\" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}} {{!menu.selectedSkill && !editorActions && <><button type=\"button\" role=\"menuitem\" onClick={() => { if(menu.figureCopy) void menu.figureCopy(); else void navigator.clipboard.writeText(menu.plainText ?? \"\"); setMenu(null); }}>{menu.figureCopy ? \"図としてコピー\" : \"プレーンテキストでコピー\"}</button><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>マークダウンでコピー</button></>}} {{!menu.selectedSkill && menu.convert && <button type=\"button\" role=\"menuitem\" onClick={() => { void menu.convert?.(); setMenu(null); }}>{menu.conversionLabel}</button>}} {{!menu.selectedSkill && menu.options.length > 0 && <div role=\"separator\" />}} {{!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type=\"button\" role=\"menuitem\" autoFocus={skill === menu.options[0]} onClick={() => {\r\n        if ([\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: \"new\" }); setMenu(null); }\r\n        else setMenu({ ...menu, selectedSkill: skill });\r\n      }}>{skill.config.label}</button>) : <>\r\n        <button type=\"button\" role=\"menuitem\" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"add\" }); setMenu(null); }}>現在の会話に追加</button>\r\n        <button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"new\" }); setMenu(null); }}>新しい会話を開始</button>\r\n      </>}} {{!menu.selectedSkill && onConsult && [\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\") && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: \"add\" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}}",
+      "displayName": "{{!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role=\"separator\" />}<button type=\"button\" role=\"menuitem\" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}} {{!menu.selectedSkill && !editorActions && <><button type=\"button\" role=\"menuitem\" onClick={() => { if(menu.figureCopy) void menu.figureCopy(); else void navigator.clipboard.writeText(menu.plainText ?? \"\"); setMenu(null); }}>{menu.figureCopy ? \"図としてコピー\" : \"プレーンテキストでコピー\"}</button><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>コードをMarkdownでコピー</button></>}} {{!menu.selectedSkill && menu.convert && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { void menu.convert?.(); setMenu(null); }}>{menu.conversionLabel}</button></>}} {{!menu.selectedSkill && menu.options.length > 0 && <div role=\"separator\" />}} {{!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type=\"button\" role=\"menuitem\" autoFocus={skill === menu.options[0]} onClick={() => {\r\n        if ([\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: \"new\" }); setMenu(null); }\r\n        else setMenu({ ...menu, selectedSkill: skill });\r\n      }}>{skill.config.label}</button>) : <>\r\n        <button type=\"button\" role=\"menuitem\" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"add\" }); setMenu(null); }}>現在の会話に追加</button>\r\n        <button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"new\" }); setMenu(null); }}>新しい会話を開始</button>\r\n      </>}} {{!menu.selectedSkill && onConsult && [\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\") && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: \"add\" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role=\"separator\" />}<button type=\"button\" role=\"menuitem\" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}} {{!menu.selectedSkill && !editorActions && <><button type=\"button\" role=\"menuitem\" onClick={() => { if(menu.figureCopy) void menu.figureCopy(); else void navigator.clipboard.writeText(menu.plainText ?? \"\"); setMenu(null); }}>{menu.figureCopy ? \"図としてコピー\" : \"プレーンテキストでコピー\"}</button><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>マークダウンでコピー</button></>}} {{!menu.selectedSkill && menu.convert && <button type=\"button\" role=\"menuitem\" onClick={() => { void menu.convert?.(); setMenu(null); }}>{menu.conversionLabel}</button>}} {{!menu.selectedSkill && menu.options.length > 0 && <div role=\"separator\" />}} {{!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type=\"button\" role=\"menuitem\" autoFocus={skill === menu.options[0]} onClick={() => {\r\n        if ([\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: \"new\" }); setMenu(null); }\r\n        else setMenu({ ...menu, selectedSkill: skill });\r\n      }}>{skill.config.label}</button>) : <>\r\n        <button type=\"button\" role=\"menuitem\" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"add\" }); setMenu(null); }}>現在の会話に追加</button>\r\n        <button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"new\" }); setMenu(null); }}>新しい会話を開始</button>\r\n      </>}} {{!menu.selectedSkill && onConsult && [\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\") && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: \"add\" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}}",
+      "labelExpression": "{{!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role=\"separator\" />}<button type=\"button\" role=\"menuitem\" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}} {{!menu.selectedSkill && !editorActions && <><button type=\"button\" role=\"menuitem\" onClick={() => { if(menu.figureCopy) void menu.figureCopy(); else void navigator.clipboard.writeText(menu.plainText ?? \"\"); setMenu(null); }}>{menu.figureCopy ? \"図としてコピー\" : \"プレーンテキストでコピー\"}</button><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>コードをMarkdownでコピー</button></>}} {{!menu.selectedSkill && menu.convert && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { void menu.convert?.(); setMenu(null); }}>{menu.conversionLabel}</button></>}} {{!menu.selectedSkill && menu.options.length > 0 && <div role=\"separator\" />}} {{!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type=\"button\" role=\"menuitem\" autoFocus={skill === menu.options[0]} onClick={() => {\r\n        if ([\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: \"new\" }); setMenu(null); }\r\n        else setMenu({ ...menu, selectedSkill: skill });\r\n      }}>{skill.config.label}</button>) : <>\r\n        <button type=\"button\" role=\"menuitem\" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"add\" }); setMenu(null); }}>現在の会話に追加</button>\r\n        <button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"new\" }); setMenu(null); }}>新しい会話を開始</button>\r\n      </>}} {{!menu.selectedSkill && onConsult && [\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\") && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: \"add\" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}}",
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
@@ -46711,7 +46864,7 @@
       "interactions": [
         "onPointerDown"
       ],
-      "signature": "sha256:4a0257148a52ac7f9ad1ee25d262514e0d7c1cb3dd3503b0ef5a885e741ce4ce",
+      "signature": "sha256:177b4938c12b70ccaa901a1c1cc452565039b1b56375ea42e3107bd80c587d85",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46845,7 +46998,7 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "マークダウンでコピー",
+      "displayName": "コードをMarkdownでコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
@@ -46864,7 +47017,7 @@
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:0fbda09f9a04a8f0445cdcdb41507ce3c56859d088bbe1534fa0cf908eb04b80",
+      "signature": "sha256:c160ab8df06d359301e79e39d6a30eb6868b61c1bc987dc89aba9956e9e1c9b5",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46903,14 +47056,14 @@
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
         "sourceLine": 76,
-        "sourceColumn": 47,
+        "sourceColumn": 73,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
         "line": 76,
-        "column": 47
+        "column": 73
       },
       "interactions": [
         "onClick"

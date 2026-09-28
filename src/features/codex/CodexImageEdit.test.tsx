@@ -22,6 +22,17 @@ async function requestEdit() {
 }
 
 describe("CodexImageEdit", () => {
+  it("既定指示を可視化し、修正内容だけを送信して既定値に戻せる", async () => {
+    render(<CodexImageEdit {...baseProps()} initialInstruction="背景を白にする" />);
+    const input = screen.getByRole("textbox", { name: "編集指示" });
+    expect(input).toHaveValue("背景を白にする");
+    fireEvent.change(input, { target: { value: "背景を青にする" } });
+    fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
+    await screen.findByText("変更後");
+    expect(invoke).toHaveBeenCalledWith("codex_edit_image", expect.objectContaining({ request: expect.objectContaining({ instruction: "背景を青にする" }) }));
+    fireEvent.click(screen.getByRole("button", { name: "既定の指示に戻す" }));
+    expect(input).toHaveValue("背景を白にする");
+  });
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(invoke).mockResolvedValue({ base64: "new", mediaType: "image/png", filename: "edited.png" });

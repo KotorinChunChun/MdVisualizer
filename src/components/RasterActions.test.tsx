@@ -7,6 +7,24 @@ import { copyRasterImage } from "../lib/imageActions";
 vi.mock("../lib/imageActions", async original => ({ ...await original<typeof import('../lib/imageActions')>(), copyRasterImage: vi.fn().mockResolvedValue(undefined) }));
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 describe("図操作とキャプション", () => {
+  it("パス・通常のフルパス・説明文をそれぞれコピーする", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<MediaPreviewModal content={{kind:'image',src:'asset://image',alt:'説明'}} onClose={vi.fn()} imageContext={{markdownPath:'C:/docs/a.md',imagePath:String.raw`\\?\C:\docs\images\a.png`,source:'images/a.png',sourceOffset:0,caption:'説明'}} />);
+    for (const [label, expected] of [['画像のパスをコピー','images/a.png'],['画像のフルパスをコピー',String.raw`C:\docs\images\a.png`],['画像の説明文をコピー','説明']]) {
+      fireEvent.click(screen.getByRole('button',{name:'コピー形式を選択'}));
+      fireEvent.click(screen.getByRole('button',{name:label}));
+      await waitFor(() => expect(writeText).toHaveBeenLastCalledWith(expected));
+    }
+  });
+  it("埋込・空説明のコピーを理由付きで無効にする", () => {
+    render(<MediaPreviewModal content={{kind:'image',src:'data:image/png;base64,AAAA',alt:''}} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button',{name:'コピー形式を選択'}));
+    for (const label of ['画像のパスをコピー','画像のフルパスをコピー','画像の説明文をコピー']) {
+      const button=screen.getByRole('button',{name:label}) as HTMLButtonElement;
+      expect(button.disabled).toBe(true); expect(button.title).not.toBe('');
+    }
+  });
   it.each([['![図](a.png)', '埋め込みに変換'], ['![図](data:image/png;base64,AAAA)', 'ファイルへ変換']])("%sの右クリックは図コピーと格納形態変換", async (content, label) => {
     const convert = vi.fn();
     render(<MarkdownPreview content={content} documentPath="C:/docs/test.md" baseDir="C:/docs" imageVersions={{}} allowBlockActions readOnly onAssetStorageConvert={convert} />);
@@ -32,6 +50,6 @@ describe("図操作とキャプション", () => {
     render(<MediaPreviewModal content={{kind:'image',src:'data:image/png;base64,AAAA',alt:'図'}} onClose={vi.fn()} imageApps={[{id:'paint',label:'ペイント',executable:'mspaint.exe',args:[]} as never]} onOpenImageApp={vi.fn()} />);
     expect(screen.queryByRole('button',{name:'ペイント'})).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'コピー形式を選択'}));
-    for(const name of ['図としてコピー','画像ファイルとしてコピー','マークダウンでコピー','画像の参照先をコピー']) expect(screen.getByRole('button',{name})).toBeTruthy();
+    for(const name of ['図としてコピー','画像ファイルとしてコピー','コードをMarkdownでコピー','画像のパスをコピー']) expect(screen.getByRole('button',{name})).toBeTruthy();
   });
 });

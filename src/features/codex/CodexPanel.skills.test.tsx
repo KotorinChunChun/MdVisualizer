@@ -61,6 +61,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CodexPanel の既定スキル入力", () => {
+  it("拡張形式で保存した会話を通常パスから復元する", async () => {
+    store.sessions = [{id:'saved-path',title:'前の会話',documentPath:String.raw`\\?\C:\docs\diagram.md`,messages:[{role:'user',text:'保持した質問',attachmentIds:[],timestamp:new Date().toISOString()}],attachments:[],draft:{instruction:'続き',targetSnapshot:null,editMode:'question',attachmentIds:[]},createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),lastMessageAt:new Date().toISOString()}];
+    render(<CodexPanel open onClose={vi.fn()} documentName="diagram.md" documentPath="C:/docs/diagram.md" documentText={content} available getSnapshot={() => snapshot} applyProposal={vi.fn(() => true)} />);
+    await screen.findByText('保持した質問');
+    expect(screen.getByLabelText('指示')).toHaveValue('続き');
+  });
   it("explain-image は実画像だけを送り、既定プロンプトと質問モードを下書きへ入れる", async () => {
     mount("explain-image");
     const input = await screen.findByLabelText("指示");
@@ -127,6 +133,6 @@ describe("CodexPanel の既定スキル入力", () => {
     expect(screen.queryByLabelText("追加した画像")).not.toBeInTheDocument();
     expect(screen.getByRole("log")).toHaveTextContent("画像1");
     expect(screen.getByRole("button", { name: "この画像を採用" })).toBeVisible();
-    expect(invoke).toHaveBeenCalledWith("codex_edit_image", expect.objectContaining({ request: expect.objectContaining({ instruction: expect.stringContaining("今回の画像は画像1") }) }));
+    expect(invoke).toHaveBeenCalledWith("codex_edit_image", expect.objectContaining({ request: expect.objectContaining({ instruction: "画像1を青くして" }) }));
   });
 });
