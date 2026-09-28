@@ -10,6 +10,28 @@ const safe = "data:image/png;base64,aGVsbG8=";
 const props = () => ({ target: { rawSrc: "http://asset.localhost/C/test.jpg", fullPath: "C:\\test.jpg", filename: "test.jpg", storage: "external" as const }, imageVersion: 0, onApply: vi.fn(), onCancel: vi.fn(), onError: vi.fn() });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); });
 describe("画像編集選択と安全な読込み", () => {
+  it("読込み失敗後に元画像を再試行できる", async () => {
+    vi.mocked(readImageForEdit).mockRejectedValueOnce(new Error("読込み失敗")).mockResolvedValue(safe);
+    render(<ImageEditingDialog {...props()} />);
+    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "再試行" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "ラスタ編集2" }) as HTMLButtonElement).disabled).toBe(false));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+  it("ペイント起動失敗後は作成済み白紙を再作成しない", async () => {
+    vi.mocked(readImageForEdit).mockResolvedValueOnce(null).mockResolvedValue(safe);
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ fillRect: vi.fn() } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue(safe);
+    const onPaint = vi.fn().mockRejectedValue(new Error("起動失敗"));
+    render(<ImageEditingDialog {...props()} onPaint={onPaint} />);
+    await screen.findByText(/白紙から新規作成/);
+    fireEvent.click(screen.getByRole("button", { name: "ペイント" }));
+    await waitFor(() => expect(screen.queryByText(/白紙から新規作成/)).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "ペイント" }));
+    await waitFor(() => expect(onPaint).toHaveBeenCalledTimes(2));
+    expect(onPaint.mock.calls[0][0].createNew).toBe(true);
+    expect(onPaint.mock.calls[1][0].createNew).toBe(false);
+  });
   it.each([["ラスタ編集1", "legacy"], ["ラスタ編集2", "new"]])("%sへネイティブ読込Data URIを渡す", async (name, id) => {
     vi.mocked(readImageForEdit).mockResolvedValue(safe); render(<ImageEditingDialog {...props()} />);
     await waitFor(() => expect((screen.getByRole("button", { name }) as HTMLButtonElement).disabled).toBe(false));

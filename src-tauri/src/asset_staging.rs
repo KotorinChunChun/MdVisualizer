@@ -506,7 +506,7 @@ fn available_filename(
         .char_indices()
         .rev()
         .find(|(_, value)| !value.is_ascii_digit())
-        .map(|(index, _)| index + 1)
+        .map(|(index, value)| index + value.len_utf8())
         .unwrap_or(0);
     if numeric_start < stem.len() && stem[..numeric_start].eq_ignore_ascii_case("image") {
         let prefix = &stem[..numeric_start];
@@ -540,6 +540,30 @@ fn available_filename(
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    #[test]
+    fn allocates_unicode_caption_filenames_without_splitting_characters() {
+        let dir = tempdir().unwrap();
+        let reserved = HashSet::new();
+        for name in ["外部画像.png", "図1.png", "図😀.png", "図😀12.png"] {
+            assert_eq!(
+                available_filename(dir.path(), name, &reserved).unwrap(),
+                name
+            );
+            fs::write(dir.path().join(name), b"existing").unwrap();
+            let path = Path::new(name);
+            let expected = format!("{}-2.png", path.file_stem().unwrap().to_str().unwrap());
+            assert_eq!(
+                available_filename(dir.path(), name, &reserved).unwrap(),
+                expected
+            );
+        }
+        fs::write(dir.path().join("image1.png"), b"existing").unwrap();
+        assert_eq!(
+            available_filename(dir.path(), "image1.png", &reserved).unwrap(),
+            "image2.png"
+        );
+    }
 
     #[test]
     fn stages_with_a_collision_free_name_and_commits_only_with_markdown_save() {
