@@ -1,10 +1,23 @@
 import { build } from '../../../node_modules/esbuild/lib/main.js';
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.join(here, 'dist');
 await mkdir(out, { recursive:true });
+const samples=[];
+const sampleRoot=path.resolve(here,'../../../samples');
+async function collect(dir='') {
+  for(const entry of await readdir(path.join(sampleRoot,dir),{withFileTypes:true})) {
+    const name=path.posix.join(dir,entry.name);
+    if(entry.isDirectory()){await collect(name);continue;}
+    if(!/\.(md|tsv|csv|svg|png|jpg|jpeg|gif|mmd|drawio|ts|cpp)$/i.test(name))continue;
+    const bytes=await readFile(path.join(sampleRoot,name));
+    const ext=path.extname(name).slice(1).toLowerCase();
+    samples.push({name,base64:bytes.toString('base64'),text:['png','jpg','jpeg','gif'].includes(ext)?null:bytes.toString('utf8'),mediaType:({svg:'image/svg+xml',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif'})[ext]??'text/plain'});
+  }
+}
+await collect();
 for (const baseline of [true, false]) {
   const result = await build({
     entryPoints: [path.join(here,'faithful/entry.tsx')], absWorkingDir: path.resolve(here,'../../..'),
@@ -12,6 +25,8 @@ for (const baseline of [true, false]) {
     jsxImportSource: baseline ? 'react' : 'preview-jsx', keepNames:true, minify:true,
     loader: { '.md':'text', '.html':'text' }, define: { 'process.env.NODE_ENV':'"production"', 'import.meta.env':'{}' }, metafile:true,
     plugins:[{name:'isolated-preview',setup(api){
+      api.onResolve({filter:/^preview-samples$/},()=>({path:'samples',namespace:'preview-samples'}));
+      api.onLoad({filter:/.*/,namespace:'preview-samples'},()=>({contents:`export default ${JSON.stringify(samples)}`,loader:'js'}));
       api.onResolve({filter:/^@tauri-apps\//}, () => ({path:path.join(here,'faithful/host.ts')}));
       api.onResolve({filter:/^preview-jsx\/jsx-runtime$/}, () => ({path:path.join(here,'faithful/jsx-runtime.ts')}));
     }}],
@@ -29,6 +44,8 @@ for (const baseline of [true, false]) {
     if (!baseline && host !== 'all') await writeFile(path.join(out,`master-${host}.html`),html);
   }
 }
-await writeFile(path.join(out,'master.html'),await readFile(path.join(here,'faithful/master.html'),'utf8'));
+const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+const options=samples.filter(s=>/\.(md|tsv|svg|mmd|drawio)$/.test(s.name)).map(s=>`<option value="${escape(s.name)}">${escape(s.name)}</option>`).join('');
+await writeFile(path.join(out,'master.html'),(await readFile(path.join(here,'faithful/master.html'),'utf8')).replace('<!-- sample-options -->',options));
 for (const file of ['comparison.css','comparison.js']) await writeFile(path.join(out,file),await readFile(path.join(here,'faithful',file),'utf8'));
 console.log('実物App.tsxから比較基準・Desktop・Web・SPFx・統合版を生成しました。');

@@ -3,10 +3,10 @@ import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const read = file => readFile(new URL(`./dist/${file}`,import.meta.url),'utf8');
 const delay = () => new Promise(resolve=>setTimeout(resolve,80));
-async function boot(asset, platform) {
+async function boot(asset, platform, sample='') {
   const errors=[];
   const vc=new VirtualConsole(); vc.on('jsdomError',e=>errors.push(e.message)); vc.on('error',(...args)=>errors.push(args.map(String).join(' ')));
-  const dom=new JSDOM(`<html><body data-platform="${platform}"><div id="root"></div></body></html>`,{runScripts:'outside-only',pretendToBeVisual:true,url:'https://preview.invalid',virtualConsole:vc});
+  const dom=new JSDOM(`<html><body data-platform="${platform}"><div id="root"></div></body></html>`,{runScripts:'outside-only',pretendToBeVisual:true,url:`https://preview.invalid?sample=${encodeURIComponent(sample)}`,virtualConsole:vc});
   const w=dom.window;
   w.TextEncoder=TextEncoder; w.TextDecoder=TextDecoder;
   w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
@@ -20,7 +20,7 @@ async function boot(asset, platform) {
   for(let i=0;i<30;i++){await delay();if(w.document.querySelector('.markdown-body h1') && w.document.querySelector('.cm-editor'))break;}
   await delay();await delay();
   if(errors.length) { globalThis.console.error(errors); dom.window.close(); throw new Error(`${asset}/${platform}: 初期化エラー`); }
-  assert.ok(w.document.querySelector('.markdown-body h1'), `${asset}: 文書読込`);
+  assert.ok(w.document.querySelector('.markdown-body'), `${asset}: 文書読込`);
   return {dom,errors};
 }
 function snapshot(document){
@@ -94,3 +94,19 @@ try{
  for(const width of ['390','760','960','1600']){const field=d.getElementById('width');field.value=width;field.dispatchEvent(new comparison.window.Event('change'));assert.equal(d.getElementById('stage').style.width,`${width}px`);}
  console.log('比較外枠: 切替前後で寸法を維持、390/760/960/1280/1600pxの幅指定 OK（実測ではなく指定値検査）');
 }finally{comparison.window.close();}
+for(const platform of ['desktop','web','spfx']) {
+ for(const sample of ['image-gallery.md','v0.0.13-table-features.md']) {
+  const instance=await boot('faithful',platform,sample);
+  try {
+   const d=instance.dom.window.document;
+   if(sample==='image-gallery.md') {
+    const images=[...d.querySelectorAll('.markdown-body img')];
+    assert.ok(images.length>2,'画像サンプルの描画');
+    assert.ok(images.some(img=>img.src.startsWith('data:image/png;base64,')),'相対PNGを同梱データへ解決');
+    assert.ok(d.querySelector('.markdown-body'),'画像プレビュー領域');
+   } else assert.ok(d.querySelector('.markdown-body table'),'表サンプルの描画');
+   assert.deepEqual(instance.errors,[]);
+   console.log(`${platform}: ${sample} 読込・描画 OK`);
+  } finally {instance.dom.window.close();}
+ }
+}
