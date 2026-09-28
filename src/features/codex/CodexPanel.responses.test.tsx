@@ -9,7 +9,7 @@ import type { EditorSnapshot } from "./model";
 import type { CodexConversation } from "./sessions";
 
 const store = vi.hoisted(() => ({ sessions: [] as CodexConversation[] }));
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), convertFileSrc: (path: string) => `asset://fixture/${encodeURIComponent(path)}` }));
 vi.mock("./api", () => ({ generateCodex: vi.fn(), cancelCodex: vi.fn().mockResolvedValue(undefined), listCodexLogs: vi.fn().mockResolvedValue({ entries: [], limit: 20 }), setCodexLogLimit: vi.fn() }));
 vi.mock("../../lib/commands", () => ({ loadSettings: vi.fn().mockResolvedValue({ codex: { enabled: true, model: "gpt-5.6-luna" } }), saveSettings: vi.fn().mockResolvedValue({}) }));
 vi.mock("./sessions", async original => ({
@@ -18,7 +18,7 @@ vi.mock("./sessions", async original => ({
   upsertCodexSession: vi.fn(async (session: CodexConversation) => { store.sessions = [structuredClone(session), ...store.sessions.filter(item => item.id !== session.id)]; return { sessions: store.sessions, retentionDays: 30 }; }),
 }));
 vi.mock("./imageTranscription", async original => ({ ...await original<typeof import("./imageTranscription")>(), loadTranscriptionImage: vi.fn().mockResolvedValue({ base64: "b3JpZ2luYWw=", mime: "image/png" }) }));
-vi.mock("./preview", () => ({ CodexMarkdownPreview: ({ source }: { source: string }) => <pre data-testid="rendered-preview">{source}</pre>, diagramImage: vi.fn() }));
+vi.mock("./preview", () => ({ CodexMarkdownPreview: ({ source, baseDir, stagedAssetPreviews }: { source: string; baseDir?: string; stagedAssetPreviews?: Record<string, string> }) => <pre data-testid="rendered-preview" data-base-dir={baseDir} data-staged-previews={JSON.stringify(stagedAssetPreviews ?? {})}>{source}</pre>, diagramImage: vi.fn() }));
 vi.mock("./skills", () => ({ useCodexSkills: () => [
   { id: "edit-image", prompt: "画像を修正してください。", config: { mode: "selection", inputs: ["image"] } },
   { id: "generate-caption", prompt: "キャプションだけ生成してください。", config: { mode: "selection", inputs: ["image"] } },
@@ -61,7 +61,11 @@ beforeEach(() => {
   });
   Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
 });
-afterEach(cleanup);
+afterEach(async () => {
+  cleanup();
+  // unmountが予約した履歴保存を次のテストのstore初期化前に完了させる。
+  await act(async () => { await Promise.resolve(); });
+});
 
 describe("AI応答の挿入・生成候補の統合", () => {
   it.each([
@@ -77,12 +81,14 @@ describe("AI応答の挿入・生成候補の統合", () => {
     expect(view.apply).not.toHaveBeenCalled();
     expect(within(dialog).getByLabelText("変更後を直接編集")).toHaveValue(expected);
     expect(within(dialog).getByLabelText("変更前後のプレビュー")).toBeInTheDocument();
+    expect(within(dialog).queryByText(/^全文置換:/)).toBeNull();
     fireEvent.click(within(dialog).getByRole("button", { name: "決定" }));
     await waitFor(() => expect(view.apply).toHaveBeenCalledWith(expect.objectContaining({ content: initial.content, from: 0, to: initial.content.length }), expected));
   });
   it("対象なしの置換は全文を対象にする", async () => {
     const view=mount(); await sendQuestion(); const dialog=await chooseInsertion("置換");
     expect(within(dialog).getByLabelText("変更後を直接編集")).toHaveValue("候補");
+    expect(within(dialog).getByText(/^全文置換:/)).toBeInTheDocument();
     expect(view.apply).not.toHaveBeenCalled();
   });
   it("質問のコピーはMarkdownを直接コピーして文書を変更しない", async () => {
@@ -113,6 +119,14 @@ describe("AI応答の挿入・生成候補の統合", () => {
     const expected=kind==='edit'?'前\n\n![既存](images/new.png)\n\n後':content+'\n![](images/new.png)';
     expect(within(dialog).getByLabelText('変更後を直接編集')).toHaveValue(expected);
     expect(invoke).toHaveBeenCalledWith('codex_candidate_preview',{id:'candidate',markdown:expected});
+    const previews = within(dialog).getAllByTestId('rendered-preview');
+    expect(previews[0]).toHaveAttribute('data-base-dir', 'C:/docs');
+    expect(previews[1]).toHaveAttribute('data-base-dir', 'C:/docs');
+    expect(previews[0]).toHaveAttribute('data-staged-previews', '{}');
+    expect(JSON.parse(previews[1].getAttribute('data-staged-previews')!)).toEqual({ 'images/new.png': 'asset://fixture/C%3A%2Fcache%2Fcandidate%2Fimages%2Fnew.png' });
+    expect(previews[1].textContent).toContain('![');
+    expect(previews[1].textContent).toContain('(images/new.png)');
+    expect(previews[1].textContent).not.toContain('data:image');
     expect(invoke).not.toHaveBeenCalledWith('codex_commit_candidate',expect.anything());
     fireEvent.click(within(dialog).getByRole('button',{name:'決定'}));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('codex_finish_candidate',{id:'candidate',accepted:true}));
@@ -151,6 +165,21 @@ describe("AI応答の挿入・生成候補の統合", () => {
     fireEvent.click(within(review).getByRole('button',{name:'コピー'}));
     await waitFor(() => expect(screen.getAllByRole('alert').some(item=>item.textContent?.includes('保存先に書き込めません'))).toBe(true));
     expect(navigator.clipboard.writeText).not.toHaveBeenCalled(); expect(view.apply).not.toHaveBeenCalled();
+  });
+  it("プレビュー作成が拒否された場合は未配置の候補を解放し再操作できる", async () => {
+    const view=mount(); const review=await generateImage('new');
+    const normal=vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (command,args)=> {
+      if(command==='codex_candidate_preview') throw new Error('プレビューが大きすぎます。');
+      return normal(command,args);
+    });
+    fireEvent.click(within(review).getByRole('button',{name:'後に挿入'}));
+    await waitFor(()=>expect(invoke).toHaveBeenCalledWith('codex_finish_candidate',{id:'candidate',accepted:false}));
+    expect(invoke).not.toHaveBeenCalledWith('codex_commit_candidate',expect.anything());
+    expect(view.apply).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog',{name:'生成画像の差分'})).toBeInTheDocument();
+    expect(within(review).getByRole('button',{name:'後に挿入'})).toBeEnabled();
+    expect(within(review).getByRole('alert')).toHaveTextContent('プレビューが大きすぎます。');
   });
   it.each(['insert','copy'])("%s成功後の履歴確定エラーで参照先画像を削除しない", async action => {
     const view=mount(); const review=await generateImage('new');

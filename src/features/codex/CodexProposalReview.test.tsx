@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CodexProposalReview } from "./CodexProposalReview";
 import { validateDiagramReplacement } from "./diagram";
+import { CodexMarkdownPreview } from "./preview";
 
 afterEach(cleanup);
 
@@ -12,6 +13,22 @@ function Fixture({ preview = false, validate }: { preview?: boolean; validate?: 
 }
 
 describe("CodexProposalReview", () => {
+  it("全文置換の明示は対象全体を置き換える操作だけに表示する", () => {
+    const props = { original: '元本文', value: '変更後', onChange: vi.fn(), onAccept: vi.fn(), onReject: vi.fn(), onClose: vi.fn() };
+    const view = render(<CodexProposalReview {...props} fullDocumentReplace />);
+    expect(screen.getByRole('note').textContent).toContain('全文置換');
+    view.rerender(<CodexProposalReview {...props} />);
+    expect(screen.queryByRole('note')).toBeNull();
+  });
+  it("キャッシュ候補だけの参照先を切り替え、既存画像は文書基準のまま描画する", () => {
+    const source = '![既存](old.png)\n\n![候補](images/new.png)';
+    const view = render(<CodexMarkdownPreview source={source} baseDir="C:/docs" />);
+    const existingSource = screen.getByAltText('既存').getAttribute('src');
+    view.rerender(<CodexMarkdownPreview source={source} baseDir="C:/docs" stagedAssetPreviews={{ 'images/new.png': 'asset://cache/images/new.png' }} />);
+    expect(screen.getByAltText('既存').getAttribute('src')).toBe(existingSource);
+    expect(screen.getByAltText('候補').getAttribute('src')?.split('?')[0]).toBe('asset://cache/images/new.png');
+    expect(screen.getByAltText('候補').getAttribute('src')).not.toContain('base64');
+  });
   it("変更後を直接編集し、行単位で変更前へ戻せる", () => {
     render(<Fixture />);
     const editor = screen.getByLabelText("変更後を直接編集");
@@ -42,11 +59,11 @@ describe("CodexProposalReview", () => {
     const accept = vi.fn();
     function DiagramFixture() { const [value, setValue] = useState("graph TD\nclick A https://bad.example"); return <CodexProposalReview original={"graph TD\nA-->B"} value={value} onChange={setValue} validate={(source) => { validateDiagramReplacement("mermaid", source); }} onAccept={accept} onReject={vi.fn()} onClose={vi.fn()} />; }
     render(<DiagramFixture />);
-    fireEvent.click(screen.getByRole("button", { name: "採用" }));
+    fireEvent.click(screen.getByRole("button", { name: "決定" }));
     expect((await screen.findByRole("alert")).textContent).toContain("Mermaid応答");
     expect(accept).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "変更前へ復旧" }));
-    fireEvent.click(screen.getByRole("button", { name: "採用" }));
+    fireEvent.click(screen.getByRole("button", { name: "決定" }));
     await waitFor(() => expect(accept).toHaveBeenCalledWith("graph TD\nA-->B"));
   });
 });
