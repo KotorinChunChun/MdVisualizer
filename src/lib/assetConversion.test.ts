@@ -14,6 +14,28 @@ describe("asset conversions", () => {
     expect(replaceImageOccurrenceSource(markdown, images[1], "data:image/png;base64,AAAA"))
       .toBe("![one](same.png)\n![two](data:image/png;base64,AAAA)");
   });
+  it("keeps captions and titles even when they contain the same path", () => {
+    for (const markdown of ['![old.png](old.png "old.png")', '<img alt="old.png" src="old.png" title="old.png">', '![a \\] old.png](<old.png> "old.png")']) {
+      const image = collectEditableMarkdownOccurrences(markdown).find(item => item.kind === "image")!;
+      expect(replaceImageOccurrenceSource(markdown, image, "new.png")).toBe(markdown.replace(markdown.includes("src=") ? 'src="old.png"' : markdown.includes("<old.png>") ? '<old.png>' : '(old.png', markdown.includes("src=") ? 'src="new.png"' : markdown.includes("<old.png>") ? '<new.png>' : '(new.png'));
+    }
+  });
+  it.each([
+    ['![[old.png|old.png]]', 'folder/new.png', '![[folder/new.png|old.png]]'],
+    ['[[old.png]]', 'folder/new.png', '[[folder/new.png]]'],
+    ['![[old.png|説明]]', 'data:image/png;base64,AAAA', '![説明](data:image/png;base64,AAAA)'],
+    ['![[old.png|説明]]', 'image/a[1].png', '![説明](image/a%5B1%5D.png)'],
+    ['![説明](old.png "title")', 'image/a[1](x)<y>.png', '![説明](image/a%5B1%5D%28x%29%3Cy%3E.png "title")'],
+    ['![説明](<old.png> "title")', 'image/a <b>.png', '![説明](<image/a %3Cb%3E.png> "title")'],
+  ])("converts %s without losing its caption or creating invalid image markup", (markdown, source, expected) => {
+    const image = collectEditableMarkdownOccurrences(markdown).find(item => item.kind === "image")!;
+    const changed = replaceImageOccurrenceSource(markdown, image, source);
+    expect(changed).toBe(expected);
+    const result = collectEditableMarkdownOccurrences(changed).find(item => item.kind === "image")!;
+    expect(result).toBeDefined();
+    expect(result.caption).toBe(image.caption);
+    expect(decodeURIComponent(result.source)).toBe(source);
+  });
 
   it("creates a safe preferred filename from the caption", () => {
     const occurrence = collectEditableMarkdownOccurrences("![設計 図](data:image/png;base64,AAAA)")[0];
