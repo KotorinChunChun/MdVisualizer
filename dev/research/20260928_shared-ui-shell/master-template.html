@@ -1,0 +1,72 @@
+<!-- 対象環境を空白区切りで指定する。対象外は接続・表示前に取り除く。 -->
+<section class="master-app" aria-label="統合UI">
+  <header class="master-title"><strong>MdVisualizer</strong><span>プロジェクトノート.md</span><small data-platforms="desktop">ローカルファイル</small><small data-platforms="web">ブラウザー文書</small><small data-platforms="spfx">SharePoint文書</small></header>
+  <nav class="master-tabs" data-platforms="desktop" aria-label="文書タブ"><button class="active" data-action="tab.activate">プロジェクトノート.md ×</button><button data-action="tab.new" data-write>＋ 新規タブ</button></nav>
+  <div class="master-toolbar" data-group="文書">
+    <button data-platforms="desktop" data-action="document.new" data-write>新規MD</button>
+    <button data-platforms="desktop web" data-action="document.open">開く</button>
+    <button data-platforms="spfx" data-action="spfx.files">ファイル一覧</button>
+    <label data-platforms="spfx">文書 <select data-action="spfx.select"><option>プロジェクトノート.md</option><option>進捗一覧.csv</option></select></label>
+    <button data-platforms="desktop web" data-action="document.print">印刷</button>
+    <button data-platforms="desktop web spfx" data-action="document.export-html">HTML出力</button>
+    <button data-platforms="desktop" data-action="document.diagnostics">診断</button>
+    <button data-platforms="desktop" data-action="document.reload">再読込</button>
+    <button data-platforms="desktop web spfx" data-action="document.save" data-write>保存</button>
+    <button data-platforms="web" data-action="web.zip" data-write>ZIPを保存</button>
+    <button data-platforms="web" data-action="web.markdown" data-write>本文のみ保存</button>
+    <button data-platforms="web" data-action="web.rename" data-write>ファイル名変更</button>
+    <button data-platforms="web" data-action="web.discard" data-write>下書きを削除</button>
+  </div>
+  <div class="master-toolbar" data-group="表示">
+    <div class="master-segment"><button data-platforms="desktop web spfx" data-action="view.code">コード</button><button class="active" data-platforms="desktop web spfx" data-action="view.split">コード｜ビジュアル</button><button data-platforms="desktop web spfx" data-action="view.visual">ビジュアル</button></div>
+    <div class="master-segment"><button class="active" data-platforms="desktop web spfx" data-action="mode.browse">閲覧</button><button data-platforms="desktop web spfx" data-action="mode.edit" data-write>編集</button></div>
+    <button data-platforms="desktop web spfx" data-action="document.diff">差分</button>
+    <label data-platforms="desktop web spfx">分割 <select data-action="view.direction"><option value="auto">自動</option><option value="horizontal">左右</option><option value="vertical">上下</option></select></label>
+    <button data-platforms="desktop" data-action="desktop.external">外部アプリ</button><button data-platforms="desktop" data-action="desktop.window">別ウィンドウ</button><button data-platforms="desktop" data-action="desktop.ai">AI</button>
+    <button data-platforms="spfx" data-action="spfx.settings">Webパーツの接続設定</button>
+  </div>
+  <div class="master-workspace">
+    <nav class="master-rail" data-platforms="desktop web" aria-label="文書パネル"><button data-action="panel.toc">☰<small>目次</small></button><button data-action="panel.search">⌕<small>検索</small></button><button data-action="panel.images">▧<small>画像</small></button></nav>
+    <div class="master-panes">
+      <section class="master-code"><header>Markdown <small>固定サンプル</small></header><div class="master-toolbar" data-group="書式"><!-- EDITOR_ACTIONS --></div><textarea aria-label="Markdownサンプル" readonly># プロジェクトノート
+
+チームで文書を育てるワークスペース。
+
+## 今週の予定
+- 要件の整理
+- UIの確認
+- レビューの共有
+
+## 進捗
+| 作業 | 状態 |
+| --- | --- |
+| 要件整理 | 完了 |
+| UI統合 | 確認中 |
+</textarea></section>
+      <section class="master-preview"><header><label data-platforms="desktop web">見出し <select data-action="preview.fold"><option>すべて展開</option><option>すべて折りたたむ</option></select></label><label data-platforms="desktop web">レイアウト <select data-action="preview.layout"><option>自動</option><option>A4縦</option><option>A3縦</option><option>プレゼンテーション</option><option>画像一覧</option></select></label></header><article class="markdown-body"><h1>プロジェクトノート</h1><p>チームで文書を育てるワークスペース。</p><h2>今週の予定</h2><ul><li>要件の整理</li><li>UIの確認</li><li>レビューの共有</li></ul><h2>進捗</h2><table><thead><tr><th>作業</th><th>状態</th></tr></thead><tbody><tr><td>要件整理</td><td>完了</td></tr><tr><td>UI統合</td><td>確認中</td></tr></tbody></table><h2>文書のフロー</h2><div class="master-flow"><span>作成</span> → <span>確認</span> → <span>共有</span></div></article></section>
+    </div>
+  </div>
+  <footer class="master-status"><span>UTF-8 · 432文字</span><label data-platforms="web">文字コード <select data-action="web.encoding"><option>UTF-8</option><option>UTF-16LE</option><option>Shift_JIS</option></select></label><label data-platforms="web"><input type="checkbox" data-action="web.bom" data-write> BOM</label><label data-platforms="desktop web">テーマ <select data-action="theme"><option value="light">ライト</option><option value="dark">ダーク</option><option value="github">GitHub</option></select></label><label data-platforms="desktop">Auto Reload <select data-action="desktop.autoreload"><option>ON</option><option>手動のみ</option><option>OFF</option></select></label><label data-platforms="desktop web">Zoom <select data-action="zoom"><option>100</option><option>125</option><option>150</option><option>200</option></select>%</label><button data-platforms="desktop" data-action="desktop.tests">検</button><button data-platforms="desktop web" data-action="help">?</button><button data-platforms="desktop web" data-action="settings">⚙</button></footer>
+</section>
+<section class="master-gallery" aria-label="各種UIの統合見本">
+  <h2>各種UIの統合見本</h2><p class="muted">文書画面以外のメニュー・設定・編集画面も、同じ対象属性で構成します。操作は外見確認用です。</p>
+  <details open data-group="ブロック"><summary>コード・図・表・埋め込みファイル</summary>
+    <label>対象形式 <select id="block-format"><option value="code">通常コード</option><option value="ps1">PowerShell</option><option value="mermaid">Mermaid</option><option value="svg">SVG</option><option value="drawio">draw.io</option><option value="tsv">TSV</option><option value="csv">CSV</option><option value="table">Markdown表</option><option value="shortcut">ショートカット</option><option value="image">画像</option><option value="attachment">添付ファイル</option></select></label>
+    <div class="master-toolbar block-controls" data-group="ブロック操作">
+      <label data-platforms="desktop web spfx" data-formats="tsv csv table">検索 <input placeholder="検索キーワード" data-action="block.search"></label>
+      <button data-platforms="desktop web" data-formats="mermaid svg drawio tsv csv table image" data-action="block.edit" data-write>編集</button>
+      <button data-platforms="spfx" data-formats="mermaid drawio tsv csv table" data-action="block.edit" data-write>編集</button>
+      <button data-platforms="desktop" data-action="block.ai" data-write>AI ▾</button>
+      <details data-platforms="desktop web spfx"><summary>コピー ▾</summary><div class="master-toolbar"><button data-action="copy.text">コードテキスト</button><button data-platforms="desktop web" data-formats="mermaid svg drawio image" data-action="copy.png">PNG</button><button data-platforms="desktop web" data-formats="mermaid svg drawio" data-action="copy.svg">SVG</button><button data-platforms="desktop" data-formats="mermaid svg drawio image" data-action="copy.bitmap">ビットマップ</button><button data-platforms="desktop web spfx" data-formats="tsv csv table" data-action="copy.tsv">TSV</button></div></details>
+      <div class="master-segment"><button data-platforms="desktop web" data-action="block.preview">プレビュー</button><button data-platforms="desktop web" data-action="block.code">コード</button></div>
+      <button data-platforms="desktop web" data-formats="code ps1" data-action="block.wrap">折り返し</button>
+      <button data-platforms="desktop web spfx" data-formats="tsv csv table" data-action="table.columns">列表示</button><button data-platforms="desktop web spfx" data-formats="tsv csv" data-action="table.header">ヘッダ</button><button data-platforms="desktop web spfx" data-formats="tsv csv table" data-action="table.slicer">スライサー</button><button data-platforms="desktop web spfx" data-formats="tsv csv table" data-action="table.print">表を印刷</button>
+      <button data-platforms="desktop web" data-formats="mermaid svg drawio tsv csv table attachment" data-action="block.storage" data-write>格納形態切替</button><button data-platforms="desktop" data-formats="ps1" data-action="powershell.run">PS1実行</button><button data-platforms="desktop" data-formats="attachment image" data-action="file.folder">フォルダーを開く</button>
+    </div><p class="muted">形式別の配置見本。SPFxの未確認操作は共通部品の存在だけで有効にせず、全操作目録に残します。</p>
+  </details>
+  <details data-platforms="desktop web spfx" data-group="編集画面"><summary>編集画面・ダイアログ</summary><div class="master-toolbar"><button data-action="dialog.mermaid">Mermaidエディター</button><button data-action="dialog.drawio">draw.ioエディター</button><button data-platforms="desktop web" data-action="dialog.svg">SVGエディター</button><button data-action="dialog.table">表エディター</button><button data-platforms="desktop web" data-action="dialog.image">画像エディター</button><button data-action="document.diff">差分比較</button><button data-action="document.export-html">HTML出力設定</button></div></details>
+  <details data-platforms="web" data-group="ブラウザー保存"><summary>Web：保存・下書き</summary><div class="master-toolbar"><button data-action="web.zip" data-write>ZIPを保存</button><button data-action="web.markdown" data-write>本文のみ保存</button><button data-action="web.discard" data-write>下書きを削除</button></div></details>
+  <details data-platforms="web" data-capability="php" data-group="PHP保管"><summary>Web／PHP：暗号化一時保管</summary><div class="master-toolbar"><button data-action="php.store" data-write>現在の文書と画像を一時保管</button><button data-action="php.open">復号して開く</button><button data-action="php.delete" data-write>保管データを削除</button><button data-action="php.signin">サインイン</button><button data-action="php.signout">サインアウト</button></div></details>
+  <details data-platforms="spfx" data-group="SharePoint接続"><summary>SPFx：Webパーツの接続設定</summary><div class="master-fields"><label>SharePointサイトURL<input placeholder="現在のサイト" data-action="spfx.site"></label><label>文書ライブラリ<input placeholder="すべて" data-action="spfx.library"></label><label>サブフォルダー<input data-action="spfx.folder"></label><label>draw.io接続<select data-action="spfx.drawio"><option>公式diagrams.net</option><option>自社ホスト</option><option>指定SharePointサイト</option><option>無効</option></select></label></div></details>
+  <details data-platforms="desktop" data-group="デスクトップ設定"><summary>デスクトップ：設定・AI・外部連携</summary><div class="master-toolbar"><button data-action="settings">アプリ設定</button><button data-action="desktop.ai">AI相談</button><button data-action="desktop.skills">スキル</button><button data-action="desktop.history">会話履歴</button><button data-action="desktop.external">外部アプリ</button><button data-action="desktop.tests">編集テスト結果</button></div></details>
+</section>
