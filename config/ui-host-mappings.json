@@ -5,11 +5,11 @@
       "file": "src/App.tsx",
       "hosts": {
         "desktop": "実装: デスクトップ文書・タブ操作",
-        "html": "未対応: ブラウザー版は単一セッションで新規MD、再読込、見出し折りたたみ、AIパネルを提供しない",
-        "php": "未対応: ブラウザー版と同じ単一セッション構成",
+        "html": "別実装: WebAppの単一文書・新規MD・表示操作。OS/AI連携と複数タブは未対応",
+        "php": "別実装: HTML版と同じ単一文書構成とhosted時の一時保管",
         "spfx": "未対応: SharePoint WebPartは文書選択と保存を提供し、デスクトップのタブ・AI・折りたたみ操作は提供しない"
       },
-      "evidence": "src/App.tsx:2320-2348。WebApp.tsx:179-199 と MdVisualizerWebPart.ts:45-78 を確認。"
+      "evidence": "src/App.tsx、web-platform/apps/web/src/WebApp.tsxのtab-bar/view-controls、MdVisualizerWebPart.tsを確認。"
     },
     {
       "file": "src/App.tsx",
@@ -265,7 +265,7 @@
         "php": "実装: HTML版に加えhosted時のRemoteStorage入口",
         "spfx": "別実装: WebPartのSharePoint文書選択・保存"
       },
-      "evidence": "WebApp.tsx:38-198、src/App.tsx、MdVisualizerWebPart.ts:45-78。"
+      "evidence": "WebApp.tsxのweb-shell-header、保存時のZIP資産処理とWeb専用設定。src/App.tsxと共通tab-bar/view-controlsを使用。"
     },
     {
       "file": "web-platform/apps/web/src/WebApp.tsx",
@@ -362,6 +362,25 @@
         "spfx": "未対応: SPFxには画像編集起動経路がない"
       },
       "evidence": "src/App.tsxとweb-platform/apps/web/src/WebImageEditor.tsx。HTML原本内部の操作は隔離iframeで実行。"
+    },
+    {
+      "file": "web-platform/apps/web/src/WebApp.tsx",
+      "displayNames": [
+        "診断",
+        "再読込",
+        "フォルダー",
+        "VS Code",
+        "別窓で開く",
+        "その他",
+        "AI"
+      ],
+      "hosts": {
+        "desktop": "実装: デスクトップのファイル診断・再読込・外部アプリ・AI連携",
+        "html": "未対応: ヘッダーの配置を共通化し、Webで実行できない操作は理由付きで無効表示",
+        "php": "未対応: HTML版と同じ理由付き無効表示",
+        "spfx": "未対応: SharePoint文書を扱い、同じローカルOS/CLI操作を提供しない"
+      },
+      "evidence": "WebApp.tsxのweb-shell-header内でdisabledとtitleを明示。操作実装や実画面合格を示すものではない。"
     }
   ]
 }
