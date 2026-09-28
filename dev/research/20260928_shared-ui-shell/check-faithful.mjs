@@ -65,7 +65,32 @@ for(const platform of ['web','spfx','all']){
    const labels=[...d.querySelectorAll('button')].map(el=>el.textContent);
    assert.equal(labels.includes('ZIPを保存'),platform!=='spfx');
    assert.equal(labels.includes('ファイル一覧'),platform!=='web');
+   const hostGroups=[...d.querySelectorAll('[data-host-group]')];
+   assert.equal(hostGroups.length,platform==='all'?3:1,'環境固有操作は独立グループ');
+   assert.equal(d.querySelector('.control-group.document-actions:not([data-host-group])').textContent.includes('ZIPを保存'),false,'既存の文書操作グループに追加ボタンを混入しない');
+   for(const group of hostGroups){assert.ok(group.querySelector('.control-group__title'));assert.ok(group.querySelector('button'));}
+   for(const group of d.querySelectorAll('.workspace-view-controls')){
+     const children=[...group.children];
+     assert.notEqual(children[0]?.getAttribute('role'),'separator');
+     assert.notEqual(children.at(-1)?.getAttribute('role'),'separator');
+     for(let i=1;i<children.length;i++)assert.ok(!(children[i].getAttribute('role')==='separator'&&children[i-1].getAttribute('role')==='separator'));
+   }
    assert.deepEqual(instance.errors,[]);
    console.log(`${platform}: 実物UI起動・対象外除去・固有操作追加 OK`);
  }finally{instance.dom.window.close();}
 }
+// 比較用外枠は表示対象の切替で幅を半分にしない。
+const comparison=new JSDOM(await read('master.html'),{runScripts:'outside-only',url:'https://preview.invalid'});
+try{
+ comparison.window.eval(await read('comparison.js'));
+ const d=comparison.window.document;
+ assert.equal(d.getElementById('stage').style.width,'1280px');
+ d.getElementById('show-baseline').click();
+ assert.equal(d.getElementById('stage').style.width,'1280px');
+ assert.equal(d.getElementById('baseline').getAttribute('aria-hidden'),'false');
+ d.getElementById('show-result').click();
+ assert.equal(d.getElementById('stage').style.width,'1280px');
+ assert.equal(d.getElementById('result').getAttribute('aria-hidden'),'false');
+ for(const width of ['390','760','960','1600']){const field=d.getElementById('width');field.value=width;field.dispatchEvent(new comparison.window.Event('change'));assert.equal(d.getElementById('stage').style.width,`${width}px`);}
+ console.log('比較外枠: 切替前後で寸法を維持、390/760/960/1280/1600pxの幅指定 OK（実測ではなく指定値検査）');
+}finally{comparison.window.close();}

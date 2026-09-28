@@ -30,4 +30,5 @@ for (const baseline of [true, false]) {
   }
 }
 await writeFile(path.join(out,'master.html'),await readFile(path.join(here,'faithful/master.html'),'utf8'));
+for (const file of ['comparison.css','comparison.js']) await writeFile(path.join(out,file),await readFile(path.join(here,'faithful',file),'utf8'));
 console.log('実物App.tsxから比較基準・Desktop・Web・SPFx・統合版を生成しました。');
