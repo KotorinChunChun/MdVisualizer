@@ -52,7 +52,7 @@ Auto ReloadがONで未編集なら、本文と「最後に正常に読込／保�
 
 Markdown編集ツールバーから、見出し、文字装飾、引用、各種リスト、リンク、コード、表、Mermaid、水平線、画像、draw.io図を挿入できます。CSV／TSV表、Markdown内の画像・SVG、draw.io図はプレビュー側の編集操作から、選択した箇所だけをドラフトへ反映します。
 
-Mermaid図の編集ボタンからGUIエディターを開き、ノード・接続・表示文字・形・色を編集できます。外側の「反映」で本文へ戻し、通常の保存操作で文書に保存します。SPFxもMermaid GUI編集を提供します。
+Mermaid図の編集ボタンからGUIエディターを開き、ノード・接続・表示文字・形・色を編集できます。外側の「反映」で本文へ戻し、通常の保存操作で文書に保存します。SPFxもMermaid GUI編集を提供します。区間選択・グループ削除・既定値への復帰は[Mermaid図のGUI編集](/docs/user/ui/mermaid-editing.md)を参照してください。
 
 「HTML出力」ではスクリプトなし／ありとファイル名を選択します。デスクトップは続いて保存先フォルダーを指定し、SPFxはダウンロードします。未保存の本文も出力対象です。本文・表・画像・図を単一HTMLにまとめるため、完成後は元のMarkdownがなくても閲覧できます。
 
@@ -141,6 +141,7 @@ PowerShellコードは`powershell`、`pwsh`、`ps1`と明示されたフェン�
 - [インストール](/docs/user/INSTALLATION.md)
 - [AI相談・編集](/docs/user/ui/codex.md)
 - [AIスキル設定](/docs/user/ui/codex-skills.md)
+- [Mermaid図のGUI編集](/docs/user/ui/mermaid-editing.md)
 - [HTML出力CLI](/docs/user/HTML_EXPORT_CLI.md)
 
 ビルドや改造は[開発者ガイド](/docs/DEVELOPERS_GUIDE.md)から参照してください。

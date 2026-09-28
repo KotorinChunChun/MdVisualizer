@@ -62730,10 +62730,47 @@
       "signature": "ca5504a47d9edfd50068460f4a9a60e64140e5fc7ff84049a4f1daf6c7c08c41"
     },
     {
+      "id": "db58b5d0f5e80104",
+      "key": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss||.spfxMermaidEditorOverlay button",
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss",
+      "line": 227,
+      "values": [
+        "min-height:32px",
+        "padding:4px 10px",
+        "border:1px solid var(--md-border, #d1d1d1)",
+        "border-radius:3px",
+        "background:#fff",
+        "color:#242424",
+        "font:inherit"
+      ],
+      "signature": "acb90c2260929912a6fda14b9bac13ef1f342dff7621c13f8345d35b5e84a0a9"
+    },
+    {
+      "id": "1ddefc329bde303c",
+      "key": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss||.spfxMermaidEditorOverlay header button",
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss",
+      "line": 228,
+      "values": [
+        "padding-inline:0"
+      ],
+      "signature": "d6d616998b74e4b9f5866b0635f84b36c2b882b6f1e83cc40346947a1868d6f3"
+    },
+    {
+      "id": "ee164ba830e0ecc6",
+      "key": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss||.spfxMermaidEditorOverlay button.primary",
+      "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss",
+      "line": 229,
+      "values": [
+        "color:#fff",
+        "background:var(--md-accent, #0f6cbd)"
+      ],
+      "signature": "70f56d244ddbdb15af850a259e78ddc33abb579b36c97386c2fbc668670e849c"
+    },
+    {
       "id": "f49e154e48eab1b9",
       "key": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss||.spfxHtmlExportOverlay input,.spfxHtmlExportOverlay select",
       "file": "web-platform/apps/spfx/src/webparts/mdVisualizer/MdVisualizer.global.scss",
-      "line": 228,
+      "line": 234,
       "values": [
         "min-height:32px"
       ],
