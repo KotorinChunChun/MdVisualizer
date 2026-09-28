@@ -15,7 +15,8 @@ const MAX_MESSAGES: usize = 500;
 const MAX_ATTACHMENTS: usize = 100;
 const MAX_TEXT_LENGTH: usize = 200_000;
 const MAX_ATTACHMENT_BYTES: usize = 10 * 1024 * 1024;
-const MAX_SESSION_BYTES: usize = 20 * 1024 * 1024;
+// 元画像・応答画像と埋込コードの比較snapshotを含む。各画像10MBの制限は維持する。
+const MAX_SESSION_BYTES: usize = 128 * 1024 * 1024;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -71,7 +72,33 @@ pub struct CodexConversationMessage {
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub attachment_labels: HashMap<String, String>,
     pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub response: Option<CodexResponse>,
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexResponse {
+    pub request_id: String,
+    pub target: CodexDraftSnapshot,
+    pub markdown: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image: Option<CodexResponseImage>,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexResponseImage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub before_attachment_id: Option<String>,
+    pub after_attachment_id: String,
+    pub source: String,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub adoption: Option<CodexImageAdoption>,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexImageAdoption { pub document_path: String, pub source: String, pub method: String, pub adopted_at: String }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -168,6 +195,13 @@ fn valid_id(value: &str) -> bool {
 
 fn valid_text(value: &str, maximum: usize) -> bool {
     value.len() <= maximum && !value.contains('\0')
+}
+
+fn valid_snapshot(snapshot: &CodexDraftSnapshot) -> bool {
+    valid_document_id(&snapshot.document_id)
+        && valid_text(&snapshot.content, MAX_SESSION_BYTES)
+        && snapshot.from <= snapshot.to
+        && snapshot.to <= snapshot.content.encode_utf16().count()
 }
 
 fn valid_document_id(value: &str) -> bool {
@@ -274,6 +308,19 @@ fn validate_conversation(conversation: &CodexConversation) -> Result<(), String>
         return Err("添付画像IDが重複しています。".into());
     }
     for message in &conversation.messages {
+        if let Some(response) = &message.response {
+            if !valid_id(&response.request_id) || !valid_snapshot(&response.target)
+                || !valid_text(&response.markdown, MAX_SESSION_BYTES)
+                || response.image.as_ref().is_some_and(|image| {
+                    !attachment_ids.contains(image.after_attachment_id.as_str())
+                        || image.before_attachment_id.as_ref().is_some_and(|id| !attachment_ids.contains(id.as_str()))
+                        || !matches!(image.status.as_str(), "pending" | "adopted" | "rejected")
+                        || !valid_text(&image.source, MAX_SESSION_BYTES)
+                        || image.adoption.as_ref().is_some_and(|entry| !valid_path(&entry.document_path) || !valid_text(&entry.source, MAX_SESSION_BYTES) || !valid_text(&entry.method, 100) || parse_time(&entry.adopted_at).is_err())
+                }) {
+                return Err("応答の採用対象または画像候補が不正です。".into());
+            }
+        }
         if !matches!(message.role.as_str(), "user" | "assistant")
             || !valid_text(&message.text, MAX_TEXT_LENGTH)
             || !message
@@ -295,11 +342,7 @@ fn validate_conversation(conversation: &CodexConversation) -> Result<(), String>
         return Err("下書きの添付画像参照が不正です。".into());
     }
     if let Some(snapshot) = &conversation.draft.target_snapshot {
-        if !valid_document_id(&snapshot.document_id)
-            || !valid_text(&snapshot.content, MAX_TEXT_LENGTH)
-            || snapshot.from > snapshot.to
-            || snapshot.to > snapshot.content.len()
-        {
+        if !valid_snapshot(snapshot) {
             return Err("下書きの対象範囲が不正です。".into());
         }
     }
@@ -307,10 +350,7 @@ fn validate_conversation(conversation: &CodexConversation) -> Result<(), String>
         || conversation.draft.text_targets.iter().any(|target| {
             !valid_id(&target.id)
                 || !valid_text(&target.label, 200)
-                || !valid_document_id(&target.snapshot.document_id)
-                || !valid_text(&target.snapshot.content, MAX_TEXT_LENGTH)
-                || target.snapshot.from > target.snapshot.to
-                || target.snapshot.to > target.snapshot.content.len()
+                || !valid_snapshot(&target.snapshot)
                 || parse_time(&target.added_at).is_err()
         })
         || conversation.draft.text_targets.iter().map(|target| &target.id).collect::<HashSet<_>>().len() != conversation.draft.text_targets.len()
@@ -452,6 +492,7 @@ mod tests {
             document_id: Some("document-1".into()),
             document_path: Some("C:\\docs\\note.md".into()),
             messages: vec![CodexConversationMessage {
+                response: None,
                 role: "user".into(),
                 text: "質問".into(),
                 attachment_ids: vec![],
@@ -483,6 +524,70 @@ mod tests {
         value.messages[0].attachment_ids.clear();
         value.document_path = Some("a\0b".into());
         assert!(validate_conversation(&value).is_err());
+    }
+
+    #[test]
+    fn response_target_roundtrip_and_utf16_ranges_are_checked() {
+        let mut value = session("2026-09-29T00:00:00Z");
+        value.messages[0].response = Some(CodexResponse {
+            request_id: "request-1".into(), markdown: "回答".into(), image: None,
+            target: CodexDraftSnapshot { document_id: "tab:1".into(), content: "図😀".into(), from: 1, to: 3 },
+        });
+        validate_conversation(&value).unwrap();
+        let serialized = serde_json::to_vec(&value).unwrap();
+        let restored: CodexConversation = serde_json::from_slice(&serialized).unwrap();
+        assert_eq!(restored.messages[0].response.as_ref().unwrap().target.to, 3);
+        value.messages[0].response.as_mut().unwrap().target.to = 4;
+        assert!(validate_conversation(&value).is_err());
+        value.messages[0].response.as_mut().unwrap().target.to = 3;
+        value.messages[0].response.as_mut().unwrap().image = Some(CodexResponseImage { before_attachment_id: None, after_attachment_id: "missing".into(), source: "image/a.png".into(), status: "pending".into(), adoption: None });
+        assert!(validate_conversation(&value).is_err());
+    }
+
+    #[test]
+    fn draft_snapshots_keep_large_embedded_documents_across_reload() {
+        let mut value = session("2026-09-29T00:00:00Z");
+        let content = format!("図😀\n![](data:image/png;base64,{})", "A".repeat(300_000));
+        let snapshot = CodexDraftSnapshot {
+            document_id: "tab:1".into(), content: content.clone(), from: 0, to: 3,
+        };
+        value.draft.target_snapshot = Some(snapshot.clone());
+        value.draft.text_targets.push(CodexConversationTextTarget {
+            id: "text-1".into(), label: "先頭の選択".into(), snapshot,
+            added_at: value.updated_at.clone(),
+        });
+        validate_conversation(&value).unwrap();
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join(SESSIONS_FILENAME);
+        persist(&path, &CodexSessionStore {
+            retention_days: 30, sessions: vec![value], deleted_session_ids: HashSet::new(),
+        }).unwrap();
+        let restored = load_from(&path).unwrap();
+        assert_eq!(restored.sessions[0].draft.target_snapshot.as_ref().unwrap().content, content);
+        assert_eq!(restored.sessions[0].draft.text_targets[0].snapshot.content, content);
+        assert_eq!(restored.sessions[0].draft.text_targets[0].snapshot.to, 3);
+    }
+
+    #[test]
+    fn legacy_and_named_draft_ranges_use_javascript_utf16_positions() {
+        for named in [false, true] {
+            let mut value = session("2026-09-29T00:00:00Z");
+            let snapshot = CodexDraftSnapshot {
+                document_id: "tab:1".into(), content: "図😀".into(), from: 1, to: 3,
+            };
+            if named {
+                value.draft.text_targets.push(CodexConversationTextTarget {
+                    id: "text-1".into(), label: "絵文字".into(), snapshot,
+                    added_at: value.updated_at.clone(),
+                });
+            } else {
+                value.draft.target_snapshot = Some(snapshot);
+            }
+            validate_conversation(&value).unwrap();
+            if named { value.draft.text_targets[0].snapshot.to = 4; }
+            else { value.draft.target_snapshot.as_mut().unwrap().to = 4; }
+            assert!(validate_conversation(&value).is_err(), "UTF-8バイト数で範囲外を受け付けない");
+        }
     }
 
     #[test]
