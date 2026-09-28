@@ -55,6 +55,7 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 ## 開発資料の案内
 
 - [製品概要・利用方法](/README.md)
+- [AI応答・画像候補の採用契約](/docs/developer/design/ai-candidate-adoption.md)
 - [AI相談・編集](/docs/user/ui/codex.md)、[AIスキル設定](/docs/user/ui/codex-skills.md)、[編集画面の状態](/docs/developer/ui/01-product-ux.md)
 - [HTML出力CLI](/docs/user/HTML_EXPORT_CLI.md)。独立CLIの完成範囲を説明する。本体導入時の契約は[HTML出力統合仕様](/docs/developer/HTML_EXPORT_INTEGRATION.md)。
 - [検証の入口](/docs/developer/testing/01-test-strategy.md)、[検証ケースの入口](/docs/developer/testing/02-test-cases.md)、[内部PDF](/docs/developer/testing/03-internal-pdf.md)、[Diff](/docs/developer/testing/04-document-diff.md)
