@@ -334,7 +334,7 @@
       "evidence": "MdVisualizerControllerの文書操作は保存/HTML出力/差分。"
     },
     {
-      "file": "web-platform/packages/editor-ui/src/assets/screenpresso.html",
+      "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
       "hosts": {
         "desktop": "実装: PNG/JPEGの画像編集から選択して起動",
         "html": "実装: WebImageEditorから共通選択画面へ接続",
@@ -354,7 +354,7 @@
       "evidence": "src/App.tsxとweb-platform/apps/web/src/WebImageEditor.tsx。HTML原本内部の操作は隔離iframeで実行。"
     },
     {
-      "file": "web-platform/packages/editor-ui/src/components/ScreenpressoEditor.tsx",
+      "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
       "hosts": {
         "desktop": "実装: PNG/JPEGの画像編集から選択して起動",
         "html": "実装: WebImageEditorから共通選択画面へ接続",

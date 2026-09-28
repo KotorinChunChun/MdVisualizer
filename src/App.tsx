@@ -23,7 +23,7 @@ import { MediaPreviewModal, type ImageEditContext, type MediaPreviewTarget, type
 import { ImageGallery, type ImageGalleryItem } from "./components/ImageGallery";
 import { ImageEditingDialog } from "./components/ImageEditingDialog";
 import { createRenderedImage } from "./lib/commands";
-import { pngBytes } from "./lib/screenpressoHost";
+import { pngBytes } from "./lib/rasterEditor2Host";
 import { SvgSourceEditor, type SvgSourceEditTarget } from "./components/SvgSourceEditor";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DocumentToc } from "./components/DocumentToc";

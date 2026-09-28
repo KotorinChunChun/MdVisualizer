@@ -216,8 +216,10 @@ web/tests/.php-zip-fixtures/
 /src/lib/copyOperation.ts
 /src/lib/selectionDecoration.ts
 
-/src/assets/screenpresso.html
-/src/lib/screenpressoHost.ts
+/src/assets/rasterEditor2.html
+/src/lib/rasterEditor2Host.ts
 /src/components/ImageEditingDialog.tsx
-/src/components/ScreenpressoEditor.tsx
-/src/styles/screenpresso.css
+/src/components/RasterEditor2.tsx
+/src/styles/rasterEditor2.css
+
+/src/lib/rasterOutput.ts

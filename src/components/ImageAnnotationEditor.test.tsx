@@ -65,7 +65,7 @@ describe("ImageAnnotationEditor", () => {
   it("shows independent tools, the color palette, and canvas dot controls", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     loadEditorImage(container);
-    expect(screen.getByRole("dialog", { name: "画像編集: sample.png" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "ラスタ編集1: sample.png" })).toBeTruthy();
     for (const tool of ["選択", "鉛筆", "ブラシ", "消しゴム", "塗りつぶし", "スポイト", "線", "四角", "楕円", "矢印", "マスク", "ラベル", "切り抜き"]) {
       expect(screen.getByRole("button", { name: new RegExp(`^${tool}$`) })).toBeTruthy();
     }
@@ -117,7 +117,7 @@ describe("ImageAnnotationEditor", () => {
   it("enables applying a centered numeric canvas expansion without annotations", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     loadEditorImage(container);
-    const apply = screen.getByRole("button", { name: "適用" }) as HTMLButtonElement;
+    const apply = screen.getByRole("button", { name: "保存して閉じる" }) as HTMLButtonElement;
     expect(apply.disabled).toBe(true);
     fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "420" } });
     expect(apply.disabled).toBe(false);
@@ -224,7 +224,7 @@ describe("ImageAnnotationEditor", () => {
   it("places and deletes a selected item with the Delete key", () => {
     const { container } = render(<ImageAnnotationEditor {...props} />);
     const canvas = editorCanvas(container);
-    const apply = screen.getByRole("button", { name: "適用" }) as HTMLButtonElement;
+    const apply = screen.getByRole("button", { name: "保存して閉じる" }) as HTMLButtonElement;
     expect(apply.disabled).toBe(true);
     fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 150, clientY: 75 });
     expect(apply.disabled).toBe(false);
@@ -240,9 +240,9 @@ describe("ImageAnnotationEditor", () => {
     fireEvent.pointerMove(canvas, { pointerId: 31, clientX: 80, clientY: 60 });
     fireEvent.pointerUp(canvas, { pointerId: 31, clientX: 120, clientY: 80 });
     expect((screen.getByRole("button", { name: "元に戻す" }) as HTMLButtonElement).disabled).toBe(false);
-    expect((screen.getByRole("button", { name: "適用" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole("button", { name: "保存して閉じる" }) as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
-    expect((screen.getByRole("button", { name: "適用" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "保存して閉じる" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("returns edited embedded images as a PNG data URI without calling the file saver", async () => {
@@ -258,7 +258,7 @@ describe("ImageAnnotationEditor", () => {
     expect(container.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,AAAA");
     loadEditorImage(container);
     fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "321" } });
-    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+    fireEvent.click(screen.getByRole("button", { name: "文書へ反映" }));
     await waitFor(() => expect(onApply).toHaveBeenCalledWith(expect.objectContaining({
       filename: "embedded.png",
       backupAvailable: false,
@@ -289,7 +289,7 @@ describe("ImageAnnotationEditor", () => {
     fireEvent.click(screen.getByLabelText("角丸四角形"));
     fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 150, clientY: 75 });
     fireEvent.wheel(canvas, { deltaY: -100, altKey: true, timeStamp: 100 });
-    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+    fireEvent.click(screen.getByRole("button", { name: "文書へ反映" }));
     await waitFor(() => expect(onApply).toHaveBeenCalled());
     expect(rotate).toHaveBeenCalledWith(2 * Math.PI / 180);
     expect(roundRect).toHaveBeenCalled();
@@ -319,7 +319,7 @@ describe("ImageAnnotationEditor", () => {
     expect(container.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,AAAA");
     loadEditorImage(container);
     fireEvent.change(screen.getByLabelText("幅 (dot)"), { target: { value: "321" } });
-    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+    fireEvent.click(screen.getByRole("button", { name: "文書へ反映" }));
     await waitFor(() => expect(onApply).toHaveBeenCalledWith(expect.objectContaining({
       filename: "sharepoint.png",
       backupAvailable: false,
@@ -368,7 +368,7 @@ describe("ImageAnnotationEditor", () => {
     fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 150, clientY: 75 });
     fireEvent.pointerDown(canvas, { button: 0, pointerId: 2, clientX: 30, clientY: 20 });
     fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
-    expect((screen.getByRole("button", { name: "適用" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "保存して閉じる" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("does not switch selection to an existing item while a stamp tool is active", () => {
@@ -380,7 +380,7 @@ describe("ImageAnnotationEditor", () => {
     fireEvent.pointerDown(canvas, { button: 0, pointerId: 2, clientX: 30, clientY: 20 });
     fireEvent.pointerDown(canvas, { button: 0, pointerId: 3, clientX: 150, clientY: 75 });
     fireEvent.keyDown(window, { key: "Delete" });
-    expect((screen.getByRole("button", { name: "適用" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole("button", { name: "保存して閉じる" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("cuts the selection with Ctrl+X and makes it available for paste", () => {
@@ -388,7 +388,7 @@ describe("ImageAnnotationEditor", () => {
     const canvas = editorCanvas(container);
     fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 150, clientY: 75 });
     fireEvent.keyDown(window, { key: "x", ctrlKey: true });
-    expect((screen.getByRole("button", { name: "適用" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "保存して閉じる" }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.contextMenu(canvas, { clientX: 20, clientY: 20 });
     expect((screen.getByRole("menuitem", { name: "貼り付け" }) as HTMLButtonElement).disabled).toBe(false);
   });

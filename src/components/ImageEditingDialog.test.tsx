@@ -5,12 +5,12 @@ import { readImageForEdit } from "../lib/commands";
 
 vi.mock("../lib/commands", () => ({ readImageForEdit: vi.fn() }));
 vi.mock("./ImageAnnotationEditor", () => ({ ImageAnnotationEditor: ({ target }: { target: object }) => <pre data-testid="legacy">{JSON.stringify(target)}</pre> }));
-vi.mock("./ScreenpressoEditor", () => ({ ScreenpressoEditor: ({ target }: { target: object }) => <pre data-testid="new">{JSON.stringify(target)}</pre> }));
+vi.mock("./RasterEditor2", () => ({ RasterEditor2: ({ target }: { target: object }) => <pre data-testid="new">{JSON.stringify(target)}</pre> }));
 const safe = "data:image/png;base64,aGVsbG8=";
 const props = () => ({ target: { rawSrc: "http://asset.localhost/C/test.jpg", fullPath: "C:\\test.jpg", filename: "test.jpg", storage: "external" as const }, imageVersion: 0, onApply: vi.fn(), onCancel: vi.fn(), onError: vi.fn() });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); });
 describe("画像編集選択と安全な読込み", () => {
-  it.each([["画像編集1", "legacy"], ["画像編集2", "new"]])("%sへネイティブ読込Data URIを渡す", async (name, id) => {
+  it.each([["ラスタ編集1", "legacy"], ["ラスタ編集2", "new"]])("%sへネイティブ読込Data URIを渡す", async (name, id) => {
     vi.mocked(readImageForEdit).mockResolvedValue(safe); render(<ImageEditingDialog {...props()} />);
     await waitFor(() => expect((screen.getByRole("button", { name }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole("button", { name }));
@@ -20,7 +20,7 @@ describe("画像編集選択と安全な読込み", () => {
   it("読込み失敗を欠落と混同せず新規保存しない", async () => {
     vi.mocked(readImageForEdit).mockRejectedValue(new Error("権限なし")); render(<ImageEditingDialog {...props()} />);
     await screen.findByRole("alert"); expect(screen.queryByText(/白紙から新規作成/)).toBeNull();
-    expect((screen.getByRole("button", { name: "画像編集1" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "ラスタ編集1" }) as HTMLButtonElement).disabled).toBe(true);
   });
   it("欠落時は白紙を生成し、キャンセルだけでは保存しない", async () => {
     vi.mocked(readImageForEdit).mockResolvedValue(null);
@@ -29,9 +29,9 @@ describe("画像編集選択と安全な読込み", () => {
     const p = props(); render(<ImageEditingDialog {...p} />);
     await screen.findByText(/白紙から新規作成/);
     fireEvent.change(screen.getByLabelText(/幅/), { target: { value: "0" } });
-    expect((screen.getByRole("button", { name: "画像編集2" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "ラスタ編集2" }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.change(screen.getByLabelText(/幅/), { target: { value: "640" } });
-    fireEvent.click(screen.getByRole("button", { name: "画像編集2" }));
+    fireEvent.click(screen.getByRole("button", { name: "ラスタ編集2" }));
     expect(JSON.parse(screen.getByTestId("new").textContent!).createNew).toBe(true);
     expect(p.onApply).not.toHaveBeenCalled();
   });

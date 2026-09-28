@@ -113,4 +113,4 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 
 - 日常の高速検証・増分型検査・関連テスト・性能計測は [開発・検証の自動化](/docs/developer/operations/02-development-automation.md) の「高速検証」を参照する。全件検証と公開時の実確認は省略しない。
 
-- [画像注釈HTMLの統合](/docs/developer/ui/SCREENPRESSO_INTEGRATION.md)：Screenpresso画面の隔離・保存契約と新旧共存の検証。
+- [画像注釈HTMLの統合](/docs/developer/ui/RASTER_EDITOR2_INTEGRATION.md)：RasterEditor2画面の隔離・保存契約と新旧共存の検証。
