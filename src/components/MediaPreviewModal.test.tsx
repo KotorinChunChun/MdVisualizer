@@ -131,7 +131,7 @@ describe("MediaPreviewModal", () => {
     const onConvertAsset = vi.fn().mockResolvedValue(undefined);
     const context = { documentPath: "C:/docs/note.md", occurrence: { kind: "inline-svg", id: "inline-svg-0-6", start: 0, end: 6, sourceLine: 1, expected: "<svg/>", svg: "<svg/>" }, assetKind: "svg", storage: "embedded" } as const;
     render(<MediaPreviewModal content={{ kind: "svg", svg: "<svg/>", alt: "図" }} conversionContext={context} onConvertAsset={onConvertAsset} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "同フォルダのファイルへ変換" }));
+    fireEvent.click(screen.getByRole("button", { name: "ファイルへ変換" }));
     await waitFor(() => expect(onConvertAsset).toHaveBeenCalledWith(context));
   });
 

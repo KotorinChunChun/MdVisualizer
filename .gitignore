@@ -223,3 +223,4 @@ web/tests/.php-zip-fixtures/
 /src/styles/rasterEditor2.css
 
 /src/lib/rasterOutput.ts
+/src/lib/imageActions.ts

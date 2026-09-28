@@ -2604,7 +2604,7 @@ export function App() {
             allowBlockActions={previewOperationPolicy({ writable: canEditActive, interactionMode, printing, saving: activeTab.saving }).editBlocks}
             content={previewContent}
             baseDir={activeTab.document.base_dir}
-            onTextEdit={canEditActive && interactionMode === "edit" && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
+            onTextEdit={canEditActive && !printing && !activeTab.saving ? (baseContent, from, to, replacement) => {
               const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
               if (!tab || tab.id !== tabsStateRef.current.activeId || tab.generation !== activeTab.generation || tab.saving) return false;
               const documentId = `${tab.id}:${tab.generation}`;

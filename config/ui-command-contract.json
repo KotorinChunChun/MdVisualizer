@@ -29216,14 +29216,14 @@
       "orderScope": {
         "component": "svgPreview",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
-        "sourceLine": 250,
+        "sourceLine": 253,
         "sourceColumn": 9,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
-        "line": 250,
+        "line": 253,
         "column": 9
       },
       "interactions": [
@@ -29268,14 +29268,14 @@
       "orderScope": {
         "component": "DrawioBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
-        "sourceLine": 293,
+        "sourceLine": 296,
         "sourceColumn": 9,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
-        "line": 293,
+        "line": 296,
         "column": 9
       },
       "interactions": [
@@ -29320,14 +29320,14 @@
       "orderScope": {
         "component": "DrawioBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
-        "sourceLine": 306,
+        "sourceLine": 309,
         "sourceColumn": 69,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
-        "line": 306,
+        "line": 309,
         "column": 69
       },
       "interactions": [
@@ -29371,14 +29371,14 @@
       "orderScope": {
         "component": "DrawioBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
-        "sourceLine": 310,
+        "sourceLine": 313,
         "sourceColumn": 97,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DrawioBlock.tsx",
-        "line": 310,
+        "line": 313,
         "column": 97
       },
       "interactions": [
@@ -34565,14 +34565,14 @@
       "orderScope": {
         "component": "ImageRenderer",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
-        "sourceLine": 246,
+        "sourceLine": 262,
         "sourceColumn": 9,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
-        "line": 246,
+        "line": 262,
         "column": 9
       },
       "interactions": [
@@ -34616,14 +34616,14 @@
       "orderScope": {
         "component": "ImageRenderer",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
-        "sourceLine": 280,
+        "sourceLine": 297,
         "sourceColumn": 9,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
-        "line": 280,
+        "line": 297,
         "column": 9
       },
       "interactions": [
@@ -34656,6 +34656,58 @@
         "name": "共通／ImageRenderer／ImageRendererの操作領域",
         "order": 2,
         "number": "UI154-02",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
+      "id": "ui-9d8bcffb306f",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "span",
+      "role": "{{onCaptionEdit ? \"button\" : undefined}}",
+      "displayName": "{{alt || \"キャプションを追加\"}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{alt || \"キャプションを追加\"}}",
+      "orderScope": {
+        "component": "ImageRenderer",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
+        "sourceLine": 323,
+        "sourceColumn": 57,
+        "ordinal": 3
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/ImageRenderer.tsx",
+        "line": 323,
+        "column": 57
+      },
+      "interactions": [
+        "onDoubleClick",
+        "onKeyDown"
+      ],
+      "signature": "sha256:40db1a17c63f055bd259fa751d1d2a4e218515e48e4ff20fbb7b608485985593",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI154",
+        "name": "共通／ImageRenderer／ImageRendererの操作領域",
+        "order": 3,
+        "number": "UI154-03",
         "basis": "定義順（実表示順は要確認）"
       }
     },
@@ -35178,14 +35230,14 @@
       "orderScope": {
         "component": "MarkdownInput",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 366,
+        "sourceLine": 368,
         "sourceColumn": 21,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 366,
+        "line": 368,
         "column": 21
       },
       "interactions": [],
@@ -35227,14 +35279,14 @@
       "orderScope": {
         "component": "MarkdownInput",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 367,
+        "sourceLine": 369,
         "sourceColumn": 10,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 367,
+        "line": 369,
         "column": 10
       },
       "interactions": [
@@ -35279,14 +35331,14 @@
       "orderScope": {
         "component": "InlineCodeCopyButton",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 404,
+        "sourceLine": 406,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 404,
+        "line": 406,
         "column": 10
       },
       "interactions": [
@@ -35330,14 +35382,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 714,
+        "sourceLine": 716,
         "sourceColumn": 18,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 714,
+        "line": 716,
         "column": 18
       },
       "interactions": [
@@ -35381,14 +35433,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 741,
+        "sourceLine": 743,
         "sourceColumn": 27,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 741,
+        "line": 743,
         "column": 27
       },
       "interactions": [
@@ -35432,14 +35484,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 741,
+        "sourceLine": 743,
         "sourceColumn": 101,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 741,
+        "line": 743,
         "column": 101
       },
       "interactions": [
@@ -35483,14 +35535,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 741,
+        "sourceLine": 743,
         "sourceColumn": 175,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 741,
+        "line": 743,
         "column": 175
       },
       "interactions": [
@@ -35534,14 +35586,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 741,
+        "sourceLine": 743,
         "sourceColumn": 259,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 741,
+        "line": 743,
         "column": 259
       },
       "interactions": [
@@ -35585,14 +35637,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 776,
+        "sourceLine": 778,
         "sourceColumn": 135,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 776,
+        "line": 778,
         "column": 135
       },
       "interactions": [
@@ -35636,14 +35688,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 777,
+        "sourceLine": 779,
         "sourceColumn": 95,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 777,
+        "line": 779,
         "column": 95
       },
       "interactions": [
@@ -35687,14 +35739,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 782,
         "sourceColumn": 58,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 782,
         "column": 58
       },
       "interactions": [
@@ -35738,14 +35790,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 782,
         "sourceColumn": 219,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 782,
         "column": 219
       },
       "interactions": [
@@ -35789,14 +35841,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 782,
         "sourceColumn": 340,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 782,
         "column": 340
       },
       "interactions": [
@@ -35840,14 +35892,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 782,
         "sourceColumn": 459,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 782,
         "column": 459
       },
       "interactions": [],
@@ -35889,14 +35941,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 782,
         "sourceColumn": 497,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 782,
         "column": 497
       },
       "interactions": [],
@@ -35938,14 +35990,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 781,
+        "sourceLine": 783,
         "sourceColumn": 60,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 781,
+        "line": 783,
         "column": 60
       },
       "interactions": [
@@ -35989,14 +36041,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 782,
+        "sourceLine": 784,
         "sourceColumn": 59,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 782,
+        "line": 784,
         "column": 59
       },
       "interactions": [
@@ -36040,14 +36092,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 783,
+        "sourceLine": 785,
         "sourceColumn": 58,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 783,
+        "line": 785,
         "column": 58
       },
       "interactions": [
@@ -36091,14 +36143,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 785,
+        "sourceLine": 787,
         "sourceColumn": 145,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 785,
+        "line": 787,
         "column": 145
       },
       "interactions": [
@@ -36142,14 +36194,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 790,
+        "sourceLine": 792,
         "sourceColumn": 53,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 790,
+        "line": 792,
         "column": 53
       },
       "interactions": [
@@ -36193,14 +36245,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 790,
+        "sourceLine": 792,
         "sourceColumn": 191,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 790,
+        "line": 792,
         "column": 191
       },
       "interactions": [
@@ -36244,14 +36296,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 790,
+        "sourceLine": 792,
         "sourceColumn": 461,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 790,
+        "line": 792,
         "column": 461
       },
       "interactions": [
@@ -36295,14 +36347,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 799,
+        "sourceLine": 801,
         "sourceColumn": 111,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 799,
+        "line": 801,
         "column": 111
       },
       "interactions": [
@@ -36346,14 +36398,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 853,
+        "sourceLine": 855,
         "sourceColumn": 72,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 853,
+        "line": 855,
         "column": 72
       },
       "interactions": [
@@ -36398,14 +36450,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 862,
+        "sourceLine": 864,
         "sourceColumn": 33,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 862,
+        "line": 864,
         "column": 33
       },
       "interactions": [
@@ -36449,14 +36501,14 @@
       "orderScope": {
         "component": "UnsupportedFileCard",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 870,
+        "sourceLine": 872,
         "sourceColumn": 19,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 870,
+        "line": 872,
         "column": 19
       },
       "interactions": [
@@ -36500,14 +36552,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1266,
+        "sourceLine": 1271,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1266,
+        "line": 1271,
         "column": 7
       },
       "interactions": [
@@ -36553,14 +36605,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1274,
+        "sourceLine": 1279,
         "sourceColumn": 22,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1274,
+        "line": 1279,
         "column": 22
       },
       "interactions": [],
@@ -36602,14 +36654,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 193,
+        "sourceLine": 195,
         "sourceColumn": 23,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 193,
+        "line": 195,
         "column": 23
       },
       "interactions": [
@@ -36647,26 +36699,26 @@
       "controlKind": "button",
       "tag": "div",
       "role": null,
-      "displayName": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{imageContext && onOpenImageApp && imageApps.length > 0 && <ExternalActions\r\n        apps={imageApps}\r\n        title=\"\"\r\n        compact\r\n        onExecute={(app) => onOpenImageApp(app, imageContext)}\r\n      />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"同フォルダのファイルへ変換\" : \"埋め込みへ変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
+      "displayName": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageContext?.source ?? content.src})`, { success: \"マークダウンをコピーしました\", failure: \"コピーできませんでした\" })}>マークダウンでコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(imageContext?.source ?? content.src, { success: \"画像の参照先をコピーしました\", failure: \"コピーできませんでした\" })}>画像の参照先をコピー</button>\r\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{imageContext && onOpenImageApp && imageApps.length > 0 && <ExternalActions\r\n        apps={imageApps}\r\n        title=\"\"\r\n        compact\r\n        onExecute={(app) => onOpenImageApp(app, imageContext)}\r\n      />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"同フォルダのファイルへ変換\" : \"埋め込みへ変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
+      "labelExpression": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageContext?.source ?? content.src})`, { success: \"マークダウンをコピーしました\", failure: \"コピーできませんでした\" })}>マークダウンでコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(imageContext?.source ?? content.src, { success: \"画像の参照先をコピーしました\", failure: \"コピーできませんでした\" })}>画像の参照先をコピー</button>\r\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 202,
+        "sourceLine": 204,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 202,
+        "line": 204,
         "column": 5
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:cfb642f2ae55765244c5aac0acf2eff6d3298e179562a21d80c6547bb46ca321",
+      "signature": "sha256:8980d03828380c6c831e3ee735c0f66d69241f3ad00d257dcc5194b6b26d5f1e",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36698,26 +36750,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "クロップ",
+      "displayName": "図としてコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 211,
-        "sourceColumn": 18,
+        "sourceLine": 208,
+        "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 211,
-        "column": 18
+        "line": 208,
+        "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:76a755ee853b4c68202b27ad3f89e03081ae5de2f327f5eac2f696792e02fa47",
+      "signature": "sha256:25a4147e4dd0ca95da3d442845c7ae637fb13b64e032d6fe4df9d2e9f2444c0e",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36749,26 +36801,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "画像編集",
+      "displayName": "画像ファイルとしてコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 212,
-        "sourceColumn": 46,
+        "sourceLine": 209,
+        "sourceColumn": 9,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 212,
-        "column": 46
+        "line": 209,
+        "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:710b642daac09f693f658e4535bb1cc2a925f45a893ca5e2854d9454d28cd5dd",
+      "signature": "sha256:c468dc7420793a02732d82cfd6b3822e6af795aa84f8d6599d40b757d292f1e5",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36800,26 +36852,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "{{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"同フォルダのファイルへ変換\" : \"埋め込みへ変換\"}}",
-      "labelKind": "dynamic",
-      "labelExpression": "{{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"同フォルダのファイルへ変換\" : \"埋め込みへ変換\"}}",
+      "displayName": "マークダウンでコピー",
+      "labelKind": "static",
+      "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 213,
-        "sourceColumn": 47,
+        "sourceLine": 210,
+        "sourceColumn": 9,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 213,
-        "column": 47
+        "line": 210,
+        "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:6e4a83ffe13c540a286f6b44c4909ed536847264d53b5dde3c9add295c0e4c1e",
+      "signature": "sha256:b09a108d9e4964164f2f86b28e182aa5aff1345da6d9596b515a16b06fa27f4c",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36834,7 +36886,7 @@
         "php": "共通正本",
         "spfx": "共有部品:ホストでの使用条件確認"
       },
-      "nameCheck": "要実画面確認:動的表示/子要素",
+      "nameCheck": "静的照合",
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
@@ -36851,26 +36903,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "画像情報",
+      "displayName": "画像の参照先をコピー",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 217,
-        "sourceColumn": 41,
+        "sourceLine": 211,
+        "sourceColumn": 9,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 217,
-        "column": 41
+        "line": 211,
+        "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:02a5b5e2b313c7165a77b9c1c757967ee834001219915ca0a9f6765752c9dadb",
+      "signature": "sha256:602631ccceaa56ac6bd7f7b99d4735bf415370e30382bd12eedfd0ed391a1b1f",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36902,26 +36954,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "{{mode === \"fit\" ? \"1:1表示\" : \"全体表示\"}}",
-      "labelKind": "dynamic",
-      "labelExpression": "{{mode === \"fit\" ? \"1:1表示\" : \"全体表示\"}}",
+      "displayName": "クロップ",
+      "labelKind": "static",
+      "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 218,
-        "sourceColumn": 7,
+        "sourceLine": 215,
+        "sourceColumn": 18,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 218,
-        "column": 7
+        "line": 215,
+        "column": 18
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:9678dd0345ab7bf4b8ebda0b628fdbd18f6917099b0ca4c834a56a9efb27aecf",
+      "signature": "sha256:76a755ee853b4c68202b27ad3f89e03081ae5de2f327f5eac2f696792e02fa47",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36936,7 +36988,7 @@
         "php": "共通正本",
         "spfx": "共有部品:ホストでの使用条件確認"
       },
-      "nameCheck": "要実画面確認:動的表示/子要素",
+      "nameCheck": "静的照合",
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
@@ -36953,26 +37005,26 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
-      "displayName": "×",
+      "displayName": "画像編集",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 221,
-        "sourceColumn": 7,
+        "sourceLine": 216,
+        "sourceColumn": 46,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 221,
-        "column": 7
+        "line": 216,
+        "column": 46
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:0c35ed445e089e3f8e55821319588d677e59d3c54ae2cf85a27adbfe8151bc5e",
+      "signature": "sha256:710b642daac09f693f658e4535bb1cc2a925f45a893ca5e2854d9454d28cd5dd",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36999,7 +37051,211 @@
       }
     },
     {
-      "id": "ui-2ac8c9eb6434",
+      "id": "ui-f44e5355e0f6",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "{{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}}",
+      "orderScope": {
+        "component": "MediaPreviewModal",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "sourceLine": 217,
+        "sourceColumn": 47,
+        "ordinal": 9
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "line": 217,
+        "column": 47
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:e7500a8e0b452ef85a02a3f06d2bb10dfa82aab367ccccef5aa5736bd2454f8b",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI169",
+        "name": "共通／MediaPreviewModal／media-preview__toolbar",
+        "order": 7,
+        "number": "UI169-07",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-55fab484d7c0",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "画像情報",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "MediaPreviewModal",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "sourceLine": 221,
+        "sourceColumn": 41,
+        "ordinal": 10
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "line": 221,
+        "column": 41
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:02a5b5e2b313c7165a77b9c1c757967ee834001219915ca0a9f6765752c9dadb",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI169",
+        "name": "共通／MediaPreviewModal／media-preview__toolbar",
+        "order": 8,
+        "number": "UI169-08",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-68316e967a98",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "{{mode === \"fit\" ? \"1:1表示\" : \"全体表示\"}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{mode === \"fit\" ? \"1:1表示\" : \"全体表示\"}}",
+      "orderScope": {
+        "component": "MediaPreviewModal",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "sourceLine": 222,
+        "sourceColumn": 7,
+        "ordinal": 11
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "line": 222,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:9678dd0345ab7bf4b8ebda0b628fdbd18f6917099b0ca4c834a56a9efb27aecf",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI169",
+        "name": "共通／MediaPreviewModal／media-preview__toolbar",
+        "order": 9,
+        "number": "UI169-09",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-361082dd4100",
+      "featureGroup": "components",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
+      "displayName": "×",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "MediaPreviewModal",
+        "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "sourceLine": 225,
+        "sourceColumn": 7,
+        "ordinal": 12
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
+        "line": 225,
+        "column": 7
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:0c35ed445e089e3f8e55821319588d677e59d3c54ae2cf85a27adbfe8151bc5e",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "共通正本",
+        "php": "共通正本",
+        "spfx": "共有部品:ホストでの使用条件確認"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI169",
+        "name": "共通／MediaPreviewModal／media-preview__toolbar",
+        "order": 10,
+        "number": "UI169-10",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-7592c1a44c1f",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "p",
@@ -37010,14 +37266,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 223,
+        "sourceLine": 227,
         "sourceColumn": 25,
-        "ordinal": 9
+        "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 223,
+        "line": 227,
         "column": 25
       },
       "interactions": [
@@ -37050,7 +37306,7 @@
       }
     },
     {
-      "id": "ui-e85e78544c04",
+      "id": "ui-f24b0b1789ae",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "div",
@@ -37061,14 +37317,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 224,
+        "sourceLine": 228,
         "sourceColumn": 55,
-        "ordinal": 10
+        "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 224,
+        "line": 228,
         "column": 55
       },
       "interactions": [
@@ -37101,7 +37357,7 @@
       }
     },
     {
-      "id": "ui-a17a3f473098",
+      "id": "ui-745d978ee4dc",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "div",
@@ -37112,14 +37368,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 227,
+        "sourceLine": 231,
         "sourceColumn": 5,
-        "ordinal": 11
+        "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 227,
+        "line": 231,
         "column": 5
       },
       "interactions": [
@@ -37159,7 +37415,7 @@
       }
     },
     {
-      "id": "ui-acb1d2ada88c",
+      "id": "ui-bc164bd4ca25",
       "featureGroup": "components",
       "controlKind": "button",
       "tag": "div",
@@ -37170,14 +37426,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 275,
+        "sourceLine": 279,
         "sourceColumn": 11,
-        "ordinal": 12
+        "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 275,
+        "line": 279,
         "column": 11
       },
       "interactions": [
@@ -37221,14 +37477,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 142,
+        "sourceLine": 144,
         "sourceColumn": 69,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 142,
+        "line": 144,
         "column": 69
       },
       "interactions": [
@@ -37272,14 +37528,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 151,
+        "sourceLine": 153,
         "sourceColumn": 95,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 151,
+        "line": 153,
         "column": 95
       },
       "interactions": [
@@ -37323,14 +37579,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 170,
+        "sourceLine": 172,
         "sourceColumn": 99,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 170,
+        "line": 172,
         "column": 99
       },
       "interactions": [
@@ -37374,14 +37630,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 170,
+        "sourceLine": 172,
         "sourceColumn": 204,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 170,
+        "line": 172,
         "column": 204
       },
       "interactions": [
@@ -37425,14 +37681,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 171,
+        "sourceLine": 173,
         "sourceColumn": 36,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 171,
+        "line": 173,
         "column": 36
       },
       "interactions": [
@@ -37476,14 +37732,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 171,
+        "sourceLine": 173,
         "sourceColumn": 112,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 171,
+        "line": 173,
         "column": 112
       },
       "interactions": [
@@ -37527,14 +37783,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 171,
+        "sourceLine": 173,
         "sourceColumn": 261,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 171,
+        "line": 173,
         "column": 261
       },
       "interactions": [
@@ -37578,14 +37834,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 171,
+        "sourceLine": 173,
         "sourceColumn": 395,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 171,
+        "line": 173,
         "column": 395
       },
       "interactions": [
@@ -37629,14 +37885,14 @@
       "orderScope": {
         "component": "MermaidBlock",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "sourceLine": 175,
+        "sourceLine": 177,
         "sourceColumn": 53,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MermaidBlock.tsx",
-        "line": 175,
+        "line": 177,
         "column": 53
       },
       "interactions": [
@@ -46436,26 +46692,26 @@
       "controlKind": "menu",
       "tag": "div",
       "role": "menu",
-      "displayName": "{{!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role=\"separator\" />}<button type=\"button\" role=\"menuitem\" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}} {{!menu.selectedSkill && !editorActions && <><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.plainText ?? \"\"); setMenu(null); }}>プレーンテキストでコピー</button><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>マークダウンでコピー</button></>}} {{!menu.selectedSkill && menu.options.length > 0 && <div role=\"separator\" />}} {{!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type=\"button\" role=\"menuitem\" autoFocus={skill === menu.options[0]} onClick={() => {\n        if ([\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: \"new\" }); setMenu(null); }\n        else setMenu({ ...menu, selectedSkill: skill });\n      }}>{skill.config.label}</button>) : <>\n        <button type=\"button\" role=\"menuitem\" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"add\" }); setMenu(null); }}>現在の会話に追加</button>\n        <button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"new\" }); setMenu(null); }}>新しい会話を開始</button>\n      </>}} {{!menu.selectedSkill && [\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\") && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: \"add\" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}}",
+      "displayName": "{{!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role=\"separator\" />}<button type=\"button\" role=\"menuitem\" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}} {{!menu.selectedSkill && !editorActions && <><button type=\"button\" role=\"menuitem\" onClick={() => { if(menu.figureCopy) void menu.figureCopy(); else void navigator.clipboard.writeText(menu.plainText ?? \"\"); setMenu(null); }}>{menu.figureCopy ? \"図としてコピー\" : \"プレーンテキストでコピー\"}</button><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>マークダウンでコピー</button></>}} {{!menu.selectedSkill && menu.convert && <button type=\"button\" role=\"menuitem\" onClick={() => { void menu.convert?.(); setMenu(null); }}>{menu.conversionLabel}</button>}} {{!menu.selectedSkill && menu.options.length > 0 && <div role=\"separator\" />}} {{!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type=\"button\" role=\"menuitem\" autoFocus={skill === menu.options[0]} onClick={() => {\r\n        if ([\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: \"new\" }); setMenu(null); }\r\n        else setMenu({ ...menu, selectedSkill: skill });\r\n      }}>{skill.config.label}</button>) : <>\r\n        <button type=\"button\" role=\"menuitem\" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"add\" }); setMenu(null); }}>現在の会話に追加</button>\r\n        <button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"new\" }); setMenu(null); }}>新しい会話を開始</button>\r\n      </>}} {{!menu.selectedSkill && onConsult && [\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\") && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: \"add\" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role=\"separator\" />}<button type=\"button\" role=\"menuitem\" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}} {{!menu.selectedSkill && !editorActions && <><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.plainText ?? \"\"); setMenu(null); }}>プレーンテキストでコピー</button><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>マークダウンでコピー</button></>}} {{!menu.selectedSkill && menu.options.length > 0 && <div role=\"separator\" />}} {{!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type=\"button\" role=\"menuitem\" autoFocus={skill === menu.options[0]} onClick={() => {\n        if ([\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: \"new\" }); setMenu(null); }\n        else setMenu({ ...menu, selectedSkill: skill });\n      }}>{skill.config.label}</button>) : <>\n        <button type=\"button\" role=\"menuitem\" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"add\" }); setMenu(null); }}>現在の会話に追加</button>\n        <button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"new\" }); setMenu(null); }}>新しい会話を開始</button>\n      </>}} {{!menu.selectedSkill && [\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\") && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: \"add\" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}}",
+      "labelExpression": "{{!menu.selectedSkill && editorActions?.map((action, index) => <Fragment key={action.label}>{index > 0 && action.group !== editorActions[index - 1].group && <div role=\"separator\" />}<button type=\"button\" role=\"menuitem\" disabled={action.disabled} onClick={() => { void action.run(menu.target); setMenu(null); }}>{action.label}</button></Fragment>)}} {{!menu.selectedSkill && !editorActions && <><button type=\"button\" role=\"menuitem\" onClick={() => { if(menu.figureCopy) void menu.figureCopy(); else void navigator.clipboard.writeText(menu.plainText ?? \"\"); setMenu(null); }}>{menu.figureCopy ? \"図としてコピー\" : \"プレーンテキストでコピー\"}</button><button type=\"button\" role=\"menuitem\" onClick={() => { void navigator.clipboard.writeText(menu.markdownText ?? menu.target.content.slice(menu.target.from, menu.target.to)); setMenu(null); }}>マークダウンでコピー</button></>}} {{!menu.selectedSkill && menu.convert && <button type=\"button\" role=\"menuitem\" onClick={() => { void menu.convert?.(); setMenu(null); }}>{menu.conversionLabel}</button>}} {{!menu.selectedSkill && menu.options.length > 0 && <div role=\"separator\" />}} {{!menu.selectedSkill ? menu.options.map((skill) => <button key={skill.id} type=\"button\" role=\"menuitem\" autoFocus={skill === menu.options[0]} onClick={() => {\r\n        if ([\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\")) { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: skill.id, editMode: skill.config.mode, conversationAction: \"new\" }); setMenu(null); }\r\n        else setMenu({ ...menu, selectedSkill: skill });\r\n      }}>{skill.config.label}</button>) : <>\r\n        <button type=\"button\" role=\"menuitem\" autoFocus onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"add\" }); setMenu(null); }}>現在の会話に追加</button>\r\n        <button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), skillId: menu.selectedSkill!.id, editMode: menu.selectedSkill!.config.mode, conversationAction: \"new\" }); setMenu(null); }}>新しい会話を開始</button>\r\n      </>}} {{!menu.selectedSkill && onConsult && [\"image\", \"svg\", \"mermaid\", \"drawio\"].includes(menu.target.targetKind ?? \"\") && <><div role=\"separator\" /><button type=\"button\" role=\"menuitem\" onClick={() => { onConsult?.({ ...menu.target, requestId: crypto.randomUUID(), conversationAction: \"add\" }); setMenu(null); }}>この画像をAIの送信対象に追加</button></>}}",
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 67,
+        "sourceLine": 73,
         "sourceColumn": 32,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 67,
+        "line": 73,
         "column": 32
       },
       "interactions": [
         "onPointerDown"
       ],
-      "signature": "sha256:4046261056c2d1fec0269a22cd2539a088a4608353367122de591b79f488bc20",
+      "signature": "sha256:4a0257148a52ac7f9ad1ee25d262514e0d7c1cb3dd3503b0ef5a885e741ce4ce",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46493,14 +46749,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 68,
+        "sourceLine": 74,
         "sourceColumn": 188,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 68,
+        "line": 74,
         "column": 188
       },
       "interactions": [
@@ -46538,26 +46794,26 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "プレーンテキストでコピー",
-      "labelKind": "static",
-      "labelExpression": null,
+      "displayName": "{{menu.figureCopy ? \"図としてコピー\" : \"プレーンテキストでコピー\"}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{menu.figureCopy ? \"図としてコピー\" : \"プレーンテキストでコピー\"}}",
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 69,
+        "sourceLine": 75,
         "sourceColumn": 51,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 69,
+        "line": 75,
         "column": 51
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:2f1cd7d782c0f915bb3fcb650d3a05e6fbdbf5dafd2c4008b98aca09f7865136",
+      "signature": "sha256:5d72446306ff73119f127a5f8c21c8bf3ddbc34cadee6654e2701611265950d2",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46572,7 +46828,7 @@
         "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
         "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
       },
-      "nameCheck": "静的照合",
+      "nameCheck": "要実画面確認:動的表示/子要素",
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
@@ -46595,15 +46851,15 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 69,
-        "sourceColumn": 203,
+        "sourceLine": 75,
+        "sourceColumn": 286,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 69,
-        "column": 203
+        "line": 75,
+        "column": 286
       },
       "interactions": [
         "onClick"
@@ -46640,26 +46896,26 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "{{skill.config.label}}",
+      "displayName": "{{menu.conversionLabel}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{skill.config.label}}",
+      "labelExpression": "{{menu.conversionLabel}}",
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 71,
-        "sourceColumn": 58,
+        "sourceLine": 76,
+        "sourceColumn": 47,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 71,
-        "column": 58
+        "line": 76,
+        "column": 47
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:3b3629aa798036a16c8a653952a6f91fc0ce1f84b9e50aaeea3aa74d4b945f4c",
+      "signature": "sha256:96f432366319e0810066d7f6bccec32c8a9a98075ba8b452418ae1ef92cd370f",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46691,26 +46947,26 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "現在の会話に追加",
-      "labelKind": "static",
-      "labelExpression": null,
+      "displayName": "{{skill.config.label}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{skill.config.label}}",
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 75,
-        "sourceColumn": 9,
+        "sourceLine": 78,
+        "sourceColumn": 58,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 75,
-        "column": 9
+        "line": 78,
+        "column": 58
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:8cecc6b0516618f065e0ffebe6c6dbd8d78203eb5e2e7bb22b1817a0c27b65c8",
+      "signature": "sha256:3b3629aa798036a16c8a653952a6f91fc0ce1f84b9e50aaeea3aa74d4b945f4c",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46725,7 +46981,7 @@
         "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
         "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
       },
-      "nameCheck": "静的照合",
+      "nameCheck": "要実画面確認:動的表示/子要素",
       "orderCheck": "共通ソース順序",
       "designCheck": "共有CSS+ホスト上書きを別検査",
       "location": {
@@ -46742,26 +46998,26 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
-      "displayName": "新しい会話を開始",
+      "displayName": "現在の会話に追加",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 76,
+        "sourceLine": 82,
         "sourceColumn": 9,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 76,
+        "line": 82,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:436ab9b00ce5e48d3f7828574f27686dfb0b778e8b785589a26c28b2da860c5d",
+      "signature": "sha256:8cecc6b0516618f065e0ffebe6c6dbd8d78203eb5e2e7bb22b1817a0c27b65c8",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46793,21 +47049,72 @@
       "controlKind": "menu",
       "tag": "button",
       "role": "menuitem",
+      "displayName": "新しい会話を開始",
+      "labelKind": "static",
+      "labelExpression": null,
+      "orderScope": {
+        "component": "useConsultationMenu",
+        "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
+        "sourceLine": 83,
+        "sourceColumn": 9,
+        "ordinal": 8
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
+        "line": 83,
+        "column": 9
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:436ab9b00ce5e48d3f7828574f27686dfb0b778e8b785589a26c28b2da860c5d",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
+      },
+      "nameCheck": "静的照合",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI236",
+        "name": "共通／useConsultationMenu／対象部分の操作",
+        "order": 7,
+        "number": "UI236-07",
+        "basis": "コンテナー内のソース順（条件付き項目も含む）"
+      }
+    },
+    {
+      "id": "ui-d31961ccd35e",
+      "featureGroup": "codex",
+      "controlKind": "menu",
+      "tag": "button",
+      "role": "menuitem",
       "displayName": "この画像をAIの送信対象に追加",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 78,
-        "sourceColumn": 137,
-        "ordinal": 8
+        "sourceLine": 85,
+        "sourceColumn": 150,
+        "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 78,
-        "column": 137
+        "line": 85,
+        "column": 150
       },
       "interactions": [
         "onClick"
@@ -46833,8 +47140,8 @@
       "location": {
         "groupId": "UI236",
         "name": "共通／useConsultationMenu／対象部分の操作",
-        "order": 7,
-        "number": "UI236-07",
+        "order": 8,
+        "number": "UI236-08",
         "basis": "コンテナー内のソース順（条件付き項目も含む）"
       }
     },

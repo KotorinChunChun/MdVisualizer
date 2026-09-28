@@ -1,6 +1,8 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RasterEditor2 } from "./RasterEditor2";
+import { saveRasterCopy } from "../lib/rasterOutput";
+vi.mock("../lib/rasterOutput", () => ({ saveRasterCopy: vi.fn().mockResolvedValue(undefined) }));
 import { saveRenderedImage } from "../lib/commands";
 import { pngBytes, rasterEditor2Document, rasterEditor2Supported } from "../lib/rasterEditor2Host";
 
@@ -37,6 +39,21 @@ async function setup(p = props()) {
 }
 
 describe("RasterEditor2 integration", () => {
+  it("競合時は元ファイルを変更せず別名保存できる", async () => {
+    const t = await setup();
+    t.rerender(<RasterEditor2 {...t.p} imageVersion={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "編集結果を別名保存" }));
+    const request = t.post.mock.calls[t.post.mock.calls.length - 1][0].request;
+    await t.emit({ type: "result", request, dataUri: png });
+    expect(saveRasterCopy).toHaveBeenCalledOnce();
+    expect(saveRenderedImage).not.toHaveBeenCalled();
+    expect(t.p.onApply).not.toHaveBeenCalled();
+  });
+  it("変更がない場合は確認なしで閉じる", async () => {
+    const t = await setup(); const confirm = vi.spyOn(window, "confirm");
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+    expect(confirm).not.toHaveBeenCalled(); expect(t.p.onCancel).toHaveBeenCalledOnce();
+  });
   it("saves a JPEG target through the existing PNG-to-original-format backup API once", async () => {
     vi.mocked(saveRenderedImage).mockResolvedValue({ backup_available: true } as Awaited<ReturnType<typeof saveRenderedImage>>);
     const t = await setup(); const request = t.apply();

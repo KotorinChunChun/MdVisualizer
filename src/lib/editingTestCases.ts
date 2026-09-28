@@ -427,7 +427,7 @@ const BASE_EDITING_TEST_CASES: readonly EditingTestCase[] = [
   testCase("toolbar-mermaid-selection", "ツールバー", "選択をMermaid本文へ", "⟦flowchart LR\nA-->B⟧", "Mermaid図を挿入", "\n\n```mermaid\nflowchart LR\nA-->B\n```\n\n", { type: "toolbar", action: "mermaid" }),
   testCase("toolbar-horizontal-rule", "ツールバー", "水平線を挿入", "before¦after", "水平線", "before\n\n---\n\nafter", { type: "toolbar", action: "horizontal-rule" }),
   testCase("toolbar-drawio-placeholder", "ツールバー", "draw.io雛形を挿入", "¦", "draw.io図を挿入", "\n\n```drawio\n<mxGraphModel><root><mxCell id=\"0\"/><mxCell id=\"1\" parent=\"0\"/></root></mxGraphModel>\n```\n\n", { type: "toolbar", action: "drawio" }),
-  testCase("toolbar-image-placeholder", "ツールバー", "画像雛形を挿入", "¦", "画像を挿入", "![画像](image.png)", { type: "toolbar", action: "image" }),
+  testCase("toolbar-image-placeholder", "ツールバー", "画像雛形を挿入", "¦", "画像を挿入", "![](image.png)", { type: "toolbar", action: "image" }),
   testCase("toolbar-image-selection", "ツールバー", "選択を代替テキストへ", "⟦diagram⟧", "画像を挿入", "![diagram](image.png)", { type: "toolbar", action: "image" }),
   testCase("toolbar-context-fence-table", "ツールバー", "コードフェンス後へ表を挿入", "```text\nin¦side\n```\ntail", "表を挿入", "```text\ninside\n```\n\n\n| 列1 | 列2 |\n| --- | --- |\n| 値1 | 値2 |\n\ntail", { type: "toolbar", action: "table" }),
   testCase("toolbar-context-fence-mermaid", "ツールバー", "コードフェンス後へMermaidを挿入", "```text\nin¦side\n```\ntail", "Mermaid図を挿入", "```text\ninside\n```\n\n\n```mermaid\ngraph TD\n  A --> B\n```\n\ntail", { type: "toolbar", action: "mermaid" }),
