@@ -107,6 +107,15 @@ fn safe_skill_path(root: &Path, id: &str) -> Result<PathBuf, String> {
 }
 
 fn ensure_defaults(root: &Path) -> Result<(), String> {
+    let caption_marker = root.join(".generate-caption-initialized");
+    if !caption_marker.exists() {
+        let path = safe_skill_path(root, "generate-caption")?;
+        if !path.exists() {
+            fs::create_dir_all(path.parent().ok_or("スキルフォルダーを取得できません。")?).map_err(|error| error.to_string())?;
+            atomic_write(&path, include_str!("../../src/features/codex/default-skills/generate-caption/SKILL.md").as_bytes()).map_err(|error| error.to_string())?;
+        }
+        atomic_write(&caption_marker, b"initialized\n").map_err(|error| error.to_string())?;
+    }
     // 既存利用者にも新規スキルだけ一度配布する。削除・編集済みのスキルは復元しない。
     let settings_marker = root.join(".app-settings-initialized");
     if !settings_marker.exists() {
@@ -269,6 +278,20 @@ mod tests {
         fs::remove_dir(root.path().join("app-settings")).unwrap();
         ensure_defaults(root.path()).unwrap();
         assert!(!settings.exists());
+    }
+
+    #[test]
+    fn migrates_caption_once_without_overwriting_user_skill() {
+        let root = tempdir().unwrap();
+        fs::write(root.path().join(INITIALIZED_MARKER), b"initialized\n").unwrap();
+        let caption = safe_skill_path(root.path(), "generate-caption").unwrap();
+        fs::create_dir_all(caption.parent().unwrap()).unwrap();
+        fs::write(&caption, "custom caption").unwrap();
+        ensure_defaults(root.path()).unwrap();
+        assert_eq!(fs::read_to_string(&caption).unwrap(), "custom caption");
+        fs::remove_file(&caption).unwrap();
+        ensure_defaults(root.path()).unwrap();
+        assert!(!caption.exists());
     }
 
     #[test]

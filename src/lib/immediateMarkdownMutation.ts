@@ -25,11 +25,23 @@ export function relocateUnchangedOccurrence(
   original: EditableMarkdownOccurrence,
 ): EditableMarkdownOccurrence {
   const candidates = relocationCandidates(markdown)
-    .filter((candidate) => candidate.kind === original.kind && candidate.expected === original.expected)
-    .sort((left, right) => Math.abs(left.start - original.start) - Math.abs(right.start - original.start));
-  const match = candidates[0];
+    .filter((candidate, index, all) => candidate.kind === original.kind && candidate.expected === original.expected
+      && all.findIndex(item => item.start === candidate.start && item.end === candidate.end && item.kind === candidate.kind) === index);
+  const match = candidates.find(candidate => candidate.start === original.start && candidate.end === original.end)
+    ?? (candidates.length === 1 ? candidates[0] : undefined);
   if (!match) throw new MarkdownOccurrenceConflictError();
   return match;
+}
+
+export function planOccurrenceConversion(stored: string, draft: string, occurrence: EditableMarkdownOccurrence, replacement: string): { draft: string; stored: string | null } {
+  // The selected draft is authoritative. Missing storage is expected for new
+  // content; a changed draft is not an excuse to guess another occurrence.
+  const nextDraft = replaceRelocatedOccurrence(draft, occurrence, replacement);
+  let nextStored: string | null = null;
+  const count = (value: string) => collectEditableMarkdownOccurrences(value).filter(item => item.kind === occurrence.kind && item.expected === occurrence.expected).length;
+  if (count(draft) > 1 && count(draft) !== count(stored)) return { draft: nextDraft, stored: null };
+  try { nextStored = replaceRelocatedOccurrence(stored, occurrence, replacement); } catch { /* draft-only target */ }
+  return { draft: nextDraft, stored: nextStored };
 }
 
 function similarityScore(candidate: EditableMarkdownOccurrence, original: EditableMarkdownOccurrence): number {

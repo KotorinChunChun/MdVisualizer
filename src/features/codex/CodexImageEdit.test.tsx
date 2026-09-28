@@ -110,10 +110,10 @@ describe("CodexImageEdit", () => {
     const input = screen.getByRole("textbox", { name: "編集指示" });
     fireEvent.change(input, { target: { value: "青くする" } });
     fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
-    await screen.findByText("変更後");
+    await waitFor(() => expect(onGenerated).toHaveBeenCalledTimes(1));
     expect(vi.mocked(invoke)).toHaveBeenCalledWith("codex_edit_image", expect.anything());
     expect(onGenerated).toHaveBeenCalledTimes(1);
-    expect(onGenerated).toHaveBeenCalledWith("青くする");
+    expect(onGenerated).toHaveBeenCalledWith("青くする", { base64: "new", mediaType: "image/png", filename: "edited.png" }, expect.any(String));
     expect(screen.queryByRole("status")).toBeNull();
   });
 

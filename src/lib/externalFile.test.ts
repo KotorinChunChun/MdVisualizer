@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { compactExternalFilename, rebaseRenamedExternalReferences, replaceExternalSourceFilename, splitExternalFilename, validateExternalFilename } from "./externalFile";
 
 describe("externalFile", () => {
+  it("実ファイルを持つ名前付き埋め込みコードも本文を変えず改名する", () => {
+    const source='```python title="code/a.py"\nprint("code/a.py")\n```';
+    expect(rebaseRenamedExternalReferences(source,'C:/docs','C:/docs/code/a.py','b.py')).toBe('```python title="code/b.py"\nprint("code/a.py")\n```');
+  });
   it("長いファイル名を冒頭10文字と末尾5文字へ省略する", () => {
     expect(compactExternalFilename("1234567890abcdefghij.png")).toBe("1234567890.....j.png");
   });

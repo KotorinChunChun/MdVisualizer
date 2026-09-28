@@ -13,13 +13,9 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tauri::{AppHandle, State, WebviewWindow};
-use tokio::{
-    io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
-    process::Command,
-};
+use tokio::process::Command;
 
 const IMAGE_LIMIT: usize = 10 * 1024 * 1024;
-const OUTPUT_LIMIT: usize = 2_000_000;
 
 #[derive(Default)]
 pub struct CodexImageRuns(Mutex<HashMap<String, (String, Arc<AtomicBool>)>>);
@@ -57,7 +53,8 @@ pub struct CodexImageEditRequest {
     pub instruction: String,
     pub document_path: String,
     pub source: String,
-    pub image: CodexImageInput,
+    #[serde(default)]
+    pub image: Option<CodexImageInput>,
 }
 #[derive(Deserialize)]
 pub struct CodexImageInput {
@@ -201,18 +198,6 @@ fn archive_path(dir: &Path, original: &Path) -> Result<PathBuf, String> {
     }
     Err("archive内に保存できる画像名がありません。".into())
 }
-async fn bounded_read(reader: impl AsyncRead + Unpin) -> Result<Vec<u8>, String> {
-    let mut bytes = Vec::new();
-    reader
-        .take((OUTPUT_LIMIT + 1) as u64)
-        .read_to_end(&mut bytes)
-        .await
-        .map_err(|_| "AI出力を読み込めません。")?;
-    if bytes.len() > OUTPUT_LIMIT {
-        return Err("AI出力が大きすぎます。".into());
-    }
-    Ok(bytes)
-}
 fn generated_root() -> Result<PathBuf, String> {
     std::env::var_os("CODEX_HOME")
         .map(PathBuf::from)
@@ -278,6 +263,40 @@ fn output_png(stdout: &[u8], root: &Path, started: SystemTime) -> Result<Vec<u8>
     Err("AIが新しいPNG画像を返しませんでした。".into())
 }
 
+fn image_cli_command(exe: &Path, model: &str, workspace: &Path, input: Option<&Path>) -> Command {
+    let mut command = Command::new(exe);
+    command.current_dir(workspace).args([
+        "exec",
+        "--ignore-user-config",
+        "--ephemeral",
+        "--skip-git-repo-check",
+        "-s",
+        "workspace-write",
+        "--enable",
+        "image_generation",
+        "--enable",
+        "code_mode_host",
+        "-m",
+        model,
+        "--json",
+    ]);
+    if let Some(input) = input {
+        command.arg("--image").arg(input);
+    }
+    for feature in [
+        "shell_tool",
+        "unified_exec",
+        "apps",
+        "plugins",
+        "hooks",
+        "multi_agent",
+    ] {
+        command.args(["--disable", feature]);
+    }
+    command.arg("-");
+    command
+}
+
 #[tauri::command]
 pub async fn codex_edit_image(
     app: AppHandle,
@@ -291,27 +310,77 @@ pub async fn codex_edit_image(
     {
         return Err("画像編集の指示を確認してください。".into());
     }
-    let settings = crate::commands::load_settings(app)?;
+    let settings = crate::commands::load_settings(app.clone())?;
     if settings["codex"]["enabled"] != true {
         return Err("設定でAI連携を有効にしてください。".into());
     }
-    let image = decode_png(&request.image)?;
+    let image = request.image.as_ref().map(decode_png).transpose()?;
     let started = SystemTime::now();
     let owner = window.label().to_owned();
     let cancel = runs.begin(&owner, &request.id)?;
+    let model = settings["codex"]["model"]
+        .as_str()
+        .unwrap_or("gpt-5.6-luna");
+    let control = if image.is_some() {
+        "Edit the supplied PNG exactly as requested. Create one PNG output using image generation. Do not read files other than the supplied image. In your final response, provide only the absolute path to the generated PNG."
+    } else {
+        "Create one new PNG image exactly as requested using image generation. Do not read any files. In your final response, provide only the absolute path to the generated PNG."
+    };
+    let prompt = format!("{control}\n{}", request.instruction);
+    let mut entry = crate::codex::CodexLogEntry {
+        id: request.id.clone(),
+        created_at: chrono::Utc::now().to_rfc3339(),
+        model: model.into(),
+        user_prompt: Some(request.instruction.clone()),
+        control_prompt: Some(control.into()),
+        request_prompt: prompt.clone(),
+        request_images: request
+            .image
+            .iter()
+            .map(|image| crate::codex::CodexLogImage {
+                base64: image.base64.clone(),
+                mime: "image/png".into(),
+                filename: "input.png".into(),
+            })
+            .collect(),
+        ..Default::default()
+    };
     let result = async {
-        let workspace = tempfile::tempdir().map_err(|_| "一時領域を作成できません。")?; let input = workspace.path().join("input.png"); std::fs::write(&input, image).map_err(|_| "入力画像を準備できません。")?;
-        let prompt = format!("Edit the supplied PNG exactly as requested. Create one PNG output using image generation. Do not read files other than the supplied image. In your final response, provide only the absolute path to the generated PNG.\n{}", request.instruction);
-        let exe = crate::codex::find_codex_executable()?; let model = settings["codex"]["model"].as_str().unwrap_or("gpt-5.6-luna"); let mut command = Command::new(exe);
-        command.current_dir(workspace.path()).args(["exec", "--ignore-user-config", "--ephemeral", "--skip-git-repo-check", "-s", "workspace-write", "--enable", "image_generation", "--enable", "code_mode_host", "-m", model, "--json", "--image"]).arg(&input);
-        for feature in ["shell_tool", "unified_exec", "apps", "plugins", "hooks", "multi_agent"] { command.args(["--disable", feature]); }
-        command.arg("-").stdin(std::process::Stdio::piped()).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::piped()).kill_on_drop(true);
-        #[cfg(windows)] command.creation_flags(0x08000000);
-        let mut child = command.spawn().map_err(|_| "AI連携用のCodex CLIを起動できません。")?; let mut stdin = child.stdin.take().ok_or("CLI入力を取得できません。")?; let stdout = child.stdout.take().ok_or("CLI出力を取得できません。")?; let stderr = child.stderr.take().ok_or("CLIエラー出力を取得できません。")?;
-        let execution = async { stdin.write_all(prompt.as_bytes()).await.map_err(|_| "CLIへ送信できません。".to_string())?; drop(stdin); let (out, _, status) = tokio::try_join!(bounded_read(stdout), bounded_read(stderr), async { child.wait().await.map_err(|_| "CLIの終了待機に失敗しました。".to_string()) })?; if !status.success() { return Err("AIによる画像編集に失敗しました。".into()); } output_png(&out, &generated_root()?, started) };
-        tokio::select! { result = execution => result, _ = async { while !cancel.load(Ordering::SeqCst) { tokio::time::sleep(Duration::from_millis(50)).await; } } => Err("停止しました。".into()), _ = tokio::time::sleep(Duration::from_secs(300)) => Err("画像編集がタイムアウトしました。".into()) }
-    }.await;
+        let workspace = tempfile::tempdir().map_err(|_| "一時領域を作成できません。")?;
+        let input = workspace.path().join("input.png");
+        if let Some(bytes) = image {
+            std::fs::write(&input, bytes).map_err(|_| "入力画像を準備できません。")?;
+        }
+        let exe = crate::codex::find_codex_executable()?;
+        let mut command = image_cli_command(
+            &exe,
+            model,
+            workspace.path(),
+            request.image.as_ref().map(|_| input.as_path()),
+        );
+        let out = crate::codex::logged_command(
+            &mut command,
+            &prompt,
+            cancel,
+            Duration::from_secs(300),
+            &mut entry,
+        )
+        .await?;
+        output_png(&out, &generated_root()?, started)
+    }
+    .await;
+    entry.error = result.as_ref().err().cloned();
+    if let Ok(bytes) = &result {
+        entry.response_text = "画像を生成しました。採用前の候補です。".into();
+        entry.response_images.push(crate::codex::CodexLogImage {
+            base64: base64::engine::general_purpose::STANDARD.encode(bytes),
+            mime: "image/png".into(),
+            filename: "codex-generated.png".into(),
+        });
+    }
+    let logging = crate::codex::save_communication_log(&app, entry);
     runs.finish(&owner);
+    logging?;
     let bytes = result?;
     Ok(CodexImageEditReply {
         filename: "codex-edited.png".into(),
@@ -532,6 +601,27 @@ impl CodexImageSaveRollbacks {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn generation_without_attachment_omits_image_argument() {
+        let request: CodexImageEditRequest = serde_json::from_value(
+            serde_json::json!({"id":"new","instruction":"描画","documentPath":"","source":""}),
+        )
+        .unwrap();
+        assert!(request.image.is_none());
+        let workspace = tempfile::tempdir().unwrap();
+        let command = image_cli_command(Path::new("codex"), "model", workspace.path(), None);
+        let args: Vec<_> = command
+            .as_std()
+            .get_args()
+            .map(|v| v.to_string_lossy().into_owned())
+            .collect();
+        assert!(!args.contains(&"--image".into()));
+        assert!(args.contains(&"image_generation".into()));
+        let input = workspace.path().join("input.png");
+        let editing =
+            image_cli_command(Path::new("codex"), "model", workspace.path(), Some(&input));
+        assert!(editing.as_std().get_args().any(|v| v == "--image"));
+    }
     fn png() -> Vec<u8> {
         let mut bytes = std::io::Cursor::new(Vec::new());
         image::DynamicImage::new_rgba8(2, 2)

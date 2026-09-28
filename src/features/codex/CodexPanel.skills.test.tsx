@@ -128,11 +128,11 @@ describe("CodexPanel の既定スキル入力", () => {
     const instruction = await screen.findByRole("textbox", { name: "編集指示" });
     fireEvent.change(instruction, { target: { value: "画像1を青くして" } });
     fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
-    await screen.findByText("変更後");
+    await screen.findByText(/^変更後 · PNG/);
     expect(instruction).toHaveValue("");
     expect(screen.queryByLabelText("追加した画像")).not.toBeInTheDocument();
     expect(screen.getByRole("log")).toHaveTextContent("画像1");
-    expect(screen.getByRole("button", { name: "この画像を採用" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "置換" })).toBeVisible();
     expect(invoke).toHaveBeenCalledWith("codex_edit_image", expect.objectContaining({ request: expect.objectContaining({ instruction: "画像1を青くして" }) }));
   });
 });

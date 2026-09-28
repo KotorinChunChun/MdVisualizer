@@ -5,6 +5,7 @@ pub mod codex;
 pub mod codex_sessions;
 pub mod codex_skills;
 pub mod codex_image_edit;
+pub mod codex_candidates;
 pub mod commands;
 mod credential_store;
 pub mod document_edit;
@@ -216,6 +217,7 @@ pub fn run() {
         .manage(codex::CodexRuns::default())
         .manage(codex_image_edit::CodexImageRuns::default())
         .manage(codex_image_edit::CodexImageSaveRollbacks::default())
+        .manage(codex_candidates::CandidatePlans::default())
         .on_window_event(|window, event| {
             let state = window.state::<AppState>();
             match event {
@@ -297,6 +299,10 @@ pub fn run() {
             codex_skills::codex_delete_skill,
             codex_skills::codex_open_skills_folder,
             codex_image_edit::codex_edit_image,
+            codex_candidates::codex_prepare_candidate,
+            codex_candidates::codex_candidate_preview,
+            codex_candidates::codex_commit_candidate,
+            codex_candidates::codex_finish_candidate,
             codex_image_edit::codex_cancel_image,
             codex_image_edit::codex_save_edited_image,
             codex_image_edit::codex_finalize_edited_image,

@@ -1,8 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { collectEditableMarkdownOccurrences, MarkdownOccurrenceConflictError, type CodeFenceOccurrence } from "./markdownOccurrences";
-import { relocateUnchangedOccurrence, replaceBestEffortOccurrence, replaceRelocatedOccurrence } from "./immediateMarkdownMutation";
+import { planOccurrenceConversion, relocateUnchangedOccurrence, replaceBestEffortOccurrence, replaceRelocatedOccurrence } from "./immediateMarkdownMutation";
 
 describe("immediate Markdown mutation", () => {
+  it("既存画像と同じ記法を下書きへ追加しても保存済みの別画像を変えない", () => {
+    const saved='![](same.png)'; const draft='![](same.png)\n![](same.png)';
+    const occurrence=collectEditableMarkdownOccurrences(draft)[0];
+    expect(planOccurrenceConversion(saved,draft,occurrence,'![](new.png)')).toEqual({stored:null,draft:'![](new.png)\n![](same.png)'});
+  });
+  it("未保存で追加した画像は本文を失わず下書きだけ変換する", () => {
+    const draft='未保存の本文\n\n![新規](data:image/png;base64,AAAA)';
+    const occurrence=collectEditableMarkdownOccurrences(draft)[0];
+    expect(planOccurrenceConversion('保存済み本文',draft,occurrence,'![新規](images/new.png)')).toEqual({stored:null,draft:'未保存の本文\n\n![新規](images/new.png)'});
+  });
+  it("移動先が複数ある重複画像を距離だけで推測しない", () => {
+    const occurrence=collectEditableMarkdownOccurrences('![](same.png)')[0];
+    expect(() => relocateUnchangedOccurrence('prefix\n![](same.png)\n![](same.png)',occurrence)).toThrow();
+  });
+  it("保存済みの対象だけ変換し他の未保存本文は保持する", () => {
+    const saved='本文\n\n![](data:image/png;base64,AAAA)';
+    const draft='未保存の本文\n\n![](data:image/png;base64,AAAA)';
+    const occurrence=collectEditableMarkdownOccurrences(draft)[0];
+    expect(planOccurrenceConversion(saved,draft,occurrence,'![](images/new.png)')).toEqual({stored:'本文\n\n![](images/new.png)',draft:'未保存の本文\n\n![](images/new.png)'});
+  });
   it("relocates an unchanged target after unrelated storage edits", () => {
     const originalText = "before\n\n```mermaid\nA --> B\n```";
     const original = collectEditableMarkdownOccurrences(originalText).find((item): item is CodeFenceOccurrence => item.kind === "code-fence")!;

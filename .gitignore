@@ -116,6 +116,7 @@ web/tests/.php-zip-fixtures/
 /src/features/codex/default-skills/consult/SKILL.md
 /src/features/codex/default-skills/edit-diagram/SKILL.md
 /src/features/codex/default-skills/edit-image/SKILL.md
+/src/features/codex/default-skills/generate-caption/SKILL.md
 /src/features/codex/default-skills/edit/SKILL.md
 /src/features/codex/default-skills/explain-image/SKILL.md
 /src/features/codex/default-skills/improve-diagram/SKILL.md
@@ -224,3 +225,13 @@ web/tests/.php-zip-fixtures/
 
 /src/lib/rasterOutput.ts
 /src/lib/imageActions.ts
+
+/src/lib/markdownAnalysis.ts
+
+/src/features/codex/responseActions.ts
+
+/src/features/codex/CodexImageComparison.tsx
+
+/src/styles/codex-image-comparison.css
+
+/src/lib/compactEmbeddedImages.ts

@@ -234,7 +234,7 @@ describe("Codexパネル", () => {
         mount({ target: { ...snapshot, editMode: "question" } });
         await send("説明して");
         await waitFor(() => expect(generateCodex).toHaveBeenCalledWith(expect.objectContaining({ text: "未保存", instruction: expect.stringContaining("replacementは必ずnull") })));
-        expect(screen.queryByRole("button", { name: "採用" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "決定" })).not.toBeInTheDocument();
     });
     it("画像の実データと会話内ラベルを対応付けて送る", async () => {
         mount({ target: { ...snapshot, imageSource: "image.png", editMode: "question" } });
@@ -265,15 +265,15 @@ describe("Codexパネル", () => {
     it("変更案は採用確認を経て本文へ反映する", async () => {
         const { apply } = mount();
         await send();
-        fireEvent.click(await screen.findByRole("button", { name: "採用" }));
+        fireEvent.click(await screen.findByRole("button", { name: "決定" }));
         await waitFor(() => expect(apply).toHaveBeenCalledWith({ ...snapshot, from: 0, to: snapshot.content.length }, "短い文章。"));
     });
     it("本文競合時は採用を中止してエラーを表示する", async () => {
         const { apply, setSnapshot } = mount();
         await send();
-        await screen.findByRole("button", { name: "採用" });
+        await screen.findByRole("button", { name: "決定" });
         setSnapshot({ ...snapshot, content: "変更済み" });
-        fireEvent.click(screen.getByRole("button", { name: "採用" }));
+        fireEvent.click(screen.getByRole("button", { name: "決定" }));
         await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("本文や文書が変わりました"));
         expect(apply).not.toHaveBeenCalled();
     });

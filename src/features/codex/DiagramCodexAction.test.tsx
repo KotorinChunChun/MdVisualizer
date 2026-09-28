@@ -32,11 +32,11 @@ describe("図メニューのCodex連携", () => {
     const save = vi.fn().mockResolvedValue(true);
     render(<DiagramCodexAction kind="svg" source={source} onSave={save} />);
     await openDiagram(); await send();
-    await screen.findByText("採用");
+    await screen.findByText("決定");
     expect(generateCodex).toHaveBeenCalledWith(expect.objectContaining({ text: source, instruction: expect.stringContaining("配置・余白") }));
     expect(screen.getAllByLabelText("SVG変更案")[1].querySelector("circle")).toBeTruthy();
     expect(save).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("採用"));
+    fireEvent.click(screen.getByText("決定"));
     await waitFor(() => expect(save).toHaveBeenCalledWith(replacement));
   });
   it("自由入力でdraw.io図のXMLを生成する", async () => {
@@ -50,26 +50,26 @@ describe("図メニューのCodex連携", () => {
     fireEvent.change(screen.getByLabelText("指示"), { target: { value: "APIの構成図を描いて" } });
     await waitFor(() => expect(screen.getByRole("button", { name: "送信（Ctrl+Enter）" })).not.toBeDisabled());
     fireEvent.keyDown(screen.getByLabelText("指示"), { key: "Enter", ctrlKey: true });
-    await screen.findByText("採用");
+    await screen.findByText("決定");
     expect(generateCodex).toHaveBeenCalledWith(expect.objectContaining({ instruction: expect.stringContaining("APIの構成図を描いて") }));
     expect(screen.getAllByTestId("drawio-preview")[1]).toHaveTextContent("mxGraphModel");
-    fireEvent.click(screen.getByText("採用"));
+    fireEvent.click(screen.getByText("決定"));
     await waitFor(() => expect(save).toHaveBeenCalledWith(xml));
   });
   it("生成後に元ソースが変わった場合は反映しない", async () => {
     const save = vi.fn();
     const view = render(<DiagramCodexAction kind="svg" source={source} onSave={save} />);
-    await openDiagram(); await send(); await screen.findByText("採用");
+    await openDiagram(); await send(); await screen.findByText("決定");
     view.rerender(<DiagramCodexAction kind="svg" source={replacement} onSave={save} />);
-    fireEvent.click(screen.getByText("採用"));
+    fireEvent.click(screen.getByText("決定"));
     expect(save).not.toHaveBeenCalled();
     expect(await screen.findByRole("alert")).toHaveTextContent("変わりました");
   });
   it("保存競合でも変更案を保持する", async () => {
     const save = vi.fn().mockRejectedValue(new Error("外部更新との競合"));
     render(<DiagramCodexAction kind="svg" source={source} onSave={save} />);
-    await openDiagram(); await send(); await screen.findByText("採用");
-    fireEvent.click(screen.getByText("採用"));
+    await openDiagram(); await send(); await screen.findByText("決定");
+    fireEvent.click(screen.getByText("決定"));
     expect(await screen.findByRole("alert")).toHaveTextContent("外部更新との競合");
     expect(screen.getAllByLabelText("SVG変更案")[1]).toBeVisible();
   });
@@ -93,9 +93,9 @@ describe("図メニューのCodex連携", () => {
     fireEvent.click(screen.getByRole("button", { name: "AI" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "AIで見た目を改善" }));
 
-    await send(); await screen.findByText("採用");
+    await send(); await screen.findByText("決定");
     expect(saveMarkdown).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("採用"));
+    fireEvent.click(screen.getByText("決定"));
     await screen.findByRole("alert");
     expect(saveMarkdown).toHaveBeenCalledWith({ path: document.path, content: replacement, expectedRevision: "r1", stagedAssetIds: [] });
     expect(screen.getAllByLabelText("SVG変更案")[1]).toBeVisible();
