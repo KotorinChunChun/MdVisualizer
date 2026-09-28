@@ -51,6 +51,12 @@ async function generateImage(kind: "new" | "edit") {
   fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
   return screen.findByRole("dialog", { name: "生成画像の差分" });
 }
+async function embeddedCandidate() {
+  const content = '前\n\n![既存](data:image/png;base64,b3JpZ2luYWw= "説明")\n\n後';
+  const selected = { ...resolveOperationTarget(content, { offset: content.indexOf('![') })!, documentId: 'doc:1', skillId: 'edit-image', conversationAction: 'new' as const };
+  const view = mount({ current: { documentId: 'doc:1', content, from: 0, to: 0 }, selected });
+  return { view, content, review: await generateImage('edit') };
+}
 beforeEach(() => {
   vi.clearAllMocks(); store.sessions = [];
   vi.mocked(generateCodex).mockResolvedValue({ answer: "候補", replacement: null });
@@ -149,6 +155,43 @@ describe("AI応答の挿入・生成候補の統合", () => {
     const commit=vi.mocked(invoke).mock.calls.findIndex(([command])=>command==='codex_commit_candidate');
     expect(vi.mocked(invoke).mock.invocationCallOrder[commit]).toBeLessThan(vi.mocked(navigator.clipboard.writeText).mock.invocationCallOrder[0]);
     expect(view.apply).not.toHaveBeenCalled();
+  });
+  it("埋め込み画像の編集候補もコピー時は実ファイル配置後に相対参照をコピーする", async () => {
+    const { view, review } = await embeddedCandidate();
+    fireEvent.click(within(review).getByRole('button', { name: 'コピー' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('codex_finish_candidate', { id: 'candidate', accepted: true }));
+    expect(invoke).toHaveBeenCalledWith('codex_prepare_candidate', { request: { documentPath: path, base64: 'bmV3', filename: 'new.png' } });
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('![既存](images/new.png "説明")');
+    const commit = vi.mocked(invoke).mock.calls.findIndex(([command]) => command === 'codex_commit_candidate');
+    expect(vi.mocked(invoke).mock.invocationCallOrder[commit]).toBeLessThan(vi.mocked(navigator.clipboard.writeText).mock.invocationCallOrder[0]);
+    expect(view.apply).not.toHaveBeenCalled();
+  });
+  it.each(['codex_prepare_candidate', 'codex_commit_candidate'])("埋め込み画像候補のコピーで%sに失敗するとクリップボードと本文を保持する", async failingCommand => {
+    const { view, review } = await embeddedCandidate();
+    const normal = vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (command, args) => {
+      if (command === failingCommand) throw new Error('画像を配置できません');
+      return normal(command, args);
+    });
+    fireEvent.click(within(review).getByRole('button', { name: 'コピー' }));
+    await waitFor(() => expect(within(review).getByRole('alert')).toHaveTextContent('画像を配置できません'));
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+    expect(view.apply).not.toHaveBeenCalled();
+    if (failingCommand === 'codex_commit_candidate') expect(invoke).toHaveBeenCalledWith('codex_finish_candidate', { id: 'candidate', accepted: false });
+    expect(within(review).getByRole('button', { name: 'コピー' })).toBeEnabled();
+  });
+  it("埋め込み画像候補を採用するときはファイル化せずData URIを維持する", async () => {
+    const { view, content, review } = await embeddedCandidate();
+    fireEvent.click(within(review).getByRole('button', { name: '置換' }));
+    const dialog = await screen.findByRole('dialog', { name: 'AI変更案のプレビュー' });
+    const expected = content.replace('b3JpZ2luYWw=', 'bmV3');
+    expect(within(dialog).getByLabelText('変更後を直接編集')).toHaveValue(expected);
+    expect(view.apply).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: '決定' }));
+    await waitFor(() => expect(view.apply).toHaveBeenCalledWith(expect.anything(), expected));
+    expect(invoke).not.toHaveBeenCalledWith('codex_prepare_candidate', expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith('codex_commit_candidate', expect.anything());
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
   });
   it("本文反映が拒否されると配置を戻して候補を残す", async () => {
     const view=mount({applyResult:false}); const review=await generateImage('new');
