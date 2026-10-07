@@ -23,6 +23,8 @@ npm.cmd run build
 npm.cmd test -- <対象testファイル>
 ```
 
+上記はpretestの生成・型・契約検査も実行します。同じ入力について準備と型確認を済ませた反復では`node node_modules/vitest/vitest.mjs run <対象testファイル>`を使えます。静的・関連テストを効率よく選ぶ方法は[高速検証](/docs/developer/operations/02-development-automation.md)を参照し、対象版を明示してください。
+
 ## Rust backend
 
 ```powershell
@@ -151,12 +153,7 @@ pwsh -NoProfile -File .\scripts\full-release-stable-MdVisualizer.ps1
 
 ### 全体検証
 
-```powershell
-npm test
-npm run build
-cargo test --manifest-path .\src-tauri\Cargo.toml
-npm run tauri build
-```
+全体検証は前述の「デバッグ実画面確認」の段階表と変更領域に従って選びます。近接反復ごとにfrontendとTauriの全ビルドを重ねません。公開用productionビルドはリリース工程で実施します。
 
 #### プリンターを使わない印刷テスト
 

@@ -85,6 +85,8 @@ try {
     New-Item -ItemType File -Path (Join-Path $fixtureRoot 'empty.md') -Force | Out-Null
 
     $fixtureScript = Join-Path $fixtureRoot 'scripts/update-version-MdVisualizer.ps1'
+    $webHashes = @{}
+    Get-ChildItem -LiteralPath (Join-Path $fixtureRoot 'web-platform') -File -Recurse | ForEach-Object { $webHashes[$_.FullName] = (Get-FileHash -LiteralPath $_.FullName).Hash }
     $fixtureOutput = & $fixtureScript -ProjectRoot $fixtureRoot -TargetVersion $targetVersion -Yes *>&1 | Out-String
     if (-not $?) { throw "fixtureの実更新に失敗しました。`n$fixtureOutput" }
     $fixtureConfig = Get-Content -LiteralPath (Join-Path $fixtureRoot 'packaging/release-config.json') -Raw | ConvertFrom-Json
@@ -94,12 +96,22 @@ try {
         throw "fixtureの変換結果が不正です。`n$fixtureOutput"
     }
     $fixtureReadme = Get-Content -LiteralPath (Join-Path $fixtureRoot 'scripts/README.md') -Raw
-    if (-not $fixtureReadme.Contains($targetVersion) -or $fixtureReadme.Contains($currentMsixVersion)) {
+    $expectedReadme = (Get-Content -LiteralPath (Join-Path $projectRoot 'scripts/README.md') -Raw).Replace($oldVersions[0], $targetPublicVersion).Replace($oldVersions[1], $targetPackageVersion).Replace($currentMsixVersion, $targetVersion)
+    if ($fixtureReadme -ne $expectedReadme) {
         throw "scripts/README.mdの版表記が更新されていません。`n$fixtureOutput"
     }
     $fixtureLogs = @(Get-ChildItem -LiteralPath (Join-Path $fixtureRoot "dev/history/$historyVersion/logs/version-update") -Filter '*.log' -File)
     if ($fixtureLogs.Count -ne 1) { throw "fixtureのNode.js実行ログが1件ではありません: $($fixtureLogs.Count)" }
-    $oldVersionResidues = Get-ChildItem -LiteralPath $fixtureRoot -File -Recurse |
+    foreach ($file in $webHashes.Keys) {
+        if ((Get-FileHash -LiteralPath $file).Hash -ne $webHashes[$file]) { throw "Desktop更新で独立版のWebを変更しました: $file" }
+    }
+    $fixtureLock = Get-Content -LiteralPath (Join-Path $fixtureRoot 'package-lock.json') -Raw | ConvertFrom-Json -AsHashtable
+    if ($fixtureLock.version -ne $targetPackageVersion -or $fixtureLock.packages[''].version -ne $targetPackageVersion) { throw 'Desktop lock版が更新されていません。' }
+    $originalLock = Get-Content -LiteralPath (Join-Path $projectRoot 'package-lock.json') -Raw | ConvertFrom-Json -AsHashtable
+    foreach ($key in @('packages/markdown-core', 'web-platform/packages/markdown-core')) {
+        if ($fixtureLock.packages[$key].version -ne $originalLock.packages[$key].version) { throw "共有core lock版を変更しました: $key" }
+    }
+    $oldVersionResidues = Get-ChildItem -LiteralPath $fixtureRoot -File -Recurse | Where-Object { $_.FullName -notlike '*\web-platform\*' -and $_.Name -ne 'package-lock.json' -and $_.Extension -ne '.log' } |
         Select-String -SimpleMatch -Pattern $oldVersions
     if ($oldVersionResidues) {
         throw "fixtureに旧版残骸があります。`n$($oldVersionResidues | Out-String)"
@@ -107,6 +119,9 @@ try {
 }
 finally {
     if (Test-Path -LiteralPath $fixtureRoot) {
+        $resolvedFixture = [IO.Path]::GetFullPath($fixtureRoot)
+        $tempBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+        if (-not $resolvedFixture.StartsWith($tempBase, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($resolvedFixture) -ne "MdVisualizer-version-update-$PID") { throw '削除対象が専用fixtureではありません。' }
         Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
     }
 }

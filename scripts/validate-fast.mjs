@@ -2,9 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { cachedTask } from './validation-cache.mjs';
+import { takeVersionArgument, versionLogDirectory } from './version-log-path.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
-const args = process.argv.slice(2);
+const { version, args } = takeVersionArgument(process.argv.slice(2));
+process.env.MDVISUALIZER_VERSION = version;
 const force = args.includes('--force');
 const typecheck = args.includes('--typecheck');
 const relatedIndex = args.indexOf('--related');
@@ -12,9 +14,8 @@ const related = relatedIndex < 0 ? [] : args.slice(relatedIndex + 1);
 const allowed = new Set(['--force', '--typecheck', '--related']);
 for (const arg of (relatedIndex < 0 ? args : args.slice(0, relatedIndex))) if (!allowed.has(arg)) throw new Error(`不明な引数: ${arg}`);
 if (relatedIndex >= 0 && !related.length) throw new Error('--related の後に変更したソースを指定してください。');
-const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).version.split('+')[0];
-const runId = `fast-validation-${new Date().toISOString().replaceAll(':', '-')}-${process.pid}`;
-const output = path.join(root, 'dev/history', `v${version}`, 'logs', runId);
+const output = versionLogDirectory(root, 'fast-validation', version);
+const runId = path.basename(output);
 fs.mkdirSync(output, { recursive: true });
 const results = [];
 const inputs = ['scripts', 'config', 'src', 'docs/developer/ui', 'package.json', 'package-lock.json', 'tsconfig.json', 'tsconfig.node.json', 'vitest.config.ts',

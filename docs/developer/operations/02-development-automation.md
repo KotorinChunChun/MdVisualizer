@@ -84,17 +84,20 @@ JSXの祖先コンテナー、HTMLのツールバー・メニュー・ダイア�
 
 ## 高速検証（普段の変更確認）
 
+対象版を明示します。以下の例のv0.0.19は実際の対象版へ置き換えます。各コマンドの--version引数でも指定できます。package版から開発対象版を推測しません。
+
 ```powershell
-npm run validate:fast
+$env:MDVISUALIZER_VERSION = 'v0.0.19'
+npm.cmd run validate:fast
 # 型検査まで。初回は必要な埋込生成も行う
-npm run validate:quick
+npm.cmd run validate:quick
 # 変更した共有ソースに依存するDesktopテストだけをVitestで選択
-npm run validate:fast -- --related src/lib/drawio.ts
+npm.cmd run validate:fast -- --related src/lib/drawio.ts
 # キャッシュを使わず静的検査を再実行
-npm run validate:fast -- --force
+npm.cmd run validate:fast -- --force
 # 遅いテストを計測。全件、または末尾へ対象ファイルを指定
-npm run test:profile
-npm run test:profile -- src/lib/delimitedTable.test.ts src/lib/tableAggregation.test.ts
+npm.cmd run test:profile
+npm.cmd run test:profile -- src/lib/delimitedTable.test.ts src/lib/tableAggregation.test.ts
 ```
 
 fastは共有投影、UI一覧、コマンド配線契約、各メニュートリガーとCSSを検査する。quick/relatedはその後に埋込生成と増分TypeScript検査を行う。関連テストの選択はVitestの依存関係解析を使い、共有正本のパスはDesktop投影パスへ変換する。src外の設定変更、Rust、Web/SPFx固有変更にはrelatedだけを使わず、従来の対象別検証を行う。関連テストが見つからない場合を成功扱いにしない。

@@ -4,12 +4,13 @@
 
 | 変更内容 | 主な配置先 | 同時に確認するもの |
 | --- | --- | --- |
-| Markdown構文、見出し、list、table、source位置などの純粋変換 | `packages/markdown-core` | `src/`と`spfx/`のconsumer、core build、両製品の回帰 |
-| デスクトップの表示、編集、focus、状態 | `src/components`、`src/hooks`、`src/lib`、`src/state` | Testing Library、keyboard、draft、非active tab、production build |
+| Markdown構文、見出し、list、table、source位置などの純粋変換 | `web-platform/packages/markdown-core` | Desktop／Web／SPFxのconsumer、core build、関連製品の回帰 |
+| 共通の表示、編集、focus、状態 | `web-platform/packages/editor-ui/src` | 子Git規則、source-map、親への投影、Testing Library、keyboard、draft、非active tab |
+| Desktop固有の接続・状態 | `src/App.tsx`などsource-mapに含まれない親ソース | 共有UIとのadapter、Tauri接続、実WebView。親srcの生成投影は直接編集しない |
 | ファイル、画像、watch、設定、資格情報、OS連携 | `src-tauri/src` | Tauri command DTO、Rust test、frontend bridge、pathとsecret境界 |
 | SharePointデスクトップ | `src/lib/sharePoint*`、Rust SharePoint処理 | host／site制限、token送信先、encoding、eTag、412時draft保持 |
-| SPFx固有UI・保存 | `spfx/src` | 共有core互換、Heft test/build、mobile幅、SharePoint権限 |
-| CSS、印刷、レスポンシブ | `src/styles`と該当component | style契約test、印刷専用状態、200% text、light／dark、目視残件 |
+| SPFx固有UI・保存 | `web-platform/apps/spfx/src` | 共有core互換、Heft test/build、mobile幅、SharePoint権限 |
+| CSS、印刷、レスポンシブ | `web-platform/packages/editor-ui/src/styles`と該当共有component。host固有は各app | style契約test、印刷専用状態、200% text、light／dark、目視残件 |
 | 起動・検証スクリプト | `scripts`と`package.json` | `pwsh`、`-WhatIf`、命名test、状態API、公開処理との分離 |
 | 配布・署名・公開 | `packaging`と公開script | このskillの対象外。MSIXまたはSPFx公開skillへ切り替える |
 

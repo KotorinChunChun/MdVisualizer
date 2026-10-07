@@ -17,7 +17,7 @@ description: MdVisualizerの機能追加、不具合修正、リファクタリ�
 ## 実装
 
 - 保存、競合、文字コード、改行、revision／eTag、draft保持、原子的置換をユーザー資産保護の契約として扱う。失敗系を成功系と同じフェーズでテストする。
-- Markdown変換や構文解釈をデスクトップとSPFxで共有すべき場合は`packages/markdown-core`へ置き、片方のUIだけへ同じ変換を複製しない。
+- Markdown変換や構文解釈をデスクトップとSPFxで共有すべき場合は`web-platform/packages/markdown-core`へ置き、片方のUIだけへ同じ変換を複製しない。
 - UIからOS、SharePoint、保存処理へ直接依存を増やす前に、既存adapter、hook、Tauri command、repository境界を探す。
 - 巨大な`src/App.tsx`や`src-tauri/src/commands.rs`を全面書換えしない。既存DTOとeventを保った小さな抽出、adapter追加、呼出し元移行の順で進める。
 - path、URL、SVG／HTML、外部process、資格情報に触れる変更では、許可範囲、redirect、sanitization、secret非露出の正常・攻撃fixtureを対で追加する。

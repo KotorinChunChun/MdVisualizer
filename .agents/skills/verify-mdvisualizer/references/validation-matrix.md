@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `src/lib`の純粋処理 | 該当`*.test.ts` | consumer component、`npm.cmd run build` |
 | React component／hook／state | 該当`*.test.tsx`と関連lib test | keyboard／focus／draftの回帰、`npm.cmd run build` |
-| `packages/markdown-core` | `npm.cmd run build:core` | frontend全体、SPFx test／production build |
+| `web-platform/packages/markdown-core` | `npm.cmd run build:core` | frontend全体、SPFx test／production build |
 | `src-tauri` | 対象module testまたは`cargo test --manifest-path .\src-tauri\Cargo.toml` | command DTOのfrontend test、必要時desktop build |
 | `spfx` | `npm.cmd --prefix .\spfx test` | `npm.cmd run build:core`、`npm.cmd run build:spfx:local` |
 | style／responsive／print | 該当style・component・print test | production build。目視、PDF、実WebViewは別証跡 |
@@ -16,11 +16,13 @@
 | 保存／競合／path／security | 正常fixtureと失敗・攻撃fixture | frontendとRust境界、元データ不変、secret非露出 |
 | 性能 | 影響するperformance testをseed固定で実行 | warmup条件、反復数、p50／p95、環境を記録 |
 
-targeted Vitestは既存のnpm scriptを通す。
+初回の準備を含むtargeted Vitestは`npm.cmd test -- <対象testファイル...>`を使う。反復時は同じ入力の生成・投影・型確認済みであることを確認し、対象テストを直接実行して広いpretestの重複を避ける。
 
 ```powershell
-npm.cmd test -- <対象testファイル...>
+node node_modules/vitest/vitest.mjs run <対象testファイル...>
 ```
+
+共有投影・静的検査は`npm.cmd run validate:fast -- --version <対象版>`、型までなら`validate:quick`、関連テスト選択は`validate:fast -- --version <対象版> --related <変更ソース...>`を使う。`MDVISUALIZER_VERSION`でも指定できる。対象版をpackage版から推測しない。キャッシュの成立条件・適用範囲は[高速検証](/docs/developer/operations/02-development-automation.md)を参照する。関連なし・試験未到達を合格にしない。最終ゲートの省略やGUI成功の代用には使わない。
 
 ## 統合ゲート
 

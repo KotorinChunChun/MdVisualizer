@@ -185,15 +185,9 @@ function Assert-VersionSnapshot {
         'tauri.conf.json' = [string]$Snapshot.Tauri.version
         'Cargo.toml' = $Snapshot.CargoVersion
         'Cargo.lock' = $Snapshot.CargoLockVersion
-        'web-platform/targets.json sharedVersion' = [string]$Snapshot.Targets.sharedVersion
-        'web-platform/targets.json html' = [string]$Snapshot.Targets.targets.html.version
-        'web-platform/targets.json php' = [string]$Snapshot.Targets.targets.php.version
-        'web-platform/targets.json spfx' = [string]$Snapshot.Targets.targets.spfx.version
-        'web-platform/apps/spfx/package.json' = [string]$Snapshot.Spfx.version
-        'web-platform/apps/spfx/package-solution.json' = [string]$Snapshot.Solution.solution.version
     }
     foreach ($entry in $checks.GetEnumerator()) {
-        $expected = if ($entry.Key -eq 'web-platform/apps/spfx/package-solution.json') { $Snapshot.MsixVersion } else { $expectedPackageVersion }
+        $expected = $expectedPackageVersion
         if ($entry.Value -ne $expected) {
             throw "$($entry.Key)の版がrelease-config.jsonと一致していません: $($entry.Value) / $expected"
         }
@@ -201,16 +195,23 @@ function Assert-VersionSnapshot {
 
     $lockPackages = Get-JsonMapValue -Object $Snapshot.PackageLock -Name 'packages'
     foreach ($key in @('', 'packages/markdown-core', 'web-platform/packages/markdown-core')) {
+        $expectedLockVersion = if ($key -eq '') { $expectedPackageVersion } else { [string]$Snapshot.Targets.sharedVersion }
         $property = if ($lockPackages -is [Collections.IDictionary]) { $lockPackages[$key] } else { $lockPackages.PSObject.Properties[$key].Value }
-        if (-not $property -or [string](Get-JsonMapValue -Object $property -Name 'version') -ne $expectedPackageVersion) {
+        if (-not $property -or [string](Get-JsonMapValue -Object $property -Name 'version') -ne $expectedLockVersion) {
             throw "package-lock.jsonの版が一致していません: packages[$key]"
         }
     }
 
     Assert-FileExists -Path $webGeneratedPath
     $generated = Get-Content -LiteralPath $webGeneratedPath -Raw
-    if (-not $generated.Contains($expectedPackageVersion)) {
-        throw 'web-platform/apps/web/src/targetVersions.generated.tsがtargets.jsonと一致していません。'
+    foreach ($target in @('html', 'php', 'spfx')) {
+        if (-not $generated.Contains([string]$Snapshot.Targets.targets.$target.version)) {
+            throw 'web-platform/apps/web/src/targetVersions.generated.tsがtargets.jsonと一致していません。'
+        }
+    }
+    if ($Snapshot.Spfx.version -ne $Snapshot.Targets.targets.spfx.version -or
+        $Snapshot.Solution.solution.version -ne $Snapshot.Targets.targets.spfx.solutionVersion) {
+        throw 'SPFx生成物の版が独立管理するtargets.jsonと一致していません。'
     }
 
     $historyPath = Join-Path $projectRootFullPath "dev\history\v$($publicMatch.Groups[1].Value)"
@@ -222,23 +223,12 @@ function Assert-VersionSnapshot {
 function Get-TextFilesForResidueScan {
     $scanPaths = @(
         'package.json',
-        'package-lock.json',
-        'scripts',
-        'src',
+        'scripts/README.md',
         'src-tauri/Cargo.toml',
         'src-tauri/Cargo.lock',
-        'src-tauri/src',
-        'packaging',
-        'web-platform/targets.json',
-        'web-platform/package.json',
-        'web-platform/package-lock.json',
-        'web-platform/scripts',
-        'web-platform/packages',
-        'web-platform/apps/web/src',
-        'web-platform/apps/spfx/config',
-        'web-platform/apps/spfx/src',
-        'web-platform/apps/spfx/package.json',
-        'web-platform/apps/spfx/package-lock.json'
+        'src-tauri/tauri.conf.json',
+        'packaging/release-config.json',
+        'packaging/site'
     )
     $excludedRelativePaths = @(
         'web-platform/scripts/test-target-versions.mjs',
@@ -332,9 +322,7 @@ function Update-VersionFiles {
 
     $filesToSnapshot = @(
         $releaseConfigPath, $packageJsonPath, $packageLockPath, $tauriConfigPath,
-        $cargoTomlPath, $cargoLockPath, $webTargetsPath, $webGeneratedPath,
-        $webSpfxPackagePath, $webSpfxLockPath, $webSolutionPath, $webPackagePath,
-        $webPackageLockPath, $webMarkdownCorePackagePath, $scriptReadmePath
+        $cargoTomlPath, $cargoLockPath, $scriptReadmePath
     ) + $siteFiles
     $backups = @{}
     foreach ($file in $filesToSnapshot) {
@@ -356,7 +344,7 @@ function Update-VersionFiles {
         $packageLock = $Snapshot.PackageLock
         $packageLock['version'] = $Plan.PackageVersion
         $lockPackages = Get-JsonMapValue -Object $packageLock -Name 'packages'
-        foreach ($key in @('', 'packages/markdown-core', 'web-platform/packages/markdown-core')) {
+        foreach ($key in @('')) {
             (Get-JsonMapValue -Object $lockPackages -Name $key)['version'] = $Plan.PackageVersion
         }
         Write-TextFile -Path $packageLockPath -Content (ConvertTo-JsonText -Value $packageLock)
@@ -373,14 +361,7 @@ function Update-VersionFiles {
         $cargoLock = [regex]::Replace($cargoLock, '(?ms)(^\[\[package\]\]\s*\r?\nname = "mdvisualizer"\s*\r?\nversion = ")[^"]+("\s*$)', "`${1}$($Plan.PackageVersion)`${2}", 1)
         Write-TextFile -Path $cargoLockPath -Content $cargoLock
 
-        $targets = $Snapshot.Targets
-        $targets.sharedVersion = $Plan.PackageVersion
-        $targets.targets.html.version = $Plan.PackageVersion
-        $targets.targets.php.version = $Plan.PackageVersion
-        $targets.targets.spfx.version = $Plan.PackageVersion
-        $targets.targets.spfx.solutionVersion = $Plan.MsixVersion
-        Write-TextFile -Path $webTargetsPath -Content (ConvertTo-JsonText -Value $targets)
-        Invoke-NodeScript -ScriptPath (Join-Path $webRoot 'scripts\generate-targets.mjs') -Arguments @() -LogPath $LogPath
+        # Web各製品と共有coreはtargets.jsonで独立管理し、この入口では変更しない。
 
         foreach ($file in $siteFiles) {
             $site = Get-Content -LiteralPath $file -Raw
@@ -485,7 +466,7 @@ catch {
     Restore-FileBackups -Backups $backups
     throw
 }
-Write-Host '旧版残骸検査: 0件（履歴資料・研究資料・テストfixtureは対象外）'
+Write-Host '旧版残骸検査: 0件（Desktopの版情報・配布ページが対象。独立版のWeb/coreと履歴・fixtureは対象外）'
 Write-Host ''
 Write-Host 'バージョン更新と旧版残骸検査が完了しました。'
 Write-Host "更新版: $($plan.PublicVersion)"

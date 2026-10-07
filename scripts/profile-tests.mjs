@@ -1,14 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { takeVersionArgument, versionLogDirectory } from './version-log-path.mjs';
 const root = path.resolve(import.meta.dirname, '..');
-const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).version.split('+')[0];
-const output = path.join(root, `dev/history/v${version}/logs/test-profile-${Date.now()}`);
+const { version, args } = takeVersionArgument(process.argv.slice(2));
+process.env.MDVISUALIZER_VERSION = version;
+const output = versionLogDirectory(root, 'test-profile', version);
 fs.mkdirSync(output, { recursive: true });
 const resultFile = path.join(output, 'vitest.json');
 const started = performance.now();
 const log = fs.openSync(path.join(output, 'vitest.log'), 'w');
-const result = spawnSync(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', ...process.argv.slice(2), '--reporter=default', '--reporter=json', `--outputFile=${resultFile}`], { cwd: root, stdio: ['ignore', log, log] });
+const result = spawnSync(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', ...args, '--reporter=default', '--reporter=json', `--outputFile=${resultFile}`], { cwd: root, stdio: ['ignore', log, log] });
 fs.closeSync(log);
 if (result.error) throw result.error;
 if (fs.existsSync(resultFile)) {
