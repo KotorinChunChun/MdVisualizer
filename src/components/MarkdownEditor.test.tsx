@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
+import { EditorView } from "@codemirror/view";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 
@@ -11,6 +12,42 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("MarkdownEditor", () => {
+  it("pastes embedded-image Markdown already folded without changing its data, and undoes once", async () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const onChange = vi.fn();
+    const markdown = `![画像](data:image/png;base64,${"A".repeat(2048)})`;
+    const { container } = render(<MarkdownEditor ref={ref} documentId="paste-fold:1" value="" dirty={false} saving={false} onChange={onChange} onSave={() => {}} />);
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, { clipboardData: { files: [], items: [], getData: () => markdown } });
+    await waitFor(() => expect(container.querySelectorAll(".cm-foldPlaceholder")).toHaveLength(1));
+    expect(ref.current!.snapshot()!.content).toBe(markdown);
+    expect(onChange).toHaveBeenLastCalledWith(markdown);
+    act(() => { expect(ref.current!.undo()).toBe(true); });
+    expect(ref.current!.snapshot()!.content).toBe("");
+  });
+
+  it("folds only newly pasted images and leaves manually expanded images open", async () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const first = `![元画像](data:image/png;base64,${"A".repeat(2048)})`;
+    const pasted = `\n![追加1](data:image/png;base64,${"B".repeat(2048)}) ![追加2](data:image/png;base64,${"C".repeat(2048)})`;
+    const { container } = render(<MarkdownEditor ref={ref} documentId="paste-fold-existing:1" value={first} dirty={false} saving={false} onChange={() => {}} onSave={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: /^展開$/ }));
+    await waitFor(() => expect(container.querySelectorAll(".cm-foldPlaceholder")).toHaveLength(0));
+    act(() => { EditorView.findFromDOM(container.querySelector<HTMLElement>(".cm-editor")!)!.dispatch({ selection: { anchor: first.length } }); });
+    fireEvent.paste(container.querySelector<HTMLElement>(".cm-content")!, { clipboardData: { files: [], items: [], getData: () => pasted } });
+    await waitFor(() => expect(container.querySelectorAll(".cm-foldPlaceholder")).toHaveLength(2));
+    expect(ref.current!.snapshot()!.content).toBe(first + pasted);
+  });
+
+  it("folds an embedded image inserted through the controlled document value", async () => {
+    const ref = createRef<MarkdownEditorHandle>();
+    const props = { ref, documentId: "insert-fold:1", dirty: false, saving: false, onChange: () => {}, onSave: () => {} };
+    const image = `![画像](data:image/png;base64,${"A".repeat(2048)})`;
+    const { container, rerender } = render(<MarkdownEditor {...props} value="前\n後" />);
+    rerender(<MarkdownEditor {...props} value={`前\n${image}\n後`} />);
+    await waitFor(() => expect(container.querySelectorAll(".cm-foldPlaceholder")).toHaveLength(1));
+    expect(ref.current!.snapshot()!.content).toBe(`前\n${image}\n後`);
+  });
+
   it("表示切替をまたいでコードとビジュアルの編集を同じ履歴でUndo・Redoする", () => {
     const ref = createRef<MarkdownEditorHandle>();
     const onChange = vi.fn();
