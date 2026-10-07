@@ -1,0 +1,34 @@
+{
+  "M01": {
+    "markdown": "![左][photo]\n\n![右][photo]\n\n![通常](images/photo.png)\n\n[photo]: images/photo.png \"共通説明\"\n\n`images/photo.png`\n",
+    "renamedFilename": "renamed.png"
+  },
+  "M02": {
+    "markdown": "# 素材選び直し\n\n![元の説明](original.png)\n",
+    "target": "original.png",
+    "replacement": "replacement.png"
+  },
+  "M03": {
+    "markdown": "# 新規保存競合\n\n![新規](new.png)\n",
+    "target": "new.png"
+  },
+  "M04": {
+    "markdown": "# 画像情報\n\n![古い説明](original.png)\n",
+    "captionBefore": "古い説明",
+    "captionAfter": "保存後の説明"
+  },
+  "M05": {
+    "markdown": "# 削除前の更新\n\n![図](original.png)\n",
+    "target": "original.png"
+  },
+  "M06": {
+    "markdown": "- 親項目\n\n  ![sample.py](code/sample.py)\n\n  項目内の後文\n\n- 兄弟項目\n",
+    "externalText": "print(\"first\")\n```\nprint(\"last\")",
+    "source": "code/sample.py"
+  },
+  "M07": {
+    "markdown": "前の文章\n\n![元の説明](original.png)\n\n後の文章\n",
+    "cancelledCaption": "取り消す説明",
+    "committedCaption": "確定する説明"
+  }
+}

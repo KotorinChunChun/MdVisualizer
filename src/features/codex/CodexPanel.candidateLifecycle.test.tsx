@@ -78,8 +78,14 @@ function liveMount(options: { content?: string; selected?: CodexTarget; document
     view.rerender(panel());
     return true;
   });
+  const resolveDocumentPath: (() => Promise<string | null>) | undefined = options.resolver ? async () => {
+    const resolved = await options.resolver!();
+    // 実hostの初回保存と同じく、成功した保存先をPanelの文書属性にも反映する。
+    if (resolved) { activePath = resolved; view.rerender(panel()); }
+    return resolved;
+  } : undefined;
   // App.tsxと同じくタブIDのkeyで文書切替時はunmountする。
-  const panel = () => <CodexPanel key={current.documentId} open onClose={vi.fn()} documentName={activePath.split('/').pop() ?? 'untitled.md'} documentPath={activePath} baseDir="C:/docs" documentText={current.content} available consultationTarget={options.selected} getSnapshot={() => current} applyProposal={apply} applyProposalAsync={options.applyAsync} resolveDocumentPath={options.resolver} />;
+  const panel = () => <CodexPanel key={current.documentId} open onClose={vi.fn()} documentName={activePath.split('/').pop() ?? 'untitled.md'} documentPath={activePath} baseDir="C:/docs" documentText={current.content} available consultationTarget={options.selected} getSnapshot={() => current} applyProposal={apply} applyProposalAsync={options.applyAsync} resolveDocumentPath={resolveDocumentPath} />;
   const view = render(panel());
   return { ...view, apply, current: () => current, setDocument(content: string, documentPath = activePath, id = current.documentId) { current = { ...current, content, documentId: id }; activePath = documentPath; view.rerender(panel()); } };
 }

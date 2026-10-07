@@ -5,6 +5,21 @@ import { MarkdownPreview } from "./MarkdownPreview";
 describe("MarkdownPreview direct text editing", () => {
   afterEach(cleanup);
 
+  it.each(["本文", "[リンク](https://example.test)", "`code`"])("%sのEscape取消はblur保存せずプレビューへfocusを返し、再入力できる", (content) => {
+    const edit = vi.fn().mockReturnValue(true);
+    const view = render(<MarkdownPreview content={content} baseDir="" imageVersions={{}} onTextEdit={edit} />);
+    const leaf = view.container.querySelector(".preview-inline-editable")!;
+    fireEvent.doubleClick(leaf);
+    const input = screen.getByRole("textbox", { name: "プレビューのテキストを編集" });
+    fireEvent.change(input, { target: { value: "取消する入力" } }); fireEvent.keyDown(input, { key: "Escape" });
+    fireEvent.blur(input);
+    expect(edit).not.toHaveBeenCalled(); expect(document.activeElement).toBe(view.container.querySelector(".markdown-body"));
+    fireEvent.doubleClick(view.container.querySelector(".preview-inline-editable")!);
+    const retry = screen.getByRole("textbox", { name: "プレビューのテキストを編集" });
+    fireEvent.change(retry, { target: { value: "確定する入力" } }); fireEvent.keyDown(retry, { key: "Enter" });
+    expect(edit).toHaveBeenCalledOnce();
+  });
+
   it.each(["先頭\n次の行\n最後の行", "先頭  \n次の行  \n最後の行", "先頭\n\n次の行\n\n最後の行", "| 見出し |\n| --- |\n| 先頭 |\n| 次の行 |\n| 最後の行 |"])("2行目以降の本文・表セルを編集できる: %s", source => {
     const onTextEdit = vi.fn().mockReturnValue(true);
     const { container } = render(<MarkdownPreview content={source} baseDir="" imageVersions={{}} onTextEdit={onTextEdit} />);

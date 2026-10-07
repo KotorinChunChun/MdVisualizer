@@ -36800,14 +36800,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1274,
+        "sourceLine": 1276,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1274,
+        "line": 1276,
         "column": 7
       },
       "interactions": [
@@ -36815,7 +36815,7 @@
         "onContextMenuCapture",
         "onKeyDown"
       ],
-      "signature": "sha256:24afcf32e647651d178453cce75374f1ade27edc46043a2cdb9f02e3b5292cd7",
+      "signature": "sha256:c2934ab1bb6fe6e8d55a14583e72ee7a1d5061349d0974a7a9ae087818d878ab",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -36947,26 +36947,26 @@
       "controlKind": "button",
       "tag": "div",
       "role": null,
-      "displayName": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageSource})`, { success: \"コードをMarkdownでコピーしました\", failure: \"コピーできませんでした\" })}>コードをMarkdownでコピー</button>\n        <button type=\"button\" disabled={embeddedImage} title={embeddedImage ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(imageSource, { success: \"画像のパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のパスをコピー</button>\n        <button type=\"button\" disabled={!absoluteImagePath} title={!absoluteImagePath ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(displayDocumentPath(absoluteImagePath), { success: \"画像のフルパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のフルパスをコピー</button>\n        <button type=\"button\" disabled={!caption.trim()} title={!caption.trim() ? \"画像の説明文がありません\" : undefined} onClick={() => void copyTextWithFeedback(caption, { success: \"画像の説明文をコピーしました\", failure: \"コピーできませんでした\" })}>画像の説明文をコピー</button>\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
+      "displayName": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" disabled={imageContextStale} title={imageContextStale ? \"保存済みの画像情報を確認中です。取得に失敗した場合はキャプションの保存を再試行してください。\" : undefined} onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageSource})`, { success: \"コードをMarkdownでコピーしました\", failure: \"コピーできませんでした\" })}>コードをMarkdownでコピー</button>\n        <button type=\"button\" disabled={embeddedImage} title={embeddedImage ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(imageSource, { success: \"画像のパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のパスをコピー</button>\n        <button type=\"button\" disabled={!absoluteImagePath} title={!absoluteImagePath ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(displayDocumentPath(absoluteImagePath), { success: \"画像のフルパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のフルパスをコピー</button>\n        <button type=\"button\" disabled={imageContextStale || !caption.trim()} title={imageContextStale ? \"保存済みの画像情報を確認中です\" : !caption.trim() ? \"画像の説明文がありません\" : undefined} onClick={() => void copyTextWithFeedback(caption, { success: \"画像の説明文をコピーしました\", failure: \"コピーできませんでした\" })}>画像の説明文をコピー</button>\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting || imageContextStale} title={imageContextStale ? \"保存済みの画像情報を確認中です\" : undefined} onClick={() => {\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageSource})`, { success: \"コードをMarkdownでコピーしました\", failure: \"コピーできませんでした\" })}>コードをMarkdownでコピー</button>\n        <button type=\"button\" disabled={embeddedImage} title={embeddedImage ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(imageSource, { success: \"画像のパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のパスをコピー</button>\n        <button type=\"button\" disabled={!absoluteImagePath} title={!absoluteImagePath ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(displayDocumentPath(absoluteImagePath), { success: \"画像のフルパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のフルパスをコピー</button>\n        <button type=\"button\" disabled={!caption.trim()} title={!caption.trim() ? \"画像の説明文がありません\" : undefined} onClick={() => void copyTextWithFeedback(caption, { success: \"画像の説明文をコピーしました\", failure: \"コピーできませんでした\" })}>画像の説明文をコピー</button>\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting} onClick={() => {\r\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
+      "labelExpression": "{{headingTitle?.trim() && <strong className=\"media-preview__title\">{headingTitle.trim()}</strong>}} {{diagramSource && content.kind === \"svg\" && <MermaidToolbar source={diagramSource} svg={content.svg} display=\"diagram\" fileDiagramKind={diagramKind ?? \"mermaid\"} ariaLabel={`${diagramKind === \"drawio\" ? \"draw.io\" : \"Mermaid\"}全画面操作`} />}} {{content.kind === \"image\" && <BlockCopyMenu>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath))}>図としてコピー</button>\r\n        <button type=\"button\" onClick={() => void copyFigure(() => copyRasterImage(content.src, imageContext?.imagePath, true), true)}>画像ファイルとしてコピー</button>\r\n        <button type=\"button\" disabled={imageContextStale} title={imageContextStale ? \"保存済みの画像情報を確認中です。取得に失敗した場合はキャプションの保存を再試行してください。\" : undefined} onClick={() => void copyTextWithFeedback(conversionContext?.occurrence.expected ?? `![${content.alt}](${imageSource})`, { success: \"コードをMarkdownでコピーしました\", failure: \"コピーできませんでした\" })}>コードをMarkdownでコピー</button>\n        <button type=\"button\" disabled={embeddedImage} title={embeddedImage ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(imageSource, { success: \"画像のパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のパスをコピー</button>\n        <button type=\"button\" disabled={!absoluteImagePath} title={!absoluteImagePath ? pathDisabledReason : undefined} onClick={() => void copyTextWithFeedback(displayDocumentPath(absoluteImagePath), { success: \"画像のフルパスをコピーしました\", failure: \"コピーできませんでした\" })}>画像のフルパスをコピー</button>\n        <button type=\"button\" disabled={imageContextStale || !caption.trim()} title={imageContextStale ? \"保存済みの画像情報を確認中です\" : !caption.trim() ? \"画像の説明文がありません\" : undefined} onClick={() => void copyTextWithFeedback(caption, { success: \"画像の説明文をコピーしました\", failure: \"コピーできませんでした\" })}>画像の説明文をコピー</button>\n      </BlockCopyMenu>}} {{!diagramSource && content.kind === \"svg\" && <MermaidToolbar source={content.svg} svg={content.svg} display=\"diagram\" />}} {{onCrop && <button type=\"button\" onClick={onCrop}>クロップ</button>}} {{(onActivate || editDisabledReason) && <button type=\"button\" onClick={onActivate} disabled={!onActivate} title={editDisabledReason}>画像編集</button>}} {{conversionContext && onConvertAsset && <button type=\"button\" disabled={converting || imageContextStale} title={imageContextStale ? \"保存済みの画像情報を確認中です\" : undefined} onClick={() => {\n        setConverting(true); setConversionError(null);\r\n        void onConvertAsset(conversionContext).catch((error) => setConversionError(error instanceof Error ? error.message : String(error))).finally(() => setConverting(false));\r\n      }}>{converting ? \"変換中…\" : conversionContext.storage === \"embedded\" ? \"ファイルへ変換\" : \"埋め込みに変換\"}</button>}} {{imageContext && onSaveCaption && <button type=\"button\" aria-expanded={metadataOpen} onClick={() => setMetadataOpen((open) => !open)}>画像情報</button>}}",
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 211,
+        "sourceLine": 215,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 211,
+        "line": 215,
         "column": 5
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:b1c7afce3b67e3dcb7f3215921b79b4da5291f1b3419f3058935842248d44237",
+      "signature": "sha256:627f222dba40714b17de175c94cc0d4eac2ca2df3ee28080791f70afa1023f75",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37106,20 +37106,20 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 217,
+        "sourceLine": 221,
         "sourceColumn": 9,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 217,
+        "line": 221,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:c1c1328e5be193127328f601615fc8dd202131170d680f7e12d311352685fd6c",
+      "signature": "sha256:ccb81dd72754a905919300d1280fbd689a584c28d9a0a8c4d327ce5a9197761b",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37259,20 +37259,20 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 220,
+        "sourceLine": 224,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 220,
+        "line": 224,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:c20002592151c8b0b189fe759da4095963dfdb2265d6666a48df671068bc4c9a",
+      "signature": "sha256:18c5f9ec440613ccdae1091d6e06ba2cb73e74c223618a5fc80fa75d5317ec57",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -37412,20 +37412,20 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 226,
+        "sourceLine": 230,
         "sourceColumn": 47,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 226,
+        "line": 230,
         "column": 47
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:e7500a8e0b452ef85a02a3f06d2bb10dfa82aab367ccccef5aa5736bd2454f8b",
+      "signature": "sha256:aa806c43d4e704fe2ae4e33ea947755220477e2fade10785c9e1f3adf836abc4",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -39301,14 +39301,14 @@
       "orderScope": {
         "component": "PreviewInlineEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/PreviewInlineEditor.tsx",
-        "sourceLine": 34,
+        "sourceLine": 40,
         "sourceColumn": 17,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/PreviewInlineEditor.tsx",
-        "line": 34,
+        "line": 40,
         "column": 17
       },
       "interactions": [
@@ -39318,7 +39318,7 @@
         "onKeyDown",
         "onBlur"
       ],
-      "signature": "sha256:42dd689c94114f394dbf359e5e1b1ed26b4ce60fcff295a560280697fad41610",
+      "signature": "sha256:588e6087b2705e25fea86ff4c43e17ec518e2928b536d673ff2d2e75d2ea0eef",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -44099,14 +44099,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 34,
+        "sourceLine": 53,
         "sourceColumn": 214,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 34,
+        "line": 53,
         "column": 214
       },
       "interactions": [
@@ -44114,7 +44114,7 @@
         "onBlur",
         "onKeyDown"
       ],
-      "signature": "sha256:86ecd3e61f736a20e1ca4e0c61e7439f766af14e145cf608dc841447fe5f8fdd",
+      "signature": "sha256:f33ef7438532ddb3d0208dc948fbfab65b3d9840ae1d0fcbf43ce4e64d5bd0ee",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",

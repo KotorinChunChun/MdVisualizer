@@ -375,7 +375,377 @@ fn scan_image_references(text: &str) -> Vec<ImageReference> {
         }
         index = next_char_index(text, index);
     }
+    references.extend(scan_reference_image_destinations(text));
     references
+}
+
+/// 参照型画像は使用箇所でなく共有定義のdestinationを1回だけ変更する。
+/// 未使用定義やコード例は対象にせず、label/title/他の利用箇所の記法を保つ。
+fn scan_reference_image_destinations(text: &str) -> Vec<ImageReference> {
+    let lines = reference_markdown_lines(text);
+    let (mut ignored, block_literals) = reference_literal_mask(text, &lines);
+    let bytes = text.as_bytes();
+    let mut definitions: Vec<(String, Range<usize>)> = Vec::new();
+    let mut in_paragraph = false;
+    let mut previous_container = (0, 0);
+    let mut definition_end = 0;
+    for (line_index, line) in lines.iter().enumerate() {
+        if line.start < definition_end {
+            continue;
+        }
+        let start = line.content_start;
+        let end = line.end;
+        let container = (line.quote_depth, line.list_indent);
+        if container != previous_container || line.starts_list {
+            in_paragraph = false;
+        }
+        previous_container = container;
+        if start == end || block_literals[line_index] {
+            in_paragraph = false;
+            continue;
+        }
+        let content = &text[start..end];
+        // 定義は進行中のparagraphを中断しない。見出し/罫線の後は新しいblock。
+        let hashes = content.bytes().take_while(|byte| *byte == b'#').count();
+        let block_boundary = (1..=6).contains(&hashes) && content[hashes..].starts_with(' ')
+            || ["---", "***", "___"].contains(&content.trim());
+        if block_boundary {
+            in_paragraph = false;
+            continue;
+        }
+        if in_paragraph {
+            continue;
+        }
+        in_paragraph = true;
+        if start < end && !ignored[start] && bytes[start] == b'[' {
+            if let Some(label_end) = markdown_label_end(text, start) {
+                if label_end < end && bytes.get(label_end + 1) == Some(&b':') {
+                    let label = normalized_reference_label(&text[start + 1..label_end]);
+                    if !label.is_empty() {
+                        let (body_start, body_end) = if text[label_end + 2..end].trim().is_empty() {
+                            match lines.get(line_index + 1).filter(|next| {
+                                next.content_start < next.end
+                                    && !ignored[next.content_start]
+                                    && next.quote_depth == line.quote_depth
+                                    && next.list_indent == line.list_indent
+                            }) {
+                                Some(next) => (next.content_start, next.end),
+                                None => continue,
+                            }
+                        } else {
+                            (label_end + 2, end)
+                        };
+                        if let Some(range) = parse_markdown_destination(text, body_start, body_end)
+                            .filter(|range| range.end <= body_end)
+                        {
+                            let tail_start = if bytes.get(range.end) == Some(&b'>') {
+                                range.end + 1
+                            } else {
+                                range.end
+                            };
+                            let tail = text[tail_start..body_end].trim();
+                            let valid_title = tail.is_empty()
+                                || tail.chars().next().is_some_and(|quote| {
+                                    let closing = if quote == '(' { ')' } else { quote };
+                                    matches!(quote, '\'' | '"' | '(')
+                                        && tail.len() >= 2
+                                        && tail.ends_with(closing)
+                                });
+                            if valid_title {
+                                in_paragraph = false;
+                                definition_end = body_end;
+                                if !definitions.iter().any(|(existing, _)| existing == &label) {
+                                    definitions.push((label, range));
+                                }
+                                ignored[line.start..body_end].fill(true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut references: Vec<ImageReference> = Vec::new();
+    let mut index = 0;
+    while index < text.len() {
+        if ignored[index] {
+            index = next_char_index(text, index);
+            continue;
+        }
+        if bytes[index] == b'\\' {
+            index = next_char_index(text, index);
+            if index < text.len() {
+                index = next_char_index(text, index);
+            }
+            continue;
+        }
+        if text[index..].starts_with("![") && !text[index..].starts_with("![[") {
+            if let Some(alt_end) = markdown_label_end(text, index + 1) {
+                let after_alt = alt_end + 1;
+                if bytes.get(after_alt) != Some(&b'(') {
+                    let alt = &text[index + 2..alt_end];
+                    let label = if bytes.get(after_alt) == Some(&b'[') {
+                        markdown_label_end(text, after_alt).map(|end| {
+                            let explicit = &text[after_alt + 1..end];
+                            if explicit.is_empty() {
+                                alt
+                            } else {
+                                explicit
+                            }
+                        })
+                    } else {
+                        Some(alt)
+                    };
+                    if let Some(label) = label {
+                        let key = normalized_reference_label(label);
+                        if let Some((_, range)) =
+                            definitions.iter().find(|(label, _)| label == &key)
+                        {
+                            if !references
+                                .iter()
+                                .any(|reference| reference.source_range == *range)
+                            {
+                                references.push(ImageReference {
+                                    source: text[range.clone()].to_string(),
+                                    source_range: range.clone(),
+                                    caption: CaptionLocation::Ignored,
+                                });
+                            }
+                        }
+                    }
+                }
+                index = after_alt;
+                continue;
+            }
+        }
+        index = next_char_index(text, index);
+    }
+    references
+}
+
+fn normalized_reference_label(label: &str) -> String {
+    // CommonMarkのlabelは大小文字と連続する空白を区別しない。
+    label
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_uppercase()
+}
+
+fn markdown_label_end(text: &str, start: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let mut depth = 1;
+    let mut index = start + 1;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'\\' => {
+                index += 2;
+                continue;
+            }
+            b'[' => depth += 1,
+            b']' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(index);
+                }
+            }
+            _ => {}
+        }
+        index += 1;
+    }
+    None
+}
+
+struct ReferenceMarkdownLine {
+    start: usize,
+    end: usize,
+    content_start: usize,
+    indented_code: bool,
+    quote_depth: usize,
+    list_indent: usize,
+    starts_list: bool,
+}
+
+/// コンテナー記号を除いた本文位置を、元のUTF-8 byte offsetのまま保持する。
+fn reference_markdown_lines(text: &str) -> Vec<ReferenceMarkdownLine> {
+    let mut lines = Vec::new();
+    let mut offset = 0;
+    let mut list_indents = Vec::new();
+    let mut previous_quote_depth = 0;
+    for raw in text.split_inclusive('\n') {
+        let line = raw.trim_end_matches(['\r', '\n']);
+        let bytes = line.as_bytes();
+        let mut cursor = 0;
+        let mut quote_depth = 0;
+        loop {
+            let before_spaces = cursor;
+            while cursor < bytes.len() && bytes[cursor] == b' ' && cursor - before_spaces < 3 {
+                cursor += 1;
+            }
+            if bytes.get(cursor) != Some(&b'>') {
+                cursor = before_spaces;
+                break;
+            }
+            quote_depth += 1;
+            cursor += 1;
+            if bytes.get(cursor) == Some(&b' ') {
+                cursor += 1;
+            }
+        }
+        if quote_depth != previous_quote_depth {
+            list_indents.clear();
+        }
+        previous_quote_depth = quote_depth;
+        let base = cursor;
+        while bytes.get(cursor) == Some(&b' ') {
+            cursor += 1;
+        }
+        let indentation = cursor - base;
+        if !line[cursor..].trim().is_empty() {
+            while list_indents
+                .last()
+                .is_some_and(|level| *level > indentation)
+            {
+                list_indents.pop();
+            }
+        }
+        let marker_start = cursor;
+        let marker_end = if matches!(bytes.get(cursor), Some(b'-' | b'+' | b'*')) {
+            cursor + 1
+        } else {
+            while bytes.get(cursor).is_some_and(u8::is_ascii_digit) && cursor - marker_start < 9 {
+                cursor += 1;
+            }
+            if cursor > marker_start && matches!(bytes.get(cursor), Some(b'.' | b')')) {
+                cursor + 1
+            } else {
+                marker_start
+            }
+        };
+        cursor = marker_start;
+        let starts_list = marker_end > marker_start && bytes.get(marker_end) == Some(&b' ');
+        if starts_list {
+            cursor = marker_end;
+            while bytes.get(cursor) == Some(&b' ') {
+                cursor += 1;
+            }
+            list_indents.push(cursor - base);
+        }
+        let list_indent = list_indents.last().copied().unwrap_or(0);
+        let indented_code = cursor == marker_start
+            && (indentation.saturating_sub(list_indent) >= 4 || bytes.get(cursor) == Some(&b'\t'));
+        lines.push(ReferenceMarkdownLine {
+            start: offset,
+            end: offset + line.len(),
+            content_start: offset + cursor,
+            indented_code,
+            quote_depth,
+            list_indent,
+            starts_list,
+        });
+        offset += raw.len();
+    }
+    lines
+}
+
+fn reference_literal_mask(text: &str, lines: &[ReferenceMarkdownLine]) -> (Vec<bool>, Vec<bool>) {
+    let mut ignored = vec![false; text.len()];
+    let mut blocks = vec![false; lines.len()];
+    let mut fence: Option<(u8, usize)> = None;
+    let mut raw_html: Option<&str> = None;
+    for (line_index, line) in lines.iter().enumerate() {
+        let trimmed = &text[line.content_start..line.end];
+        let lower = trimmed.to_ascii_lowercase();
+        if fence.is_none() && !line.indented_code && raw_html.is_none() {
+            raw_html = ["script", "pre", "style", "textarea"]
+                .into_iter()
+                .find(|tag| {
+                    lower.strip_prefix(&format!("<{tag}")).is_some_and(|tail| {
+                        tail.starts_with('>') || tail.starts_with(char::is_whitespace)
+                    })
+                });
+        }
+        if let Some(tag) = raw_html {
+            ignored[line.start..line.end].fill(true);
+            blocks[line_index] = true;
+            if lower.contains(&format!("</{tag}>")) {
+                raw_html = None;
+            }
+            continue;
+        }
+        let marker = trimmed.as_bytes().first().copied();
+        let count = marker
+            .map(|marker| trimmed.bytes().take_while(|byte| *byte == marker).count())
+            .unwrap_or(0);
+        let was_fenced = fence.is_some();
+        if !line.indented_code {
+            if let Some((open, length)) = fence {
+                if marker == Some(open) && count >= length && trimmed[count..].trim().is_empty() {
+                    fence = None;
+                }
+            } else if matches!(marker, Some(b'`' | b'~')) && count >= 3 {
+                fence = Some((marker.unwrap(), count));
+            }
+        }
+        if was_fenced || fence.is_some() || line.indented_code {
+            ignored[line.start..line.end].fill(true);
+            blocks[line_index] = true;
+        }
+    }
+    let mut index = 0;
+    while index < text.len() {
+        if ignored[index] {
+            index = next_char_index(text, index);
+            continue;
+        }
+        if text[index..].starts_with("<!--") {
+            let end = text[index + 4..]
+                .find("-->")
+                .map(|relative| index + 4 + relative + 3)
+                .unwrap_or(text.len());
+            ignored[index..end].fill(true);
+            for (line_index, line) in lines.iter().enumerate() {
+                if line.content_start >= index && line.content_start < end {
+                    blocks[line_index] = true;
+                }
+            }
+            index = end;
+            continue;
+        }
+        if text.as_bytes()[index] == b'`' {
+            let length = text[index..]
+                .bytes()
+                .take_while(|byte| *byte == b'`')
+                .count();
+            let mut candidate = index + length;
+            let mut end = None;
+            while candidate < text.len() {
+                if text.as_bytes()[candidate] != b'`' {
+                    candidate = next_char_index(text, candidate);
+                    continue;
+                }
+                let run = text[candidate..]
+                    .bytes()
+                    .take_while(|byte| *byte == b'`')
+                    .count();
+                if run == length {
+                    end = Some(candidate + run);
+                    break;
+                }
+                candidate += run;
+            }
+            if let Some(end) = end {
+                ignored[index..end].fill(true);
+                index = end;
+                continue;
+            }
+            index += length;
+            continue;
+        }
+        index = next_char_index(text, index);
+    }
+    (ignored, blocks)
 }
 
 fn parse_image_at(text: &str, start: usize) -> Option<ImageReference> {
@@ -665,20 +1035,33 @@ fn replace_caption(text: &str, reference: &ImageReference, caption: &str) -> Str
 }
 
 fn escape_markdown_alt(value: &str) -> Cow<'_, str> {
-    if !value.contains(['\\', '[', ']']) {
+    // 画像情報からの保存でも、プレビューの直接編集と同じく説明を文字として保つ。
+    // 特にGFM表の縦棒は画像alt内でもセル区切りとして扱われる。
+    const SPECIAL: &str = "\\`*_[]<>#+-=!|~";
+    if !value
+        .chars()
+        .any(|character| SPECIAL.contains(character) || character == '&')
+    {
         return Cow::Borrowed(value);
     }
-    Cow::Owned(
-        value
-            .replace('\\', "\\\\")
-            .replace('[', "\\[")
-            .replace(']', "\\]"),
-    )
+    let mut escaped = String::with_capacity(value.len());
+    for character in value.chars() {
+        if character == '&' {
+            escaped.push_str("&amp;");
+        } else {
+            if SPECIAL.contains(character) {
+                escaped.push('\\');
+            }
+            escaped.push(character);
+        }
+    }
+    Cow::Owned(escaped)
 }
 
 fn escape_html_attribute(value: &str, quote: Option<char>) -> String {
     let mut escaped = value
         .replace('&', "&amp;")
+        .replace('|', "&#124;")
         .replace('<', "&lt;")
         .replace('>', "&gt;");
     match quote {
@@ -908,6 +1291,57 @@ mod tests {
     }
 
     #[test]
+    fn caption_metadata_save_protects_table_columns_and_literal_inline_text() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("caption-table.md");
+        let original = "| 図 | 備考 |\r\n| --- | --- |\r\n| ![旧](same.png \"固定\") | 隣接 |\r\n![別](same.png)\r\n";
+        for (caption, encoded) in [
+            ("左 | 右", "左 \\| 右"),
+            (r"左\|右", r"左\\\|右"),
+            (
+                "**重要** _下線_ `x=1` ~~廃止~~",
+                r"\*\*重要\*\* \_下線\_ \`x\=1\` \~\~廃止\~\~",
+            ),
+            ("HTMLの &amp; と &#65;", r"HTMLの &amp;amp; と &amp;\#65;"),
+        ] {
+            fs::write(&path, encode_with_bom(UTF_8, &[0xef, 0xbb, 0xbf], original)).unwrap();
+            update_image_caption(
+                &path,
+                utf16_offset(original, original.find("![旧]").unwrap()),
+                "same.png",
+                caption,
+            )
+            .unwrap();
+            let saved = fs::read(&path).unwrap();
+            assert!(saved.starts_with(&[0xef, 0xbb, 0xbf]));
+            assert_eq!(
+                std::str::from_utf8(&saved[3..]).unwrap(),
+                original.replacen("![旧]", &format!("![{encoded}]"), 1),
+                "{caption}"
+            );
+        }
+    }
+
+    #[test]
+    fn html_caption_metadata_save_protects_table_pipe_and_quote_style() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("caption-html-table.md");
+        let original = "| 図 | 備考 |\n| --- | --- |\n| <img src='same.png' alt='旧'> | 隣接 |\n";
+        fs::write(&path, original).unwrap();
+        update_image_caption(
+            &path,
+            utf16_offset(original, original.find("<img").unwrap()),
+            "same.png",
+            "左 | it's &amp;",
+        )
+        .unwrap();
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            original.replace("alt='旧'", "alt='左 &#124; it&#39;s &amp;amp;'")
+        );
+    }
+
+    #[test]
     fn preserves_utf16_bom_and_newline_when_updating_caption() {
         for (encoding, bom) in [(UTF_16LE, &[0xff, 0xfe][..]), (UTF_16BE, &[0xfe, 0xff][..])] {
             let dir = tempdir().unwrap();
@@ -958,6 +1392,137 @@ mod tests {
         assert_eq!(
             fs::read_to_string(root.join("nested").join("other.MARKDOWN")).unwrap(),
             "<img alt='caption' src='../images/renamed.png?x#fragment'>\n"
+        );
+    }
+
+    #[test]
+    fn rename_reference_definition_persists_all_shared_images_after_reopen() {
+        let dir = tempdir().unwrap();
+        fs::create_dir(dir.path().join("images")).unwrap();
+        let image = dir.path().join("images/photo.png");
+        let markdown = dir.path().join("shared.md");
+        fs::write(&image, b"original image bytes").unwrap();
+        let source = "![左][photo]\n\n![右][photo]\n\n![通常](images/photo.png)\n\n[photo]: images/photo.png \"共通説明\"\n\n`images/photo.png`\n";
+        fs::write(&markdown, source).unwrap();
+
+        let result = rename_image_and_references(&markdown, &image, "renamed.png").unwrap();
+
+        // 読み直した実ファイルを検査する。画面内の補正済みdraftだけでは合格にしない。
+        let reopened = fs::read_to_string(&markdown).unwrap();
+        assert_eq!(reopened, "![左][photo]\n\n![右][photo]\n\n![通常](images/renamed.png)\n\n[photo]: images/renamed.png \"共通説明\"\n\n`images/photo.png`\n");
+        assert_eq!(result.updated_references, 2); // 共有定義1か所と通常参照1か所
+        assert_eq!(
+            fs::read(dir.path().join("images/renamed.png")).unwrap(),
+            b"original image bytes"
+        );
+        assert!(!image.exists());
+    }
+
+    #[test]
+    fn rename_reference_definition_supports_collapsed_shortcut_and_first_definition() {
+        let dir = tempdir().unwrap();
+        let image = dir.path().join("old name.png");
+        let markdown = dir.path().join("shared.md");
+        fs::write(&image, b"image").unwrap();
+        let source = "![Photo][] ![photo] ![説明][  PHOTO ]\r\n\r\n[Photo]: <old name.png?download=1#part> '保持するtitle'\r\n[photo]: unused.png \"後の定義\"\r\n";
+        fs::write(
+            &markdown,
+            encode_with_bom(UTF_8, &[0xef, 0xbb, 0xbf], source),
+        )
+        .unwrap();
+
+        let result = rename_image_and_references(&markdown, &image, "new.png").unwrap();
+
+        assert_eq!(result.updated_references, 1);
+        let reopened = fs::read(&markdown).unwrap();
+        assert!(reopened.starts_with(&[0xef, 0xbb, 0xbf]));
+        assert_eq!(
+            std::str::from_utf8(&reopened[3..]).unwrap(),
+            source.replacen(
+                "<old name.png?download=1#part>",
+                "<new.png?download=1#part>",
+                1
+            )
+        );
+    }
+
+    #[test]
+    fn rename_reference_definition_does_not_interrupt_paragraph() {
+        let dir = tempdir().unwrap();
+        let image = dir.path().join("old.png");
+        let markdown = dir.path().join("paragraph.md");
+        fs::write(&image, b"image").unwrap();
+        let source = "![図][photo]\n[photo]: fake.png\n\n[photo]: old.png \"有効な定義\"\n";
+        fs::write(&markdown, source).unwrap();
+        let result = rename_image_and_references(&markdown, &image, "new.png").unwrap();
+        assert_eq!(result.updated_references, 1);
+        assert_eq!(
+            fs::read_to_string(&markdown).unwrap(),
+            source.replace("old.png", "new.png")
+        );
+    }
+
+    #[test]
+    fn rename_reference_definition_ignores_raw_html_image_examples() {
+        let dir = tempdir().unwrap();
+        let image = dir.path().join("old.png");
+        let markdown = dir.path().join("raw-html.md");
+        fs::write(&image, b"image").unwrap();
+        let source = "<script>\n![例][photo]\n</script>\n\n[photo]: old.png\n";
+        fs::write(&markdown, source).unwrap();
+        let result = rename_image_and_references(&markdown, &image, "new.png").unwrap();
+        assert_eq!(result.updated_references, 0);
+        assert_eq!(fs::read_to_string(&markdown).unwrap(), source);
+    }
+
+    #[test]
+    fn rename_reference_definition_preserves_quote_list_and_multiline_containers() {
+        for source in [
+            "> ![図][photo]\n>\n> [photo]: old.png \"引用内のtitle\"\n",
+            "- ![図][photo]\n\n  [photo]: old.png \"項目内のtitle\"\n",
+            "- 親\n  - ![図][photo]\n\n    [photo]: old.png \"入れ子のtitle\"\n",
+            "![図][photo]\n\n[photo]:\n  old.png \"次行のtitle\"\n",
+            "> - ![図][photo]\n>\n>   [photo]:\n>     old.png \"引用項目のtitle\"\n",
+            "![一][a] ![二][b]\n\n[a]:\nold.png\n[b]: old.png\n",
+        ] {
+            let dir = tempdir().unwrap();
+            let image = dir.path().join("old.png");
+            let markdown = dir.path().join("container.md");
+            fs::write(&image, b"image").unwrap();
+            fs::write(&markdown, source).unwrap();
+            let result = rename_image_and_references(&markdown, &image, "new.png").unwrap();
+            assert_eq!(
+                result.updated_references,
+                source.matches("old.png").count(),
+                "{source}"
+            );
+            assert_eq!(
+                fs::read_to_string(&markdown).unwrap(),
+                source.replace("old.png", "new.png")
+            );
+            assert_eq!(fs::read(dir.path().join("new.png")).unwrap(), b"image");
+        }
+    }
+
+    #[test]
+    fn rename_reference_definition_ignores_unused_and_literal_definitions() {
+        let dir = tempdir().unwrap();
+        let image = dir.path().join("old.png");
+        let markdown = dir.path().join("shared.md");
+        fs::write(&image, b"image").unwrap();
+        let source = "~~~markdown\n![例][photo]\n[photo]: old.png \"コードの定義\"\n~~~\n\n`![例][unused]`\n\n<!--\n[photo]: old.png \"コメントの定義\"\n-->\n\n![実画像][photo]\n\n[photo]: old.png \"有効な定義\"\n[unused]: old.png \"未使用定義\"\n";
+        fs::write(&markdown, source).unwrap();
+
+        let result = rename_image_and_references(&markdown, &image, "new.png").unwrap();
+
+        assert_eq!(result.updated_references, 1);
+        assert_eq!(
+            fs::read_to_string(&markdown).unwrap(),
+            source.replacen(
+                "[photo]: old.png \"有効な定義\"",
+                "[photo]: new.png \"有効な定義\"",
+                1
+            )
         );
     }
 

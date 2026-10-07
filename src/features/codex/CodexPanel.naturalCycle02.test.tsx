@@ -251,8 +251,10 @@ describe("B02 AI応答・履歴・保存の連続操作", () => {
   });
   it("B02-R07 差分中の別フォルダーSaveAsを拒否し明示コピーは新基準へ配置する", async () => {
     store.sessions = [session()]; const h = host(); await openImage(); const review = await code(); h.savedAs(pathB);
-    fireEvent.click(within(review).getByRole("button", { name: "決定" })); await alertIncludes("文書が変わりました");
+    fireEvent.click(within(review).getByRole("button", { name: "決定" })); await alertIncludes("保存先が変わりました");
     expect(h.tab().draft).toBe(original); expect(files.size).toBe(0);
+    // 保存先競合では手編集も含めReviewを保持する。明示的に閉じてから別基準のコピーを始める。
+    fireEvent.click(within(review).getByRole("button", { name: "変更案の確認を閉じる" }));
     const oldImage = screen.queryByRole("dialog", { name: "生成画像の差分" }); if (oldImage) closeImage();
     await loadHistory("b02-owner"); const image = await openImage(); fireEvent.click(within(image).getByRole("button", { name: "コピー" }));
     await waitFor(() => expect(clipboardValue).toContain("image/plan-")); expect([...files.keys()].every(path => path.startsWith("C:/b02/B/"))).toBe(true);

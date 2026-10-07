@@ -1,10 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { collectEditableMarkdownOccurrences, type CodeFenceOccurrence } from "./markdownOccurrences";
 import { appendFilenameExtension, codeFencePathDecoration, embeddedFenceWithPath, markdownContinuationPrefix, removeFilenameExtension, splitFenceLanguagePath } from "./externalPathRepresentation";
+import { analyzeMarkdown } from "./markdownAnalysis";
 
 const fence = (markdown: string) => collectEditableMarkdownOccurrences(markdown).find((item): item is CodeFenceOccurrence => item.kind === "code-fence")!;
 
 describe("external path representation", () => {
+  it.each(["heading", "bold-code", "fence-title", "fence-colon"] as const)("%sで複数行コードをリストと引用の中に保持する", (style) => {
+    const body = 'first\n\n```example\nlast';
+    for (const ending of ["\n", "\r\n"] as const) {
+      for (const [firstPrefix, prefix, container] of [["- ", "  ", "list"], ["> ", "> ", "blockquote"]] as const) {
+        const embedded = embeddedFenceWithPath({ language: "ts", body, relativePath: "src/main.ts", style, lineEnding: ending, continuationPrefix: prefix });
+        const markdown = `${firstPrefix}${embedded}${ending}${prefix}${ending}${prefix}後続本文`;
+        const tree = analyzeMarkdown(markdown);
+        expect(tree.children.map(node => node.type)).toEqual([container]);
+        const occurrence = fence(markdown);
+        expect(occurrence.body.replace(/\r\n/g, "\n")).toBe(body);
+        expect(occurrence.expected).not.toContain("後続本文");
+        expect(markdown.includes(ending === "\r\n" ? "\r\r\n" : "\r")).toBe(false);
+      }
+    }
+  });
   it.each(["\n", "\r\n", "\r"])("先頭の空行を含むコードフェンスを有限時間で処理する（%j）", (ending) => {
     for (const leading of [ending, ending.repeat(2), `${ending}  ${ending}`, `${ending}> ${ending}`]) {
       const markdown = `${leading}\`\`\`svg${ending}<svg xmlns="http://www.w3.org/2000/svg"/>${ending}\`\`\``;

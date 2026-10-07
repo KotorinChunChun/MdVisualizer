@@ -83,6 +83,7 @@ import { foldIdsForElement, nearestRenderedSourceBlock, scrollSourceTarget, sour
 import { useDocumentPrint } from "./hooks/useDocumentPrint";
 import { PrintMetadata } from "./components/PrintMetadata";
 import { createDocumentStorageRefresh } from "./lib/documentStorageRefresh";
+import { createImageCaptionSaver } from "./lib/imageCaptionSave";
 import { startDeletedDocumentRecovery } from "./lib/deletedDocumentRecovery";
 import { documentDiffTarget } from "./lib/documentDiffTarget";
 import { documentDiffProtectsDraft, documentDiffSavePermission } from "./lib/documentDiffSave";
@@ -202,6 +203,14 @@ export async function handleWindowCloseRequest(
   await destroyWindow();
 }
 
+export function restoreDocumentSearchFocus(origin: HTMLElement | null, fallback: () => void): void {
+  if (origin?.isConnected) {
+    origin.focus({ preventScroll: true });
+    if (document.activeElement === origin) return;
+  }
+  fallback();
+}
+
 /** 非同期確認が対象にした本文・保存世代を比較する。focusやscrollだけの変更は許容する。 */
 export function unchangedTabForAction(before: TabState, current: TabState | undefined): boolean {
   return Boolean(current && current.id === before.id && current.path === before.path
@@ -245,6 +254,7 @@ export function App() {
   const pendingPreviewScrollTop = useRef<{ value: number; until: number } | null>(null);
   const pendingEditorLine = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const searchFocusOriginRef = useRef<{ tabId: string; element: HTMLElement | null } | null>(null);
   const inFlightLoads = useRef(new Set<string>());
   const recentSelfSaves = useRef(new Map<string, number>());
   const reloadAnchors = useRef<Record<string, SemanticScrollAnchor>>({});
@@ -1510,26 +1520,16 @@ export function App() {
     mediaPreviewViewRef.current = state;
   }, []);
 
+  const persistImageCaption = useMemo(() => createImageCaptionSaver({
+    getTabs: () => tabsStateRef.current.tabs,
+    getPreview: () => mediaPreviewRef.current,
+    setPreview: (preview) => { mediaPreviewRef.current = preview; setMediaPreview(preview); },
+    dispatch, save: updateImageCaption, load: loadMarkdown,
+  }), []);
   const saveImageCaption = useCallback(async (context: ImageEditContext, caption: string) => {
-    if (tabsStateRef.current.tabs.some((tab) => localPathIdentity(tab.path) === localPathIdentity(context.markdownPath) && tab.dirty)) {
-      throw new Error("未保存のMarkdown編集があります。先に文書を保存してから画像情報を変更してください。");
-    }
-    await updateImageCaption({
-      markdownPath: context.markdownPath,
-      sourceOffset: context.sourceOffset,
-      expectedSource: context.source,
-      caption,
-    });
-    const matchingTabs = tabsStateRef.current.tabs.filter((tab) => localPathIdentity(tab.path) === localPathIdentity(context.markdownPath));
-    matchingTabs.forEach((tab) => dispatch({ type: "RELOAD", id: tab.id }));
-    setMediaPreview((current) => current?.imageContext ? {
-      ...current,
-      content: { ...current.content, alt: caption },
-      headingTitle: caption.trim() || undefined,
-      imageContext: { ...current.imageContext, caption },
-    } : current);
+    await persistImageCaption(context, caption);
     setToast({ id: String(Date.now()), message: "キャプションを保存しました", type: "success" });
-  }, []);
+  }, [persistImageCaption]);
 
   const renameExternalFile = useCallback(async (context: ExternalFileRenameContext, filename: string) => {
     let nextFilename = filename;
@@ -1946,7 +1946,10 @@ export function App() {
 
   const openSearch = useCallback(() => {
     if (activeTab?.document) {
-      panelBeforeSearchRef.current[activeTab.id] = documentPanelsRef.current[activeTab.id] ?? null;
+      if (!activeTab.searchOpen) {
+        panelBeforeSearchRef.current[activeTab.id] = documentPanelsRef.current[activeTab.id] ?? null;
+        searchFocusOriginRef.current = { tabId: activeTab.id, element: document.activeElement instanceof HTMLElement ? document.activeElement : null };
+      }
       dispatch({ type: "SEARCH_VISIBILITY", id: activeTab.id, open: true });
     }
     focusSearchInput();
@@ -1959,7 +1962,17 @@ export function App() {
     const restore = panelBeforeSearchRef.current[activeTab.id] ?? null;
     setDocumentPanels((current) => ({ ...current, [activeTab.id]: restore }));
     delete panelBeforeSearchRef.current[activeTab.id];
-  }, [activeTab, search]);
+    const origin = searchFocusOriginRef.current;
+    searchFocusOriginRef.current = null;
+    window.requestAnimationFrame(() => {
+      const current = tabsStateRef.current;
+      if (current.activeId !== activeTab.id || current.tabs.find(tab => tab.id === activeTab.id)?.searchOpen) return;
+      restoreDocumentSearchFocus(origin?.tabId === activeTab.id ? origin.element : null, () => {
+        if (editorMode !== "preview" && editorRef.current) editorRef.current.focus();
+        else containerRef.current?.focus({ preventScroll: true });
+      });
+    });
+  }, [activeTab, editorMode, search]);
 
   const changeDocumentSidePanel = useCallback((panel: DocumentSidePanelTab | null) => {
     if (!activeTab?.document) return;
@@ -2658,6 +2671,7 @@ export function App() {
           saving={activeTab.saving}
           onChange={(content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}
           onSave={() => void saveTab(activeTab.id)}
+          onSearch={openSearch}
           onResolvePastedImage={resolvePastedImage}
           onResolveFileAttachment={async (file, placement) => {
             const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === activeTab.id);
@@ -3016,6 +3030,7 @@ export function App() {
         diagramSource={mediaPreview.diagramSource}
         diagramKind={mediaPreview.diagramKind}
         imageContext={mediaPreview.imageContext}
+        imageContextStale={mediaPreview.imageContextStale}
         conversionContext={mediaPreview.conversionContext}
         onConvertAsset={convertDocumentAsset}
         onSaveCaption={saveImageCaption}
