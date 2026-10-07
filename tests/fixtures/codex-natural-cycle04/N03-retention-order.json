@@ -1,0 +1,84 @@
+{
+  "acceptedAlternative": "先行保存中の二度目操作が無効の場合、完了後に7日を再操作し同じ最終値を検査",
+  "replyOrder": [
+    2,
+    1
+  ],
+  "actions": [
+    {
+      "sequence": 1,
+      "days": 20,
+      "applyBeforeReply": true,
+      "holdReply": true
+    },
+    {
+      "sequence": 2,
+      "days": 7,
+      "applyBeforeReply": true,
+      "holdReply": false
+    }
+  ],
+  "store": {
+    "sessions": [
+      {
+        "id": "b04-A",
+        "draft": {
+          "targetSnapshot": null,
+          "editMode": "question",
+          "attachmentIds": [],
+          "instruction": "削除対象Aの下書き"
+        },
+        "attachments": [],
+        "title": "削除対象A",
+        "lastMessageAt": "2026-10-08T00:00:00.000Z",
+        "createdAt": "2026-10-08T00:00:00.000Z",
+        "messages": [
+          {
+            "role": "assistant",
+            "attachmentIds": [],
+            "timestamp": "2026-10-08T00:00:00.000Z",
+            "text": "削除対象Aの保存済み回答"
+          }
+        ],
+        "documentId": "b04-document:1",
+        "updatedAt": "2026-10-08T00:00:00.000Z",
+        "documentPath": "C:/b04/document.md"
+      },
+      {
+        "id": "b04-old",
+        "draft": {
+          "targetSnapshot": null,
+          "editMode": "question",
+          "attachmentIds": [],
+          "instruction": "15日前の会話の下書き"
+        },
+        "attachments": [],
+        "title": "15日前の会話",
+        "lastMessageAt": "2026-09-23T00:00:00.000Z",
+        "createdAt": "2026-09-23T00:00:00.000Z",
+        "messages": [
+          {
+            "role": "assistant",
+            "attachmentIds": [],
+            "timestamp": "2026-09-23T00:00:00.000Z",
+            "text": "15日前の会話の保存済み回答"
+          }
+        ],
+        "documentId": "b04-document:1",
+        "updatedAt": "2026-09-23T00:00:00.000Z",
+        "documentPath": "C:/b04/document.md"
+      }
+    ],
+    "retentionDays": 30
+  },
+  "now": "2026-10-08T00:00:00.000Z",
+  "expected": {
+    "deletedSessionDoesNotReappear": true,
+    "sessionIds": [
+      "b04-A"
+    ],
+    "persistedRetention": 7,
+    "uiRetention": 7
+  },
+  "id": "B04-N03"
+}

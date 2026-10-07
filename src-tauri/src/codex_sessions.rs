@@ -96,6 +96,15 @@ pub struct CodexResponseImage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub adoption: Option<CodexImageAdoption>,
 }
+
+/// 会話設定の保存成功と、別ファイルの通信記録削除の結果を分ける。
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexRetentionResult {
+    pub store: CodexSessionStore,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_cleanup_error: Option<String>,
+}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodexImageAdoption { pub document_path: String, pub source: String, pub method: String, pub adopted_at: String }
@@ -463,27 +472,98 @@ pub fn delete_codex_session(
 pub fn set_codex_session_retention(
     app: AppHandle,
     retention_days: u16,
-) -> Result<CodexSessionStore, String> {
+) -> Result<CodexRetentionResult, String> {
+    let path = sessions_path(&app)?;
+    set_retention_at(&path, retention_days, Utc::now(), || {
+        crate::codex::purge_logs_for_retention(&app, retention_days)
+    })
+}
+
+fn set_retention_at(
+    path: &Path,
+    retention_days: u16,
+    now: DateTime<Utc>,
+    purge_logs: impl FnOnce() -> Result<(), String>,
+) -> Result<CodexRetentionResult, String> {
     if retention_days > MAX_RETENTION_DAYS {
         return Err("会話履歴の保持日数は0〜3650日で指定してください。".into());
     }
-    let path = sessions_path(&app)?;
-    let store = with_lock(&path, || {
-        let mut store = load_from(&path).map_err(crate::errors::AppError::IoError)?;
+    let store = with_lock(path, || {
+        let mut store = load_from(path).map_err(crate::errors::AppError::IoError)?;
         store.retention_days = retention_days;
-        purge_expired(&mut store, Utc::now());
-        persist(&path, &store).map_err(crate::errors::AppError::IoError)?;
+        purge_expired(&mut store, now);
+        persist(path, &store).map_err(crate::errors::AppError::IoError)?;
         Ok(store)
     })
     .map_err(|error| error.to_string())?;
-    // 会話と別ファイルの旧通信ログも、設定を短縮したその場で期限切れを消す。
-    crate::codex::purge_logs_for_retention(&app, retention_days)?;
-    Ok(store)
+    // 保存済みの会話ストアを失敗として隠さず、ログ掃除の部分失敗を併記する。
+    let log_cleanup_error = purge_logs().err();
+    Ok(CodexRetentionResult { store, log_cleanup_error })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retention_reports_persisted_store_when_real_log_cleanup_fails_and_can_retry() {
+        let dir = tempfile::tempdir().unwrap();
+        let sessions_path = dir.path().join("codex-sessions.json");
+        let logs_path = dir.path().join("codex-log.json");
+        let document = dir.path().join("document.md");
+        let image = dir.path().join("adopted.png");
+        let png = base64::engine::general_purpose::STANDARD.decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==").unwrap();
+        std::fs::write(&document, "![採用済み](adopted.png)\r\n").unwrap();
+        std::fs::write(&image, &png).unwrap();
+        let original_document = std::fs::read(&document).unwrap();
+        let now = parse_time("2026-10-08T00:00:00Z").unwrap();
+        let mut initial = CodexSessionStore::default();
+        initial.sessions.push(session("2026-10-08T00:00:00Z"));
+        initial.deleted_session_ids.insert("deleted-before-retention".into());
+        persist(&sessions_path, &initial).unwrap();
+        std::fs::write(&logs_path, b"invalid communication log JSON").unwrap();
+
+        let result = set_retention_at(&sessions_path, 0, now, || {
+            crate::codex::purge_logs_for_retention_at(&logs_path, 0)
+        }).unwrap();
+
+        assert_eq!(result.store.retention_days, 0);
+        assert!(result.store.sessions.is_empty());
+        assert!(result.log_cleanup_error.as_deref().unwrap().contains("AI通信記録の形式が不正"));
+        let persisted = load_from(&sessions_path).unwrap();
+        assert_eq!(persisted.retention_days, 0);
+        assert!(persisted.sessions.is_empty());
+        assert!(persisted.deleted_session_ids.contains("deleted-before-retention"));
+        assert_eq!(std::fs::read(&logs_path).unwrap(), b"invalid communication log JSON");
+        let encoded = serde_json::to_value(&result).unwrap();
+        assert_eq!(encoded["store"]["retentionDays"], 0);
+        assert!(encoded["logCleanupError"].is_string());
+
+        // ログだけを修復し同じ操作を再実行する。保存済み0日を巻き戻さない。
+        std::fs::write(&logs_path, br#"{"entries":[],"limit":20}"#).unwrap();
+        let retried = set_retention_at(&sessions_path, 0, now, || {
+            crate::codex::purge_logs_for_retention_at(&logs_path, 0)
+        }).unwrap();
+        assert!(retried.log_cleanup_error.is_none());
+        assert!(serde_json::to_value(&retried).unwrap().get("logCleanupError").is_none());
+        let mut after = load_from(&sessions_path).unwrap();
+        merge_session(&mut after, initial.sessions[0].clone(), now);
+        assert!(after.sessions.is_empty()); // 古いautosaveでも保持0を迂回しない。
+        assert_eq!(std::fs::read(&document).unwrap(), original_document);
+        assert_eq!(std::fs::read(&image).unwrap(), png);
+    }
+
+    #[test]
+    fn retention_store_failure_does_not_start_log_cleanup_or_claim_a_saved_store() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("codex-sessions.json");
+        std::fs::write(&path, b"invalid session JSON").unwrap();
+        let cleaned = std::cell::Cell::new(false);
+        let result = set_retention_at(&path, 0, Utc::now(), || { cleaned.set(true); Ok(()) });
+        assert!(result.is_err());
+        assert!(!cleaned.get());
+        assert_eq!(std::fs::read(&path).unwrap(), b"invalid session JSON");
+    }
 
     fn session(updated_at: &str) -> CodexConversation {
         CodexConversation {

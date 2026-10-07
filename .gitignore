@@ -216,6 +216,7 @@ web/tests/.php-zip-fixtures/
 /src/lib/previewActionContract.ts
 /src/lib/copyOperation.ts
 /src/lib/selectionDecoration.ts
+/src/lib/documentEditorHistory.ts
 
 /src/assets/rasterEditor2.html
 /src/lib/rasterEditor2Host.ts

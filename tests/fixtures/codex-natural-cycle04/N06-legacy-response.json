@@ -1,0 +1,47 @@
+{
+  "operation": "旧応答の置換→全文置換の差分確認→閉じる→コピー",
+  "document": {
+    "from": 3,
+    "content": "先頭\n選択した本文\n末尾\n",
+    "to": 9,
+    "path": "C:/b04/document.md"
+  },
+  "store": {
+    "sessions": [
+      {
+        "id": "b04-legacy",
+        "draft": {
+          "targetSnapshot": null,
+          "editMode": "question",
+          "attachmentIds": [],
+          "instruction": ""
+        },
+        "attachments": [],
+        "title": "旧形式の応答",
+        "lastMessageAt": "2026-10-08T00:00:00.000Z",
+        "createdAt": "2026-10-08T00:00:00.000Z",
+        "messages": [
+          {
+            "role": "assistant",
+            "attachmentIds": [],
+            "timestamp": "2026-10-08T00:00:00.000Z",
+            "text": "## 旧応答\n\n- 追加案\n"
+          }
+        ],
+        "documentId": "b04-document:1",
+        "updatedAt": "2026-10-08T00:00:00.000Z",
+        "documentPath": "C:/b04/document.md"
+      }
+    ],
+    "retentionDays": 30
+  },
+  "now": "2026-10-08T00:00:00.000Z",
+  "expected": {
+    "clipboardMarkdown": "## 旧応答\n\n- 追加案\n",
+    "cancelKeepsDocument": true,
+    "fullDocumentWarning": true,
+    "responseMetadataAbsent": true,
+    "noImageFileWrites": true
+  },
+  "id": "B04-N06"
+}

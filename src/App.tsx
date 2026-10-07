@@ -53,6 +53,7 @@ import { planOccurrenceConversion, relocateUnchangedOccurrence, replaceBestEffor
 import { rebaseRenamedExternalReferences } from "./lib/externalFile";
 import type { ExternalAppConfig } from "./types/settings";
 import { emptyNavigationHistory, navigateBack, navigateForward, recordNavigation, type NavigationSnapshot } from "./lib/navigationHistory";
+import { restoreNavigationMediaPreview } from "./lib/navigationMediaPreview";
 import { documentSourceIdentity, localPathIdentity } from "./lib/pathIdentity";
 import { collectImageOccurrences, groupImageOccurrences } from "./lib/imageOccurrences";
 import { getFileName, resolveImageSrc, resolveLocalImagePath } from "./lib/path";
@@ -1452,10 +1453,15 @@ export function App() {
         });
       }
     }
-    mediaPreviewViewRef.current = snapshot.mediaView;
-    mediaPreviewRef.current = snapshot.mediaPreview;
-    setMediaPreviewInitialViewState(snapshot.mediaView);
-    setMediaPreview(snapshot.mediaPreview);
+    const restoredMedia = restoreNavigationMediaPreview(snapshot.mediaPreview,
+      tabsStateRef.current.tabs.find(tab => tab.id === snapshot.activeTabId));
+    const mediaView = restoredMedia.preview ? snapshot.mediaView : null;
+    mediaPreviewViewRef.current = mediaView;
+    mediaPreviewRef.current = restoredMedia.preview;
+    setMediaPreviewInitialViewState(mediaView);
+    setMediaPreview(restoredMedia.preview);
+    if (restoredMedia.changedTarget) setToast({ id: crypto.randomUUID(), type: "info",
+      message: "画像の位置または参照先が変更されています。現在の画像から拡大表示を開き直してください。" });
     if (restoresExistingTab && snapshot.activeTabId) {
       const tabId = snapshot.activeTabId;
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
@@ -2614,6 +2620,7 @@ export function App() {
       {documentDiff && activeTab?.document?.kind === "markdown" && documentSourceIdentity(documentDiff.path) === documentSourceIdentity(activeTab.path) ? <DocumentDiffWorkspace
         key={activeTab.id}
         target={documentDiffTarget(activeTab, documentDiff.conflict)}
+        history={{ store: editorHistoriesRef.current, key: `${activeTab.id}:${activeTab.editorResetSequence ?? 0}` }}
         editorMode={editorMode}
         theme={theme === "system" ? document.documentElement.dataset.theme ?? "dark" : theme}
         onEditingChange={isSharePointDocument(activeTab.document) ? undefined : (content) => dispatch({ type: "DRAFT_CHANGED", id: activeTab.id, content })}

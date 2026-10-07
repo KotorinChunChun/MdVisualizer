@@ -1,0 +1,78 @@
+{
+  "document": {
+    "content": "# 削除の所有確認\n本文は変更しない\n",
+    "path": "C:/b04/document.md"
+  },
+  "store": {
+    "sessions": [
+      {
+        "id": "b04-A",
+        "draft": {
+          "targetSnapshot": null,
+          "editMode": "question",
+          "attachmentIds": [],
+          "instruction": "削除対象Aの下書き"
+        },
+        "attachments": [],
+        "title": "削除対象A",
+        "lastMessageAt": "2026-10-08T00:00:00.000Z",
+        "createdAt": "2026-10-08T00:00:00.000Z",
+        "messages": [
+          {
+            "role": "assistant",
+            "attachmentIds": [],
+            "timestamp": "2026-10-08T00:00:00.000Z",
+            "text": "削除対象Aの保存済み回答"
+          }
+        ],
+        "documentId": "b04-document:1",
+        "updatedAt": "2026-10-08T00:00:00.000Z",
+        "documentPath": "C:/b04/document.md"
+      },
+      {
+        "id": "b04-B",
+        "draft": {
+          "targetSnapshot": null,
+          "editMode": "question",
+          "attachmentIds": [],
+          "instruction": "表示対象Bの下書き"
+        },
+        "attachments": [],
+        "title": "表示対象B",
+        "lastMessageAt": "2026-10-08T00:00:00.000Z",
+        "createdAt": "2026-10-08T00:00:00.000Z",
+        "messages": [
+          {
+            "role": "assistant",
+            "attachmentIds": [],
+            "timestamp": "2026-10-08T00:00:00.000Z",
+            "text": "表示対象Bの保存済み回答"
+          }
+        ],
+        "documentId": "b04-document:1",
+        "updatedAt": "2026-10-08T00:00:00.000Z",
+        "documentPath": "C:/b04/document.md"
+      }
+    ],
+    "retentionDays": 30
+  },
+  "now": "2026-10-08T00:00:00.000Z",
+  "gate": {
+    "variants": [
+      "success",
+      "reject:保存先が使えません"
+    ],
+    "after": "Bの履歴プレビューが可視",
+    "command": "delete_codex_session",
+    "owner": "b04-A"
+  },
+  "expected": {
+    "rejectNotificationMustNotClaimB": true,
+    "previewAfter": "b04-B",
+    "keepDocument": true,
+    "deleteIds": [
+      "b04-A"
+    ]
+  },
+  "id": "B04-N01"
+}

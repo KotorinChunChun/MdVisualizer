@@ -39,14 +39,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2490,
+        "sourceLine": 2592,
         "sourceColumn": 11,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2490,
+        "line": 2592,
         "column": 11
       },
       "interactions": [
@@ -91,14 +91,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2491,
+        "sourceLine": 2593,
         "sourceColumn": 11,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2491,
+        "line": 2593,
         "column": 11
       },
       "interactions": [
@@ -143,14 +143,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2492,
+        "sourceLine": 2594,
         "sourceColumn": 11,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2492,
+        "line": 2594,
         "column": 11
       },
       "interactions": [
@@ -195,14 +195,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2495,
+        "sourceLine": 2597,
         "sourceColumn": 11,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2495,
+        "line": 2597,
         "column": 11
       },
       "interactions": [
@@ -247,14 +247,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2496,
+        "sourceLine": 2598,
         "sourceColumn": 11,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2496,
+        "line": 2598,
         "column": 11
       },
       "interactions": [
@@ -299,14 +299,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2499,
+        "sourceLine": 2601,
         "sourceColumn": 141,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2499,
+        "line": 2601,
         "column": 141
       },
       "interactions": [
@@ -351,14 +351,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2510,
+        "sourceLine": 2612,
         "sourceColumn": 67,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2510,
+        "line": 2612,
         "column": 67
       },
       "interactions": [
@@ -403,14 +403,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2511,
+        "sourceLine": 2613,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2511,
+        "line": 2613,
         "column": 9
       },
       "interactions": [
@@ -455,14 +455,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2608,
+        "sourceLine": 2715,
         "sourceColumn": 13,
         "ordinal": 9
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2608,
+        "line": 2715,
         "column": 13
       },
       "interactions": [
@@ -507,14 +507,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2613,
+        "sourceLine": 2720,
         "sourceColumn": 15,
         "ordinal": 10
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2613,
+        "line": 2720,
         "column": 15
       },
       "interactions": [],
@@ -557,14 +557,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2613,
+        "sourceLine": 2720,
         "sourceColumn": 55,
         "ordinal": 11
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2613,
+        "line": 2720,
         "column": 55
       },
       "interactions": [],
@@ -607,14 +607,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2613,
+        "sourceLine": 2720,
         "sourceColumn": 92,
         "ordinal": 12
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2613,
+        "line": 2720,
         "column": 92
       },
       "interactions": [],
@@ -657,14 +657,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2613,
+        "sourceLine": 2720,
         "sourceColumn": 134,
         "ordinal": 13
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2613,
+        "line": 2720,
         "column": 134
       },
       "interactions": [],
@@ -707,14 +707,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2613,
+        "sourceLine": 2720,
         "sourceColumn": 168,
         "ordinal": 14
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2613,
+        "line": 2720,
         "column": 168
       },
       "interactions": [],
@@ -757,14 +757,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2613,
+        "sourceLine": 2720,
         "sourceColumn": 202,
         "ordinal": 15
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2613,
+        "line": 2720,
         "column": 202
       },
       "interactions": [],
@@ -807,14 +807,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2613,
+        "sourceLine": 2720,
         "sourceColumn": 236,
         "ordinal": 16
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2613,
+        "line": 2720,
         "column": 236
       },
       "interactions": [],
@@ -857,14 +857,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2613,
+        "sourceLine": 2720,
         "sourceColumn": 281,
         "ordinal": 17
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2613,
+        "line": 2720,
         "column": 281
       },
       "interactions": [],
@@ -907,14 +907,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2617,
+        "sourceLine": 2724,
         "sourceColumn": 13,
         "ordinal": 18
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2617,
+        "line": 2724,
         "column": 13
       },
       "interactions": [
@@ -959,14 +959,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2618,
+        "sourceLine": 2725,
         "sourceColumn": 41,
         "ordinal": 19
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2618,
+        "line": 2725,
         "column": 41
       },
       "interactions": [],
@@ -1009,14 +1009,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2618,
+        "sourceLine": 2725,
         "sourceColumn": 74,
         "ordinal": 20
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2618,
+        "line": 2725,
         "column": 74
       },
       "interactions": [],
@@ -1059,14 +1059,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2618,
+        "sourceLine": 2725,
         "sourceColumn": 114,
         "ordinal": 21
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2618,
+        "line": 2725,
         "column": 114
       },
       "interactions": [],
@@ -1109,14 +1109,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2619,
+        "sourceLine": 2726,
         "sourceColumn": 39,
         "ordinal": 22
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2619,
+        "line": 2726,
         "column": 39
       },
       "interactions": [],
@@ -1159,14 +1159,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2619,
+        "sourceLine": 2726,
         "sourceColumn": 81,
         "ordinal": 23
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2619,
+        "line": 2726,
         "column": 81
       },
       "interactions": [],
@@ -1209,14 +1209,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 27,
+        "sourceLine": 29,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 27,
+        "line": 29,
         "column": 10
       },
       "interactions": [
@@ -1261,14 +1261,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 28,
+        "sourceLine": 30,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 28,
+        "line": 30,
         "column": 5
       },
       "interactions": [
@@ -1313,14 +1313,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 29,
+        "sourceLine": 31,
         "sourceColumn": 5,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 29,
+        "line": 31,
         "column": 5
       },
       "interactions": [
@@ -1365,14 +1365,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 30,
+        "sourceLine": 32,
         "sourceColumn": 5,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 30,
+        "line": 32,
         "column": 5
       },
       "interactions": [
@@ -1417,14 +1417,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 32,
+        "sourceLine": 34,
         "sourceColumn": 19,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 32,
+        "line": 34,
         "column": 19
       },
       "interactions": [
@@ -1469,14 +1469,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 33,
+        "sourceLine": 35,
         "sourceColumn": 7,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 33,
+        "line": 35,
         "column": 7
       },
       "interactions": [
@@ -1521,14 +1521,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 34,
+        "sourceLine": 36,
         "sourceColumn": 7,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 34,
+        "line": 36,
         "column": 7
       },
       "interactions": [
@@ -1573,14 +1573,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 35,
+        "sourceLine": 37,
         "sourceColumn": 7,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 35,
+        "line": 37,
         "column": 7
       },
       "interactions": [
@@ -1625,14 +1625,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 38,
+        "sourceLine": 40,
         "sourceColumn": 5,
         "ordinal": 9
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 38,
+        "line": 40,
         "column": 5
       },
       "interactions": [
@@ -1677,14 +1677,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 39,
+        "sourceLine": 41,
         "sourceColumn": 5,
         "ordinal": 10
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 39,
+        "line": 41,
         "column": 5
       },
       "interactions": [
@@ -1729,14 +1729,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 40,
+        "sourceLine": 42,
         "sourceColumn": 5,
         "ordinal": 11
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 40,
+        "line": 42,
         "column": 5
       },
       "interactions": [
@@ -1781,14 +1781,14 @@
       "orderScope": {
         "component": "ContextMenu",
         "sourceFile": "src/components/ContextMenu.tsx",
-        "sourceLine": 41,
+        "sourceLine": 43,
         "sourceColumn": 5,
         "ordinal": 12
       },
       "source": {
         "kind": "desktop",
         "file": "src/components/ContextMenu.tsx",
-        "line": 41,
+        "line": 43,
         "column": 5
       },
       "interactions": [
@@ -25143,14 +25143,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3615,
+        "sourceLine": 3674,
         "sourceColumn": 3,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3615,
+        "line": 3674,
         "column": 3
       },
       "interactions": [
@@ -25195,14 +25195,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3647,
+        "sourceLine": 3706,
         "sourceColumn": 3,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3647,
+        "line": 3706,
         "column": 3
       },
       "interactions": [
@@ -25247,14 +25247,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3677,
+        "sourceLine": 3736,
         "sourceColumn": 3,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3677,
+        "line": 3736,
         "column": 3
       },
       "interactions": [
@@ -25299,14 +25299,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3678,
+        "sourceLine": 3737,
         "sourceColumn": 3,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3678,
+        "line": 3737,
         "column": 3
       },
       "interactions": [
@@ -25351,14 +25351,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3679,
+        "sourceLine": 3738,
         "sourceColumn": 3,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3679,
+        "line": 3738,
         "column": 3
       },
       "interactions": [
@@ -25403,14 +25403,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3680,
+        "sourceLine": 3739,
         "sourceColumn": 3,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3680,
+        "line": 3739,
         "column": 3
       },
       "interactions": [
@@ -25455,14 +25455,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3688,
+        "sourceLine": 3747,
         "sourceColumn": 19,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3688,
+        "line": 3747,
         "column": 19
       },
       "interactions": [
@@ -25507,14 +25507,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3691,
+        "sourceLine": 3750,
         "sourceColumn": 3,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3691,
+        "line": 3750,
         "column": 3
       },
       "interactions": [
@@ -25559,14 +25559,14 @@
       "orderScope": {
         "component": "buildProps",
         "sourceFile": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "sourceLine": 3692,
+        "sourceLine": 3751,
         "sourceColumn": 3,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/assets/rasterEditor2.html",
-        "line": 3692,
+        "line": 3751,
         "column": 3
       },
       "interactions": [
@@ -28751,14 +28751,14 @@
       "orderScope": {
         "component": "append",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 53,
+        "sourceLine": 55,
         "sourceColumn": 100,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 53,
+        "line": 55,
         "column": 100
       },
       "interactions": [
@@ -28804,14 +28804,14 @@
       "orderScope": {
         "component": "action",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 77,
+        "sourceLine": 86,
         "sourceColumn": 389,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 77,
+        "line": 86,
         "column": 389
       },
       "interactions": [
@@ -28855,14 +28855,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 86,
+        "sourceLine": 95,
         "sourceColumn": 16,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 86,
+        "line": 95,
         "column": 16
       },
       "interactions": [
@@ -28906,14 +28906,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 86,
+        "sourceLine": 95,
         "sourceColumn": 119,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 86,
+        "line": 95,
         "column": 119
       },
       "interactions": [],
@@ -28955,14 +28955,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 86,
+        "sourceLine": 95,
         "sourceColumn": 154,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 86,
+        "line": 95,
         "column": 154
       },
       "interactions": [],
@@ -29004,14 +29004,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 87,
+        "sourceLine": 96,
         "sourceColumn": 75,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 87,
+        "line": 96,
         "column": 75
       },
       "interactions": [
@@ -29055,14 +29055,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 87,
+        "sourceLine": 96,
         "sourceColumn": 175,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 87,
+        "line": 96,
         "column": 175
       },
       "interactions": [],
@@ -29104,14 +29104,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 87,
+        "sourceLine": 96,
         "sourceColumn": 219,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 87,
+        "line": 96,
         "column": 219
       },
       "interactions": [],
@@ -29153,14 +29153,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 88,
+        "sourceLine": 97,
         "sourceColumn": 7,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 88,
+        "line": 97,
         "column": 7
       },
       "interactions": [
@@ -29204,14 +29204,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 88,
+        "sourceLine": 97,
         "sourceColumn": 119,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 88,
+        "line": 97,
         "column": 119
       },
       "interactions": [
@@ -29255,14 +29255,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 88,
+        "sourceLine": 97,
         "sourceColumn": 211,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 88,
+        "line": 97,
         "column": 211
       },
       "interactions": [
@@ -29306,14 +29306,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 88,
+        "sourceLine": 97,
         "sourceColumn": 317,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 88,
+        "line": 97,
         "column": 317
       },
       "interactions": [
@@ -29357,14 +29357,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 88,
+        "sourceLine": 97,
         "sourceColumn": 416,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 88,
+        "line": 97,
         "column": 416
       },
       "interactions": [
@@ -29408,14 +29408,14 @@
       "orderScope": {
         "component": "DocumentDiffWorkspace",
         "sourceFile": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "sourceLine": 89,
+        "sourceLine": 98,
         "sourceColumn": 28,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/DocumentDiffWorkspace.tsx",
-        "line": 89,
+        "line": 98,
         "column": 28
       },
       "interactions": [
@@ -31197,14 +31197,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 852,
+        "sourceLine": 860,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 852,
+        "line": 860,
         "column": 10
       },
       "interactions": [],
@@ -31246,14 +31246,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 821,
+        "sourceLine": 864,
         "sourceColumn": 9,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 821,
+        "line": 864,
         "column": 9
       },
       "interactions": [
@@ -31297,14 +31297,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 822,
+        "sourceLine": 865,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 822,
+        "line": 865,
         "column": 9
       },
       "interactions": [
@@ -31348,14 +31348,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 823,
+        "sourceLine": 866,
         "sourceColumn": 9,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 823,
+        "line": 866,
         "column": 9
       },
       "interactions": [
@@ -31399,14 +31399,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 824,
+        "sourceLine": 867,
         "sourceColumn": 9,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 824,
+        "line": 867,
         "column": 9
       },
       "interactions": [
@@ -31450,14 +31450,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 860,
+        "sourceLine": 868,
         "sourceColumn": 9,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 860,
+        "line": 868,
         "column": 9
       },
       "interactions": [
@@ -31501,14 +31501,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 861,
+        "sourceLine": 869,
         "sourceColumn": 9,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 861,
+        "line": 869,
         "column": 9
       },
       "interactions": [
@@ -31552,14 +31552,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 845,
+        "sourceLine": 888,
         "sourceColumn": 43,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 845,
+        "line": 888,
         "column": 43
       },
       "interactions": [
@@ -31603,14 +31603,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 865,
+        "sourceLine": 908,
         "sourceColumn": 19,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 865,
+        "line": 908,
         "column": 19
       },
       "interactions": [
@@ -31654,14 +31654,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 868,
+        "sourceLine": 911,
         "sourceColumn": 20,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 868,
+        "line": 911,
         "column": 20
       },
       "interactions": [
@@ -31705,14 +31705,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 877,
+        "sourceLine": 920,
         "sourceColumn": 53,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 877,
+        "line": 920,
         "column": 53
       },
       "interactions": [
@@ -31756,14 +31756,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 888,
+        "sourceLine": 931,
         "sourceColumn": 18,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 888,
+        "line": 931,
         "column": 18
       },
       "interactions": [
@@ -31807,14 +31807,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 894,
+        "sourceLine": 937,
         "sourceColumn": 18,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 894,
+        "line": 937,
         "column": 18
       },
       "interactions": [
@@ -31858,14 +31858,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 899,
+        "sourceLine": 942,
         "sourceColumn": 18,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 899,
+        "line": 942,
         "column": 18
       },
       "interactions": [
@@ -31909,14 +31909,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 904,
+        "sourceLine": 947,
         "sourceColumn": 18,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 904,
+        "line": 947,
         "column": 18
       },
       "interactions": [
@@ -31960,14 +31960,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 905,
+        "sourceLine": 948,
         "sourceColumn": 11,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 905,
+        "line": 948,
         "column": 11
       },
       "interactions": [],
@@ -32009,14 +32009,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 905,
+        "sourceLine": 948,
         "sourceColumn": 43,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 905,
+        "line": 948,
         "column": 43
       },
       "interactions": [],
@@ -32058,14 +32058,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 905,
+        "sourceLine": 948,
         "sourceColumn": 81,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 905,
+        "line": 948,
         "column": 81
       },
       "interactions": [],
@@ -32107,14 +32107,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 905,
+        "sourceLine": 948,
         "sourceColumn": 112,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 905,
+        "line": 948,
         "column": 112
       },
       "interactions": [],
@@ -32156,14 +32156,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 906,
+        "sourceLine": 949,
         "sourceColumn": 11,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 906,
+        "line": 949,
         "column": 11
       },
       "interactions": [],
@@ -32205,14 +32205,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 906,
+        "sourceLine": 949,
         "sourceColumn": 42,
         "ordinal": 21
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 906,
+        "line": 949,
         "column": 42
       },
       "interactions": [],
@@ -32254,14 +32254,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 906,
+        "sourceLine": 949,
         "sourceColumn": 77,
         "ordinal": 22
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 906,
+        "line": 949,
         "column": 77
       },
       "interactions": [],
@@ -32303,14 +32303,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 906,
+        "sourceLine": 949,
         "sourceColumn": 106,
         "ordinal": 23
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 906,
+        "line": 949,
         "column": 106
       },
       "interactions": [],
@@ -32352,14 +32352,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 912,
+        "sourceLine": 955,
         "sourceColumn": 18,
         "ordinal": 24
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 912,
+        "line": 955,
         "column": 18
       },
       "interactions": [
@@ -32403,14 +32403,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 913,
+        "sourceLine": 956,
         "sourceColumn": 11,
         "ordinal": 25
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 913,
+        "line": 956,
         "column": 11
       },
       "interactions": [],
@@ -32452,14 +32452,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 913,
+        "sourceLine": 956,
         "sourceColumn": 44,
         "ordinal": 26
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 913,
+        "line": 956,
         "column": 44
       },
       "interactions": [],
@@ -32501,14 +32501,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 913,
+        "sourceLine": 956,
         "sourceColumn": 77,
         "ordinal": 27
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 913,
+        "line": 956,
         "column": 77
       },
       "interactions": [],
@@ -32550,14 +32550,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 919,
+        "sourceLine": 962,
         "sourceColumn": 18,
         "ordinal": 28
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 919,
+        "line": 962,
         "column": 18
       },
       "interactions": [
@@ -32601,14 +32601,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 921,
+        "sourceLine": 964,
         "sourceColumn": 25,
         "ordinal": 29
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 921,
+        "line": 964,
         "column": 25
       },
       "interactions": [
@@ -32652,14 +32652,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 922,
+        "sourceLine": 965,
         "sourceColumn": 21,
         "ordinal": 30
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 922,
+        "line": 965,
         "column": 21
       },
       "interactions": [
@@ -32703,14 +32703,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 929,
+        "sourceLine": 972,
         "sourceColumn": 53,
         "ordinal": 31
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 929,
+        "line": 972,
         "column": 53
       },
       "interactions": [
@@ -32754,14 +32754,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 938,
+        "sourceLine": 981,
         "sourceColumn": 27,
         "ordinal": 32
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 938,
+        "line": 981,
         "column": 27
       },
       "interactions": [
@@ -32805,14 +32805,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 946,
+        "sourceLine": 989,
         "sourceColumn": 11,
         "ordinal": 33
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 946,
+        "line": 989,
         "column": 11
       },
       "interactions": [
@@ -32856,14 +32856,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 947,
+        "sourceLine": 990,
         "sourceColumn": 11,
         "ordinal": 34
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 947,
+        "line": 990,
         "column": 11
       },
       "interactions": [
@@ -32907,14 +32907,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 948,
+        "sourceLine": 991,
         "sourceColumn": 11,
         "ordinal": 35
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 948,
+        "line": 991,
         "column": 11
       },
       "interactions": [
@@ -32958,14 +32958,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 949,
+        "sourceLine": 992,
         "sourceColumn": 11,
         "ordinal": 36
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 949,
+        "line": 992,
         "column": 11
       },
       "interactions": [
@@ -33009,14 +33009,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 956,
+        "sourceLine": 999,
         "sourceColumn": 24,
         "ordinal": 37
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 956,
+        "line": 999,
         "column": 24
       },
       "interactions": [
@@ -33060,14 +33060,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 957,
+        "sourceLine": 1000,
         "sourceColumn": 25,
         "ordinal": 38
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 957,
+        "line": 1000,
         "column": 25
       },
       "interactions": [
@@ -33111,14 +33111,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 959,
+        "sourceLine": 1002,
         "sourceColumn": 9,
         "ordinal": 39
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 959,
+        "line": 1002,
         "column": 9
       },
       "interactions": [
@@ -33162,14 +33162,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 964,
+        "sourceLine": 1007,
         "sourceColumn": 24,
         "ordinal": 40
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 964,
+        "line": 1007,
         "column": 24
       },
       "interactions": [
@@ -33214,14 +33214,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 976,
+        "sourceLine": 1019,
         "sourceColumn": 11,
         "ordinal": 41
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 976,
+        "line": 1019,
         "column": 11
       },
       "interactions": [
@@ -33265,14 +33265,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 977,
+        "sourceLine": 1020,
         "sourceColumn": 11,
         "ordinal": 42
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 977,
+        "line": 1020,
         "column": 11
       },
       "interactions": [
@@ -33316,14 +33316,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 979,
+        "sourceLine": 1022,
         "sourceColumn": 9,
         "ordinal": 43
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 979,
+        "line": 1022,
         "column": 9
       },
       "interactions": [
@@ -33367,14 +33367,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 998,
+        "sourceLine": 1041,
         "sourceColumn": 25,
         "ordinal": 44
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 998,
+        "line": 1041,
         "column": 25
       },
       "interactions": [
@@ -33418,14 +33418,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 999,
+        "sourceLine": 1042,
         "sourceColumn": 26,
         "ordinal": 45
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 999,
+        "line": 1042,
         "column": 26
       },
       "interactions": [
@@ -33469,14 +33469,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1007,
+        "sourceLine": 1050,
         "sourceColumn": 5,
         "ordinal": 46
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1007,
+        "line": 1050,
         "column": 5
       },
       "interactions": [
@@ -33523,14 +33523,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1062,
+        "sourceLine": 1104,
         "sourceColumn": 11,
         "ordinal": 47
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1062,
+        "line": 1104,
         "column": 11
       },
       "interactions": [
@@ -33580,14 +33580,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1103,
+        "sourceLine": 1145,
         "sourceColumn": 72,
         "ordinal": 48
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1103,
+        "line": 1145,
         "column": 72
       },
       "interactions": [
@@ -33634,14 +33634,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1122,
+        "sourceLine": 1164,
         "sourceColumn": 22,
         "ordinal": 49
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1122,
+        "line": 1164,
         "column": 22
       },
       "interactions": [],
@@ -33683,14 +33683,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1123,
+        "sourceLine": 1165,
         "sourceColumn": 30,
         "ordinal": 50
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1123,
+        "line": 1165,
         "column": 30
       },
       "interactions": [
@@ -33734,14 +33734,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1125,
+        "sourceLine": 1167,
         "sourceColumn": 22,
         "ordinal": 51
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1125,
+        "line": 1167,
         "column": 22
       },
       "interactions": [
@@ -33785,14 +33785,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1126,
+        "sourceLine": 1168,
         "sourceColumn": 23,
         "ordinal": 52
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1126,
+        "line": 1168,
         "column": 23
       },
       "interactions": [
@@ -33836,14 +33836,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1127,
+        "sourceLine": 1169,
         "sourceColumn": 27,
         "ordinal": 53
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1127,
+        "line": 1169,
         "column": 27
       },
       "interactions": [
@@ -33887,14 +33887,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1136,
+        "sourceLine": 1178,
         "sourceColumn": 15,
         "ordinal": 54
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1136,
+        "line": 1178,
         "column": 15
       },
       "interactions": [
@@ -33938,14 +33938,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1143,
+        "sourceLine": 1185,
         "sourceColumn": 21,
         "ordinal": 55
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1143,
+        "line": 1185,
         "column": 21
       },
       "interactions": [
@@ -33989,14 +33989,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1150,
+        "sourceLine": 1192,
         "sourceColumn": 7,
         "ordinal": 56
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1150,
+        "line": 1192,
         "column": 7
       },
       "interactions": [
@@ -34040,14 +34040,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1151,
+        "sourceLine": 1193,
         "sourceColumn": 7,
         "ordinal": 57
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1151,
+        "line": 1193,
         "column": 7
       },
       "interactions": [
@@ -34091,14 +34091,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1152,
+        "sourceLine": 1194,
         "sourceColumn": 7,
         "ordinal": 58
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1152,
+        "line": 1194,
         "column": 7
       },
       "interactions": [
@@ -34142,14 +34142,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1154,
+        "sourceLine": 1196,
         "sourceColumn": 7,
         "ordinal": 59
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1154,
+        "line": 1196,
         "column": 7
       },
       "interactions": [
@@ -34193,14 +34193,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1200,
+        "sourceLine": 1207,
         "sourceColumn": 20,
         "ordinal": 60
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1200,
+        "line": 1207,
         "column": 20
       },
       "interactions": [
@@ -34244,14 +34244,14 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1201,
+        "sourceLine": 1208,
         "sourceColumn": 7,
         "ordinal": 61
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1201,
+        "line": 1208,
         "column": 7
       },
       "interactions": [
@@ -34813,14 +34813,14 @@
       "orderScope": {
         "component": "ImageMetadataEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageMetadataEditor.tsx",
-        "sourceLine": 56,
+        "sourceLine": 70,
         "sourceColumn": 7,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageMetadataEditor.tsx",
-        "line": 56,
+        "line": 70,
         "column": 7
       },
       "interactions": [
@@ -34864,14 +34864,14 @@
       "orderScope": {
         "component": "ImageMetadataEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageMetadataEditor.tsx",
-        "sourceLine": 58,
+        "sourceLine": 72,
         "sourceColumn": 5,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageMetadataEditor.tsx",
-        "line": 58,
+        "line": 72,
         "column": 5
       },
       "interactions": [
@@ -34915,14 +34915,14 @@
       "orderScope": {
         "component": "ImageMetadataEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageMetadataEditor.tsx",
-        "sourceLine": 63,
+        "sourceLine": 77,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageMetadataEditor.tsx",
-        "line": 63,
+        "line": 77,
         "column": 9
       },
       "interactions": [
@@ -34966,14 +34966,14 @@
       "orderScope": {
         "component": "ImageMetadataEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageMetadataEditor.tsx",
-        "sourceLine": 65,
+        "sourceLine": 79,
         "sourceColumn": 7,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageMetadataEditor.tsx",
-        "line": 65,
+        "line": 79,
         "column": 7
       },
       "interactions": [
@@ -35227,14 +35227,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 585,
+        "sourceLine": 654,
         "sourceColumn": 19,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 585,
+        "line": 654,
         "column": 19
       },
       "interactions": [],
@@ -35276,14 +35276,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 586,
+        "sourceLine": 655,
         "sourceColumn": 38,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 586,
+        "line": 655,
         "column": 38
       },
       "interactions": [
@@ -35327,14 +35327,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 588,
+        "sourceLine": 657,
         "sourceColumn": 7,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 588,
+        "line": 657,
         "column": 7
       },
       "interactions": [
@@ -35378,14 +35378,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 589,
+        "sourceLine": 658,
         "sourceColumn": 7,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 589,
+        "line": 658,
         "column": 7
       },
       "interactions": [
@@ -35429,14 +35429,14 @@
       "orderScope": {
         "component": "MarkdownEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "sourceLine": 592,
+        "sourceLine": 661,
         "sourceColumn": 81,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownEditor.tsx",
-        "line": 592,
+        "line": 661,
         "column": 81
       },
       "interactions": [],
@@ -35630,14 +35630,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 717,
+        "sourceLine": 719,
         "sourceColumn": 18,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 717,
+        "line": 719,
         "column": 18
       },
       "interactions": [
@@ -35681,14 +35681,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 744,
+        "sourceLine": 746,
         "sourceColumn": 27,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 744,
+        "line": 746,
         "column": 27
       },
       "interactions": [
@@ -35732,14 +35732,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 744,
+        "sourceLine": 746,
         "sourceColumn": 101,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 744,
+        "line": 746,
         "column": 101
       },
       "interactions": [
@@ -35783,14 +35783,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 744,
+        "sourceLine": 746,
         "sourceColumn": 175,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 744,
+        "line": 746,
         "column": 175
       },
       "interactions": [
@@ -35834,14 +35834,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 744,
+        "sourceLine": 746,
         "sourceColumn": 259,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 744,
+        "line": 746,
         "column": 259
       },
       "interactions": [
@@ -35885,14 +35885,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 779,
+        "sourceLine": 781,
         "sourceColumn": 135,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 779,
+        "line": 781,
         "column": 135
       },
       "interactions": [
@@ -35936,14 +35936,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 780,
+        "sourceLine": 782,
         "sourceColumn": 95,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 780,
+        "line": 782,
         "column": 95
       },
       "interactions": [
@@ -35987,14 +35987,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 783,
+        "sourceLine": 785,
         "sourceColumn": 58,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 783,
+        "line": 785,
         "column": 58
       },
       "interactions": [
@@ -36038,14 +36038,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 783,
+        "sourceLine": 785,
         "sourceColumn": 219,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 783,
+        "line": 785,
         "column": 219
       },
       "interactions": [
@@ -36089,14 +36089,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 783,
+        "sourceLine": 785,
         "sourceColumn": 340,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 783,
+        "line": 785,
         "column": 340
       },
       "interactions": [
@@ -36140,14 +36140,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 783,
+        "sourceLine": 785,
         "sourceColumn": 459,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 783,
+        "line": 785,
         "column": 459
       },
       "interactions": [],
@@ -36189,14 +36189,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 783,
+        "sourceLine": 785,
         "sourceColumn": 497,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 783,
+        "line": 785,
         "column": 497
       },
       "interactions": [],
@@ -36238,14 +36238,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 784,
+        "sourceLine": 786,
         "sourceColumn": 60,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 784,
+        "line": 786,
         "column": 60
       },
       "interactions": [
@@ -36289,14 +36289,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 785,
+        "sourceLine": 787,
         "sourceColumn": 59,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 785,
+        "line": 787,
         "column": 59
       },
       "interactions": [
@@ -36340,14 +36340,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 786,
+        "sourceLine": 788,
         "sourceColumn": 58,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 786,
+        "line": 788,
         "column": 58
       },
       "interactions": [
@@ -36391,14 +36391,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 788,
+        "sourceLine": 790,
         "sourceColumn": 145,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 788,
+        "line": 790,
         "column": 145
       },
       "interactions": [
@@ -36442,14 +36442,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 793,
+        "sourceLine": 795,
         "sourceColumn": 53,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 793,
+        "line": 795,
         "column": 53
       },
       "interactions": [
@@ -36493,14 +36493,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 793,
+        "sourceLine": 795,
         "sourceColumn": 191,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 793,
+        "line": 795,
         "column": 191
       },
       "interactions": [
@@ -36544,14 +36544,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 793,
+        "sourceLine": 795,
         "sourceColumn": 461,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 793,
+        "line": 795,
         "column": 461
       },
       "interactions": [
@@ -36595,14 +36595,14 @@
       "orderScope": {
         "component": "MarkdownTable",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 802,
+        "sourceLine": 804,
         "sourceColumn": 111,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 802,
+        "line": 804,
         "column": 111
       },
       "interactions": [
@@ -36646,14 +36646,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 856,
+        "sourceLine": 858,
         "sourceColumn": 72,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 856,
+        "line": 858,
         "column": 72
       },
       "interactions": [
@@ -36698,14 +36698,14 @@
       "orderScope": {
         "component": "MarkdownLink",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 865,
+        "sourceLine": 867,
         "sourceColumn": 33,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 865,
+        "line": 867,
         "column": 33
       },
       "interactions": [
@@ -36749,14 +36749,14 @@
       "orderScope": {
         "component": "UnsupportedFileCard",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 873,
+        "sourceLine": 875,
         "sourceColumn": 19,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 873,
+        "line": 875,
         "column": 19
       },
       "interactions": [
@@ -36853,14 +36853,14 @@
       "orderScope": {
         "component": "MarkdownPreviewComponent",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "sourceLine": 1282,
+        "sourceLine": 1284,
         "sourceColumn": 22,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MarkdownPreview.tsx",
-        "line": 1282,
+        "line": 1284,
         "column": 22
       },
       "interactions": [],
@@ -36896,20 +36896,20 @@
       "controlKind": "dialog",
       "tag": "div",
       "role": "dialog",
-      "displayName": "{{conversionError && <p className=\"media-preview__conversion-error\" role=\"alert\" onClick={(event) => event.stopPropagation()}>{conversionError}</p>}} {{metadataOpen && imageContext && onSaveCaption && <div onClick={(event) => event.stopPropagation()}>\r\n      <ImageMetadataEditor context={imageContext} onSaveCaption={onSaveCaption} onRename={onRenameImage} />\r\n    </div>}}",
+      "displayName": "{{conversionError && <p className=\"media-preview__conversion-error\" role=\"alert\" onClick={(event) => event.stopPropagation()}>{conversionError}</p>}} {{metadataOpen && imageContext && onSaveCaption && <div onClick={(event) => event.stopPropagation()}>\r\n      <ImageMetadataEditor context={imageContext} onSaveCaption={onSaveCaption} onRename={onRenameImage} />\n    </div>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{conversionError && <p className=\"media-preview__conversion-error\" role=\"alert\" onClick={(event) => event.stopPropagation()}>{conversionError}</p>}} {{metadataOpen && imageContext && onSaveCaption && <div onClick={(event) => event.stopPropagation()}>\r\n      <ImageMetadataEditor context={imageContext} onSaveCaption={onSaveCaption} onRename={onRenameImage} />\r\n    </div>}}",
+      "labelExpression": "{{conversionError && <p className=\"media-preview__conversion-error\" role=\"alert\" onClick={(event) => event.stopPropagation()}>{conversionError}</p>}} {{metadataOpen && imageContext && onSaveCaption && <div onClick={(event) => event.stopPropagation()}>\r\n      <ImageMetadataEditor context={imageContext} onSaveCaption={onSaveCaption} onRename={onRenameImage} />\n    </div>}}",
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 202,
+        "sourceLine": 206,
         "sourceColumn": 23,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 202,
+        "line": 206,
         "column": 23
       },
       "interactions": [
@@ -37004,14 +37004,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 215,
+        "sourceLine": 219,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 215,
+        "line": 219,
         "column": 9
       },
       "interactions": [
@@ -37055,14 +37055,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 216,
+        "sourceLine": 220,
         "sourceColumn": 9,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 216,
+        "line": 220,
         "column": 9
       },
       "interactions": [
@@ -37157,14 +37157,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 218,
+        "sourceLine": 222,
         "sourceColumn": 9,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 218,
+        "line": 222,
         "column": 9
       },
       "interactions": [
@@ -37208,14 +37208,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 219,
+        "sourceLine": 223,
         "sourceColumn": 9,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 219,
+        "line": 223,
         "column": 9
       },
       "interactions": [
@@ -37310,14 +37310,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 224,
+        "sourceLine": 228,
         "sourceColumn": 18,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 224,
+        "line": 228,
         "column": 18
       },
       "interactions": [
@@ -37361,14 +37361,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 225,
+        "sourceLine": 229,
         "sourceColumn": 46,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 225,
+        "line": 229,
         "column": 46
       },
       "interactions": [
@@ -37463,14 +37463,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 230,
+        "sourceLine": 234,
         "sourceColumn": 41,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 230,
+        "line": 234,
         "column": 41
       },
       "interactions": [
@@ -37514,14 +37514,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 231,
+        "sourceLine": 235,
         "sourceColumn": 7,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 231,
+        "line": 235,
         "column": 7
       },
       "interactions": [
@@ -37565,14 +37565,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 234,
+        "sourceLine": 238,
         "sourceColumn": 7,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 234,
+        "line": 238,
         "column": 7
       },
       "interactions": [
@@ -37616,14 +37616,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 236,
+        "sourceLine": 240,
         "sourceColumn": 25,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 236,
+        "line": 240,
         "column": 25
       },
       "interactions": [
@@ -37667,14 +37667,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 237,
+        "sourceLine": 241,
         "sourceColumn": 55,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 237,
+        "line": 241,
         "column": 55
       },
       "interactions": [
@@ -37718,14 +37718,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 240,
+        "sourceLine": 244,
         "sourceColumn": 5,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 240,
+        "line": 244,
         "column": 5
       },
       "interactions": [
@@ -37776,14 +37776,14 @@
       "orderScope": {
         "component": "MediaPreviewModal",
         "sourceFile": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "sourceLine": 288,
+        "sourceLine": 292,
         "sourceColumn": 11,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/MediaPreviewModal.tsx",
-        "line": 288,
+        "line": 292,
         "column": 11
       },
       "interactions": [
@@ -39356,14 +39356,14 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 98,
+        "sourceLine": 178,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 98,
+        "line": 178,
         "column": 10
       },
       "interactions": [],
@@ -39406,14 +39406,14 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 134,
+        "sourceLine": 181,
         "sourceColumn": 9,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 134,
+        "line": 181,
         "column": 9
       },
       "interactions": [
@@ -39458,14 +39458,14 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 135,
+        "sourceLine": 182,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 135,
+        "line": 182,
         "column": 9
       },
       "interactions": [
@@ -39510,14 +39510,14 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 138,
+        "sourceLine": 185,
         "sourceColumn": 22,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 138,
+        "line": 185,
         "column": 22
       },
       "interactions": [
@@ -39562,14 +39562,14 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 139,
+        "sourceLine": 186,
         "sourceColumn": 9,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 139,
+        "line": 186,
         "column": 9
       },
       "interactions": [
@@ -42671,14 +42671,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 54,
+        "sourceLine": 75,
         "sourceColumn": 76,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 54,
+        "line": 75,
         "column": 76
       },
       "interactions": [
@@ -42722,14 +42722,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 61,
+        "sourceLine": 82,
         "sourceColumn": 20,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 61,
+        "line": 82,
         "column": 20
       },
       "interactions": [
@@ -42773,21 +42773,21 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 68,
+        "sourceLine": 89,
         "sourceColumn": 28,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 68,
+        "line": 89,
         "column": 28
       },
       "interactions": [
         "onChange",
         "onBlur"
       ],
-      "signature": "sha256:8634d622477652e55c93c4a29dff6a737f84827f18a47285b4d6f0d7d68e299f",
+      "signature": "sha256:578c00b816f75b2bfbd5da10301369cb264108879612d5cbb64abb515a414839",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -42825,14 +42825,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 73,
+        "sourceLine": 94,
         "sourceColumn": 210,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 73,
+        "line": 94,
         "column": 210
       },
       "interactions": [
@@ -42876,14 +42876,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 73,
+        "sourceLine": 94,
         "sourceColumn": 286,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 73,
+        "line": 94,
         "column": 286
       },
       "interactions": [
@@ -42927,14 +42927,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 77,
+        "sourceLine": 98,
         "sourceColumn": 316,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 77,
+        "line": 98,
         "column": 316
       },
       "interactions": [],
@@ -42976,14 +42976,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 82,
+        "sourceLine": 103,
         "sourceColumn": 22,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 82,
+        "line": 103,
         "column": 22
       },
       "interactions": [
@@ -43027,14 +43027,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 88,
+        "sourceLine": 109,
         "sourceColumn": 15,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 88,
+        "line": 109,
         "column": 15
       },
       "interactions": [
@@ -43078,14 +43078,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 88,
+        "sourceLine": 109,
         "sourceColumn": 169,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 88,
+        "line": 109,
         "column": 169
       },
       "interactions": [
@@ -43129,14 +43129,14 @@
       "orderScope": {
         "component": "CodexConversationHistory",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "sourceLine": 88,
+        "sourceLine": 109,
         "sourceColumn": 291,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexConversationHistory.tsx",
-        "line": 88,
+        "line": 109,
         "column": 291
       },
       "interactions": [
@@ -43436,14 +43436,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 118,
+        "sourceLine": 135,
         "sourceColumn": 9,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 118,
+        "line": 135,
         "column": 9
       },
       "interactions": [
@@ -43487,14 +43487,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 124,
+        "sourceLine": 141,
         "sourceColumn": 49,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 124,
+        "line": 141,
         "column": 49
       },
       "interactions": [
@@ -43538,14 +43538,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 124,
+        "sourceLine": 141,
         "sourceColumn": 163,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 124,
+        "line": 141,
         "column": 163
       },
       "interactions": [
@@ -43589,14 +43589,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 128,
+        "sourceLine": 145,
         "sourceColumn": 16,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 128,
+        "line": 145,
         "column": 16
       },
       "interactions": [
@@ -43640,14 +43640,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 129,
+        "sourceLine": 146,
         "sourceColumn": 16,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 129,
+        "line": 146,
         "column": 16
       },
       "interactions": [
@@ -43691,14 +43691,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 130,
+        "sourceLine": 147,
         "sourceColumn": 16,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 130,
+        "line": 147,
         "column": 16
       },
       "interactions": [
@@ -43742,14 +43742,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 131,
+        "sourceLine": 148,
         "sourceColumn": 42,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 131,
+        "line": 148,
         "column": 42
       },
       "interactions": [
@@ -43793,14 +43793,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 133,
+        "sourceLine": 150,
         "sourceColumn": 7,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 133,
+        "line": 150,
         "column": 7
       },
       "interactions": [
@@ -43844,14 +43844,14 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 133,
+        "sourceLine": 150,
         "sourceColumn": 89,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 133,
+        "line": 150,
         "column": 89
       },
       "interactions": [
@@ -43895,14 +43895,14 @@
       "orderScope": {
         "component": "images",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 18,
+        "sourceLine": 34,
         "sourceColumn": 186,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 18,
+        "line": 34,
         "column": 186
       },
       "interactions": [
@@ -43946,14 +43946,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 24,
+        "sourceLine": 43,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 24,
+        "line": 43,
         "column": 10
       },
       "interactions": [
@@ -43997,14 +43997,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 27,
+        "sourceLine": 46,
         "sourceColumn": 36,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 27,
+        "line": 46,
         "column": 36
       },
       "interactions": [
@@ -44048,14 +44048,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 31,
+        "sourceLine": 50,
         "sourceColumn": 137,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 31,
+        "line": 50,
         "column": 137
       },
       "interactions": [
@@ -44152,14 +44152,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 39,
+        "sourceLine": 58,
         "sourceColumn": 183,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 39,
+        "line": 58,
         "column": 183
       },
       "interactions": [],
@@ -44201,14 +44201,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 39,
+        "sourceLine": 58,
         "sourceColumn": 265,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 39,
+        "line": 58,
         "column": 265
       },
       "interactions": [],
@@ -44250,14 +44250,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 42,
+        "sourceLine": 61,
         "sourceColumn": 225,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 42,
+        "line": 61,
         "column": 225
       },
       "interactions": [
@@ -44301,14 +44301,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 42,
+        "sourceLine": 61,
         "sourceColumn": 362,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 42,
+        "line": 61,
         "column": 362
       },
       "interactions": [
@@ -44352,14 +44352,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 44,
+        "sourceLine": 63,
         "sourceColumn": 74,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 44,
+        "line": 63,
         "column": 74
       },
       "interactions": [
@@ -44403,14 +44403,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 44,
+        "sourceLine": 63,
         "sourceColumn": 144,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 44,
+        "line": 63,
         "column": 144
       },
       "interactions": [
@@ -44454,14 +44454,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 44,
+        "sourceLine": 63,
         "sourceColumn": 277,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 44,
+        "line": 63,
         "column": 277
       },
       "interactions": [],
@@ -44503,14 +44503,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 47,
+        "sourceLine": 66,
         "sourceColumn": 15,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 47,
+        "line": 66,
         "column": 15
       },
       "interactions": [],
@@ -44552,14 +44552,14 @@
       "orderScope": {
         "component": "CodexLogViewer",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "sourceLine": 47,
+        "sourceLine": 66,
         "sourceColumn": 109,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexLogViewer.tsx",
-        "line": 47,
+        "line": 66,
         "column": 109
       },
       "interactions": [
@@ -44603,14 +44603,14 @@
       "orderScope": {
         "component": "CandidateDialog",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 44,
+        "sourceLine": 57,
         "sourceColumn": 12,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 44,
+        "line": 57,
         "column": 12
       },
       "interactions": [],
@@ -44652,14 +44652,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 692,
+        "sourceLine": 775,
         "sourceColumn": 31,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 692,
+        "line": 775,
         "column": 31
       },
       "interactions": [
@@ -44703,15 +44703,15 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 632,
-        "sourceColumn": 350,
+        "sourceLine": 775,
+        "sourceColumn": 360,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 632,
-        "column": 350
+        "line": 775,
+        "column": 360
       },
       "interactions": [],
       "signature": "sha256:68648b97a9980b9b2839b289f3c486800523970a0e39726e3951fcbbd90e830f",
@@ -44752,15 +44752,15 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 632,
-        "sourceColumn": 422,
+        "sourceLine": 775,
+        "sourceColumn": 432,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 632,
-        "column": 422
+        "line": 775,
+        "column": 432
       },
       "interactions": [],
       "signature": "sha256:127877f1ab553cb449017a823b0f544920b151cbd0e3d518241ed058d10d3a52",
@@ -44801,15 +44801,15 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 632,
-        "sourceColumn": 466,
+        "sourceLine": 775,
+        "sourceColumn": 476,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 632,
-        "column": 466
+        "line": 775,
+        "column": 476
       },
       "interactions": [],
       "signature": "sha256:74959b80588d21a8489d01b42e5be3b32522006cc94062398c69aa104e7526be",
@@ -44844,26 +44844,26 @@
       "controlKind": "button",
       "tag": "aside",
       "role": null,
-      "displayName": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\r\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
+      "displayName": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} retentionBusy={retentionBusy} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={changeRetention}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\r\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
+      "labelExpression": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} retentionBusy={retentionBusy} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={changeRetention}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 686,
+        "sourceLine": 776,
         "sourceColumn": 12,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 686,
+        "line": 776,
         "column": 12
       },
       "interactions": [
         "onKeyDown"
       ],
-      "signature": "sha256:9b894ce4f3dbccb5865e0265b9eb2a29e299b37fff97354934358ba5ff949eb6",
+      "signature": "sha256:1e4a953a56c24b833f4970283a7b8974c3e78103be67cbd593b38dc969b3e58f",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -44901,14 +44901,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 639,
+        "sourceLine": 782,
         "sourceColumn": 20,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 639,
+        "line": 782,
         "column": 20
       },
       "interactions": [
@@ -44954,14 +44954,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 643,
+        "sourceLine": 786,
         "sourceColumn": 141,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 643,
+        "line": 786,
         "column": 141
       },
       "interactions": [
@@ -45005,14 +45005,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 703,
+        "sourceLine": 786,
         "sourceColumn": 389,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 703,
+        "line": 786,
         "column": 389
       },
       "interactions": [
@@ -45056,14 +45056,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 703,
+        "sourceLine": 786,
         "sourceColumn": 483,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 703,
+        "line": 786,
         "column": 483
       },
       "interactions": [
@@ -45107,14 +45107,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 644,
+        "sourceLine": 787,
         "sourceColumn": 74,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 644,
+        "line": 787,
         "column": 74
       },
       "interactions": [
@@ -45158,14 +45158,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 644,
+        "sourceLine": 787,
         "sourceColumn": 265,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 644,
+        "line": 787,
         "column": 265
       },
       "interactions": [
@@ -45209,14 +45209,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 652,
+        "sourceLine": 795,
         "sourceColumn": 180,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 652,
+        "line": 795,
         "column": 180
       },
       "interactions": [
@@ -45260,14 +45260,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 652,
+        "sourceLine": 795,
         "sourceColumn": 345,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 652,
+        "line": 795,
         "column": 345
       },
       "interactions": [
@@ -45311,14 +45311,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 652,
+        "sourceLine": 795,
         "sourceColumn": 624,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 652,
+        "line": 795,
         "column": 624
       },
       "interactions": [
@@ -45362,14 +45362,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 652,
+        "sourceLine": 795,
         "sourceColumn": 904,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 652,
+        "line": 795,
         "column": 904
       },
       "interactions": [
@@ -45413,14 +45413,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 653,
+        "sourceLine": 796,
         "sourceColumn": 222,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 653,
+        "line": 796,
         "column": 222
       },
       "interactions": [
@@ -45464,14 +45464,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 657,
+        "sourceLine": 800,
         "sourceColumn": 7,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 657,
+        "line": 800,
         "column": 7
       },
       "interactions": [
@@ -45517,14 +45517,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 664,
+        "sourceLine": 807,
         "sourceColumn": 21,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 664,
+        "line": 807,
         "column": 21
       },
       "interactions": [
@@ -45569,14 +45569,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 669,
+        "sourceLine": 812,
         "sourceColumn": 54,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 669,
+        "line": 812,
         "column": 54
       },
       "interactions": [
@@ -45620,14 +45620,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 669,
+        "sourceLine": 812,
         "sourceColumn": 344,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 669,
+        "line": 812,
         "column": 344
       },
       "interactions": [
@@ -45671,14 +45671,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 674,
+        "sourceLine": 817,
         "sourceColumn": 23,
         "ordinal": 21
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 674,
+        "line": 817,
         "column": 23
       },
       "interactions": [
@@ -45722,14 +45722,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 675,
+        "sourceLine": 818,
         "sourceColumn": 15,
         "ordinal": 22
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 675,
+        "line": 818,
         "column": 15
       },
       "interactions": [],
@@ -45771,14 +45771,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 675,
+        "sourceLine": 818,
         "sourceColumn": 59,
         "ordinal": 23
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 675,
+        "line": 818,
         "column": 59
       },
       "interactions": [],
@@ -45820,14 +45820,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 675,
+        "sourceLine": 818,
         "sourceColumn": 112,
         "ordinal": 24
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 675,
+        "line": 818,
         "column": 112
       },
       "interactions": [],
@@ -45869,14 +45869,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 675,
+        "sourceLine": 818,
         "sourceColumn": 163,
         "ordinal": 25
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 675,
+        "line": 818,
         "column": 163
       },
       "interactions": [],
@@ -45918,14 +45918,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 675,
+        "sourceLine": 818,
         "sourceColumn": 214,
         "ordinal": 26
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 675,
+        "line": 818,
         "column": 214
       },
       "interactions": [],
@@ -45967,14 +45967,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 675,
+        "sourceLine": 818,
         "sourceColumn": 267,
         "ordinal": 27
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 675,
+        "line": 818,
         "column": 267
       },
       "interactions": [],
@@ -46016,14 +46016,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 677,
+        "sourceLine": 820,
         "sourceColumn": 23,
         "ordinal": 28
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 677,
+        "line": 820,
         "column": 23
       },
       "interactions": [
@@ -46067,14 +46067,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 677,
+        "sourceLine": 820,
         "sourceColumn": 277,
         "ordinal": 29
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 677,
+        "line": 820,
         "column": 277
       },
       "interactions": [],
@@ -46116,14 +46116,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 680,
+        "sourceLine": 823,
         "sourceColumn": 31,
         "ordinal": 30
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 680,
+        "line": 823,
         "column": 31
       },
       "interactions": [
@@ -46167,14 +46167,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 746,
+        "sourceLine": 829,
         "sourceColumn": 13,
         "ordinal": 31
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 746,
+        "line": 829,
         "column": 13
       },
       "interactions": [
@@ -46218,14 +46218,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 746,
+        "sourceLine": 829,
         "sourceColumn": 101,
         "ordinal": 32
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 746,
+        "line": 829,
         "column": 101
       },
       "interactions": [
@@ -46269,14 +46269,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 688,
+        "sourceLine": 831,
         "sourceColumn": 168,
         "ordinal": 33
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 688,
+        "line": 831,
         "column": 168
       },
       "interactions": [
@@ -46321,14 +46321,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 688,
+        "sourceLine": 831,
         "sourceColumn": 818,
         "ordinal": 34
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 688,
+        "line": 831,
         "column": 818
       },
       "interactions": [
@@ -46372,14 +46372,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 750,
+        "sourceLine": 833,
         "sourceColumn": 13,
         "ordinal": 35
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 750,
+        "line": 833,
         "column": 13
       },
       "interactions": [
@@ -46423,14 +46423,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 751,
+        "sourceLine": 834,
         "sourceColumn": 13,
         "ordinal": 36
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 751,
+        "line": 834,
         "column": 13
       },
       "interactions": [
@@ -46474,14 +46474,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 752,
+        "sourceLine": 835,
         "sourceColumn": 39,
         "ordinal": 37
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 752,
+        "line": 835,
         "column": 39
       },
       "interactions": [
@@ -46525,14 +46525,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 694,
+        "sourceLine": 837,
         "sourceColumn": 346,
         "ordinal": 38
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 694,
+        "line": 837,
         "column": 346
       },
       "interactions": [
@@ -46577,14 +46577,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 694,
+        "sourceLine": 837,
         "sourceColumn": 869,
         "ordinal": 39
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 694,
+        "line": 837,
         "column": 869
       },
       "interactions": [
@@ -46628,14 +46628,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 703,
+        "sourceLine": 846,
         "sourceColumn": 18,
         "ordinal": 40
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 703,
+        "line": 846,
         "column": 18
       },
       "interactions": [],
@@ -46677,14 +46677,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 704,
+        "sourceLine": 847,
         "sourceColumn": 113,
         "ordinal": 41
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 704,
+        "line": 847,
         "column": 113
       },
       "interactions": [
@@ -46728,14 +46728,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 704,
+        "sourceLine": 847,
         "sourceColumn": 305,
         "ordinal": 42
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 704,
+        "line": 847,
         "column": 305
       },
       "interactions": [
@@ -46779,14 +46779,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 704,
+        "sourceLine": 847,
         "sourceColumn": 435,
         "ordinal": 43
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 704,
+        "line": 847,
         "column": 435
       },
       "interactions": [
@@ -46830,14 +46830,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 704,
+        "sourceLine": 847,
         "sourceColumn": 546,
         "ordinal": 44
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 704,
+        "line": 847,
         "column": 546
       },
       "interactions": [
@@ -48360,14 +48360,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 127,
+        "sourceLine": 141,
         "sourceColumn": 32,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 127,
+        "line": 141,
         "column": 32
       },
       "interactions": [
@@ -48411,14 +48411,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 128,
+        "sourceLine": 142,
         "sourceColumn": 215,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 128,
+        "line": 142,
         "column": 215
       },
       "interactions": [
@@ -48462,14 +48462,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 129,
+        "sourceLine": 143,
         "sourceColumn": 79,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 129,
+        "line": 143,
         "column": 79
       },
       "interactions": [
@@ -48513,14 +48513,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 129,
+        "sourceLine": 143,
         "sourceColumn": 371,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 129,
+        "line": 143,
         "column": 371
       },
       "interactions": [
@@ -48564,14 +48564,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 130,
+        "sourceLine": 144,
         "sourceColumn": 73,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 130,
+        "line": 144,
         "column": 73
       },
       "interactions": [
@@ -48615,14 +48615,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 132,
+        "sourceLine": 146,
         "sourceColumn": 58,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 132,
+        "line": 146,
         "column": 58
       },
       "interactions": [
@@ -48666,14 +48666,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 136,
+        "sourceLine": 150,
         "sourceColumn": 9,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 136,
+        "line": 150,
         "column": 9
       },
       "interactions": [
@@ -48717,14 +48717,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 137,
+        "sourceLine": 151,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 137,
+        "line": 151,
         "column": 9
       },
       "interactions": [
@@ -48768,14 +48768,14 @@
       "orderScope": {
         "component": "useConsultationMenu",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "sourceLine": 139,
+        "sourceLine": 153,
         "sourceColumn": 124,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/useConsultationMenu.tsx",
-        "line": 139,
+        "line": 153,
         "column": 124
       },
       "interactions": [

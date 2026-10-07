@@ -25,7 +25,7 @@ vi.mock("./sessions", async (importOriginal) => {
       store.sessions = [session, ...store.sessions.filter(item => item.id !== session.id)];
       return { sessions: store.sessions, retentionDays: 30 };
     }),
-    setCodexSessionRetention: vi.fn(async () => ({ sessions: store.sessions, retentionDays: 30 })),
+    setCodexSessionRetention: vi.fn(async () => ({ store: { sessions: store.sessions, retentionDays: 30 } })),
   };
 });
 vi.mock("./skills", async (importOriginal) => {

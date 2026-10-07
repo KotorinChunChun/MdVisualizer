@@ -59,12 +59,12 @@ $releaseToolsPath = Join-Path $PSScriptRoot "ReleaseTools.psm1"
 Import-Module $releaseToolsPath -Force
 $configuration = Import-ReleaseConfiguration -ProjectRoot $projectRoot
 $historyVersion = Get-ConfiguredHistoryVersion -Configuration $configuration
-if ($historyVersion -ne 'v0.0.18') { throw "履歴版の決定結果が不正です: $historyVersion" }
 $publicVersion = [string]$configuration.Raw.application.publicVersion
 $packageVersion = [string]$configuration.Raw.application.packageVersion
 $publicMatch = [regex]::Match($publicVersion, '^(\d+\.\d+\.\d+)\.(\d+) beta$')
 $packageMatch = [regex]::Match($packageVersion, '^(\d+\.\d+\.\d+)\+beta\.(\d+)$')
 if (-not $publicMatch.Success -or -not $packageMatch.Success) { throw "beta版の版表記が不正です: $publicVersion / $packageVersion" }
+if ($historyVersion -ne "v$($publicMatch.Groups[1].Value)") { throw "履歴版の決定結果が不正です: $historyVersion" }
 $expectedMsixVersion = "$($publicMatch.Groups[1].Value).$($publicMatch.Groups[2].Value)"
 if ($packageMatch.Groups[1].Value -ne $publicMatch.Groups[1].Value -or $packageMatch.Groups[2].Value -ne $publicMatch.Groups[2].Value -or [string]$configuration.Raw.application.msixVersion -ne $expectedMsixVersion) {
     throw "beta版の公開版・内部版・MSIX版が一致していません。"
@@ -104,6 +104,9 @@ try {
 }
 finally {
     if (Test-Path -LiteralPath $temporaryCertificateDirectory) {
+        $resolvedTemporary = [IO.Path]::GetFullPath($temporaryCertificateDirectory)
+        $temporaryRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+        if (-not $resolvedTemporary.StartsWith($temporaryRoot, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($resolvedTemporary) -ne "MdVisualizer-certificate-test-$PID") { throw '削除対象が証明書試験専用フォルダーではありません。' }
         Remove-Item -LiteralPath $temporaryCertificateDirectory -Recurse -Force
     }
 }

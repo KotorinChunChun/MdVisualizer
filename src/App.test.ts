@@ -204,7 +204,8 @@ describe("extended navigation history wiring", () => {
     expect(source).toContain("scrollAnchor: containerRef.current && markdownRef.current ? captureScrollAnchor");
     expect(source).toContain("mediaPreview: mediaPreviewRef.current");
     expect(source).toContain("if (snapshot.editorMode) dispatch");
-    expect(source).toContain("setMediaPreview(snapshot.mediaPreview)");
+    expect(source).toContain("restoreNavigationMediaPreview(snapshot.mediaPreview,");
+    expect(source).toContain("setMediaPreview(restoredMedia.preview)");
   });
 });
 

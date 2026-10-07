@@ -1,0 +1,11 @@
+{
+  "pngBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jf9kAAAAASUVORK5CYII=",
+  "E01": { "body": "同じ語を編集\n離れた段落\n同じ語を編集", "needle": "同じ語", "replacement": "共通" },
+  "E02": { "aPrefix": "Aの前文\n", "aSuffix": "\nAの後文", "b": "Bの本文\n" },
+  "E03": "1. alpha\n2. beta\n3. gamma\n",
+  "E04": "# 検索元\n\n```text\nline 01\nline 02\nline 03\nline 04\nline 05\n検索対象\nline 07\nline 08\nline 09\nline 10\n```\n\n最後の段落",
+  "E05": { "a": "# A\n\n逆向き選択の対象\n\n末尾", "b": "# B\n\n変更しない文書" },
+  "E06": { "a": "# 戻る先\n\nAの下書き\n\n末尾", "b": "# 進む先\n\nBの下書き\n\n末尾" },
+  "E08": { "a": "# 改名前\n\n本文", "b": "別文書", "name": "renamed.md" },
+  "E09": { "a": "先頭\n開始時\n末尾", "b": "別文書", "local": "先頭\n手編集\n末尾", "external": "先頭\n外部変更\n末尾" }
+}

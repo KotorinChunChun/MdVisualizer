@@ -749,17 +749,21 @@ fn set_log_limit(path: &Path, limit: usize, retention_days: u16) -> Result<Codex
 /// 会話保持設定の変更時、別ファイルの既存通信ログにも直ちに同じ期限を適用する。
 pub fn purge_logs_for_retention(app: &AppHandle, retention_days: u16) -> Result<(), String> {
     let path = log_path(app)?;
+    purge_logs_for_retention_at(&path, retention_days)
+}
+
+pub(crate) fn purge_logs_for_retention_at(path: &Path, retention_days: u16) -> Result<(), String> {
     if !path.exists() {
         return Ok(());
     }
-    with_lock(&path, || {
+    with_lock(path, || {
         let mut data =
-            load_logs_from(&path, retention_days).map_err(crate::errors::AppError::IoError)?;
+            load_logs_from(path, retention_days).map_err(crate::errors::AppError::IoError)?;
         apply_log_retention(&mut data, retention_days, Utc::now());
         let content = serde_json::to_vec(&data).map_err(|error| {
             crate::errors::AppError::IoError(format!("AI通信記録を整形できません: {error}"))
         })?;
-        atomic_write(&path, &content)
+        atomic_write(path, &content)
     })
     .map_err(|error| error.to_string())
 }

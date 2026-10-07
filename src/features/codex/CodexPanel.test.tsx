@@ -30,7 +30,7 @@ vi.mock("./sessions", async (importOriginal) => {
             sessionMock.retentionDays = retentionDays;
             if (retentionDays === 0)
                 sessionMock.sessions = [];
-            return { sessions: sessionMock.sessions, retentionDays };
+            return { store: { sessions: sessionMock.sessions, retentionDays } };
         }),
         deleteCodexSession: vi.fn(async (id: string) => {
             sessionMock.sessions = sessionMock.sessions.filter(item => item.id !== id);
