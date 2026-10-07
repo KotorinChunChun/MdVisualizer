@@ -1,6 +1,6 @@
 [package]
 name = "mdvisualizer"
-version = "0.0.18+beta.5"
+version = "0.0.19+beta.1"
 description = "Fast Markdown Viewer Desktop App"
 authors = ["KotorinChunChun"]
 license = "MIT"

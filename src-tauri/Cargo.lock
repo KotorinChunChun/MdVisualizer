@@ -2553,7 +2553,7 @@ dependencies = [
 
 [[package]]
 name = "mdvisualizer"
-version = "0.0.18+beta.5"
+version = "0.0.19+beta.1"
 dependencies = [
  "base64 0.22.1",
  "chardetng",
