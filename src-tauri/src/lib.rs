@@ -302,6 +302,7 @@ pub fn run() {
             codex_candidates::codex_prepare_candidate,
             codex_candidates::codex_candidate_preview,
             codex_candidates::codex_commit_candidate,
+            codex_candidates::codex_validate_candidate_file,
             codex_candidates::codex_finish_candidate,
             codex_image_edit::codex_cancel_image,
             codex_image_edit::codex_save_edited_image,

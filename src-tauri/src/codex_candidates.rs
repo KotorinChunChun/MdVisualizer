@@ -34,6 +34,54 @@ pub struct CandidateReply {
     source: String,
     preview_dir: String,
 }
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CandidateFileRequest {
+    document_path: String,
+    source: String,
+    base64: String,
+}
+
+// コピー済み候補はplan/cacheを解放済みでも、再利用の直前に実ファイルを確認する。
+fn validate_candidate_file(document: &Path, source: &str, bytes: &[u8]) -> Result<(), String> {
+    if !document.is_absolute() || bytes.len() > 10 * 1024 * 1024 {
+        return Err("画像候補の保存先を確認してください。".into());
+    }
+    let source = source.replace('\\', "/");
+    let parts: Vec<_> = source.split('/').collect();
+    let filename = match parts.as_slice() {
+        [name] => *name,
+        ["image", name] => *name,
+        _ => return Err("画像候補の相対パスが不正です。".into()),
+    };
+    if filename.is_empty() || filename.contains(':') || filename.contains('\0')
+        || !filename.to_ascii_lowercase().ends_with(".png") {
+        return Err("画像候補の相対パスが不正です。".into());
+    }
+    let parent = document.parent().ok_or("Markdownの保存先を確認できません。")?
+        .canonicalize().map_err(|_| "Markdownの保存先が移動または削除されました。差分を開き直してください。")?;
+    let destination = parent.join(source).canonicalize()
+        .map_err(|_| "コピー済みの画像が見つかりません。画像候補の差分を開き直してください。")?;
+    if !destination.starts_with(&parent) {
+        return Err("画像の保存先がMarkdownのフォルダー外へ変更されました。".into());
+    }
+    let metadata = fs::metadata(&destination).map_err(|e| e.to_string())?;
+    if !metadata.is_file() || metadata.len() != bytes.len() as u64
+        || fs::read(&destination).map_err(|e| e.to_string())? != bytes {
+        return Err("コピー済みの画像が外部で変更されました。画像候補の差分を開き直してください。".into());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn codex_validate_candidate_file(request: CandidateFileRequest) -> Result<(), String> {
+    if request.base64.len() > (10 * 1024 * 1024 + 2) / 3 * 4 {
+        return Err("画像候補が大きすぎます。".into());
+    }
+    let bytes = base64::engine::general_purpose::STANDARD.decode(&request.base64)
+        .map_err(|_| "画像データが不正です。")?;
+    validate_candidate_file(Path::new(&request.document_path), &request.source, &bytes)
+}
 
 fn prepare(
     parent: &Path,
@@ -161,11 +209,24 @@ fn commit(plan: &mut CandidatePlan) -> Result<(), String> {
     if plan.committed {
         return Ok(());
     }
+    // 比較中に文書フォルダーが移動した場合、旧保存先を作り直さない。
+    let parent = plan.parent.canonicalize()
+        .map_err(|_| "Markdownの保存先が移動または削除されました。保存先を確認して差分を開き直してください。")?;
+    if parent != plan.parent || !parent.is_dir() {
+        return Err("Markdownの保存先が変更されました。保存先を確認して差分を開き直してください。".into());
+    }
     let directory = plan
         .destination
         .parent()
         .ok_or("画像の保存先がありません。")?;
-    fs::create_dir_all(directory).map_err(|e| e.to_string())?;
+    if directory != plan.parent {
+        // 作成対象は相対imageフォルダーだけ。親の消失と競合しても再帰作成しない。
+        match fs::create_dir(directory) {
+            Ok(()) => {},
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && directory.is_dir() => {},
+            Err(error) => return Err(error.to_string()),
+        }
+    }
     let canonical = directory.canonicalize().map_err(|e| e.to_string())?;
     if !canonical.starts_with(&plan.parent) {
         return Err("画像の保存先がMarkdownのフォルダー外へ変更されました。".into());
@@ -227,6 +288,55 @@ pub fn codex_finish_candidate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn published_candidate_is_checked_again_before_reuse_without_recreating_it() {
+        let root = tempfile::tempdir().unwrap();
+        let document = root.path().join("note.md");
+        fs::write(&document, b"original document").unwrap();
+        let (mut plan, reply) = prepare(root.path(), "image", "generated.png", b"candidate".to_vec(), "window").unwrap();
+        commit(&mut plan).unwrap();
+        let destination = plan.destination.clone();
+        drop(plan);
+        assert!(validate_candidate_file(&document, &reply.source, b"candidate").is_ok());
+        fs::write(&destination, b"otherdata").unwrap();
+        assert!(validate_candidate_file(&document, &reply.source, b"candidate").is_err());
+        assert_eq!(fs::read(&destination).unwrap(), b"otherdata");
+        fs::remove_file(&destination).unwrap();
+        assert!(validate_candidate_file(&document, &reply.source, b"candidate").is_err());
+        assert!(!destination.exists());
+        assert_eq!(fs::read(&document).unwrap(), b"original document");
+        for source in ["../outside.png", "image/../outside.png", "C:/outside.png", "/outside.png", "image\\..\\outside.png", "image/a.png:stream", "image/nested/a.png"] {
+            assert!(validate_candidate_file(&document, source, b"candidate").is_err(), "{source}");
+        }
+    }
+
+    #[test]
+    fn moved_document_parent_is_not_recreated_by_candidate_commit() {
+        for folder in ["image", ""] {
+            let root = tempfile::tempdir().unwrap();
+            let original = root.path().join("original");
+            let moved = root.path().join("moved");
+            fs::create_dir(&original).unwrap();
+            fs::write(original.join("note.md"), b"original document").unwrap();
+            let (mut plan, reply) = prepare(
+                &original, folder, "generated.png", b"candidate".to_vec(), "window",
+            ).unwrap();
+            fs::rename(&original, &moved).unwrap();
+
+            assert!(commit(&mut plan).is_err(), "移動した文書の旧保存先には配置しない");
+            assert!(!original.exists(), "旧親フォルダーを作り直さない");
+            assert!(!plan.committed);
+            assert_eq!(fs::read(moved.join("note.md")).unwrap(), b"original document");
+            assert!(plan.cache.path().join(&reply.source).exists(), "候補は再操作に備えて保持する");
+
+            let (mut retry, _) = prepare(
+                &moved, folder, "generated.png", b"candidate".to_vec(), "window",
+            ).unwrap();
+            commit(&mut retry).unwrap();
+            assert_eq!(fs::read(&retry.destination).unwrap(), b"candidate");
+        }
+    }
+
     #[test]
     fn candidate_is_cached_until_explicit_commit_and_never_overwrites() {
         let root = tempfile::tempdir().unwrap();
