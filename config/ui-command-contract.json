@@ -31191,24 +31191,24 @@
       "controlKind": "dialog",
       "tag": "div",
       "role": "dialog",
-      "displayName": "{{settingsOpen && <section className=\"annotation-editor__settings\" role=\"dialog\" aria-modal=\"false\" aria-label=\"画像編集設定\">\r\n      <header><h2>画像編集設定</h2><button type=\"button\" aria-label=\"画像編集設定を閉じる\" onClick={() => setSettingsOpen(false)}>×</button></header>\r\n      <div className=\"annotation-editor__settings-fields\">\r\n        <label>通常の変化量<input type=\"number\" min=\"1\" max=\"90\" value={editorSettings.normalWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, normalWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>\r\n        <label>高速時の変化量<input type=\"number\" min=\"1\" max=\"180\" value={editorSettings.fastWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>\r\n        <label>連続判定時間 (ms)<input type=\"number\" min=\"1\" max=\"2000\" value={editorSettings.fastWheelWindowMs} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelWindowMs: Math.max(1, Number(event.target.value)) }))} /></label>\r\n      </div>\r\n      <p>最初の2回は通常の変化量、設定時間内に3回以上続けると高速時の変化量を使います。</p>\r\n      <dl>\r\n        <dt>ホイール</dt><dd>高さを変更</dd>\r\n        <dt>Shift+ホイール</dt><dd>幅を変更</dd>\r\n        <dt>Alt+ホイール</dt><dd>選択中のスタンプを回転</dd>\r\n        <dt>Ctrl+クロップ</dt><dd>上下または左右を対称に変更</dd>\r\n      </dl>\r\n      <footer><button type=\"button\" onClick={() => {\r\n        setEditorSettings(saveImageEditorSettings(editorSettings));\r\n        wheelSequenceRef.current = { count: 0, lastTimestamp: null };\r\n        setSettingsOpen(false);\r\n      }}>設定を保存</button></footer>\r\n    </section>}} {{contextMenu && <div\r\n      ref={contextMenuRef}\r\n      className=\"annotation-editor__context-menu\"\r\n      role=\"menu\"\r\n      style={{ left: contextMenu.clientX, top: contextMenu.clientY }}\r\n      onContextMenu={(event) => event.preventDefault()}\r\n    >\r\n      <button type=\"button\" role=\"menuitem\" disabled={!contextMenu.targetId} onClick={copyContextTarget}>コピー</button>\r\n      <button type=\"button\" role=\"menuitem\" disabled={!contextMenu.targetId} onClick={cutContextTarget}>切り取り</button>\r\n      <button type=\"button\" role=\"menuitem\" disabled={!clipboard} onClick={pasteContextTarget}>貼り付け</button>\r\n      <div role=\"separator\" />\r\n      <button type=\"button\" role=\"menuitem\" className=\"is-danger\" disabled={!contextMenu.targetId} onClick={() => {\r\n        if (contextMenu.targetId) {\r\n          recordEdit();\r\n          dispatch({ type: \"delete\", id: contextMenu.targetId });\r\n        }\r\n        setContextMenu(null);\r\n      }}>削除</button>\r\n    </div>}} {{externalConflict && <div className=\"annotation-editor__conflict\" role=\"alert\">\r\n      <p>編集中に画像が外部で変更されました。</p>\r\n      {onReload && <button type=\"button\" disabled={saving} onClick={() => { if(window.confirm(\"編集内容を破棄して最新画像を読み直しますか？\")) void onReload().catch(error => onError(String(error))); }}>最新画像を読み直す</button>}\r\n      <button type=\"button\" disabled={saving} onClick={() => void apply(true)}>編集結果を別名保存</button>\r\n      <p>元画像への上書きは停止しています。別名保存後も編集内容を保持します。</p>\r\n    </div>}}",
+      "displayName": "{{settingsOpen && <section className=\"annotation-editor__settings\" role=\"dialog\" aria-modal=\"false\" aria-label=\"画像編集設定\">\r\n      <header><h2>画像編集設定</h2><button type=\"button\" aria-label=\"画像編集設定を閉じる\" onClick={() => setSettingsOpen(false)}>×</button></header>\r\n      <div className=\"annotation-editor__settings-fields\">\r\n        <label>通常の変化量<input type=\"number\" min=\"1\" max=\"90\" value={editorSettings.normalWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, normalWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>\r\n        <label>高速時の変化量<input type=\"number\" min=\"1\" max=\"180\" value={editorSettings.fastWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>\r\n        <label>連続判定時間 (ms)<input type=\"number\" min=\"1\" max=\"2000\" value={editorSettings.fastWheelWindowMs} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelWindowMs: Math.max(1, Number(event.target.value)) }))} /></label>\r\n      </div>\r\n      <p>最初の2回は通常の変化量、設定時間内に3回以上続けると高速時の変化量を使います。</p>\r\n      <dl>\r\n        <dt>ホイール</dt><dd>高さを変更</dd>\r\n        <dt>Shift+ホイール</dt><dd>幅を変更</dd>\r\n        <dt>Alt+ホイール</dt><dd>選択中のスタンプを回転</dd>\r\n        <dt>Ctrl+クロップ</dt><dd>上下または左右を対称に変更</dd>\r\n      </dl>\r\n      <footer><button type=\"button\" onClick={() => {\r\n        setEditorSettings(saveImageEditorSettings(editorSettings));\r\n        wheelSequenceRef.current = { count: 0, lastTimestamp: null };\r\n        setSettingsOpen(false);\r\n      }}>設定を保存</button></footer>\r\n    </section>}} {{contextMenu && <div\r\n      ref={contextMenuRef}\r\n      className=\"annotation-editor__context-menu\"\r\n      role=\"menu\"\r\n      style={{ left: contextMenu.clientX, top: contextMenu.clientY }}\r\n      onContextMenu={(event) => event.preventDefault()}\r\n    >\r\n      <button type=\"button\" role=\"menuitem\" disabled={!contextMenu.targetId} onClick={copyContextTarget}>コピー</button>\r\n      <button type=\"button\" role=\"menuitem\" disabled={!contextMenu.targetId} onClick={cutContextTarget}>切り取り</button>\r\n      <button type=\"button\" role=\"menuitem\" disabled={!clipboard} onClick={pasteContextTarget}>貼り付け</button>\r\n      <div role=\"separator\" />\r\n      <button type=\"button\" role=\"menuitem\" className=\"is-danger\" disabled={!contextMenu.targetId} onClick={() => {\r\n        if (contextMenu.targetId) {\r\n          recordEdit();\r\n          dispatch({ type: \"delete\", id: contextMenu.targetId });\r\n        }\r\n        setContextMenu(null);\r\n      }}>削除</button>\r\n    </div>}} {{externalConflict && <div className=\"annotation-editor__conflict\" role=\"alert\">\r\n      <p>編集中に画像が外部で変更されました。</p>\r\n      {onReload && <button type=\"button\" disabled={saving || confirming} onClick={() => void discardAfterConfirmation(\"編集内容を破棄して最新画像を読み直しますか？\", onReload)}>最新画像を読み直す</button>}\n      <button type=\"button\" disabled={saving || confirming} onClick={() => void apply(true)}>編集結果を別名保存</button>\n      <p>元画像への上書きは停止しています。別名保存後も編集内容を保持します。</p>\r\n    </div>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{settingsOpen && <section className=\"annotation-editor__settings\" role=\"dialog\" aria-modal=\"false\" aria-label=\"画像編集設定\">\r\n      <header><h2>画像編集設定</h2><button type=\"button\" aria-label=\"画像編集設定を閉じる\" onClick={() => setSettingsOpen(false)}>×</button></header>\r\n      <div className=\"annotation-editor__settings-fields\">\r\n        <label>通常の変化量<input type=\"number\" min=\"1\" max=\"90\" value={editorSettings.normalWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, normalWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>\r\n        <label>高速時の変化量<input type=\"number\" min=\"1\" max=\"180\" value={editorSettings.fastWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>\r\n        <label>連続判定時間 (ms)<input type=\"number\" min=\"1\" max=\"2000\" value={editorSettings.fastWheelWindowMs} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelWindowMs: Math.max(1, Number(event.target.value)) }))} /></label>\r\n      </div>\r\n      <p>最初の2回は通常の変化量、設定時間内に3回以上続けると高速時の変化量を使います。</p>\r\n      <dl>\r\n        <dt>ホイール</dt><dd>高さを変更</dd>\r\n        <dt>Shift+ホイール</dt><dd>幅を変更</dd>\r\n        <dt>Alt+ホイール</dt><dd>選択中のスタンプを回転</dd>\r\n        <dt>Ctrl+クロップ</dt><dd>上下または左右を対称に変更</dd>\r\n      </dl>\r\n      <footer><button type=\"button\" onClick={() => {\r\n        setEditorSettings(saveImageEditorSettings(editorSettings));\r\n        wheelSequenceRef.current = { count: 0, lastTimestamp: null };\r\n        setSettingsOpen(false);\r\n      }}>設定を保存</button></footer>\r\n    </section>}} {{contextMenu && <div\r\n      ref={contextMenuRef}\r\n      className=\"annotation-editor__context-menu\"\r\n      role=\"menu\"\r\n      style={{ left: contextMenu.clientX, top: contextMenu.clientY }}\r\n      onContextMenu={(event) => event.preventDefault()}\r\n    >\r\n      <button type=\"button\" role=\"menuitem\" disabled={!contextMenu.targetId} onClick={copyContextTarget}>コピー</button>\r\n      <button type=\"button\" role=\"menuitem\" disabled={!contextMenu.targetId} onClick={cutContextTarget}>切り取り</button>\r\n      <button type=\"button\" role=\"menuitem\" disabled={!clipboard} onClick={pasteContextTarget}>貼り付け</button>\r\n      <div role=\"separator\" />\r\n      <button type=\"button\" role=\"menuitem\" className=\"is-danger\" disabled={!contextMenu.targetId} onClick={() => {\r\n        if (contextMenu.targetId) {\r\n          recordEdit();\r\n          dispatch({ type: \"delete\", id: contextMenu.targetId });\r\n        }\r\n        setContextMenu(null);\r\n      }}>削除</button>\r\n    </div>}} {{externalConflict && <div className=\"annotation-editor__conflict\" role=\"alert\">\r\n      <p>編集中に画像が外部で変更されました。</p>\r\n      {onReload && <button type=\"button\" disabled={saving} onClick={() => { if(window.confirm(\"編集内容を破棄して最新画像を読み直しますか？\")) void onReload().catch(error => onError(String(error))); }}>最新画像を読み直す</button>}\r\n      <button type=\"button\" disabled={saving} onClick={() => void apply(true)}>編集結果を別名保存</button>\r\n      <p>元画像への上書きは停止しています。別名保存後も編集内容を保持します。</p>\r\n    </div>}}",
+      "labelExpression": "{{settingsOpen && <section className=\"annotation-editor__settings\" role=\"dialog\" aria-modal=\"false\" aria-label=\"画像編集設定\">\r\n      <header><h2>画像編集設定</h2><button type=\"button\" aria-label=\"画像編集設定を閉じる\" onClick={() => setSettingsOpen(false)}>×</button></header>\r\n      <div className=\"annotation-editor__settings-fields\">\r\n        <label>通常の変化量<input type=\"number\" min=\"1\" max=\"90\" value={editorSettings.normalWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, normalWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>\r\n        <label>高速時の変化量<input type=\"number\" min=\"1\" max=\"180\" value={editorSettings.fastWheelStep} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelStep: Math.max(1, Number(event.target.value)) }))} /></label>\r\n        <label>連続判定時間 (ms)<input type=\"number\" min=\"1\" max=\"2000\" value={editorSettings.fastWheelWindowMs} onChange={(event) => setEditorSettings((current) => ({ ...current, fastWheelWindowMs: Math.max(1, Number(event.target.value)) }))} /></label>\r\n      </div>\r\n      <p>最初の2回は通常の変化量、設定時間内に3回以上続けると高速時の変化量を使います。</p>\r\n      <dl>\r\n        <dt>ホイール</dt><dd>高さを変更</dd>\r\n        <dt>Shift+ホイール</dt><dd>幅を変更</dd>\r\n        <dt>Alt+ホイール</dt><dd>選択中のスタンプを回転</dd>\r\n        <dt>Ctrl+クロップ</dt><dd>上下または左右を対称に変更</dd>\r\n      </dl>\r\n      <footer><button type=\"button\" onClick={() => {\r\n        setEditorSettings(saveImageEditorSettings(editorSettings));\r\n        wheelSequenceRef.current = { count: 0, lastTimestamp: null };\r\n        setSettingsOpen(false);\r\n      }}>設定を保存</button></footer>\r\n    </section>}} {{contextMenu && <div\r\n      ref={contextMenuRef}\r\n      className=\"annotation-editor__context-menu\"\r\n      role=\"menu\"\r\n      style={{ left: contextMenu.clientX, top: contextMenu.clientY }}\r\n      onContextMenu={(event) => event.preventDefault()}\r\n    >\r\n      <button type=\"button\" role=\"menuitem\" disabled={!contextMenu.targetId} onClick={copyContextTarget}>コピー</button>\r\n      <button type=\"button\" role=\"menuitem\" disabled={!contextMenu.targetId} onClick={cutContextTarget}>切り取り</button>\r\n      <button type=\"button\" role=\"menuitem\" disabled={!clipboard} onClick={pasteContextTarget}>貼り付け</button>\r\n      <div role=\"separator\" />\r\n      <button type=\"button\" role=\"menuitem\" className=\"is-danger\" disabled={!contextMenu.targetId} onClick={() => {\r\n        if (contextMenu.targetId) {\r\n          recordEdit();\r\n          dispatch({ type: \"delete\", id: contextMenu.targetId });\r\n        }\r\n        setContextMenu(null);\r\n      }}>削除</button>\r\n    </div>}} {{externalConflict && <div className=\"annotation-editor__conflict\" role=\"alert\">\r\n      <p>編集中に画像が外部で変更されました。</p>\r\n      {onReload && <button type=\"button\" disabled={saving || confirming} onClick={() => void discardAfterConfirmation(\"編集内容を破棄して最新画像を読み直しますか？\", onReload)}>最新画像を読み直す</button>}\n      <button type=\"button\" disabled={saving || confirming} onClick={() => void apply(true)}>編集結果を別名保存</button>\n      <p>元画像への上書きは停止しています。別名保存後も編集内容を保持します。</p>\r\n    </div>}}",
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 817,
+        "sourceLine": 852,
         "sourceColumn": 10,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 817,
+        "line": 852,
         "column": 10
       },
       "interactions": [],
-      "signature": "sha256:dd4bd7509c7ed79fea946347533ec4a2cb7fa6f9cff93b68b8fec2b941f584be",
+      "signature": "sha256:2a523524ac545f69c3ed979b437d6bea768c8bdb40c6effa72a30c03db5ec1cf",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -31450,20 +31450,20 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 825,
+        "sourceLine": 860,
         "sourceColumn": 9,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 825,
+        "line": 860,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:db7bac3284433ddc41a7f19b144254801cebf4adefcb16872a482ffd7ba40634",
+      "signature": "sha256:d3aea48f1146a5c7a702ed662294c5564dfcc795237c1351b9d0fbe5913a4497",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -31501,20 +31501,20 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 826,
+        "sourceLine": 861,
         "sourceColumn": 9,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 826,
+        "line": 861,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:56797593c676199dfcdceea5f0306fa5476b579da32b403bb2a54c104f893a72",
+      "signature": "sha256:0100258c091bdfa604956cbe75545e5711e6dd784d2b5deb3bf1e969def57225",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -34193,20 +34193,20 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1165,
+        "sourceLine": 1200,
         "sourceColumn": 20,
         "ordinal": 60
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1165,
+        "line": 1200,
         "column": 20
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:f2bf26daf5da0bc0e1f894ac70f558df15f9d62f187d7c091011ffc5943c3f42",
+      "signature": "sha256:0f545596144854149d45969b10611e09541b4bb4400802024ced736824636139",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -34244,20 +34244,20 @@
       "orderScope": {
         "component": "ImageAnnotationEditor",
         "sourceFile": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "sourceLine": 1166,
+        "sourceLine": 1201,
         "sourceColumn": 7,
         "ordinal": 61
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/ImageAnnotationEditor.tsx",
-        "line": 1166,
+        "line": 1201,
         "column": 7
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:666b8e38b3c5cc385507ff7ab56e4d255b0832a615226057399bb8c495c366de",
+      "signature": "sha256:bde91cd9165ca611cc0b5246f10f2ab6eecb06985927b28f1a1434551fc800d0",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -39406,20 +39406,20 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 101,
+        "sourceLine": 134,
         "sourceColumn": 9,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 101,
+        "line": 134,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:26296812d72ce71ef50caf5357e3d003ce140e0a2cba1d154b440bc0f266ccfb",
+      "signature": "sha256:ab881cabf714fe5f67c478b6ba4a9504763e6ba1133c800351afa01727b2a4af",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -39458,20 +39458,20 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 102,
+        "sourceLine": 135,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 102,
+        "line": 135,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:f8350fa36cd9d966c602393fa6331bbc9eba61b7d8b9af290a7835b47083eefb",
+      "signature": "sha256:c8c7a13bd2d0ebfc34c3b03d8d6381ef018474d4598729cf20aed5e99638e0cd",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -39510,20 +39510,20 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 105,
+        "sourceLine": 138,
         "sourceColumn": 22,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 105,
+        "line": 138,
         "column": 22
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:91be57eaa2278f0a0f4cfc8170987236963cdfc3191f462c29d426ae0469d90c",
+      "signature": "sha256:11c644f4b9c90a128b1196b9e76050f457febb1c09c2138da5cc5ebd1d2f0625",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -39562,20 +39562,20 @@
       "orderScope": {
         "component": "RasterEditor2",
         "sourceFile": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "sourceLine": 106,
+        "sourceLine": 139,
         "sourceColumn": 9,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/components/RasterEditor2.tsx",
-        "line": 106,
+        "line": 139,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:efee7d2b5a2754e7b548557ba0a3b67da9368cd6c6689a4fa2415754681fde55",
+      "signature": "sha256:d58984a187ccd04fd5ef32fc411eb59a3caf1e2219715e075cc1199cf9a35ecf",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43282,21 +43282,21 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 114,
+        "sourceLine": 131,
         "sourceColumn": 18,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 114,
+        "line": 131,
         "column": 18
       },
       "interactions": [
         "onChange",
         "onKeyDown"
       ],
-      "signature": "sha256:8d63389a193b840d3aaa99c60159649da2ee552a8029f2b5f583eec754a49aed",
+      "signature": "sha256:6305bade9e1c22918a249caa3e3ad486fbf4eeb360945423c9ca774c3432e77f",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43334,20 +43334,20 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 115,
+        "sourceLine": 132,
         "sourceColumn": 7,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 115,
+        "line": 132,
         "column": 7
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:dadacf3bee81c061195e1eecfb896dac2e2174b4c76eb2b2d5e2a375edc5594e",
+      "signature": "sha256:48a4f92e3ead5e9ebb546990b2f12eb11bd93f157d2b1bc8994849574ced7054",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -43385,20 +43385,20 @@
       "orderScope": {
         "component": "CodexImageEdit",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "sourceLine": 117,
+        "sourceLine": 134,
         "sourceColumn": 9,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexImageEdit.tsx",
-        "line": 117,
+        "line": 134,
         "column": 9
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:fd6d28d07714ad10d1b4cdf2369df3fb7b9e6fba135084c725832cecdafbebbe",
+      "signature": "sha256:aaa62b0ec960358fad09438731ad75c70492a94bb3c76479317ee4d11da3f81b",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -44652,20 +44652,20 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 632,
+        "sourceLine": 692,
         "sourceColumn": 31,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 632,
+        "line": 692,
         "column": 31
       },
       "interactions": [
         "onChange"
       ],
-      "signature": "sha256:0ef12472dd420b36438af4c27324bcb660b261a120802547c80e3aa48341f04b",
+      "signature": "sha256:963eb785dba7512491300ab10109c7347040d767229e68c81e82055fab277191",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -44844,26 +44844,26 @@
       "controlKind": "button",
       "tag": "aside",
       "role": null,
-      "displayName": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\r\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\r\n        const snapshot = getSnapshot();\r\n        const targets = textTargets(item.draft);\r\n        replaceConversation(documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\r\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
+      "displayName": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\r\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\r\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\r\n        const snapshot = getSnapshot();\r\n        const targets = textTargets(item.draft);\r\n        replaceConversation(documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\r\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
+      "labelExpression": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\r\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={(days) => { void setCodexSessionRetention(days).then((store) => { setSessions(store.sessions); setRetention(store.retentionDays); void listCodexLogs().then(setLogs).catch(() => {}); const cutoff = Date.now() - days * 86400000; if (days === 0 || Date.parse(conversationRef.current.updatedAt) < cutoff) replaceConversation(fresh(current?.documentId ?? \"\", documentPath, documentName)); }).catch((cause) => setError(String(cause))); }}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 633,
+        "sourceLine": 686,
         "sourceColumn": 12,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 633,
+        "line": 686,
         "column": 12
       },
       "interactions": [
         "onKeyDown"
       ],
-      "signature": "sha256:fb095b26d5318acab4d36a93ed09f79ce662ec8ea6fbf227a153656e2eb49b9c",
+      "signature": "sha256:9b894ce4f3dbccb5865e0265b9eb2a29e299b37fff97354934358ba5ff949eb6",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -45005,20 +45005,20 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 643,
+        "sourceLine": 703,
         "sourceColumn": 389,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 643,
+        "line": 703,
         "column": 389
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:0d168f329d783ba5874b4ea97a77cee2efeb8115379c0dec99e1c7b969fe7ef9",
+      "signature": "sha256:3d5827bcd9a09dbb9a8866f25d5ab17bbc73cbf67f28b22988532acdcdbed0e7",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -45056,20 +45056,20 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 643,
-        "sourceColumn": 465,
+        "sourceLine": 703,
+        "sourceColumn": 483,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 643,
-        "column": 465
+        "line": 703,
+        "column": 483
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:40b4c9713f13fde7e23c23d32b44e1b68e6aabf929b5b82b612924432c187e3d",
+      "signature": "sha256:485d0f39a28731e77cd0d5426cf4f073a554357b7dec73e9a730cf53cb9a9883",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46167,20 +46167,20 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 686,
+        "sourceLine": 746,
         "sourceColumn": 13,
         "ordinal": 31
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 686,
+        "line": 746,
         "column": 13
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:2de629c2b112073ee626aaec1aac9f91b1217d6234f4159ad449d6661e061dcc",
+      "signature": "sha256:2ce34d0ad623fb63b9bb4da41552a0a2e2c32999665f215736f2eb392b2b2beb",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46218,20 +46218,20 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 686,
-        "sourceColumn": 91,
+        "sourceLine": 746,
+        "sourceColumn": 101,
         "ordinal": 32
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 686,
-        "column": 91
+        "line": 746,
+        "column": 101
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:ede4ce3b4c49c04831e842eb732c6cddc442d60a2dad69373f6795e9cc362832",
+      "signature": "sha256:bd44a0dfc477916396ba5ce539f731fbffde39ee3ea9ed2577ac2d77120a2e9b",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46372,20 +46372,20 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 690,
+        "sourceLine": 750,
         "sourceColumn": 13,
         "ordinal": 35
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 690,
+        "line": 750,
         "column": 13
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:faa64bef006f8c821a8ed1ab12b491b763dcf6da300540f2690f323baa934ead",
+      "signature": "sha256:5e826b3cdc4aa79bb9e3904c113b78e17aafaf345f8ff0e2e4a9921572520e6c",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46417,26 +46417,26 @@
       "controlKind": "input",
       "tag": "input",
       "role": null,
-      "displayName": "{{selected?.imageSource && <button type=\"button\" disabled={busy || preparingImage} onClick={() => void addSelectedImage()}>現在の画像を追加</button>}}",
+      "displayName": "{{selected?.imageSource && <button type=\"button\" disabled={!ready || busy || preparingImage} onClick={() => void addSelectedImage()}>現在の画像を追加</button>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{selected?.imageSource && <button type=\"button\" disabled={busy || preparingImage} onClick={() => void addSelectedImage()}>現在の画像を追加</button>}}",
+      "labelExpression": "{{selected?.imageSource && <button type=\"button\" disabled={!ready || busy || preparingImage} onClick={() => void addSelectedImage()}>現在の画像を追加</button>}}",
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 691,
+        "sourceLine": 751,
         "sourceColumn": 13,
         "ordinal": 36
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 691,
+        "line": 751,
         "column": 13
       },
       "interactions": [
         "onChange"
       ],
-      "signature": "sha256:013a298a693562e68d970f2ef39407a408388abc3fca722414455d7a9107fc20",
+      "signature": "sha256:b4b3d4e0f59bcdba76dba8f7559f78bbc1dabbb9ad65d890abc958952eef2d59",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46474,20 +46474,20 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 692,
+        "sourceLine": 752,
         "sourceColumn": 39,
         "ordinal": 37
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 692,
+        "line": 752,
         "column": 39
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:299293e5c1883d8d5fbb901ed667e5430e5876e143278ea82868bd0fe5e7d4d8",
+      "signature": "sha256:345b90873c2e9c78837b23b00d5f9ca34621982a351975883251c3d10ec54e7f",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",

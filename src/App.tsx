@@ -32,7 +32,7 @@ import { CodexPanel } from "./features/codex/CodexPanel";
 import { resolveOperationTarget, type CodexTarget } from "./features/codex/scope";
 import { DiagnosticsPanel, type DiagnosticItem } from "./components/DiagnosticsPanel";
 import { DocumentDiffWorkspace, type DocumentDiffTarget, type DiffSaveReview } from "./components/DocumentDiffWorkspace";
-import type { MarkdownEditorHandle } from "./components/MarkdownEditor";
+import type { MarkdownEditorHandle, MarkdownEditorHistoryStore } from "./components/MarkdownEditor";
 import { useCropEditor, type ImageEditTarget } from "./hooks/useCropEditor";
 import type { ImageSize } from "./hooks/useInlineImageResize";
 import { useSearch } from "./hooks/useSearch";
@@ -42,7 +42,7 @@ import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
 import { createMarkdown, deleteDocumentAsset, diagnoseDocument, discardStagedAssets, documentWatchTargets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameDocument, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
 import { ToastState, type MarkdownLoadResult, type StagedDocumentAsset } from "./types/app";
-import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode, type TabsAction } from "./state/tabsReducer";
+import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode, type TabsAction, type TabState } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
@@ -191,19 +191,47 @@ export function applicationWindowTitle(tab: { kind?: "document" | "settings"; pa
 
 export async function handleWindowCloseRequest(
   hasUnsavedChanges: boolean,
-  confirmDiscard: (message?: string) => boolean,
+  confirmDiscard: (message?: string) => boolean | Promise<boolean>,
   event: { preventDefault: () => void },
   destroyWindow: () => Promise<void>,
+  isCurrent: () => boolean = () => true,
 ) {
   event.preventDefault();
-  if (hasUnsavedChanges && !confirmDiscard("未保存の編集内容があります。破棄してアプリを終了しますか？")) return;
+  if (hasUnsavedChanges && await confirmDiscard("未保存の編集内容があります。破棄してアプリを終了しますか？") !== true) return;
+  if (!isCurrent()) return;
   await destroyWindow();
+}
+
+/** 非同期確認が対象にした本文・保存世代を比較する。focusやscrollだけの変更は許容する。 */
+export function unchangedTabForAction(before: TabState, current: TabState | undefined): boolean {
+  return Boolean(current && current.id === before.id && current.path === before.path
+    && current.generation === before.generation && current.changeSequence === before.changeSequence
+    && current.draft === before.draft && current.dirty === before.dirty && current.saving === before.saving
+    && current.loading === before.loading && current.pendingAssets === before.pendingAssets
+    && current.document?.revision === before.document?.revision);
+}
+
+export async function confirmUnchangedTabAction(
+  before: TabState,
+  getCurrent: () => TabState | undefined,
+  message: string,
+  confirmAction: (message?: string) => boolean | Promise<boolean>,
+): Promise<boolean> {
+  // Tauriのwindow.confirmはPromiseを返す。truthy判定では取消でも破棄してしまう。
+  if (await confirmAction(message) !== true) return false;
+  return unchangedTabForAction(before, getCurrent());
+}
+
+export async function closeTabsSequentially(ids: readonly string[], close: (id: string) => Promise<boolean>): Promise<boolean> {
+  for (const id of ids) if (!await close(id)) return false;
+  return true;
 }
 
 export function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markdownRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
+  const editorHistoriesRef = useRef<MarkdownEditorHistoryStore>(new Map());
   const [codexOpen, setCodexOpen] = useState(false);
   const [codexMaximized, setCodexMaximized] = useState(false);
   const [codexTarget, setCodexTarget] = useState<CodexTarget | null>(null);
@@ -271,11 +299,14 @@ export function App() {
   const diffReviewRef = useRef<DiffSaveReview | null>(null);
   const storageConversionPromptedRef = useRef(new Set<string>());
   const updateDiffReview = useCallback((review: DiffSaveReview | null) => { diffReviewRef.current = review; }, []);
-  const confirmStorageConversion = useCallback((context: { documentPath: string; occurrence: { start: number }; storage: "embedded" | "external" }) => {
+  const confirmStorageConversion = useCallback(async (context: { documentPath: string; occurrence: { start: number }; storage: "embedded" | "external" }) => {
+    const tab = tabsStateRef.current.tabs.find(candidate => localPathIdentity(candidate.document?.path ?? candidate.path) === localPathIdentity(context.documentPath));
+    if (!tab || tab.saving) return false;
     const key = `${localPathIdentity(context.documentPath)}:${context.occurrence.start}`;
     if (storageConversionPromptedRef.current.has(key)) return true;
     const direction = context.storage === "embedded" ? "埋め込みデータを外部ファイルへ切り替えます" : "外部ファイルをMarkdownへ埋め込みます";
-    if (!window.confirm(`${direction}。未保存の対象は下書きに反映し、保存済みの対象は即時保存します。続行しますか？`)) return false;
+    if (!await confirmUnchangedTabAction(tab, () => tabsStateRef.current.tabs.find(candidate => candidate.id === tab.id),
+      `${direction}。未保存の対象は下書きに反映し、保存済みの対象は即時保存します。続行しますか？`, message => window.confirm(message))) return false;
     storageConversionPromptedRef.current.add(key);
     return true;
   }, []);
@@ -358,6 +389,11 @@ export function App() {
   const [splitDirection, setSplitDirection] = useState<SplitDirection>("auto");
   const visualEditing = interactionMode === "edit";
   const [tabsState, reactDispatch] = useReducer(tabsReducer, initialTabsState);
+  const editorHistoryKeys = tabsState.tabs.filter(tab => tab.kind !== "settings").map(tab => `${tab.id}:${tab.editorResetSequence ?? 0}`).join("\0");
+  useEffect(() => {
+    const alive = new Set(editorHistoryKeys.split("\0"));
+    for (const key of editorHistoriesRef.current.keys()) if (!alive.has(key)) editorHistoriesRef.current.delete(key);
+  }, [editorHistoryKeys]);
   const tabsStateRef = useRef(tabsState);
   tabsStateRef.current = tabsState;
   const dispatch = useCallback((action: TabsAction) => {
@@ -446,17 +482,28 @@ export function App() {
   }, [mediaPreview, tabsState, windowLabel]);
 
   useEffect(() => {
-    const hasUnsavedChanges = () => tabsStateRef.current.tabs.some((tab) => tab.dirty);
+    let confirmingClose = false;
     let unlisten: (() => void) | undefined;
     let disposed = false;
     const appWindow = getCurrentWindow();
     void appWindow.onCloseRequested((event) => {
+      if (confirmingClose) { event.preventDefault(); return; }
+      const captured = tabsStateRef.current.tabs;
+      if (captured.some(tab => tab.saving)) {
+        event.preventDefault();
+        setToast({ id: crypto.randomUUID(), message: "保存中のため終了できません。保存完了後に再実行してください。", type: "info" });
+        return;
+      }
+      confirmingClose = true;
       void handleWindowCloseRequest(
-        hasUnsavedChanges(),
+        captured.some(tab => tab.dirty),
         (message) => window.confirm(message),
         event,
         () => appWindow.destroy(),
-      );
+        () => !disposed && captured.length === tabsStateRef.current.tabs.length
+          && captured.every(tab => unchangedTabForAction(tab, tabsStateRef.current.tabs.find(current => current.id === tab.id))),
+      ).catch(error => setToast({ id: crypto.randomUUID(), message: `終了の確認に失敗しました: ${String(error)}`, type: "error" }))
+        .finally(() => { confirmingClose = false; });
     }).then((dispose) => {
       if (disposed) dispose();
       else unlisten = dispose;
@@ -750,20 +797,30 @@ export function App() {
     return () => { document.removeEventListener("pointerdown", dismissOnOutsidePointer, true); window.removeEventListener("keydown", dismissOnEscape); };
   }, [contextTab]);
 
-  const reloadTab = useCallback((id: string, confirmDiscard = true) => {
+  const pendingDocumentActions = useRef(new Set<string>());
+  const reloadTab = useCallback(async (id: string, confirmDiscard = true) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
-    if (!tab) return false;
-    if (confirmDiscard && tab.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄して再読み込みしますか？`)) return false;
-    if (id === tabsStateRef.current.activeId && containerRef.current && markdownRef.current) {
-      const anchor = captureScrollAnchor(containerRef.current, markdownRef.current);
-      if (anchor) reloadAnchors.current[id] = anchor;
-    }
-    dispatch({ type: "RELOAD", id });
-    return true;
+    if (!tab || tab.saving || pendingDocumentActions.current.has(id)) return false;
+    pendingDocumentActions.current.add(id);
+    try {
+      if (confirmDiscard && tab.dirty && !await confirmUnchangedTabAction(tab,
+        () => tabsStateRef.current.tabs.find(candidate => candidate.id === id),
+        `${tab.path}\n\n未保存の編集内容を破棄して再読み込みしますか？`, message => window.confirm(message))) return false;
+      if (!unchangedTabForAction(tab, tabsStateRef.current.tabs.find(candidate => candidate.id === id))) return false;
+      if (id === tabsStateRef.current.activeId && containerRef.current && markdownRef.current) {
+        const anchor = captureScrollAnchor(containerRef.current, markdownRef.current);
+        if (anchor) reloadAnchors.current[id] = anchor;
+      }
+      dispatch({ type: "RELOAD", id });
+      return true;
+    } catch (error) {
+      setToast({ id: crypto.randomUUID(), message: `再読み込みの確認に失敗しました: ${String(error)}`, type: "error" });
+      return false;
+    } finally { pendingDocumentActions.current.delete(id); }
   }, []);
 
   const reload = useCallback(() => {
-    if (activeTab?.document && !activeTab.untitled) reloadTab(activeTab.id);
+    if (activeTab?.document && !activeTab.untitled) void reloadTab(activeTab.id);
   }, [activeTab, reloadTab]);
 
   const openDocument = useCallback(async () => {
@@ -1533,7 +1590,7 @@ export function App() {
     }
     const currentName = getFileName(tab.path);
     const requestedName = window.prompt("新しいファイル名を入力してください", currentName)?.trim();
-    if (!requestedName || requestedName === currentName) return;
+    if (!requestedName || requestedName === currentName) return false;
     if (/[\\/]/.test(requestedName) || requestedName === "." || requestedName === "..") {
       throw new Error("ファイル名にフォルダー区切りを含めることはできません。");
     }
@@ -1543,16 +1600,27 @@ export function App() {
       throw new Error("同じファイルを別のタブですでに開いています。");
     }
     let overwrite = false;
+    let existing: MarkdownLoadResult | null = null;
     try {
-      const existing = await loadMarkdown(targetPath);
-      if (existing.content !== tab.document.content && !window.confirm(`ファイルがすでに存在します: ${targetPath}\n\n上書きして名前を変更しますか？`)) return;
-      overwrite = true;
+      existing = await loadMarkdown(targetPath);
     } catch {
       // 対象が存在しない場合は通常の名前変更を続行する。
+    }
+    if (existing) {
+      if (existing.content !== tab.document.content && !await confirmUnchangedTabAction(tab,
+        () => tabsStateRef.current.tabs.find(candidate => candidate.id === id),
+        `ファイルがすでに存在します: ${targetPath}\n\n上書きして名前を変更しますか？`, message => window.confirm(message))) return false;
+      overwrite = true;
+    }
+    // 読込・確認中に入力／保存／別名保存された対象へ古い改名要求を適用しない。
+    if (!unchangedTabForAction(tab, tabsStateRef.current.tabs.find(candidate => candidate.id === id))) return false;
+    if (tabsStateRef.current.tabs.some(candidate => candidate.id !== id && documentSourceIdentity(candidate.path) === documentSourceIdentity(targetPath))) {
+      throw new Error("同じファイルを別のタブですでに開いています。");
     }
     const document = await renameDocument({ sourcePath: tab.path, targetPath, overwrite });
     dispatch({ type: "RENAMED", id, document });
     setToast({ id: crypto.randomUUID(), message: `${currentName} を ${getFileName(document.path)} に変更しました`, type: "success" });
+    return true;
   }, []);
 
   const renamePreviewImage = useCallback(async (context: ImageEditContext, filename: string) => {
@@ -1635,19 +1703,34 @@ export function App() {
     dispatch({ type: "OPEN_SETTINGS" });
   }, [recordNavigationPoint]);
 
-  const closeTab = useCallback((id: string) => {
+  const closeTab = useCallback(async (id: string) => {
     const tab = tabsStateRef.current.tabs.find((candidate) => candidate.id === id);
-    if (tab?.dirty && !window.confirm(`${tab.path}\n\n未保存の編集内容を破棄してタブを閉じますか？`)) return false;
-    if (tab?.pendingAssets?.length) void discardStagedAssets(tab.pendingAssets.map((asset) => asset.id));
-    if (tab && tab.kind !== "settings" && !tab.untitled) setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
-    dispatch({ type: "CLOSE", id });
-    return true;
+    if (!tab || tab.saving || pendingDocumentActions.current.has(id)) return false;
+    pendingDocumentActions.current.add(id);
+    try {
+      if (tab.dirty && !await confirmUnchangedTabAction(tab,
+        () => tabsStateRef.current.tabs.find(candidate => candidate.id === id),
+        `${tab.path}\n\n未保存の編集内容を破棄してタブを閉じますか？`, message => window.confirm(message))) return false;
+      if (!unchangedTabForAction(tab, tabsStateRef.current.tabs.find(candidate => candidate.id === id))) return false;
+      if (tab.pendingAssets?.length) void discardStagedAssets(tab.pendingAssets.map((asset) => asset.id));
+      if (tab.kind !== "settings" && !tab.untitled) setClosedTabs((previous) => [{ path: tab.path, scrollTop: tab.scrollTop, searchOpen: tab.searchOpen, imageDisplaySizes: tab.imageDisplaySizes, search: tab.search }, ...previous].slice(0, 50));
+      dispatch({ type: "CLOSE", id });
+      return true;
+    } catch (error) {
+      setToast({ id: crypto.randomUUID(), message: `タブを閉じる確認に失敗しました: ${String(error)}`, type: "error" });
+      return false;
+    } finally { pendingDocumentActions.current.delete(id); }
   }, []);
+
+  const closeTabs = useCallback(async (ids: readonly string[]) => {
+    // 取消時点で中止する。native dialogをforEachで同時に開かない。
+    return closeTabsSequentially(ids, closeTab);
+  }, [closeTab]);
 
   const closeActiveTab = useCallback(() => {
     if (!activeTab) return;
     if (tabsState.tabs.length === 1) void getCurrentWindow().close();
-    else closeTab(activeTab.id);
+    else void closeTab(activeTab.id);
   }, [activeTab, closeTab, tabsState.tabs.length]);
 
   const activateRelativeTab = useCallback((delta: number) => {
@@ -1812,7 +1895,7 @@ export function App() {
   }, []);
 
   const convertDocumentAsset = useCallback(async (context: AssetConversionContext) => {
-    if (!confirmStorageConversion(context)) return;
+    if (!await confirmStorageConversion(context)) return;
     const prepared = await prepareStorageConversion(context.documentPath);
     if (!prepared) return;
     const { tab, latest } = prepared;
@@ -1821,14 +1904,15 @@ export function App() {
       let extension: string;
       let base64: string | undefined;
       let text: string | undefined;
+      let mediaType: string | undefined;
       if (context.assetKind === "raster" && latestOccurrence.kind === "image") {
         const parsed = parseRasterDataUri(latestOccurrence.source);
         if (!parsed) throw new Error("未対応のBase64ラスタ画像です。");
-        ({ extension, base64 } = parsed);
+        ({ extension, base64, mediaType } = parsed);
       } else if (context.assetKind === "svg" && latestOccurrence.kind === "inline-svg") {
         extension = "svg"; text = sanitizeSvgXml(latestOccurrence.svg);
       } else throw new Error("この埋め込み形式は外部ファイルへ変換できません。");
-      const staged = await stageStorageAsset({ documentPath: tab.document.path, preferredFilename: preferredAssetFilename(context, extension), base64, text });
+      const staged = await stageStorageAsset({ documentPath: tab.document.path, preferredFilename: preferredAssetFilename(context, extension), base64, text, mediaType });
       const replacement = latestOccurrence.kind === "image"
         ? imageOccurrenceWithSource(latestOccurrence, staged.filename)
         : `![SVG](${staged.filename})`;
@@ -1847,10 +1931,9 @@ export function App() {
     const loaded = await readConversionAsset(tab.document.path, latestOccurrence.source);
     let replacement: string;
     if (context.assetKind === "raster") {
-      const mediaType = loaded.mediaType;
-      const base64 = loaded.base64;
-      if (!mediaType || !base64) throw new Error("ラスタ画像データを読み込めませんでした。");
-      replacement = imageOccurrenceWithSource(latestOccurrence, `data:${mediaType};base64,${base64}`);
+      const parsed = loaded.base64 ? parseRasterDataUri(`data:${loaded.mediaType};base64,${loaded.base64}`) : null;
+      if (!parsed) throw new Error("ラスタ画像データを読み込めませんでした。");
+      replacement = imageOccurrenceWithSource(latestOccurrence, `data:${parsed.mediaType};base64,${parsed.base64}`);
     } else {
       const text = loaded.text;
       if (!text) throw new Error("SVG XMLを読み込めませんでした。");
@@ -2081,7 +2164,7 @@ export function App() {
   }, []);
 
   const convertDrawioStorage = useCallback(async (context: DrawioStorageConversionContext) => {
-    if (!confirmStorageConversion(context)) return false;
+    if (!await confirmStorageConversion(context)) return false;
     const prepared = await prepareStorageConversion(context.documentPath);
     if (!prepared) return false;
     const { tab, latest } = prepared;
@@ -2145,7 +2228,7 @@ export function App() {
   }, [confirmStorageConversion, deleteConvertedExternalAsset, embeddedPathStyle, persistImmediateOccurrence, stageConversionAsset, prepareStorageConversion, readConversionAsset]);
 
   const convertMermaidStorage = useCallback(async (context: MermaidStorageConversionContext) => {
-    if (!confirmStorageConversion(context)) return false;
+    if (!await confirmStorageConversion(context)) return false;
     const prepared = await prepareStorageConversion(context.documentPath);
     if (!prepared) return false;
     const { tab, latest } = prepared;
@@ -2209,7 +2292,7 @@ export function App() {
   }, [confirmStorageConversion, deleteConvertedExternalAsset, embeddedPathStyle, persistImmediateOccurrence, stageConversionAsset, prepareStorageConversion, readConversionAsset]);
 
   const convertTableStorage = useCallback(async (context: TableStorageConversionContext) => {
-    if (!confirmStorageConversion(context)) return false;
+    if (!await confirmStorageConversion(context)) return false;
     const prepared = await prepareStorageConversion(context.documentPath);
     if (!prepared) return false;
     const { tab, latest } = prepared;
@@ -2266,7 +2349,7 @@ export function App() {
   }, [confirmStorageConversion, deleteConvertedExternalAsset, embeddedPathStyle, persistImmediateOccurrence, stageConversionAsset, prepareStorageConversion, readConversionAsset]);
 
   const convertTextStorage = useCallback(async (context: TextStorageConversionContext) => {
-    if (!confirmStorageConversion(context)) return false;
+    if (!await confirmStorageConversion(context)) return false;
     const prepared = await prepareStorageConversion(context.documentPath);
     if (!prepared) return false;
     const { tab, latest } = prepared;
@@ -2560,12 +2643,15 @@ export function App() {
         <MarkdownEditor
           documentPath={activeTab.document.path}
           baseDir={activeTab.document.base_dir}
+          stagedAssetPreviews={Object.fromEntries((activeTab.pendingAssets ?? []).flatMap((asset) => asset.previewSource ? [[asset.filename, asset.previewSource]] : []))}
           onTargetStorageConvert={!printing && !activeTab.saving ? convertOperationTarget : undefined}
           hidden={editorMode === "preview"}
           onCodexConsult={!printing && !activeTab.saving ? (target) => { setCodexTarget(target); setCodexOpen(true); } : undefined}
           ref={editorRef}
           documentId={`${activeTab.id}:${activeTab.generation}`}
           viewStateKey={activeTab.path}
+          historyKey={`${activeTab.id}:${activeTab.editorResetSequence ?? 0}`}
+          historyStore={editorHistoriesRef.current}
           codeBlockFoldMinLines={codeBlockFoldMinLines}
           value={activeTab.draft}
           dirty={activeTab.dirty}
@@ -2988,8 +3074,8 @@ export function App() {
         const tab = tabsState.tabs.find((candidate) => candidate.id === contextTab.id);
         if (!tab) return null;
         const index = tabsState.tabs.indexOf(tab);
-        const close = (id: string) => { closeTab(id); setContextTab(null); };
-        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close(tab.id)} onCloseOthers={() => { tabsState.tabs.filter((candidate) => candidate.id !== tab.id).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onCloseRight={() => { tabsState.tabs.slice(index + 1).forEach((candidate) => closeTab(candidate.id)); setContextTab(null); }} onRename={() => renameTab(tab.id)} onNewWindow={tab.untitled ? undefined : () => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
+        const close = (ids: string[]) => { setContextTab(null); return closeTabs(ids); };
+        return <ContextMenu tab={tab} x={contextTab.x} y={contextTab.y} onDismiss={() => setContextTab(null)} onClose={() => close([tab.id])} onCloseOthers={() => close(tabsState.tabs.filter(candidate => candidate.id !== tab.id).map(candidate => candidate.id))} onCloseRight={() => close(tabsState.tabs.slice(index + 1).map(candidate => candidate.id))} onRename={() => renameTab(tab.id)} onNewWindow={tab.untitled ? undefined : () => openInNewWindow(tab.path)} onResult={(message) => setToast({ id: String(Date.now()), message, type: "success" })} onError={(message) => setToast({ id: String(Date.now()), message, type: "error" })} />;
       })()}
       {previewContext && <PreviewContextMenu
         x={previewContext.x}

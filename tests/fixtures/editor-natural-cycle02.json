@@ -1,0 +1,18 @@
+{
+  "pngBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jf9kAAAAASUVORK5CYII=",
+  "E01": "前 target 後",
+  "E02": "alpha\nbeta\ngamma",
+  "E03": "- parent\n  - child\n- sibling",
+  "E04": "```typescript\nconst original = 1;\n```\nafter",
+  "E05": "前\n置換対象\n後",
+  "E06": "前\n対象\n後",
+  "E07": { "a": "A\n対象\n末尾", "b": "B\n別文書\n末尾" },
+  "E08": "前\n対象1\n対象2\n\n別の段落",
+  "E09": "前 target 後",
+  "E10": "| A | B |\n| --- | --- |\n| one | two |\n\noutside",
+  "E11": { "a": "A\n対象\n末尾", "b": "B\n別文書\n末尾" },
+  "E12": { "a": "A\n対象\n末尾", "b": "B\n別文書\n末尾" },
+  "E13": { "a": "A\n対象\n末尾", "b": "B\n別文書\n末尾" },
+  "E14": { "a": "A\n対象\n末尾", "b": "B\n別文書\n末尾" },
+  "E15": { "a": "A\n対象\n末尾", "b": "B\n別文書\n末尾" }
+}

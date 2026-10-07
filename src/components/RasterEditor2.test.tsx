@@ -100,8 +100,8 @@ describe("RasterEditor2 integration", () => {
   });
   it("confirms cancel without writing anything", async () => {
     const t = await setup(); await t.emit({ type: "changed", dirty: true }); const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-    fireEvent.click(screen.getByRole("button", { name: "キャンセル" })); expect(t.p.onCancel).not.toHaveBeenCalled();
-    confirm.mockReturnValue(true); fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "キャンセル" })); }); expect(t.p.onCancel).not.toHaveBeenCalled();
+    confirm.mockReturnValue(true); await act(async () => { fireEvent.click(screen.getByRole("button", { name: "キャンセル" })); });
     expect(t.p.onCancel).toHaveBeenCalledOnce(); expect(saveRenderedImage).not.toHaveBeenCalled();
   });
   it("rejects non-PNG payloads and invalid signatures", () => {

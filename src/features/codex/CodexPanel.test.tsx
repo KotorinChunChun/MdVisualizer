@@ -207,7 +207,7 @@ describe("Codexパネル", () => {
         vi.mocked(generateCodex).mockImplementation(() => new Promise(done => { resolve = done; }));
         mount({ target: { ...snapshot, editMode: "question" } });
         await send("途中で止める");
-        expect(screen.getByRole("status")).toHaveTextContent("送信中");
+        expect(await screen.findByRole("status")).toHaveTextContent("送信中");
         fireEvent.click(screen.getByRole("button", { name: "停止" }));
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(screen.getByLabelText("指示")).toHaveValue("途中で止める");
@@ -217,7 +217,9 @@ describe("Codexパネル", () => {
     });
     it("テキストを取り込むと選択範囲だけを許可し、選択を解除すると全体へ戻す", async () => {
         const view = mount();
-        fireEvent.click(await screen.findByRole("button", { name: "選択テキストを追加" }));
+        const add = screen.getByRole("button", { name: "選択テキストを追加" });
+        await waitFor(() => expect(add).toBeEnabled());
+        fireEvent.click(add);
         expect(screen.getByLabelText("編集の許可")).toHaveValue("selection");
         view.setSnapshot({ ...snapshot, from: 0, to: 0 });
         fireEvent.click(screen.getByRole("button", { name: "選択テキストを追加" }));
@@ -308,7 +310,9 @@ describe("Codexパネル", () => {
     });
     it("履歴の保持日数を0日にしても履歴画面を開ける", async () => {
         mount();
-        fireEvent.click(await screen.findByRole("button", { name: /会話履歴/ }));
+        const history = screen.getByRole("button", { name: /会話履歴/ });
+        await waitFor(() => expect(history).toBeEnabled());
+        fireEvent.click(history);
         const input = await screen.findByLabelText("会話履歴の保持日数");
         fireEvent.change(input, { target: { value: "0" } });
         fireEvent.blur(input);

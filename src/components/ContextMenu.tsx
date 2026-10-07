@@ -5,18 +5,20 @@ import { isSharePointDocument, sharePointLibraryViewUrl } from "../lib/sharePoin
 import { stripWindowsExtendedPathPrefix } from "../lib/path";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
-export function ContextMenu({ tab, x, y, onClose, onCloseOthers, onCloseRight, onRename, onNewWindow, onResult, onError, onDismiss }: { tab: TabState; x: number; y: number; onClose: () => void; onCloseOthers: () => void; onCloseRight: () => void; onRename?: () => void | Promise<void>; onNewWindow?: () => void | Promise<void>; onResult: (message: string) => void; onError: (message: string) => void; onDismiss: () => void }) {
+type MenuOperation = () => void | boolean | Promise<void | boolean>;
+
+export function ContextMenu({ tab, x, y, onClose, onCloseOthers, onCloseRight, onRename, onNewWindow, onResult, onError, onDismiss }: { tab: TabState; x: number; y: number; onClose: MenuOperation; onCloseOthers: MenuOperation; onCloseRight: MenuOperation; onRename?: MenuOperation; onNewWindow?: MenuOperation; onResult: (message: string) => void; onError: (message: string) => void; onDismiss: () => void }) {
   const menuRef = useFocusTrap<HTMLDivElement>(true, onDismiss);
   useEffect(() => {
     const dismissOnBlur = () => onDismiss();
     window.addEventListener("blur", dismissOnBlur);
     return () => window.removeEventListener("blur", dismissOnBlur);
   }, [onDismiss]);
-  const run = (successMessage: string, operation: () => void | Promise<void>) => {
+  const run = (successMessage: string, operation: MenuOperation) => {
     onDismiss();
     void Promise.resolve()
       .then(operation)
-      .then(() => onResult(successMessage))
+      .then(result => { if (result !== false) onResult(successMessage); })
       .catch((error) => onError(String(error)));
   };
   const copy = (value: string, label: string) => run(`${label}をコピーしました`, () => navigator.clipboard.writeText(value));

@@ -66,9 +66,8 @@ const NUMBERED_LIST_MOVE_AUDIT_CASES: readonly AuditCase[] = [
 ];
 
 describe("番号付きリストAlt+上下移動の監査", () => {
-  // These are intentional expected failures: each case records a natural
-  // result that the current implementation does not yet produce.
-  it.fails.each(NUMBERED_LIST_MOVE_AUDIT_CASES)("$id: $description", ({ source, needle, direction, expected }) => {
+  // 監査時に発見した6件を、修正後の通常回帰として維持する。
+  it.each(NUMBERED_LIST_MOVE_AUDIT_CASES)("$id: $description", ({ source, needle, direction, expected }) => {
     const actual = apply(source, buildStructuredListMove(source, source.indexOf(needle), direction));
     expect(actual).toBe(expected);
   });

@@ -94,13 +94,13 @@ describe("CodexPanel の既定スキル入力", () => {
     expect(screen.queryByLabelText("指示")).not.toBeInTheDocument();
   });
 
-  it("add は保存済み会話を再開し、new は履歴を持ち込まない", async () => {
+  it("独立した図ダイアログのaddは保存済み会話を再開し、newは履歴を持ち込まない", async () => {
     const saved: CodexConversation = { id: "saved", title: "前の会話", documentId: "old", documentPath: "", messages: [{ role: "user", text: "前の質問", attachmentIds: [], timestamp: "2026-09-13T00:00:00Z" }], attachments: [], draft: { instruction: "続き", targetSnapshot: null, editMode: "question", attachmentIds: [] }, createdAt: "2026-09-13T00:00:00Z", updatedAt: "2026-09-13T00:00:00Z", lastMessageAt: "2026-09-13T00:00:00Z" };
     store.sessions = [saved];
-    const first = mount("explain-image", "add");
+    const first = mount("explain-image", "add", { diagramKind: "mermaid" });
     expect(await screen.findByText("前の質問")).toBeVisible();
     first.unmount();
-    mount("explain-image", "new");
+    mount("explain-image", "new", { diagramKind: "mermaid" });
     await screen.findByLabelText("指示");
     expect(screen.queryByText("前の質問")).not.toBeInTheDocument();
   });
