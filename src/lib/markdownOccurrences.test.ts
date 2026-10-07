@@ -66,6 +66,19 @@ describe("editable Markdown occurrences", () => {
     expect(collectEditableMarkdownOccurrences(markdown)).toEqual([]);
   });
 
+  it("HTMLコンテナー内のコメントとコードから画像・SVGを抽出せず、実要素の位置を維持する", () => {
+    const markdown = '<div>\r\n<!-- <img src="hidden.png"><svg><path/></svg> -->\r\n<pre><img src="code.png"><svg/></pre>\r\n<img src="visible.png">\r\n<svg id="visible"/>\r\n</div>';
+    const occurrences = collectEditableMarkdownOccurrences(markdown);
+    expect(occurrences.map(item => item.expected)).toEqual(['<img src="visible.png">', '<svg id="visible"/>']);
+    expect(occurrences.map(item => markdown.slice(item.start, item.end))).toEqual(occurrences.map(item => item.expected));
+    expect(occurrences.map(item => item.sourceLine)).toEqual([4, 5]);
+  });
+
+  it("属性のコメント開始風文字列で後続の実画像を除外しない", () => {
+    const markdown = '<div title="<!--">\n<img src="visible.png">\n</div>';
+    expect(collectEditableMarkdownOccurrences(markdown).map(item => item.expected)).toEqual(['<img src="visible.png">']);
+  });
+
   it("replaces only the selected duplicate occurrence", () => {
     const markdown = "![same](image.png)\n\n![same](image.png)";
     const images = collectEditableMarkdownOccurrences(markdown).filter((item) => item.kind === "image");

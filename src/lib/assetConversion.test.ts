@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { collectEditableMarkdownOccurrences } from "./markdownOccurrences";
-import { normalizedAssetFilename, parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./assetConversion";
+import { imageOccurrenceWithCaption, normalizedAssetFilename, parseRasterDataUri, preferredAssetFilename, replaceImageOccurrenceSource, type AssetConversionContext } from "./assetConversion";
 
 describe("asset conversions", () => {
   it("parses supported raster data URIs", () => {
@@ -19,6 +19,14 @@ describe("asset conversions", () => {
       const image = collectEditableMarkdownOccurrences(markdown).find(item => item.kind === "image")!;
       expect(replaceImageOccurrenceSource(markdown, image, "new.png")).toBe(markdown.replace(markdown.includes("src=") ? 'src="old.png"' : markdown.includes("<old.png>") ? '<old.png>' : '(old.png', markdown.includes("src=") ? 'src="new.png"' : markdown.includes("<old.png>") ? '<new.png>' : '(new.png'));
     }
+  });
+  it("HTML属性内のsrc・alt風文字列とdata-srcを変更せず、実属性だけを更新する", () => {
+    const markdown = '<img title=\'src="old.png" alt="旧"\' data-src="old.png" src="old.png" alt="旧">';
+    const image = collectEditableMarkdownOccurrences(markdown).find(item => item.kind === "image")!;
+    expect(replaceImageOccurrenceSource(markdown, image, "new.png"))
+      .toBe('<img title=\'src="old.png" alt="旧"\' data-src="old.png" src="new.png" alt="旧">');
+    expect(imageOccurrenceWithCaption(image, "新"))
+      .toBe('<img title=\'src="old.png" alt="旧"\' data-src="old.png" src="old.png" alt="新">');
   });
   it.each([
     ['![[old.png|old.png]]', 'folder/new.png', '![[folder/new.png|old.png]]'],

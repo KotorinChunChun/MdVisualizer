@@ -193,6 +193,21 @@ describe("AI応答の挿入・生成候補の統合", () => {
     expect(invoke).not.toHaveBeenCalledWith('codex_commit_candidate', expect.anything());
     expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
   });
+  it("埋め込み候補の変更後コピーも画像を配置し、手編集を保った相対Markdown全文をコピーする", async () => {
+    const { view, content, review } = await embeddedCandidate();
+    fireEvent.click(within(review).getByRole('button', { name: '置換' }));
+    const dialog = await screen.findByRole('dialog', { name: 'AI変更案のプレビュー' });
+    const edited = content.replace('b3JpZ2luYWw=', 'bmV3') + '\n手編集の追記';
+    fireEvent.change(within(dialog).getByLabelText('変更後を直接編集'), { target: { value: edited } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'コード差分を表示' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: '変更後をコピー' }));
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(edited.replace('data:image/png;base64,bmV3', 'images/new.png')));
+    expect(invoke).toHaveBeenCalledWith('codex_finish_candidate', { id: 'candidate', accepted: true });
+    expect(view.apply).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: '決定' }));
+    await waitFor(() => expect(view.apply).toHaveBeenCalledWith(expect.anything(), edited));
+    expect(invoke).not.toHaveBeenCalledWith('codex_finish_candidate', { id: 'candidate', accepted: false });
+  });
   it("本文反映が拒否されると配置を戻して候補を残す", async () => {
     const view=mount({applyResult:false}); const review=await generateImage('new');
     fireEvent.click(within(review).getByRole('button',{name:'後に挿入'}));
@@ -286,7 +301,7 @@ describe("AI応答の挿入・生成候補の統合", () => {
     let current=initial, documentPath='';
     const apply=vi.fn().mockReturnValue(true);
     const resolve=vi.fn(async()=>{
-      current={...initial,documentId:'saved:2'}; documentPath=path;
+      current={...initial,documentId:'doc:2'}; documentPath=path;
       view.rerender(panel());
       await new Promise(resolve=>setTimeout(resolve,0));
       return path;
@@ -299,7 +314,7 @@ describe("AI応答の挿入・生成候補の統合", () => {
     expect(resolve).toHaveBeenCalledOnce();
     expect(invoke).toHaveBeenCalledWith('codex_prepare_candidate',{request:expect.objectContaining({documentPath:path})});
     fireEvent.click(within(dialog).getByRole('button',{name:'決定'}));
-    await waitFor(()=>expect(apply).toHaveBeenCalledWith(expect.objectContaining({documentId:'saved:2'}),expect.any(String)));
+    await waitFor(()=>expect(apply).toHaveBeenCalledWith(expect.objectContaining({documentId:'doc:2'}),expect.any(String)));
     expect(screen.getByRole('button',{name:'画像差分を確認'})).toBeInTheDocument();
   });
   it("生成候補と応答画像は会話に保存され再マウント後も比較できる", async () => {
