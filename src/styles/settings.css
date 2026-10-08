@@ -10,6 +10,10 @@
 .sharepoint-settings { display: grid; gap: 0.7rem; }
 .sharepoint-settings p { margin: 0; font-size: 13px; }
 .sharepoint-settings input { width: min(34rem, 58vw); }
+.sharepoint-settings dd { margin: 0 0 0.5rem; overflow-wrap: anywhere; }
+.sharepoint-settings label { flex-wrap: wrap; }
+.sharepoint-settings input { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.sharepoint-settings button { justify-self: start; }
 .settings-section select { padding: 6px 8px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; }
 .syntax-highlight-settings { display: grid; gap: 0.7rem; }
 .syntax-highlight-settings__toggle { justify-content: flex-start !important; }

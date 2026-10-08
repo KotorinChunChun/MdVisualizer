@@ -303,6 +303,8 @@ export function App() {
     sharePointAuthPrompt,
     openAuthenticationPage,
     dismissAuthentication,
+    authenticationReady,
+    authenticationError,
   } = useSharePointAuthentication(setToast);
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewTarget | null>(null);
   const [mediaPreviewInitialViewState, setMediaPreviewInitialViewState] = useState<MediaPreviewViewState | null>(null);
@@ -749,9 +751,13 @@ export function App() {
 
   useEffect(() => {
     for (const tab of tabsState.tabs) {
+      if (tab.loading && /^spmd:/i.test(tab.path) && !authenticationReady) {
+        if (authenticationError) dispatch({ type: "FAILED", id: tab.id, generation: tab.generation, error: authenticationError });
+        continue;
+      }
       if (tab.loading) void loadTab(tab.id, tab.path, tab.generation);
     }
-  }, [tabsState.tabs, loadTab]);
+  }, [tabsState.tabs, loadTab, authenticationReady, authenticationError]);
 
   const watchTargetKey = JSON.stringify(
     [...new Set(tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document)
@@ -2742,6 +2748,7 @@ export function App() {
       >
         {activeTab?.kind === "settings" ? (
           <SettingsPanel
+            onOpenSharePoint={(path) => dispatch({ type: "OPEN", path })}
             apps={externalApps}
             presentationLineThreshold={presentationLineThreshold}
             codeBlockFoldMinLines={codeBlockFoldMinLines}

@@ -79,6 +79,8 @@ fn document_launch_arguments(
                 parse_spmd_uri(&argument)
                     .ok()
                     .map(|parsed| parsed.canonical_uri)
+                    // 不正な起動を黙って破棄しない。入力に含まれ得るtoken等は保持しない。
+                    .or_else(|| Some("spmd:".to_string()))
             } else {
                 normalize_document_path(&argument, cwd)
                     .map(|path| path.to_string_lossy().into_owned())
@@ -308,6 +310,8 @@ pub fn run() {
             codex_image_edit::codex_save_edited_image,
             codex_image_edit::codex_finalize_edited_image,
             load_settings,
+            sharepoint_connection_info,
+            validate_sharepoint_uri,
             load_settings_status,
             save_settings,
             load_markdown_style,
@@ -419,11 +423,10 @@ mod tests {
             ),
             vec![source]
         );
-        assert!(document_launch_arguments(
-            ["spmd://example.com/sites/a/docs/readme.md".into()],
+        assert_eq!(document_launch_arguments(
+            ["spmd://example.com/sites/a/docs/readme.md?token=secret".into()],
             Path::new("C:/")
-        )
-        .is_empty());
+        ), vec!["spmd:"]);
     }
 
     #[test]

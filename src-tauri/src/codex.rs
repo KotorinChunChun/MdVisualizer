@@ -967,12 +967,14 @@ mod tests {
     fn communication_logs_keep_the_configured_newest_records() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join(LOG_FILENAME);
+        // 件数上限の試験データが実行日によって保持期限切れにならないようにする。
+        let created_at = Utc::now().to_rfc3339();
         for index in 0..11 {
             append_log(
                 &path,
                 CodexLogEntry {
                     id: format!("{index}"),
-                    created_at: "2026-09-08T00:00:00Z".into(),
+                    created_at: created_at.clone(),
                     model: "gpt-5.6-luna".into(),
                     request_prompt: format!("request-{index}"),
                     response_text: format!("response-{index}"),

@@ -16,6 +16,7 @@ import {
 import "../styles/settings.css";
 import { CodexSkillSettings } from "../features/codex/CodexSkillSettings";
 import { DEFAULT_CODE_BLOCK_FOLD_MIN_LINES, normalizeCodeBlockFoldMinLines } from "../lib/editorPreferences";
+import { SharePointSettings } from "./SharePointSettings";
 
 export function SettingsPanel({
   apps,
@@ -33,8 +34,10 @@ export function SettingsPanel({
   onOpenMarkdownStyle = async () => undefined,
   onReloadMarkdownStyle = async () => undefined,
   onSave,
+  onOpenSharePoint,
 }: {
   apps: ExternalAppConfig[];
+  onOpenSharePoint?: (path: string) => void;
   presentationLineThreshold: number;
   codeBlockFoldMinLines?: number;
   imageA4TargetWidth?: number;
@@ -124,10 +127,11 @@ export function SettingsPanel({
 
   return <section className="settings-panel" aria-labelledby="settings-title">
     <header>
-      <div><h1 id="settings-title">設定</h1><p>外部アプリの表示場所と安全な起動引数を管理します。</p></div>
+      <div><h1 id="settings-title">設定</h1><p>表示・編集・画像保存・外部アプリとSharePoint連携を管理します。</p></div>
       <button type="button" className="settings-save" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
     </header>
     {error && <p role="alert" className="settings-error">{error}</p>}
+    {onOpenSharePoint && <SharePointSettings onOpen={onOpenSharePoint} />}
     <CodexSkillSettings />
     <fieldset className="settings-section">
       <legend>コード画面の折畳</legend>

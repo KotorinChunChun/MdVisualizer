@@ -47,7 +47,7 @@ pub struct SpmdAssetUri {
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum SpmdUriError {
-    #[error("spmd URIの形式が正しくありません。")]
+    #[error("spmd URIの形式が正しくありません。設定の「SharePoint連携」でファイルのURLを確認してください。共有リンクやクエリ付きURLは使用できません。")]
     Invalid,
     #[error("spmd URIのホストはSharePoint Online（*.sharepoint.com）である必要があります。")]
     InvalidHost,
@@ -103,10 +103,8 @@ pub fn parse_spmd_uri(value: &str) -> Result<SpmdUri, SpmdUriError> {
         .collect::<Result<Vec<_>, _>>()?;
 
     if decoded_segments.len() < 4
-        || !matches!(
-            decoded_segments.first().map(String::as_str),
-            Some("sites" | "teams")
-        )
+        || !decoded_segments.first().is_some_and(|segment|
+            segment.eq_ignore_ascii_case("sites") || segment.eq_ignore_ascii_case("teams"))
         || decoded_segments[1].is_empty()
     {
         return Err(SpmdUriError::InvalidSitePath);

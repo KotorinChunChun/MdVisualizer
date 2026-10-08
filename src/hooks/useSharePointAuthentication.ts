@@ -5,6 +5,8 @@ import type { ToastState } from "../types/app";
 
 export function useSharePointAuthentication(setToast: Dispatch<SetStateAction<ToastState | null>>) {
   const [prompt, setPrompt] = useState<SharePointAuthPrompt | null>(null);
+  const [authenticationReady, setAuthenticationReady] = useState(false);
+  const [authenticationError, setAuthenticationError] = useState<string | null>(null);
 
   const openUri = useCallback((uri: string) => {
     void openExternalUrl(uri).catch((error) => {
@@ -19,17 +21,27 @@ export function useSharePointAuthentication(setToast: Dispatch<SetStateAction<To
   const dismissAuthentication = useCallback(() => setPrompt(null), []);
 
   useEffect(() => {
+    let disposed = false;
     let unlisten: (() => void) | undefined;
     void listenForSharePointAuthentication((event) => {
+      if (disposed) return;
       setPrompt(event.payload);
       openUri(event.payload.verificationUri);
-    }).then((dispose) => { unlisten = dispose; });
-    return () => { unlisten?.(); };
+    }).then((dispose) => {
+      if (disposed) { dispose(); return; }
+      unlisten = dispose;
+      setAuthenticationReady(true);
+    }).catch(() => {
+      if (!disposed) setAuthenticationError("認証案内の準備に失敗しました。アプリを再起動してください。");
+    });
+    return () => { disposed = true; unlisten?.(); };
   }, [openUri]);
 
   return {
     sharePointAuthPrompt: prompt,
     openAuthenticationPage,
     dismissAuthentication,
+    authenticationReady,
+    authenticationError,
   };
 }
