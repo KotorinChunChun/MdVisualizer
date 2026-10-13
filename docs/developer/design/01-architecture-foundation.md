@@ -1,12 +1,37 @@
-# DES-01 v0.0.14 アーキテクチャ分割設計
+# DES-01 アーキテクチャの責務境界と分割方針
 
-本書は継続利用する設計資料の正本。対象版・状態・完了条件は策定時の計画を示し、現在の実装済み範囲を保証しない。実装や再開の判断は現在の要求とソースで確認する。
+本書は継続利用する設計資料の正本。「現行の責務境界」が実装の配置と変更方法を示す。それ以降の設計案・完了条件は策定時の計画であり、全面移行済みではない。
 
 作成日: 2026-08-30
-状態: PROPOSED
-対象版: v0.0.14
+状態: 部分実装（現行境界と残る設計案を区別）
+構想策定版: v0.0.14／現行境界確認版: v0.0.19
 
-## 背景
+## 現行の責務境界
+
+Desktopの`App.tsx`は画面構成と文書セッションの配線を所有する。巨大な汎用controllerへ置き換えるのではなく、独立して入力と結果を検証できる処理から抽出する。既存の保存、revision競合、未保存下書き、Undoの契約を維持する。
+
+| 変更したい責務 | 実装場所 | 維持する境界 |
+| --- | --- | --- |
+| 終了・タブ操作の非同期確認 | `src/lib/documentActions.ts` | 確認結果は明示的なtrueだけ許可。確認中に対象の本文・保存世代が変わったら中止 |
+| 文書種別・表示モード・サイドパネル判定 | `src/lib/applicationViewPolicy.ts` | UI部品は型だけ参照し、TauriやAppを読み込まない |
+| プレビューのDOM、選択範囲、検索focus | `src/lib/previewDom.ts` | 対象文書のDOM境界内だけを扱う |
+| 文書と外部参照の監視 | `src/hooks/useDocumentWatchTargets.ts` | 文書revisionで再解析し、後着応答を無視。自動更新OFFでも開いたDiffは監視。解除はウィンドウ単位 |
+| draw.io・Mermaid・表・テキストの格納形態変換 | `src/lib/fenceStorageConversion.ts` | 形式差を方針へ限定。確認→対象再確認→stage→commitと失敗時discardは共通 |
+| Codexモデル候補 | `web-platform/packages/editor-ui/src/features/codex/useCodexModels.ts` | CLI一覧取得だけを所有し、選択値・保存設定・会話を変更しない |
+| OSクリップボード | `src-tauri/src/commands/clipboard.rs` | ファイル・BMPの検証とOS出力 |
+| 文書診断・監視対象解析 | `src-tauri/src/commands/diagnostics.rs` | Markdown構文、参照パス、見出しとfenceの判定 |
+| 外部エディター | `src-tauri/src/commands/editor_launch.rs` | 実行ファイル探索、VS Code workspace判定、引数 |
+| SharePoint設定 | `src-tauri/src/commands/sharepoint_settings.rs` | 設定表示と安全なURI検証。認証・通信は既存SharePointサービス |
+
+Rustコマンドは`commands.rs`の再公開を通して既存のTauri名・DTOを維持する。各モジュールのテストは同じモジュール内に置き、テストだけのために内部helperを親へ公開しない。文書保存・asset staging・画像操作とwatcher管理のコマンドは引き続き`commands.rs`に残る。
+
+格納形態変換の`createFenceStorageConverter`はI/Oポートを受け取り、Appの`persistImmediateOccurrence`がrevision確認と下書き保護を担当する。形式を追加する場合は、拡張子・本文整形・空本文の可否・参照構文を方針へ追加し、保存処理を複製しない。ラスタ画像のbase64／バイナリ変換は別経路であり、無理に同じ方針へ混ぜない。外部ファイル削除は変換成功後の明示操作とし、自動削除しない。
+
+単体テストは対象のlib／hookを直接importする。Appの補助関数を試すためにApp全体と全画面の依存を読み込まない。非同期hookは取得取消・後着・失敗時保持・再試行を検証し、GUIやOS出力の受入とは区別する。検証入口は[ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)を参照する。
+
+Appの保存・ナビゲーション・画面構成、Codexの会話保存・候補採用は引き続き既存componentが所有する。以下のapplication-core新設やAppShellへの全面移行は未完了であり、現行境界から独立して段階判断する。
+
+## 策定当時の背景
 
 `src/App.tsx`は文書読込、タブ、保存、競合、印刷、検索、診断、履歴、画像・図表編集、外部操作、各種モーダルを2,583行で管理する。`src-tauri/src/commands.rs`も文書、診断、監視、画像、外部プロセスを2,289行で扱う。同期とAIをこの構造へ直接追加すると、変更範囲、テスト時間、権限監査、AI実装時のコンテキスト量が増大する。
 

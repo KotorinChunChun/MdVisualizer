@@ -48,7 +48,10 @@ async function generateImage(kind: "new" | "edit") {
   await waitFor(() => expect(screen.getByLabelText("ツール")).toBeEnabled());
   if (kind === "new") fireEvent.click(screen.getByRole("button", { name: "新規画像を生成" }));
   await waitFor(() => expect(screen.getByRole("button", { name: "画像編集を依頼" })).toBeEnabled());
-  fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" }));
+  // 添付読込後のeffectと、送信から応答までの非同期更新を完了させる。
+  // 有効表示だけを待たず、対象準備に続く更新も試験の操作前に反映する。
+  await act(async () => {});
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "画像編集を依頼" })); });
   return screen.findByRole("dialog", { name: "生成画像の差分" });
 }
 async function embeddedCandidate() {
@@ -61,6 +64,7 @@ beforeEach(() => {
   vi.clearAllMocks(); store.sessions = [];
   vi.mocked(generateCodex).mockResolvedValue({ answer: "候補", replacement: null });
   vi.mocked(invoke).mockImplementation(async command => {
+    if (command === "codex_list_models") return [{ model: "gpt-5.6-luna", displayName: "試験用モデル", isDefault: true }];
     if (command === "codex_edit_image") return { base64: "bmV3", mediaType: "image/png", filename: "new.png" };
     if (command === "codex_prepare_candidate") return { id: "candidate", source: "images/new.png", previewDir: "C:/cache/candidate" };
     return undefined;

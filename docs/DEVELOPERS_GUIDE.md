@@ -69,7 +69,7 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 
 | ID | 設計書 | 対象版 | 状態 | 主な依存 |
 | --- | --- | --- | --- | --- |
-| DES-01 | [アーキテクチャ分割](/docs/developer/design/01-architecture-foundation.md) | v0.0.14 | PROPOSED | v0.0.13受入完了 |
+| DES-01 | [アーキテクチャの責務境界と分割方針](/docs/developer/design/01-architecture-foundation.md) | v0.0.14〜 | 部分実装 | 現行境界と残る設計案を本文で区別 |
 | DES-02 | [補助SQLiteデータストア](/docs/developer/design/02-local-data-store.md) | v0.0.14 | PROPOSED | DES-01 |
 | DES-03 | [セキュリティ境界](/docs/developer/design/03-security-boundary.md) | v0.0.14 | PROPOSED | DES-01 |
 | DES-04 | [内部プロバイダー基盤](/docs/developer/design/04-provider-architecture.md) | v0.0.14 | PROPOSED | DES-01〜03 |
