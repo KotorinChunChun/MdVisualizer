@@ -68,7 +68,7 @@ fn markdown_style_result(path: &Path, css: String) -> MarkdownStyleFile {
     }
 }
 
-pub(super) fn load_markdown_style_file(
+fn load_markdown_style_file(
     path: &Path,
     default_css: &str,
 ) -> Result<MarkdownStyleFile, String> {
@@ -86,7 +86,7 @@ pub(super) fn load_markdown_style_file(
     Ok(markdown_style_result(path, css))
 }
 
-pub(super) fn save_markdown_style_file(
+fn save_markdown_style_file(
     path: &Path,
     css: &str,
 ) -> Result<MarkdownStyleFile, String> {
@@ -95,7 +95,7 @@ pub(super) fn save_markdown_style_file(
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct WorkArea {
+struct WorkArea {
     pub x: i32,
     pub y: i32,
     pub width: u32,
@@ -108,7 +108,7 @@ fn physical_width(value: u32) -> i32 {
     i32::try_from(value).unwrap_or(i32::MAX)
 }
 
-pub(super) fn logical_geometry(
+fn logical_geometry(
     geometry: WindowGeometry,
     scale_factor: f64,
 ) -> (f64, f64, f64, f64) {
@@ -161,7 +161,7 @@ fn geometry_is_visible(geometry: WindowGeometry, area: WorkArea) -> bool {
     geometry.x < area_right && right > area.x && geometry.y < area_bottom && bottom > area.y
 }
 
-pub(super) fn clamp_geometry_to_area(
+fn clamp_geometry_to_area(
     mut geometry: WindowGeometry,
     area: WorkArea,
 ) -> WindowGeometry {
@@ -178,7 +178,7 @@ pub(super) fn clamp_geometry_to_area(
     geometry
 }
 
-pub(super) fn adjacent_geometry(
+fn adjacent_geometry(
     source: WindowGeometry,
     source_outer_width: u32,
     area: WorkArea,
@@ -494,4 +494,239 @@ mod markdown_style_tests {
         assert_eq!(load_markdown_style_file(&path, "ignored").unwrap(), saved);
         assert!(!directory.path().join("markdown-style.lock").exists());
     }
+}
+
+#[cfg(test)]
+mod command_tests {
+    use super::*;
+
+    #[test]
+    fn adjacent_window_prefers_the_right_of_its_source() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: 100,
+            y: 120,
+            width: 800,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry {
+                x: 920,
+                y: 120,
+                width: 800,
+                height: 600
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_uses_the_left_when_right_would_overflow() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: 1100,
+            y: 120,
+            width: 800,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry {
+                x: 280,
+                y: 120,
+                width: 800,
+                height: 600
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_shrinks_to_right_space_without_a_gap() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: 700,
+            y: 120,
+            width: 800,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry {
+                x: 1520,
+                y: 120,
+                // The 20px non-client frame is preserved inside the 400px
+                // physical free space.
+                width: 380,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_uses_exactly_the_200px_minimum_space() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: 900,
+            y: 120,
+            width: 800,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry {
+                x: 1720,
+                y: 120,
+                width: 180,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_shrinks_to_left_space_when_right_is_too_narrow() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1000,
+            height: 800,
+        };
+        let source = WindowGeometry {
+            x: 300,
+            y: 80,
+            width: 580,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 600, area),
+            WindowGeometry {
+                x: 0,
+                y: 80,
+                width: 280,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_uses_the_existing_cascade_when_both_sides_are_under_minimum() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 400,
+            height: 800,
+        };
+        let source = WindowGeometry {
+            x: 180,
+            y: 80,
+            width: 220,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 240, area),
+            WindowGeometry {
+                x: 0,
+                y: 80,
+                width: 220,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn adjacent_window_supports_negative_coordinate_work_areas_in_physical_pixels() {
+        let area = WorkArea {
+            x: -1920,
+            y: -100,
+            width: 1920,
+            height: 1080,
+        };
+        let source = WindowGeometry {
+            x: -1500,
+            y: 40,
+            width: 800,
+            height: 600,
+        };
+
+        assert_eq!(
+            adjacent_geometry(source, 820, area),
+            WindowGeometry {
+                x: -680,
+                y: 40,
+                width: 660,
+                height: 600,
+            },
+        );
+    }
+
+    #[test]
+    fn converts_physical_geometry_to_logical_coordinates_for_high_dpi_displays() {
+        assert_eq!(
+            logical_geometry(
+                WindowGeometry {
+                    x: -150,
+                    y: 75,
+                    width: 1000,
+                    height: 750,
+                },
+                1.25,
+            ),
+            (800.0, 600.0, -120.0, 60.0),
+        );
+    }
+
+    #[test]
+    fn saved_geometry_outside_all_displays_is_clamped_to_a_work_area() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1200,
+            height: 800,
+        };
+        let restored = clamp_geometry_to_area(
+            WindowGeometry {
+                x: 5000,
+                y: -200,
+                width: 1600,
+                height: 900,
+            },
+            area,
+        );
+
+        assert_eq!(
+            restored,
+            WindowGeometry {
+                x: 0,
+                y: 0,
+                width: 1200,
+                height: 800
+            }
+        );
+    }
+
 }

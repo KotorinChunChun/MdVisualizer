@@ -18,7 +18,7 @@ pub struct OpenExternalAppRequest {
     line: Option<u32>,
 }
 
-pub(super) fn expand_external_app_value(
+fn expand_external_app_value(
     value: &str,
     file: &Path,
     line: u32,
@@ -109,13 +109,13 @@ pub struct PowerShellRunResult {
     duration_ms: u64,
 }
 
-pub(super) struct ValidatedPowerShellRequest {
+struct ValidatedPowerShellRequest {
     pub(super) working_directory: PathBuf,
     pub(super) source: String,
 }
 
 #[cfg(target_os = "windows")]
-pub(super) fn normalize_powershell_path(path: &Path) -> PathBuf {
+fn normalize_powershell_path(path: &Path) -> PathBuf {
     let value = path.to_string_lossy();
     if let Some(unc) = value.strip_prefix(r"\\?\UNC\") {
         return PathBuf::from(format!(r"\\{unc}"));
@@ -127,7 +127,7 @@ pub(super) fn normalize_powershell_path(path: &Path) -> PathBuf {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub(super) fn normalize_powershell_path(path: &Path) -> PathBuf {
+fn normalize_powershell_path(path: &Path) -> PathBuf {
     path.to_path_buf()
 }
 
@@ -136,7 +136,7 @@ fn powershell_set_location(directory: &Path) -> String {
     format!("Set-Location -LiteralPath '{literal}'; ")
 }
 
-pub(super) fn validate_powershell_request(
+fn validate_powershell_request(
     request: RunPowerShellRequest,
 ) -> Result<ValidatedPowerShellRequest, String> {
     if !matches!(
@@ -198,7 +198,7 @@ fn read_limited_output<R: Read + Send + 'static>(
     })
 }
 
-pub(super) fn run_powershell_process(
+fn run_powershell_process(
     request: ValidatedPowerShellRequest,
     timeout: Duration,
 ) -> Result<PowerShellRunResult, String> {
@@ -309,6 +309,131 @@ pub fn open_external_url(app_handle: AppHandle, url: String) -> Result<(), Strin
         .map_err(|error| error.to_string())
 }
 
-pub(super) fn is_allowed_external_url(url: &str) -> bool {
+fn is_allowed_external_url(url: &str) -> bool {
     url.starts_with("https://") || url.starts_with("http://") || url.starts_with("mailto:")
+}
+
+#[cfg(test)]
+mod command_tests {
+    use super::*;
+
+    #[test]
+    fn external_url_policy_allows_only_safe_schemes() {
+        assert!(is_allowed_external_url("https://example.com"));
+        assert!(is_allowed_external_url("http://example.com"));
+        assert!(is_allowed_external_url("mailto:test@example.com"));
+        assert!(!is_allowed_external_url("file:///C:/secret.txt"));
+        assert!(!is_allowed_external_url("javascript:alert(1)"));
+    }
+
+    #[test]
+    fn external_app_expands_only_allowed_placeholders_without_shell_parsing() {
+        let file = Path::new("C:/日本語 & docs/read me.md");
+        assert_eq!(
+            expand_external_app_value("--file=${file}", file, 42).unwrap(),
+            "--file=C:/日本語 & docs/read me.md"
+        );
+        assert_eq!(
+            expand_external_app_value("${dir}", file, 42).unwrap(),
+            "C:/日本語 & docs"
+        );
+        assert_eq!(
+            expand_external_app_value("${line}", file, 42).unwrap(),
+            "42"
+        );
+        assert!(expand_external_app_value("${unknown}", file, 1).is_err());
+    }
+
+    #[test]
+    fn powershell_request_requires_an_explicit_language_and_document_directory() {
+        let directory = tempfile::tempdir().unwrap();
+        let document = directory.path().join("sample.md");
+        std::fs::write(&document, "# sample").unwrap();
+        let validated = validate_powershell_request(RunPowerShellRequest {
+            document_path: document.to_string_lossy().into_owned(),
+            language: "pwsh".into(),
+            source: "Get-Location".into(),
+        })
+        .unwrap();
+        assert_eq!(
+            validated.working_directory,
+            normalize_powershell_path(&std::fs::canonicalize(directory.path()).unwrap())
+        );
+        assert!(validate_powershell_request(RunPowerShellRequest {
+            document_path: document.to_string_lossy().into_owned(),
+            language: "bash".into(),
+            source: "echo unsafe".into(),
+        })
+        .is_err());
+        let text_file = directory.path().join("sample.txt");
+        std::fs::write(&text_file, "not markdown").unwrap();
+        assert!(validate_powershell_request(RunPowerShellRequest {
+            document_path: text_file.to_string_lossy().into_owned(),
+            language: "pwsh".into(),
+            source: "Get-Location".into(),
+        })
+        .is_err());
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn powershell_path_normalization_removes_verbatim_prefixes() {
+        assert_eq!(
+            normalize_powershell_path(Path::new(r"\\?\C:\docs\sample")),
+            PathBuf::from(r"C:\docs\sample")
+        );
+        assert_eq!(
+            normalize_powershell_path(Path::new(r"\\?\UNC\server\share\sample")),
+            PathBuf::from(r"\\server\share\sample")
+        );
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn powershell_process_captures_output_and_enforces_timeout() {
+        let directory = tempfile::tempdir().unwrap();
+        let special_directory = directory.path().join("日本語 & O'Brien");
+        std::fs::create_dir(&special_directory).unwrap();
+        let output = run_powershell_process(
+            ValidatedPowerShellRequest {
+                working_directory: special_directory.clone(),
+                source: "Write-Output 'safe-output'".into(),
+            },
+            Duration::from_secs(30),
+        )
+        .unwrap();
+        assert_eq!(
+            output.exit_code,
+            Some(0),
+            "stderr: {} / stdout: {}",
+            output.stderr,
+            output.stdout
+        );
+        assert!(output.stdout.contains("safe-output"));
+        assert!(!output.timed_out);
+
+        let location = run_powershell_process(
+            ValidatedPowerShellRequest {
+                working_directory: special_directory.clone(),
+                source: "(Get-Location).Path".into(),
+            },
+            Duration::from_secs(30),
+        )
+        .unwrap();
+        assert_eq!(
+            normalize_powershell_path(Path::new(location.stdout.trim())),
+            normalize_powershell_path(&special_directory)
+        );
+
+        let timed_out = run_powershell_process(
+            ValidatedPowerShellRequest {
+                working_directory: directory.path().to_path_buf(),
+                source: "Start-Sleep -Seconds 5".into(),
+            },
+            Duration::from_millis(100),
+        )
+        .unwrap();
+        assert!(timed_out.timed_out);
+    }
+
 }
