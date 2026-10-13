@@ -236,3 +236,4 @@ web/tests/.php-zip-fixtures/
 /src/styles/codex-image-comparison.css
 
 /src/lib/compactEmbeddedImages.ts
+/src/features/codex/useCodexModels.ts

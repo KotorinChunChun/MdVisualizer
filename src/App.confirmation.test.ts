@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { closeTabsSequentially, confirmUnchangedTabAction, handleWindowCloseRequest, unchangedTabForAction } from "./App";
+import { closeTabsSequentially, confirmUnchangedTabAction, handleWindowCloseRequest, unchangedTabForAction } from "./lib/documentActions";
 import { initialTabsState, tabsReducer, type TabsAction, type TabState } from "./state/tabsReducer";
 
 function deferred<T>() {

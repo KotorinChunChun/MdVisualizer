@@ -2,7 +2,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { applicationWindowTitle, canEditMarkdownDocument, documentLinkTarget, focusAndSelectSearchInput, handleWindowCloseRequest, hasPreviewTextSelection, moveZoomLevel, normalizeZoom, previewSelectionSourceRange, resolveDocumentPanelForView, resolveDocumentSidePanel, shouldBlockF5Reload, tocHeadingIdAtPointer, ZOOM_LEVELS } from "./App";
+import { applicationWindowTitle, canEditMarkdownDocument, resolveDocumentPanelForView, resolveDocumentSidePanel, shouldBlockF5Reload } from "./lib/applicationViewPolicy";
+import { documentLinkTarget, focusAndSelectSearchInput, hasPreviewTextSelection, previewSelectionSourceRange, tocHeadingIdAtPointer } from "./lib/previewDom";
+import { handleWindowCloseRequest } from "./lib/documentActions";
+import { moveZoomLevel, normalizeZoom, ZOOM_LEVELS } from "./lib/zoom";
 
 describe("application window title", () => {
   it("uses the active tab filename followed by the application name", () => {

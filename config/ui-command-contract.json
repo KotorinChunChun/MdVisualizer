@@ -39,14 +39,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2598,
+        "sourceLine": 2216,
         "sourceColumn": 11,
         "ordinal": 1
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2598,
+        "line": 2216,
         "column": 11
       },
       "interactions": [
@@ -91,14 +91,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2599,
+        "sourceLine": 2217,
         "sourceColumn": 11,
         "ordinal": 2
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2599,
+        "line": 2217,
         "column": 11
       },
       "interactions": [
@@ -143,14 +143,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2600,
+        "sourceLine": 2218,
         "sourceColumn": 11,
         "ordinal": 3
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2600,
+        "line": 2218,
         "column": 11
       },
       "interactions": [
@@ -195,14 +195,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2603,
+        "sourceLine": 2221,
         "sourceColumn": 11,
         "ordinal": 4
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2603,
+        "line": 2221,
         "column": 11
       },
       "interactions": [
@@ -247,14 +247,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2604,
+        "sourceLine": 2222,
         "sourceColumn": 11,
         "ordinal": 5
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2604,
+        "line": 2222,
         "column": 11
       },
       "interactions": [
@@ -299,14 +299,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2607,
+        "sourceLine": 2225,
         "sourceColumn": 141,
         "ordinal": 6
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2607,
+        "line": 2225,
         "column": 141
       },
       "interactions": [
@@ -351,14 +351,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2618,
+        "sourceLine": 2236,
         "sourceColumn": 67,
         "ordinal": 7
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2618,
+        "line": 2236,
         "column": 67
       },
       "interactions": [
@@ -403,14 +403,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2619,
+        "sourceLine": 2237,
         "sourceColumn": 9,
         "ordinal": 8
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2619,
+        "line": 2237,
         "column": 9
       },
       "interactions": [
@@ -455,14 +455,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2721,
+        "sourceLine": 2339,
         "sourceColumn": 13,
         "ordinal": 9
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2721,
+        "line": 2339,
         "column": 13
       },
       "interactions": [
@@ -507,14 +507,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2726,
+        "sourceLine": 2344,
         "sourceColumn": 15,
         "ordinal": 10
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2726,
+        "line": 2344,
         "column": 15
       },
       "interactions": [],
@@ -557,14 +557,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2726,
+        "sourceLine": 2344,
         "sourceColumn": 55,
         "ordinal": 11
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2726,
+        "line": 2344,
         "column": 55
       },
       "interactions": [],
@@ -607,14 +607,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2726,
+        "sourceLine": 2344,
         "sourceColumn": 92,
         "ordinal": 12
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2726,
+        "line": 2344,
         "column": 92
       },
       "interactions": [],
@@ -657,14 +657,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2726,
+        "sourceLine": 2344,
         "sourceColumn": 134,
         "ordinal": 13
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2726,
+        "line": 2344,
         "column": 134
       },
       "interactions": [],
@@ -707,14 +707,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2726,
+        "sourceLine": 2344,
         "sourceColumn": 168,
         "ordinal": 14
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2726,
+        "line": 2344,
         "column": 168
       },
       "interactions": [],
@@ -757,14 +757,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2726,
+        "sourceLine": 2344,
         "sourceColumn": 202,
         "ordinal": 15
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2726,
+        "line": 2344,
         "column": 202
       },
       "interactions": [],
@@ -807,14 +807,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2726,
+        "sourceLine": 2344,
         "sourceColumn": 236,
         "ordinal": 16
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2726,
+        "line": 2344,
         "column": 236
       },
       "interactions": [],
@@ -857,14 +857,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2726,
+        "sourceLine": 2344,
         "sourceColumn": 281,
         "ordinal": 17
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2726,
+        "line": 2344,
         "column": 281
       },
       "interactions": [],
@@ -907,14 +907,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2730,
+        "sourceLine": 2348,
         "sourceColumn": 13,
         "ordinal": 18
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2730,
+        "line": 2348,
         "column": 13
       },
       "interactions": [
@@ -959,14 +959,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2731,
+        "sourceLine": 2349,
         "sourceColumn": 41,
         "ordinal": 19
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2731,
+        "line": 2349,
         "column": 41
       },
       "interactions": [],
@@ -1009,14 +1009,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2731,
+        "sourceLine": 2349,
         "sourceColumn": 74,
         "ordinal": 20
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2731,
+        "line": 2349,
         "column": 74
       },
       "interactions": [],
@@ -1059,14 +1059,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2731,
+        "sourceLine": 2349,
         "sourceColumn": 114,
         "ordinal": 21
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2731,
+        "line": 2349,
         "column": 114
       },
       "interactions": [],
@@ -1109,14 +1109,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2732,
+        "sourceLine": 2350,
         "sourceColumn": 39,
         "ordinal": 22
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2732,
+        "line": 2350,
         "column": 39
       },
       "interactions": [],
@@ -1159,14 +1159,14 @@
       "orderScope": {
         "component": "App",
         "sourceFile": "src/App.tsx",
-        "sourceLine": 2732,
+        "sourceLine": 2350,
         "sourceColumn": 81,
         "ordinal": 23
       },
       "source": {
         "kind": "desktop",
         "file": "src/App.tsx",
-        "line": 2732,
+        "line": 2350,
         "column": 81
       },
       "interactions": [],
@@ -44756,14 +44756,14 @@
       "orderScope": {
         "component": "CandidateDialog",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 57,
+        "sourceLine": 58,
         "sourceColumn": 12,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 57,
+        "line": 58,
         "column": 12
       },
       "interactions": [],
@@ -44805,14 +44805,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 797,
+        "sourceLine": 777,
         "sourceColumn": 31,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 797,
+        "line": 777,
         "column": 31
       },
       "interactions": [
@@ -44856,14 +44856,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 797,
+        "sourceLine": 777,
         "sourceColumn": 360,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 797,
+        "line": 777,
         "column": 360
       },
       "interactions": [],
@@ -44905,14 +44905,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 797,
+        "sourceLine": 777,
         "sourceColumn": 432,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 797,
+        "line": 777,
         "column": 432
       },
       "interactions": [],
@@ -44954,14 +44954,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 797,
+        "sourceLine": 777,
         "sourceColumn": 476,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 797,
+        "line": 777,
         "column": 476
       },
       "interactions": [],
@@ -44997,20 +44997,20 @@
       "controlKind": "button",
       "tag": "aside",
       "role": null,
-      "displayName": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} retentionBusy={retentionBusy} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={changeRetention}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
+      "displayName": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} retentionBusy={retentionBusy} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\r\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\r\n        const snapshot = getSnapshot();\r\n        const targets = textTargets(item.draft);\r\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\r\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\r\n    } setHistoryOpen(false); }} onRetentionChange={changeRetention}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
       "labelKind": "dynamic",
-      "labelExpression": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} retentionBusy={retentionBusy} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\n        const snapshot = getSnapshot();\n        const targets = textTargets(item.draft);\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\n    } setHistoryOpen(false); }} onRetentionChange={changeRetention}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
+      "labelExpression": "{{!maximized && <div className=\"codex-panel__resize\" role=\"separator\" tabIndex={0} aria-label=\"AIパネルの幅を変更\" aria-orientation=\"vertical\" aria-valuemin={300} aria-valuemax={760} aria-valuenow={width}\r\n      onPointerDown={event => { event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture?.(event.pointerId); }}\r\n      onPointerMove={event => { if (event.buttons === 1) setWidth(Math.max(300, Math.min(760, window.innerWidth - event.clientX))); }}\r\n      onKeyDown={event => { if (event.key === \"ArrowLeft\" || event.key === \"ArrowRight\") { event.preventDefault(); setWidth(value => Math.max(300, Math.min(760, value + (event.key === \"ArrowLeft\" ? 20 : -20)))); } }} />}} {{proposal && <div className=\"codex-proposal-preview\" role=\"dialog\" aria-modal=\"true\" aria-label=\"AI変更案のプレビュー\"><CodexProposalReview fullDocumentReplace={proposal.fullDocumentReplace} imageComparison={proposal.candidate ? imageComparison(proposal.candidate.response) : undefined} original={proposal.original} value={proposal.value} onChange={(value) => setProposal((old) => old ? { ...old, value } : null)} renderPreview={diagramKind ? (value) => renderProposal?.(value) : (value, side) => { const candidate = proposal.candidate; const stagedAssetPreviews = candidate?.plan && !candidate.plan.finished && side === \"after\" ? { [candidate.source]: convertFileSrc(`${candidate.plan.previewDir.replace(/[\\\\/]$/, \"\")}/${candidate.source}`) } : undefined; return <CodexMarkdownPreview source={value} baseDir={baseDir} stagedAssetPreviews={stagedAssetPreviews}/>; }} validate={diagramKind ? async (value) => { await validateDiagramForAdoption(diagramKind, value); } : undefined} onCopyAfter={copyProposal} onAccept={accept} onReject={closeProposal} onClose={closeProposal} busy={applying} error={error}/></div>}} {{imageReview && <CandidateDialog><section className=\"codex-proposal-review\"><header><strong>生成画像の差分</strong><button type=\"button\" onClick={() => setImageReview(null)}>閉じる</button></header>{imageComparison(imageReview)}<p>採用方法を選ぶと、コード・ビジュアル差分を確認できます。</p><div>{responseActions.map(([action, label]) => <button type=\"button\" disabled={applying} key={action} onClick={() => void insertResponse(imageReview, action)}>{label}</button>)}<button type=\"button\" disabled={applying} onClick={() => void insertResponse(imageReview, \"copy\")}>コピー</button><button type=\"button\" disabled={applying} onClick={() => { markCandidate(imageReview, \"rejected\"); setImageReview(null); }}>却下</button></div>{error && <p role=\"alert\">{error}</p>}</section></CandidateDialog>}} {{historyOpen && <CodexConversationHistory sessions={sessions} selectedId={conversation.id} retentionDays={retention} retentionBusy={retentionBusy} onDelete={deleteConversation} onClose={() => setHistoryOpen(false)} onSelect={(id) => { const item = sessions.find((value) => value.id === id); if (item) {\r\n        stop();\r\n        saveConversation(conversationRef.current, true);\r\n        setIgnoredTarget(suppliedTarget ?? null); setProposal(null); setSelectedImageId(undefined);\r\n        const snapshot = getSnapshot();\r\n        const targets = textTargets(item.draft);\r\n        const matchingDocument = documentPath ? documentSourceIdentity(item.documentPath ?? \"\") === documentSourceIdentity(documentPath) : !item.documentPath && !!item.documentId && !!snapshot && sameDocumentTab(item.documentId, snapshot.documentId);\r\n        replaceConversation(matchingDocument && snapshot && targets.every(target => target.snapshot.content === snapshot.content) ? { ...item, draft: { ...item.draft, targetSnapshot: null, targetLabel: undefined, textTargets: targets.map(target => ({ ...target, snapshot: { ...target.snapshot, documentId: snapshot.documentId } })) } } : item);\r\n    } setHistoryOpen(false); }} onRetentionChange={changeRetention}/>}} {{logsOpen && <CodexLogViewer data={logs} candidateStates={Object.fromEntries([...sessions, conversation].flatMap(session => session.messages.flatMap(message => message.response?.image ? [[message.response.requestId, message.response.image.status]] : [])))} onClose={() => setLogsOpen(false)} onLimitChange={async (limit) => { setLogs(await setCodexLogLimit(limit)); }}/>}}",
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 798,
+        "sourceLine": 778,
         "sourceColumn": 12,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 798,
+        "line": 778,
         "column": 12
       },
       "interactions": [
@@ -45054,14 +45054,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 804,
+        "sourceLine": 784,
         "sourceColumn": 20,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 804,
+        "line": 784,
         "column": 20
       },
       "interactions": [
@@ -45107,14 +45107,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 808,
+        "sourceLine": 788,
         "sourceColumn": 141,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 808,
+        "line": 788,
         "column": 141
       },
       "interactions": [
@@ -45158,14 +45158,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 808,
+        "sourceLine": 788,
         "sourceColumn": 389,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 808,
+        "line": 788,
         "column": 389
       },
       "interactions": [
@@ -45209,14 +45209,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 808,
+        "sourceLine": 788,
         "sourceColumn": 483,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 808,
+        "line": 788,
         "column": 483
       },
       "interactions": [
@@ -45260,14 +45260,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 809,
+        "sourceLine": 789,
         "sourceColumn": 74,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 809,
+        "line": 789,
         "column": 74
       },
       "interactions": [
@@ -45311,14 +45311,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 809,
+        "sourceLine": 789,
         "sourceColumn": 265,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 809,
+        "line": 789,
         "column": 265
       },
       "interactions": [
@@ -45362,14 +45362,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 817,
+        "sourceLine": 797,
         "sourceColumn": 180,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 817,
+        "line": 797,
         "column": 180
       },
       "interactions": [
@@ -45413,14 +45413,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 817,
+        "sourceLine": 797,
         "sourceColumn": 345,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 817,
+        "line": 797,
         "column": 345
       },
       "interactions": [
@@ -45464,14 +45464,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 817,
+        "sourceLine": 797,
         "sourceColumn": 624,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 817,
+        "line": 797,
         "column": 624
       },
       "interactions": [
@@ -45515,14 +45515,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 817,
+        "sourceLine": 797,
         "sourceColumn": 904,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 817,
+        "line": 797,
         "column": 904
       },
       "interactions": [
@@ -45566,14 +45566,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 818,
+        "sourceLine": 798,
         "sourceColumn": 222,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 818,
+        "line": 798,
         "column": 222
       },
       "interactions": [
@@ -45617,14 +45617,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 822,
+        "sourceLine": 802,
         "sourceColumn": 7,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 822,
+        "line": 802,
         "column": 7
       },
       "interactions": [
@@ -45670,14 +45670,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 829,
+        "sourceLine": 809,
         "sourceColumn": 21,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 829,
+        "line": 809,
         "column": 21
       },
       "interactions": [
@@ -45722,14 +45722,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 834,
+        "sourceLine": 814,
         "sourceColumn": 54,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 834,
+        "line": 814,
         "column": 54
       },
       "interactions": [
@@ -45773,14 +45773,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 834,
+        "sourceLine": 814,
         "sourceColumn": 344,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 834,
+        "line": 814,
         "column": 344
       },
       "interactions": [
@@ -45824,14 +45824,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 839,
+        "sourceLine": 819,
         "sourceColumn": 23,
         "ordinal": 21
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 839,
+        "line": 819,
         "column": 23
       },
       "interactions": [
@@ -45875,14 +45875,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 840,
+        "sourceLine": 820,
         "sourceColumn": 15,
         "ordinal": 22
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 840,
+        "line": 820,
         "column": 15
       },
       "interactions": [],
@@ -45924,14 +45924,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 840,
+        "sourceLine": 820,
         "sourceColumn": 59,
         "ordinal": 23
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 840,
+        "line": 820,
         "column": 59
       },
       "interactions": [],
@@ -45973,14 +45973,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 840,
+        "sourceLine": 820,
         "sourceColumn": 112,
         "ordinal": 24
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 840,
+        "line": 820,
         "column": 112
       },
       "interactions": [],
@@ -46022,14 +46022,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 840,
+        "sourceLine": 820,
         "sourceColumn": 163,
         "ordinal": 25
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 840,
+        "line": 820,
         "column": 163
       },
       "interactions": [],
@@ -46071,14 +46071,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 840,
+        "sourceLine": 820,
         "sourceColumn": 214,
         "ordinal": 26
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 840,
+        "line": 820,
         "column": 214
       },
       "interactions": [],
@@ -46120,14 +46120,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 840,
+        "sourceLine": 820,
         "sourceColumn": 267,
         "ordinal": 27
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 840,
+        "line": 820,
         "column": 267
       },
       "interactions": [],
@@ -46169,14 +46169,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 842,
+        "sourceLine": 822,
         "sourceColumn": 23,
         "ordinal": 28
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 842,
+        "line": 822,
         "column": 23
       },
       "interactions": [
@@ -46220,14 +46220,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 842,
+        "sourceLine": 822,
         "sourceColumn": 188,
         "ordinal": 29
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 842,
+        "line": 822,
         "column": 188
       },
       "interactions": [],
@@ -46269,20 +46269,20 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 843,
+        "sourceLine": 823,
         "sourceColumn": 13,
         "ordinal": 30
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 843,
+        "line": 823,
         "column": 13
       },
       "interactions": [
         "onClick"
       ],
-      "signature": "sha256:5d62bf42e2398fc1a1aefe3ba54eb85f5a9d812beb6b9e0e38c71f750c1d7172",
+      "signature": "sha256:75b5fce6eb226a9d87ddf586146feb3d9587a976db75788c4b15c120e88fd8d0",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46320,14 +46320,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 850,
+        "sourceLine": 830,
         "sourceColumn": 31,
         "ordinal": 31
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 850,
+        "line": 830,
         "column": 31
       },
       "interactions": [
@@ -46371,14 +46371,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 856,
+        "sourceLine": 836,
         "sourceColumn": 13,
         "ordinal": 32
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 856,
+        "line": 836,
         "column": 13
       },
       "interactions": [
@@ -46422,14 +46422,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 856,
+        "sourceLine": 836,
         "sourceColumn": 101,
         "ordinal": 33
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 856,
+        "line": 836,
         "column": 101
       },
       "interactions": [
@@ -46473,14 +46473,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 858,
+        "sourceLine": 838,
         "sourceColumn": 168,
         "ordinal": 34
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 858,
+        "line": 838,
         "column": 168
       },
       "interactions": [
@@ -46525,14 +46525,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 858,
+        "sourceLine": 838,
         "sourceColumn": 818,
         "ordinal": 35
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 858,
+        "line": 838,
         "column": 818
       },
       "interactions": [
@@ -46576,14 +46576,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 860,
+        "sourceLine": 840,
         "sourceColumn": 13,
         "ordinal": 36
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 860,
+        "line": 840,
         "column": 13
       },
       "interactions": [
@@ -46627,14 +46627,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 861,
+        "sourceLine": 841,
         "sourceColumn": 13,
         "ordinal": 37
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 861,
+        "line": 841,
         "column": 13
       },
       "interactions": [
@@ -46678,14 +46678,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 862,
+        "sourceLine": 842,
         "sourceColumn": 39,
         "ordinal": 38
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 862,
+        "line": 842,
         "column": 39
       },
       "interactions": [
@@ -46729,14 +46729,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 864,
+        "sourceLine": 844,
         "sourceColumn": 346,
         "ordinal": 39
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 864,
+        "line": 844,
         "column": 346
       },
       "interactions": [
@@ -46781,14 +46781,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 864,
+        "sourceLine": 844,
         "sourceColumn": 869,
         "ordinal": 40
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 864,
+        "line": 844,
         "column": 869
       },
       "interactions": [
@@ -46832,14 +46832,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 873,
+        "sourceLine": 853,
         "sourceColumn": 18,
         "ordinal": 41
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 873,
+        "line": 853,
         "column": 18
       },
       "interactions": [],
@@ -46881,14 +46881,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 874,
+        "sourceLine": 854,
         "sourceColumn": 113,
         "ordinal": 42
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 874,
+        "line": 854,
         "column": 113
       },
       "interactions": [
@@ -46932,14 +46932,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 874,
+        "sourceLine": 854,
         "sourceColumn": 305,
         "ordinal": 43
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 874,
+        "line": 854,
         "column": 305
       },
       "interactions": [
@@ -46983,14 +46983,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 874,
+        "sourceLine": 854,
         "sourceColumn": 435,
         "ordinal": 44
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 874,
+        "line": 854,
         "column": 435
       },
       "interactions": [
@@ -47034,14 +47034,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 874,
+        "sourceLine": 854,
         "sourceColumn": 546,
         "ordinal": 45
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 874,
+        "line": 854,
         "column": 546
       },
       "interactions": [

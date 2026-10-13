@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { createRef, useRef, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { restoreDocumentSearchFocus } from "./App";
+import { restoreDocumentSearchFocus } from "./lib/previewDom";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./components/MarkdownEditor";
 
 beforeAll(() => {

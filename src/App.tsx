@@ -1,3 +1,7 @@
+import { handleWindowCloseRequest, unchangedTabForAction, confirmUnchangedTabAction, closeTabsSequentially } from "./lib/documentActions";
+import { focusAndSelectSearchInput, documentLinkTarget, tocHeadingIdAtPointer, previewSourceBlocks, previewSourceLineAtNode, hasPreviewTextSelection, restoreDocumentSearchFocus } from "./lib/previewDom";
+import { resolveDocumentSidePanel, resolveDocumentPanelForView, canEditMarkdownDocument, shouldBlockF5Reload, applicationWindowTitle } from "./lib/applicationViewPolicy";
+import { useDocumentWatchTargets } from "./hooks/useDocumentWatchTargets";
 import { createFenceStorageConverter, type OccurrenceConversionCommit } from "./lib/fenceStorageConversion";
 import { previewOperationPolicy } from "./lib/previewOperationPolicy";
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
@@ -41,9 +45,9 @@ import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useFileDrop } from "./hooks/useFileDrop";
 import { useApplicationSettings } from "./hooks/useApplicationSettings";
 import { useSharePointAuthentication } from "./hooks/useSharePointAuthentication";
-import { createMarkdown, deleteDocumentAsset, diagnoseDocument, discardStagedAssets, documentWatchTargets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, removeWindowWatchTargets, renameDocument, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, syncWatchTargets, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
+import { createMarkdown, deleteDocumentAsset, diagnoseDocument, discardStagedAssets, getInitialFiles, hasImageBackup, loadMarkdown, openContainingFolder, openExternalApp, openInEditor, openInNewWindow, readDocumentAsset, renameDocument, renameImageAndReferences, reportDebugWindowState, restoreImage, saveFoldState, saveMarkdown, saveSettings, saveSharePointAsset, stageClipboardImage, stageDocumentAsset, updateImageCaption, updateStagedTextAsset } from "./lib/commands";
 import { ToastState, type MarkdownLoadResult, type StagedDocumentAsset } from "./types/app";
-import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode, type TabsAction, type TabState } from "./state/tabsReducer";
+import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode, type TabsAction } from "./state/tabsReducer";
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
@@ -94,47 +98,8 @@ import "./styles/crop.css";
 import "./styles/themes.css";
 import "./styles/syntax-highlight.css";
 
-// Keep this list in sync with StatusBar's fixed zoom choices.  Normalizing at
-// the state boundary also repairs legacy persisted values that were not a
-// selectable option.
-export { moveZoomLevel, normalizeZoom, ZOOM_LEVELS, type ZoomLevel } from "./lib/zoom";
-
 const MarkdownEditor = lazy(() => import("./components/MarkdownEditor").then((module) => ({ default: module.MarkdownEditor })));
 const EditingTestReport = lazy(() => import("./components/EditingTestReport").then((module) => ({ default: module.EditingTestReport })));
-
-export function focusAndSelectSearchInput(input: HTMLInputElement | null): void {
-  input?.focus();
-  input?.select();
-}
-
-export function documentLinkTarget(target: EventTarget | null): string | null {
-  if (!(target instanceof Element)) return null;
-  const link = target.closest("a[href]");
-  if (!(link instanceof HTMLAnchorElement) || !link.closest(".markdown-body")) return null;
-  return link.getAttribute("href");
-}
-
-export function tocHeadingIdAtPointer(target: Element | null, markdownRoot: HTMLElement | null): string | null {
-  if (!target || !markdownRoot || !markdownRoot.contains(target)) return null;
-  return target.closest<HTMLElement>("[data-fold-id]")?.dataset.foldId ?? null;
-}
-
-export function resolveDocumentSidePanel(searchOpen: boolean, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): DocumentSidePanelTab | null {
-  if (searchOpen) return "search";
-  return requestedPanel;
-}
-
-export function resolveDocumentPanelForView(viewMode: ViewMode, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): Exclude<DocumentSidePanelTab, "search"> | null {
-  return viewMode === "presentation" && requestedPanel === "images" ? null : requestedPanel;
-}
-
-export function canEditMarkdownDocument(document: { kind: string } | null | undefined): boolean {
-  return document?.kind === "markdown" || document?.kind === "tsv";
-}
-
-export function shouldBlockF5Reload(tab: { dirty: boolean } | null | undefined): boolean {
-  return Boolean(tab?.dirty);
-}
 
 interface PreviewContextState {
   x: number;
@@ -144,97 +109,6 @@ interface PreviewContextState {
   markdownText: string;
   rowElement: HTMLTableRowElement | null;
   rowTsv: string;
-}
-
-function previewSourceBlocks(root: HTMLElement | null, visibleOnly = false): HTMLElement[] {
-  const seen = new Set<number>();
-  return [...(root?.querySelectorAll<HTMLElement>("[data-source-line]") ?? [])].filter((block) => {
-    const line = Number(block.dataset.sourceLine);
-    if (!Number.isFinite(line) || line < 1 || seen.has(line)) return false;
-    if (visibleOnly && block.getClientRects().length === 0) return false;
-    seen.add(line);
-    return true;
-  });
-}
-
-function previewSourceLineAtNode(node: Node | null, root: HTMLElement): number | null {
-  const element = node instanceof Element ? node : node?.parentElement;
-  const block = element?.closest<HTMLElement>("[data-source-line]");
-  if (!block || !root.contains(block)) return null;
-  const line = Number(block.dataset.sourceLine);
-  return Number.isFinite(line) && line >= 1 ? line : null;
-}
-
-export function previewSelectionSourceRange(selection: Selection | null, root: HTMLElement, sourceLines: readonly number[], fallbackLine: number): { inside: boolean; firstLine: number; lastLine: number } {
-  const inside = Boolean(selection && !selection.isCollapsed && selection.anchorNode && selection.focusNode
-    && root.contains(selection.anchorNode) && root.contains(selection.focusNode));
-  const range = inside && selection!.rangeCount > 0 ? selection!.getRangeAt(0) : null;
-  return {
-    inside,
-    firstLine: range ? previewSourceLineAtNode(range.startContainer, root) ?? sourceLines[0] ?? fallbackLine : fallbackLine,
-    lastLine: range ? previewSourceLineAtNode(range.endContainer, root) ?? sourceLines[sourceLines.length - 1] ?? fallbackLine : fallbackLine,
-  };
-}
-
-/** True while the browser owns a non-empty text selection inside View. */
-export function hasPreviewTextSelection(selection: Selection | null, root: HTMLElement | null): boolean {
-  return Boolean(root && selection && !selection.isCollapsed && selection.toString().length > 0
-    && selection.anchorNode && selection.focusNode
-    && root.contains(selection.anchorNode) && root.contains(selection.focusNode));
-}
-
-export function applicationWindowTitle(tab: { kind?: "document" | "settings"; path: string } | null | undefined): string {
-  if (!tab) return "MdVisualizer";
-  if (tab.kind === "settings") return "設定 - MdVisualizer";
-  const segments = tab.path.split(/[\\/]/).filter(Boolean);
-  const filename = segments[segments.length - 1] ?? tab.path;
-  return `${filename} - MdVisualizer`;
-}
-
-export async function handleWindowCloseRequest(
-  hasUnsavedChanges: boolean,
-  confirmDiscard: (message?: string) => boolean | Promise<boolean>,
-  event: { preventDefault: () => void },
-  destroyWindow: () => Promise<void>,
-  isCurrent: () => boolean = () => true,
-) {
-  event.preventDefault();
-  if (hasUnsavedChanges && await confirmDiscard("未保存の編集内容があります。破棄してアプリを終了しますか？") !== true) return;
-  if (!isCurrent()) return;
-  await destroyWindow();
-}
-
-export function restoreDocumentSearchFocus(origin: HTMLElement | null, fallback: () => void): void {
-  if (origin?.isConnected) {
-    origin.focus({ preventScroll: true });
-    if (document.activeElement === origin) return;
-  }
-  fallback();
-}
-
-/** 非同期確認が対象にした本文・保存世代を比較する。focusやscrollだけの変更は許容する。 */
-export function unchangedTabForAction(before: TabState, current: TabState | undefined): boolean {
-  return Boolean(current && current.id === before.id && current.path === before.path
-    && current.generation === before.generation && current.changeSequence === before.changeSequence
-    && current.draft === before.draft && current.dirty === before.dirty && current.saving === before.saving
-    && current.loading === before.loading && current.pendingAssets === before.pendingAssets
-    && current.document?.revision === before.document?.revision);
-}
-
-export async function confirmUnchangedTabAction(
-  before: TabState,
-  getCurrent: () => TabState | undefined,
-  message: string,
-  confirmAction: (message?: string) => boolean | Promise<boolean>,
-): Promise<boolean> {
-  // Tauriのwindow.confirmはPromiseを返す。truthy判定では取消でも破棄してしまう。
-  if (await confirmAction(message) !== true) return false;
-  return unchangedTabForAction(before, getCurrent());
-}
-
-export async function closeTabsSequentially(ids: readonly string[], close: (id: string) => Promise<boolean>): Promise<boolean> {
-  for (const id of ids) if (!await close(id)) return false;
-  return true;
 }
 
 export function App() {
@@ -365,7 +239,6 @@ export function App() {
   const panelBeforeSearchRef = useRef<Record<string, Exclude<DocumentSidePanelTab, "search"> | null>>({});
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([]);
-  const [diagnosticWatchTargets, setDiagnosticWatchTargets] = useState<Record<string, string[]>>({});
   const [diagnosticsRefresh, setDiagnosticsRefresh] = useState(0);
   const [activeTocHeadingId, setActiveTocHeadingId] = useState<string | null>(null);
   const [activeImageOccurrenceId, setActiveImageOccurrenceId] = useState<string | null>(null);
@@ -759,32 +632,9 @@ export function App() {
     }
   }, [tabsState.tabs, loadTab, authenticationReady, authenticationError]);
 
-  const watchTargetKey = JSON.stringify(
-    [...new Set(tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document)
-      ? [...(diagnosticWatchTargets[tab.document.path] ?? [tab.document.path]), ...tab.document.image_paths]
-      : []))].sort(),
-  );
-
-  const watchableDocumentsKey = JSON.stringify(tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document) ? [tab.document.path, tab.document.revision] : []));
-  useEffect(() => {
-    let disposed = false;
-    const paths = tabsState.tabs.flatMap((tab) => tab.document && !tab.untitled && !isSharePointDocument(tab.document) ? [tab.document.path] : []);
-    void Promise.all(paths.map(async (path) => [path, await documentWatchTargets(path)] as const)).then((entries) => {
-      if (!disposed) setDiagnosticWatchTargets(Object.fromEntries(entries));
-    }).catch(() => {
-      // The normal image_paths watcher remains active when diagnostics cannot load.
-    });
-    return () => { disposed = true; };
-  }, [watchableDocumentsKey]);
-
-  useEffect(() => {
-    // OFFは通常本文の自動更新を止める。開いているDiffの最新版監視は独立して維持する。
-    const targets: string[] = autoReload === "off" ? (documentDiff ? [documentDiff.path] : []) : JSON.parse(watchTargetKey);
-    if (targets.length > 0) void syncWatchTargets(windowLabel, targets);
-    else void removeWindowWatchTargets(windowLabel);
-  }, [watchTargetKey, autoReload, windowLabel, documentDiff?.path]);
-
-  useEffect(() => () => { void removeWindowWatchTargets(windowLabel); }, [windowLabel]);
+  const diagnosticWatchTargets = useDocumentWatchTargets({
+    tabs: tabsState.tabs, autoReload, windowLabel, diffPath: documentDiff?.path,
+  });
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
