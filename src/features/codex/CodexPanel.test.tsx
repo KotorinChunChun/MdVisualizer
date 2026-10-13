@@ -7,6 +7,11 @@ import { loadSettings, saveSettings } from "../../lib/commands";
 import type { CodexReply, EditorSnapshot } from "./model";
 import type { CodexConversation } from "./sessions";
 import { upsertCodexSession } from "./sessions";
+import { invoke } from "@tauri-apps/api/core";
+vi.mock("@tauri-apps/api/core", async importOriginal => {
+    const original = await importOriginal<typeof import("@tauri-apps/api/core")>();
+    return { ...original, invoke: vi.fn() };
+});
 const sessionMock = vi.hoisted(() => ({ sessions: [] as CodexConversation[], retentionDays: 30 }));
 vi.mock("./api", () => ({
     generateCodex: vi.fn(),
@@ -73,6 +78,7 @@ async function send(text = "短くして") {
     fireEvent.click(screen.getByRole("button", { name: "送信（Ctrl+Enter）" }));
 }
 beforeEach(() => {
+    vi.mocked(invoke).mockResolvedValue([{ model: "cli-discovered", displayName: "CLIモデル", isDefault: true }]);
     vi.restoreAllMocks();
     vi.clearAllMocks();
     sessionMock.sessions = [];
@@ -86,6 +92,37 @@ beforeEach(() => {
 });
 afterEach(() => { vi.restoreAllMocks(); cleanup(); });
 describe("Codexパネル", () => {
+    it("CLI取得モデルだけを候補に表示し、保存済み一覧外モデルを保持する", async () => {
+        mount();
+        await screen.findByText(/Codex CLIから1件取得しました/);
+        const input = screen.getByLabelText("モデル") as HTMLInputElement;
+        const list = document.getElementById(input.getAttribute("list")!)!;
+        expect([...list.querySelectorAll("option")].map(option => option.value)).toEqual(["cli-discovered"]);
+        expect(input.value).toBe("gpt-5.6-luna");
+        expect(screen.getByText(/現在の入力値は取得した一覧にありません/)).toBeTruthy();
+        expect(invoke).toHaveBeenCalledWith("codex_list_models");
+    });
+    it("モデル取得失敗後も入力を保持し、更新で再取得できる", async () => {
+        vi.mocked(invoke).mockRejectedValueOnce(new Error("CLI未導入"));
+        mount();
+        await screen.findByText(/CLI未導入/);
+        fireEvent.change(screen.getByLabelText("モデル"), { target: { value: "custom-saved" } });
+        fireEvent.click(screen.getByRole("button", { name: "モデル一覧を更新" }));
+        await screen.findByText(/Codex CLIから1件取得しました/);
+        expect(screen.getByLabelText("モデル")).toHaveValue("custom-saved");
+        expect(saveSettings).not.toHaveBeenCalled();
+    });
+    it("閉じたパネルの遅延応答で再表示後の一覧を上書きしない", async () => {
+        let finish!: (value: unknown) => void;
+        vi.mocked(invoke).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+        const view = mount();
+        await screen.findByRole("button", { name: "モデル一覧を取得中…" });
+        view.unmount();
+        mount();
+        await screen.findByText(/Codex CLIから1件取得しました/);
+        await act(async () => finish([{ model: "stale", displayName: "古い応答", isDefault: false }]));
+        expect(document.querySelector('option[value="stale"]')).toBeNull();
+    });
     it("初回送信は同意後にだけAIを有効化して送信する", async () => {
         vi.mocked(loadSettings).mockResolvedValue({ codex: { enabled: false, model: "gpt-5.6-luna" } });
         vi.spyOn(window, "confirm").mockReturnValue(true);

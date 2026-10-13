@@ -44805,14 +44805,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 775,
+        "sourceLine": 797,
         "sourceColumn": 31,
         "ordinal": 1
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 775,
+        "line": 797,
         "column": 31
       },
       "interactions": [
@@ -44856,14 +44856,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 775,
+        "sourceLine": 797,
         "sourceColumn": 360,
         "ordinal": 2
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 775,
+        "line": 797,
         "column": 360
       },
       "interactions": [],
@@ -44905,14 +44905,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 775,
+        "sourceLine": 797,
         "sourceColumn": 432,
         "ordinal": 3
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 775,
+        "line": 797,
         "column": 432
       },
       "interactions": [],
@@ -44954,14 +44954,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 775,
+        "sourceLine": 797,
         "sourceColumn": 476,
         "ordinal": 4
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 775,
+        "line": 797,
         "column": 476
       },
       "interactions": [],
@@ -45003,14 +45003,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 776,
+        "sourceLine": 798,
         "sourceColumn": 12,
         "ordinal": 5
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 776,
+        "line": 798,
         "column": 12
       },
       "interactions": [
@@ -45054,14 +45054,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 782,
+        "sourceLine": 804,
         "sourceColumn": 20,
         "ordinal": 6
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 782,
+        "line": 804,
         "column": 20
       },
       "interactions": [
@@ -45107,14 +45107,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 786,
+        "sourceLine": 808,
         "sourceColumn": 141,
         "ordinal": 7
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 786,
+        "line": 808,
         "column": 141
       },
       "interactions": [
@@ -45158,14 +45158,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 786,
+        "sourceLine": 808,
         "sourceColumn": 389,
         "ordinal": 8
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 786,
+        "line": 808,
         "column": 389
       },
       "interactions": [
@@ -45209,14 +45209,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 786,
+        "sourceLine": 808,
         "sourceColumn": 483,
         "ordinal": 9
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 786,
+        "line": 808,
         "column": 483
       },
       "interactions": [
@@ -45260,14 +45260,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 787,
+        "sourceLine": 809,
         "sourceColumn": 74,
         "ordinal": 10
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 787,
+        "line": 809,
         "column": 74
       },
       "interactions": [
@@ -45311,14 +45311,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 787,
+        "sourceLine": 809,
         "sourceColumn": 265,
         "ordinal": 11
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 787,
+        "line": 809,
         "column": 265
       },
       "interactions": [
@@ -45362,14 +45362,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 795,
+        "sourceLine": 817,
         "sourceColumn": 180,
         "ordinal": 12
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 795,
+        "line": 817,
         "column": 180
       },
       "interactions": [
@@ -45413,14 +45413,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 795,
+        "sourceLine": 817,
         "sourceColumn": 345,
         "ordinal": 13
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 795,
+        "line": 817,
         "column": 345
       },
       "interactions": [
@@ -45464,14 +45464,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 795,
+        "sourceLine": 817,
         "sourceColumn": 624,
         "ordinal": 14
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 795,
+        "line": 817,
         "column": 624
       },
       "interactions": [
@@ -45515,14 +45515,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 795,
+        "sourceLine": 817,
         "sourceColumn": 904,
         "ordinal": 15
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 795,
+        "line": 817,
         "column": 904
       },
       "interactions": [
@@ -45566,14 +45566,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 796,
+        "sourceLine": 818,
         "sourceColumn": 222,
         "ordinal": 16
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 796,
+        "line": 818,
         "column": 222
       },
       "interactions": [
@@ -45617,14 +45617,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 800,
+        "sourceLine": 822,
         "sourceColumn": 7,
         "ordinal": 17
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 800,
+        "line": 822,
         "column": 7
       },
       "interactions": [
@@ -45670,14 +45670,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 807,
+        "sourceLine": 829,
         "sourceColumn": 21,
         "ordinal": 18
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 807,
+        "line": 829,
         "column": 21
       },
       "interactions": [
@@ -45722,14 +45722,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 812,
+        "sourceLine": 834,
         "sourceColumn": 54,
         "ordinal": 19
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 812,
+        "line": 834,
         "column": 54
       },
       "interactions": [
@@ -45773,14 +45773,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 812,
+        "sourceLine": 834,
         "sourceColumn": 344,
         "ordinal": 20
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 812,
+        "line": 834,
         "column": 344
       },
       "interactions": [
@@ -45824,14 +45824,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 817,
+        "sourceLine": 839,
         "sourceColumn": 23,
         "ordinal": 21
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 817,
+        "line": 839,
         "column": 23
       },
       "interactions": [
@@ -45875,14 +45875,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 818,
+        "sourceLine": 840,
         "sourceColumn": 15,
         "ordinal": 22
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 818,
+        "line": 840,
         "column": 15
       },
       "interactions": [],
@@ -45924,14 +45924,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 818,
+        "sourceLine": 840,
         "sourceColumn": 59,
         "ordinal": 23
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 818,
+        "line": 840,
         "column": 59
       },
       "interactions": [],
@@ -45973,14 +45973,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 818,
+        "sourceLine": 840,
         "sourceColumn": 112,
         "ordinal": 24
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 818,
+        "line": 840,
         "column": 112
       },
       "interactions": [],
@@ -46022,14 +46022,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 818,
+        "sourceLine": 840,
         "sourceColumn": 163,
         "ordinal": 25
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 818,
+        "line": 840,
         "column": 163
       },
       "interactions": [],
@@ -46071,14 +46071,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 818,
+        "sourceLine": 840,
         "sourceColumn": 214,
         "ordinal": 26
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 818,
+        "line": 840,
         "column": 214
       },
       "interactions": [],
@@ -46120,14 +46120,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 818,
+        "sourceLine": 840,
         "sourceColumn": 267,
         "ordinal": 27
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 818,
+        "line": 840,
         "column": 267
       },
       "interactions": [],
@@ -46169,14 +46169,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 820,
+        "sourceLine": 842,
         "sourceColumn": 23,
         "ordinal": 28
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 820,
+        "line": 842,
         "column": 23
       },
       "interactions": [
@@ -46214,24 +46214,24 @@
       "controlKind": "select",
       "tag": "option",
       "role": null,
-      "displayName": null,
-      "labelKind": "missing",
-      "labelExpression": null,
+      "displayName": "${{model.displayName}{model.isDefault ? \"（CLI既定）\" : \"\"}}",
+      "labelKind": "dynamic",
+      "labelExpression": "${{model.displayName}{model.isDefault ? \"（CLI既定）\" : \"\"}}",
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 820,
-        "sourceColumn": 277,
+        "sourceLine": 842,
+        "sourceColumn": 188,
         "ordinal": 29
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 820,
-        "column": 277
+        "line": 842,
+        "column": 188
       },
       "interactions": [],
-      "signature": "sha256:d8491f182400cd2a32e808fae20abe4bf88f8da4395f034dbbb7513329d908b5",
+      "signature": "sha256:c7def995d51b940a63936f5ddb85a6c5484a35cd08b8124f625cf802cde724cd",
       "targetSourcePresence": {
         "desktop": "shared-source",
         "html": "shared-source",
@@ -46239,7 +46239,7 @@
         "spfx": "shared-source"
       },
       "comparisonStatus": "unmapped",
-      "exclusionReason": "表示名を静的抽出できない（子要素または実行時生成を要確認）",
+      "exclusionReason": null,
       "hosts": {
         "desktop": "共通正本",
         "html": "対象外:デスクトップのAI/OS/設定/タブ機能",
@@ -46263,20 +46263,71 @@
       "controlKind": "button",
       "tag": "button",
       "role": null,
+      "displayName": "{{modelsLoading ? \"モデル一覧を取得中…\" : \"モデル一覧を更新\"}}",
+      "labelKind": "dynamic",
+      "labelExpression": "{{modelsLoading ? \"モデル一覧を取得中…\" : \"モデル一覧を更新\"}}",
+      "orderScope": {
+        "component": "CodexPanel",
+        "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
+        "sourceLine": 843,
+        "sourceColumn": 13,
+        "ordinal": 30
+      },
+      "source": {
+        "kind": "shared",
+        "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
+        "line": 843,
+        "column": 13
+      },
+      "interactions": [
+        "onClick"
+      ],
+      "signature": "sha256:5d62bf42e2398fc1a1aefe3ba54eb85f5a9d812beb6b9e0e38c71f750c1d7172",
+      "targetSourcePresence": {
+        "desktop": "shared-source",
+        "html": "shared-source",
+        "php": "shared-source",
+        "spfx": "shared-source"
+      },
+      "comparisonStatus": "unmapped",
+      "exclusionReason": null,
+      "hosts": {
+        "desktop": "共通正本",
+        "html": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "php": "対象外:デスクトップのAI/OS/設定/タブ機能",
+        "spfx": "対象外:デスクトップのAI/OS/設定/タブ機能"
+      },
+      "nameCheck": "要実画面確認:動的表示/子要素",
+      "orderCheck": "共通ソース順序",
+      "designCheck": "共有CSS+ホスト上書きを別検査",
+      "location": {
+        "groupId": "UI229",
+        "name": "共通／CodexPanel／CodexPanelの操作領域",
+        "order": 11,
+        "number": "UI229-11",
+        "basis": "定義順（実表示順は要確認）"
+      }
+    },
+    {
+      "id": "ui-1d20ff0b58cd",
+      "featureGroup": "codex",
+      "controlKind": "button",
+      "tag": "button",
+      "role": null,
       "displayName": "設定を保存",
       "labelKind": "static",
       "labelExpression": null,
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 823,
+        "sourceLine": 850,
         "sourceColumn": 31,
-        "ordinal": 30
+        "ordinal": 31
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 823,
+        "line": 850,
         "column": 31
       },
       "interactions": [
@@ -46309,7 +46360,7 @@
       }
     },
     {
-      "id": "ui-1d20ff0b58cd",
+      "id": "ui-8efba8dd2b65",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46320,14 +46371,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 829,
+        "sourceLine": 856,
         "sourceColumn": 13,
-        "ordinal": 31
+        "ordinal": 32
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 829,
+        "line": 856,
         "column": 13
       },
       "interactions": [
@@ -46360,7 +46411,7 @@
       }
     },
     {
-      "id": "ui-8efba8dd2b65",
+      "id": "ui-349a6d090ee5",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46371,14 +46422,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 829,
+        "sourceLine": 856,
         "sourceColumn": 101,
-        "ordinal": 32
+        "ordinal": 33
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 829,
+        "line": 856,
         "column": 101
       },
       "interactions": [
@@ -46411,7 +46462,7 @@
       }
     },
     {
-      "id": "ui-c300c71c8ca3",
+      "id": "ui-f08138c9e8e6",
       "featureGroup": "codex",
       "controlKind": "input",
       "tag": "input",
@@ -46422,14 +46473,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 831,
+        "sourceLine": 858,
         "sourceColumn": 168,
-        "ordinal": 33
+        "ordinal": 34
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 831,
+        "line": 858,
         "column": 168
       },
       "interactions": [
@@ -46457,13 +46508,13 @@
       "location": {
         "groupId": "UI229",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
-        "order": 11,
-        "number": "UI229-11",
+        "order": 12,
+        "number": "UI229-12",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-3a95a2c4670c",
+      "id": "ui-4ef1893b8d00",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46474,14 +46525,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 831,
+        "sourceLine": 858,
         "sourceColumn": 818,
-        "ordinal": 34
+        "ordinal": 35
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 831,
+        "line": 858,
         "column": 818
       },
       "interactions": [
@@ -46508,13 +46559,13 @@
       "location": {
         "groupId": "UI229",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
-        "order": 12,
-        "number": "UI229-12",
+        "order": 13,
+        "number": "UI229-13",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-4ef1893b8d00",
+      "id": "ui-ae2856c82d28",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46525,14 +46576,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 833,
+        "sourceLine": 860,
         "sourceColumn": 13,
-        "ordinal": 35
+        "ordinal": 36
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 833,
+        "line": 860,
         "column": 13
       },
       "interactions": [
@@ -46565,7 +46616,7 @@
       }
     },
     {
-      "id": "ui-a365ee96a443",
+      "id": "ui-ab813ace06b5",
       "featureGroup": "codex",
       "controlKind": "input",
       "tag": "input",
@@ -46576,14 +46627,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 834,
+        "sourceLine": 861,
         "sourceColumn": 13,
-        "ordinal": 36
+        "ordinal": 37
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 834,
+        "line": 861,
         "column": 13
       },
       "interactions": [
@@ -46616,7 +46667,7 @@
       }
     },
     {
-      "id": "ui-af8a09200db4",
+      "id": "ui-b60a3903c25d",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46627,14 +46678,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 835,
+        "sourceLine": 862,
         "sourceColumn": 39,
-        "ordinal": 37
+        "ordinal": 38
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 835,
+        "line": 862,
         "column": 39
       },
       "interactions": [
@@ -46667,7 +46718,7 @@
       }
     },
     {
-      "id": "ui-0be36a572230",
+      "id": "ui-9a083354cdae",
       "featureGroup": "codex",
       "controlKind": "input",
       "tag": "input",
@@ -46678,14 +46729,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 837,
+        "sourceLine": 864,
         "sourceColumn": 346,
-        "ordinal": 38
+        "ordinal": 39
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 837,
+        "line": 864,
         "column": 346
       },
       "interactions": [
@@ -46713,13 +46764,13 @@
       "location": {
         "groupId": "UI229",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
-        "order": 13,
-        "number": "UI229-13",
+        "order": 14,
+        "number": "UI229-14",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-3c6da2c46539",
+      "id": "ui-d402e5ed584d",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46730,14 +46781,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 837,
+        "sourceLine": 864,
         "sourceColumn": 869,
-        "ordinal": 39
+        "ordinal": 40
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 837,
+        "line": 864,
         "column": 869
       },
       "interactions": [
@@ -46764,13 +46815,13 @@
       "location": {
         "groupId": "UI229",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
-        "order": 14,
-        "number": "UI229-14",
+        "order": 15,
+        "number": "UI229-15",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-33a537e6f28c",
+      "id": "ui-849d7609a876",
       "featureGroup": "codex",
       "controlKind": "dialog",
       "tag": "div",
@@ -46781,14 +46832,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 846,
+        "sourceLine": 873,
         "sourceColumn": 18,
-        "ordinal": 40
+        "ordinal": 41
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 846,
+        "line": 873,
         "column": 18
       },
       "interactions": [],
@@ -46813,13 +46864,13 @@
       "location": {
         "groupId": "UI229",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
-        "order": 15,
-        "number": "UI229-15",
+        "order": 16,
+        "number": "UI229-16",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-211e2899f8f0",
+      "id": "ui-41ac1fd7d699",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46830,14 +46881,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 847,
+        "sourceLine": 874,
         "sourceColumn": 113,
-        "ordinal": 41
+        "ordinal": 42
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 847,
+        "line": 874,
         "column": 113
       },
       "interactions": [
@@ -46870,7 +46921,7 @@
       }
     },
     {
-      "id": "ui-41ac1fd7d699",
+      "id": "ui-6d3acc0e7243",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46881,14 +46932,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 847,
+        "sourceLine": 874,
         "sourceColumn": 305,
-        "ordinal": 42
+        "ordinal": 43
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 847,
+        "line": 874,
         "column": 305
       },
       "interactions": [
@@ -46915,13 +46966,13 @@
       "location": {
         "groupId": "UI229",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
-        "order": 16,
-        "number": "UI229-16",
+        "order": 17,
+        "number": "UI229-17",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-6d3acc0e7243",
+      "id": "ui-742895b08fab",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46932,14 +46983,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 847,
+        "sourceLine": 874,
         "sourceColumn": 435,
-        "ordinal": 43
+        "ordinal": 44
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 847,
+        "line": 874,
         "column": 435
       },
       "interactions": [
@@ -46966,13 +47017,13 @@
       "location": {
         "groupId": "UI229",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
-        "order": 17,
-        "number": "UI229-17",
+        "order": 18,
+        "number": "UI229-18",
         "basis": "定義順（実表示順は要確認）"
       }
     },
     {
-      "id": "ui-742895b08fab",
+      "id": "ui-b533f1978701",
       "featureGroup": "codex",
       "controlKind": "button",
       "tag": "button",
@@ -46983,14 +47034,14 @@
       "orderScope": {
         "component": "CodexPanel",
         "sourceFile": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "sourceLine": 847,
+        "sourceLine": 874,
         "sourceColumn": 546,
-        "ordinal": 44
+        "ordinal": 45
       },
       "source": {
         "kind": "shared",
         "file": "web-platform/packages/editor-ui/src/features/codex/CodexPanel.tsx",
-        "line": 847,
+        "line": 874,
         "column": 546
       },
       "interactions": [
@@ -47017,8 +47068,8 @@
       "location": {
         "groupId": "UI229",
         "name": "共通／CodexPanel／CodexPanelの操作領域",
-        "order": 18,
-        "number": "UI229-18",
+        "order": 19,
+        "number": "UI229-19",
         "basis": "定義順（実表示順は要確認）"
       }
     },

@@ -2,6 +2,7 @@ pub mod app_state;
 pub mod asset_staging;
 pub mod backup;
 pub mod codex;
+pub mod codex_models;
 pub mod codex_sessions;
 pub mod codex_skills;
 pub mod codex_image_edit;
@@ -289,6 +290,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             html_export::save_html_export,
             codex::codex_generate,
+            codex_models::codex_list_models,
             codex::codex_cancel,
             codex::codex_list_logs,
             codex::codex_set_log_limit,
