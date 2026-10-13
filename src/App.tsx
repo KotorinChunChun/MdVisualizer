@@ -1,3 +1,4 @@
+import { createFenceStorageConverter, type OccurrenceConversionCommit } from "./lib/fenceStorageConversion";
 import { previewOperationPolicy } from "./lib/previewOperationPolicy";
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -46,8 +47,8 @@ import { ClosedTabState, initialTabsState, tabsReducer, type EditorWorkspaceMode
 import { getMermaidStatus, subscribeMermaidStatus } from "./lib/mermaidStatus";
 import { captureScrollAnchor, restoreScrollAnchor, type SemanticScrollAnchor } from "./lib/scrollAnchor";
 import { ancestorFoldIds, toggleNestedFoldStates } from "./lib/foldSections";
-import { codeFenceTitle, replaceCodeFenceBody, replaceMarkdownOccurrence, type CodeFenceOccurrence, type EditableMarkdownOccurrence, type MarkdownTableOccurrence } from "./lib/markdownOccurrences";
-import { normalizedAssetFilename, parseRasterDataUri, preferredAssetFilename, imageOccurrenceWithSource, replaceImageOccurrenceSource, type AssetConversionContext } from "./lib/assetConversion";
+import { replaceCodeFenceBody, replaceMarkdownOccurrence, type CodeFenceOccurrence, type MarkdownTableOccurrence } from "./lib/markdownOccurrences";
+import { parseRasterDataUri, preferredAssetFilename, imageOccurrenceWithSource, replaceImageOccurrenceSource, type AssetConversionContext } from "./lib/assetConversion";
 import { sanitizeSvgXml } from "./lib/svgSafety";
 import { planOccurrenceConversion, relocateUnchangedOccurrence, replaceBestEffortOccurrence, replaceRelocatedOccurrence } from "./lib/immediateMarkdownMutation";
 import { rebaseRenamedExternalReferences } from "./lib/externalFile";
@@ -61,8 +62,7 @@ import { acceptAuxiliaryNavigation, isShortcutHelpShortcut, isZoomInShortcut, ty
 import type { ViewMode } from "./lib/viewMode";
 import type { TableStorageConversionContext } from "./lib/tableStorage";
 import type { TextStorageConversionContext } from "./lib/textStorage";
-import { sourceExtensionForLanguage, textExternalReference } from "./lib/textStorage";
-import { appendFilenameExtension, codeFencePathDecoration, embeddedFenceWithPath, markdownContinuationPrefix, normalizeRelativeAssetPath, removeFilenameExtension } from "./lib/externalPathRepresentation";
+import { codeFencePathDecoration, normalizeRelativeAssetPath } from "./lib/externalPathRepresentation";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { isSharePointDocument } from "./lib/sharePoint";
 import { moveZoomLevel } from "./lib/zoom";
@@ -73,8 +73,8 @@ import { clipboardImageDestination, formatClipboardImageFilename, referencedStag
 import { droppedFilePath, droppedFileReference } from "./lib/fileAttachment";
 import { scopeMarkdownStyleCss } from "./lib/markdownStyle";
 import { saveUntitledDocument } from "./lib/untitledDocument";
-import { drawioExternalReference, markdownLineEnding, type DrawioStorageConversionContext } from "./lib/drawioStorage";
-import { mermaidExternalReference, type MermaidStorageConversionContext } from "./lib/mermaidStorage";
+import type { DrawioStorageConversionContext } from "./lib/drawioStorage";
+import type { MermaidStorageConversionContext } from "./lib/mermaidStorage";
 import { scrollDeltaForViewportAnchor, sourceBlockIndexForLine, sourceLineAtViewportTop, sourceTopForLine, synchronizedPaneEndScrollTop, type EditorCursorPosition } from "./lib/paneSync";
 import { insertPreviewBlockAfter } from "./lib/previewBlockReorder";
 
@@ -1821,15 +1821,7 @@ export function App() {
     occurrence,
     replacement,
     committedAssetIds = [],
-  }: {
-    tabId: string;
-    documentPath: string;
-    draft: string;
-    latest: MarkdownLoadResult;
-    occurrence: EditableMarkdownOccurrence;
-    replacement: string;
-    committedAssetIds?: string[];
-  }) => {
+  }: OccurrenceConversionCommit) => {
     const currentTab = tabsStateRef.current.tabs.find((candidate) => candidate.id === tabId);
     if (!currentTab || currentTab.draft !== draft) throw new Error("変換中に文書が変更されました。対象を再選択してください。");
     const plan = planOccurrenceConversion(latest.content, draft, occurrence, replacement);
@@ -2188,246 +2180,22 @@ export function App() {
     }
   }, []);
 
-  const convertDrawioStorage = useCallback(async (context: DrawioStorageConversionContext) => {
-    if (!await confirmStorageConversion(context)) return false;
-    const prepared = await prepareStorageConversion(context.documentPath);
-    if (!prepared) return false;
-    const { tab, latest } = prepared;
-    const latestOccurrence = relocateUnchangedOccurrence(tab.draft, context.occurrence);
-
-    if (context.storage === "embedded") {
-      if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込みdraw.ioの位置を確認できませんでした。");
-      const staged = await stageConversionAsset({
-        documentPath: tab.document.path,
-        preferredFilename: normalizedAssetFilename(removeFilenameExtension(context.relativePath ?? codeFenceTitle(context.occurrence.meta) ?? ""), "drawio", "diagram"),
-        preferredSource: context.relativePath ? appendFilenameExtension(context.relativePath, "drawio") : undefined,
-        text: latestOccurrence.body,
-      });
-      if (!staged) return false;
-      try {
-        await persistImmediateOccurrence({
-          tabId: tab.id,
-          documentPath: tab.document.path,
-          draft: tab.draft,
-          latest,
-          occurrence: latestOccurrence,
-          replacement: drawioExternalReference(staged.filename, context.alt),
-          committedAssetIds: [staged.id],
-        });
-        setToast({
-          id: crypto.randomUUID(),
-          message: `${staged.filename} へ変換しました。未保存の変更は文書の保存で確定します。`,
-          type: "success",
-          onMessageClick: async () => {
-            try { await openContainingFolder(tab.document!.path); }
-            catch (error) { setToast({ id: crypto.randomUUID(), message: `保存フォルダーを開けませんでした: ${String(error)}`, type: "error" }); }
-          },
-        });
-      } catch (error) {
-        await discardStagedAssets([staged.id]);
-        throw error;
-      }
-      return;
-    }
-
-    if (latestOccurrence.kind !== "image") throw new Error("外部draw.io参照の位置を確認できませんでした。");
-    const asset = await readConversionAsset(tab.document.path, latestOccurrence.source);
-    if (!asset.text) throw new Error("draw.ioファイルの最新内容を読み込めませんでした。");
-    await persistImmediateOccurrence({
-      tabId: tab.id,
-      documentPath: tab.document.path,
-      draft: tab.draft,
-      latest,
-      occurrence: latestOccurrence,
-      replacement: embeddedFenceWithPath({
-        language: "drawio",
-        body: asset.text,
-        relativePath: normalizeRelativeAssetPath(latestOccurrence.source) ?? asset.filename,
-        alt: context.alt,
-        style: embeddedPathStyle,
-        lineEnding: markdownLineEnding(latest.content),
-        continuationPrefix: markdownContinuationPrefix(latest.content, latestOccurrence.start),
-      }),
-    });
-    setToast({ id: crypto.randomUUID(), message: "draw.ioを埋め込みへ切り替えました。未保存の変更は文書の保存で確定します。", type: "success", actions: [{ label: "外部ファイルを削除", onAction: () => deleteConvertedExternalAsset(tab.document!.path, latestOccurrence.source, asset.revision ?? undefined) }] });
-  }, [confirmStorageConversion, deleteConvertedExternalAsset, embeddedPathStyle, persistImmediateOccurrence, stageConversionAsset, prepareStorageConversion, readConversionAsset]);
-
-  const convertMermaidStorage = useCallback(async (context: MermaidStorageConversionContext) => {
-    if (!await confirmStorageConversion(context)) return false;
-    const prepared = await prepareStorageConversion(context.documentPath);
-    if (!prepared) return false;
-    const { tab, latest } = prepared;
-    const latestOccurrence = relocateUnchangedOccurrence(tab.draft, context.occurrence);
-
-    if (context.storage === "embedded") {
-      if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込みMermaidの位置を確認できませんでした。");
-      const staged = await stageConversionAsset({
-        documentPath: tab.document.path,
-        preferredFilename: normalizedAssetFilename(removeFilenameExtension(context.relativePath ?? codeFenceTitle(context.occurrence.meta) ?? ""), "mmd", "diagram"),
-        preferredSource: context.relativePath ? appendFilenameExtension(context.relativePath, "mmd") : undefined,
-        text: latestOccurrence.body,
-      });
-      if (!staged) return false;
-      try {
-        await persistImmediateOccurrence({
-          tabId: tab.id,
-          documentPath: tab.document.path,
-          draft: tab.draft,
-          latest,
-          occurrence: latestOccurrence,
-          replacement: mermaidExternalReference(staged.filename, context.alt),
-          committedAssetIds: [staged.id],
-        });
-        setToast({
-          id: crypto.randomUUID(),
-          message: `${staged.filename} へ変換しました。未保存の変更は文書の保存で確定します。`,
-          type: "success",
-          onMessageClick: async () => {
-            try { await openContainingFolder(tab.document!.path); }
-            catch (error) { setToast({ id: crypto.randomUUID(), message: `保存フォルダーを開けませんでした: ${String(error)}`, type: "error" }); }
-          },
-        });
-      } catch (error) {
-        await discardStagedAssets([staged.id]);
-        throw error;
-      }
-      return;
-    }
-
-    if (latestOccurrence.kind !== "image") throw new Error("外部Mermaid参照の位置を確認できませんでした。");
-    const asset = await readConversionAsset(tab.document.path, latestOccurrence.source);
-    if (!asset.text) throw new Error("Mermaidファイルの最新内容を読み込めませんでした。");
-    await persistImmediateOccurrence({
-      tabId: tab.id,
-      documentPath: tab.document.path,
-      draft: tab.draft,
-      latest,
-      occurrence: latestOccurrence,
-      replacement: embeddedFenceWithPath({
-        language: "mermaid",
-        body: asset.text,
-        relativePath: normalizeRelativeAssetPath(latestOccurrence.source) ?? asset.filename,
-        alt: context.alt,
-        style: embeddedPathStyle,
-        lineEnding: markdownLineEnding(latest.content),
-        continuationPrefix: markdownContinuationPrefix(latest.content, latestOccurrence.start),
-      }),
-    });
-    setToast({ id: crypto.randomUUID(), message: "Mermaidを埋め込みへ切り替えました。未保存の変更は文書の保存で確定します。", type: "success", actions: [{ label: "外部ファイルを削除", onAction: () => deleteConvertedExternalAsset(tab.document!.path, latestOccurrence.source, asset.revision ?? undefined) }] });
-  }, [confirmStorageConversion, deleteConvertedExternalAsset, embeddedPathStyle, persistImmediateOccurrence, stageConversionAsset, prepareStorageConversion, readConversionAsset]);
-
-  const convertTableStorage = useCallback(async (context: TableStorageConversionContext) => {
-    if (!await confirmStorageConversion(context)) return false;
-    const prepared = await prepareStorageConversion(context.documentPath);
-    if (!prepared) return false;
-    const { tab, latest } = prepared;
-    const latestOccurrence = relocateUnchangedOccurrence(tab.draft, context.occurrence);
-
-    if (context.storage === "embedded") {
-      if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込み表の位置を確認できませんでした。");
-      const staged = await stageConversionAsset({
-        documentPath: tab.document.path,
-        preferredFilename: normalizedAssetFilename(removeFilenameExtension(context.relativePath ?? codeFenceTitle(latestOccurrence.meta) ?? ""), context.language.startsWith("csv") ? "csv" : "tsv", "table"),
-        preferredSource: context.relativePath ? appendFilenameExtension(context.relativePath, context.language.startsWith("csv") ? "csv" : "tsv") : undefined,
-        text: latestOccurrence.body,
-      });
-      if (!staged) return false;
-      try {
-        await persistImmediateOccurrence({
-          tabId: tab.id,
-          documentPath: tab.document.path,
-          draft: tab.draft,
-          latest,
-          occurrence: latestOccurrence,
-          replacement: `![${context.language.toUpperCase()}表](${staged.filename})`,
-          committedAssetIds: [staged.id],
-        });
-      } catch (error) {
-        await discardStagedAssets([staged.id]);
-        throw error;
-      }
-      setToast({ id: crypto.randomUUID(), message: `${staged.filename} へ変換しました。未保存の変更は文書の保存で確定します。`, type: "success" });
-      return;
-    }
-
-    if (latestOccurrence.kind !== "image") throw new Error("外部表参照の位置を確認できませんでした。");
-    const asset = await readConversionAsset(tab.document.path, latestOccurrence.source);
-    if (asset.text === null || asset.text === undefined) throw new Error("表ファイルの最新内容を読み込めませんでした。");
-    const lineEnding = markdownLineEnding(latest.content);
-    const body = asset.text.replace(/^\uFEFF/, "").replace(/[\r\n]+$/, "");
-    await persistImmediateOccurrence({
-      tabId: tab.id,
-      documentPath: tab.document.path,
-      draft: tab.draft,
-      latest,
-      occurrence: latestOccurrence,
-      replacement: embeddedFenceWithPath({
-        language: context.language,
-        body,
-        relativePath: normalizeRelativeAssetPath(latestOccurrence.source) ?? asset.filename,
-        style: embeddedPathStyle,
-        lineEnding,
-        continuationPrefix: markdownContinuationPrefix(latest.content, latestOccurrence.start),
-      }),
-    });
-    setToast({ id: crypto.randomUUID(), message: "表を埋め込みへ切り替えました。未保存の変更は文書の保存で確定します。", type: "success", actions: [{ label: "外部ファイルを削除", onAction: () => deleteConvertedExternalAsset(tab.document!.path, latestOccurrence.source, asset.revision ?? undefined) }] });
-  }, [confirmStorageConversion, deleteConvertedExternalAsset, embeddedPathStyle, persistImmediateOccurrence, stageConversionAsset, prepareStorageConversion, readConversionAsset]);
-
-  const convertTextStorage = useCallback(async (context: TextStorageConversionContext) => {
-    if (!await confirmStorageConversion(context)) return false;
-    const prepared = await prepareStorageConversion(context.documentPath);
-    if (!prepared) return false;
-    const { tab, latest } = prepared;
-    const latestOccurrence = relocateUnchangedOccurrence(tab.draft, context.occurrence);
-
-    if (context.storage === "embedded") {
-      if (latestOccurrence.kind !== "code-fence") throw new Error("埋め込みコードの位置を確認できませんでした。");
-      const extension = sourceExtensionForLanguage(context.language);
-      const staged = await stageConversionAsset({
-        documentPath: tab.document.path,
-        preferredFilename: normalizedAssetFilename(removeFilenameExtension(context.relativePath ?? codeFenceTitle(latestOccurrence.meta) ?? ""), extension, "code"),
-        preferredSource: context.relativePath ? appendFilenameExtension(context.relativePath, extension) : undefined,
-        text: latestOccurrence.body,
-      });
-      if (!staged) return false;
-      try {
-        await persistImmediateOccurrence({
-          tabId: tab.id,
-          documentPath: tab.document.path,
-          draft: tab.draft,
-          latest,
-          occurrence: latestOccurrence,
-          replacement: textExternalReference(staged.filename),
-          committedAssetIds: [staged.id],
-        });
-      } catch (error) {
-        await discardStagedAssets([staged.id]);
-        throw error;
-      }
-      setToast({ id: crypto.randomUUID(), message: `${staged.filename} へ変換しました。未保存の変更は文書の保存で確定します。`, type: "success" });
-      return;
-    }
-
-    if (latestOccurrence.kind !== "image") throw new Error("外部テキスト参照の位置を確認できませんでした。");
-    const asset = await readConversionAsset(tab.document.path, latestOccurrence.source);
-    if (asset.text === null || asset.text === undefined) throw new Error("外部テキストの最新内容を読み込めませんでした。");
-    await persistImmediateOccurrence({
-      tabId: tab.id,
-      documentPath: tab.document.path,
-      draft: tab.draft,
-      latest,
-      occurrence: latestOccurrence,
-      replacement: embeddedFenceWithPath({
-        language: context.language,
-        body: asset.text.replace(/^\uFEFF/, ""),
-        relativePath: normalizeRelativeAssetPath(latestOccurrence.source) ?? asset.filename,
-        style: embeddedPathStyle,
-        lineEnding: markdownLineEnding(latest.content),
-        continuationPrefix: markdownContinuationPrefix(latest.content, latestOccurrence.start),
-      }),
-    });
-    setToast({ id: crypto.randomUUID(), message: "外部テキストを埋め込みへ切り替えました。未保存の変更は文書の保存で確定します。", type: "success", actions: [{ label: "外部ファイルを削除", onAction: () => deleteConvertedExternalAsset(tab.document!.path, latestOccurrence.source, asset.revision ?? undefined) }] });
-  }, [confirmStorageConversion, deleteConvertedExternalAsset, embeddedPathStyle, persistImmediateOccurrence, stageConversionAsset, prepareStorageConversion, readConversionAsset]);
+  const convertFenceStorage = useMemo(() => createFenceStorageConverter({
+    confirm: confirmStorageConversion,
+    prepare: prepareStorageConversion,
+    stage: stageConversionAsset,
+    read: readConversionAsset,
+    commit: persistImmediateOccurrence,
+    discard: discardStagedAssets,
+    notify: setToast,
+    openFolder: openContainingFolder,
+    deleteExternal: deleteConvertedExternalAsset,
+    embeddedPathStyle,
+  }), [confirmStorageConversion, prepareStorageConversion, stageConversionAsset, readConversionAsset, persistImmediateOccurrence, deleteConvertedExternalAsset, embeddedPathStyle]);
+  const convertDrawioStorage = useCallback((context: DrawioStorageConversionContext) => convertFenceStorage({ format: "drawio", context }), [convertFenceStorage]);
+  const convertMermaidStorage = useCallback((context: MermaidStorageConversionContext) => convertFenceStorage({ format: "mermaid", context }), [convertFenceStorage]);
+  const convertTableStorage = useCallback((context: TableStorageConversionContext) => convertFenceStorage({ format: "table", context }), [convertFenceStorage]);
+  const convertTextStorage = useCallback((context: TextStorageConversionContext) => convertFenceStorage({ format: "text", context }), [convertFenceStorage]);
 
   const convertOperationTarget = useCallback(async (target: CodexTarget) => {
     const tab = tabsStateRef.current.tabs.find(candidate => candidate.id === tabsStateRef.current.activeId);
