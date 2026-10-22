@@ -13,7 +13,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $packagePath = Join-Path $PSScriptRoot 'spfx\sharepoint\solution\spfx-mdvisualizer.sppkg'
-$nodeRoot = Join-Path $PSScriptRoot '.tools\node-v22.23.2-win-x64'
+$nodeRoot = Join-Path $PSScriptRoot '.tools\node-v22.23.4-win-x64'
 $nodeExe = Join-Path $nodeRoot 'node.exe'
 $npmCli = Join-Path $nodeRoot 'node_modules\npm\bin\npm-cli.js'
 $spfxRoot = Join-Path $PSScriptRoot 'spfx'

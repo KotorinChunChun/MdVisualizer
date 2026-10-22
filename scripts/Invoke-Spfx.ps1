@@ -10,9 +10,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$NodeVersion = '22.23.2'
+$NodeVersion = '22.23.4'
 $NodeArchiveName = "node-v$NodeVersion-win-x64.zip"
-$NodeArchiveSha256 = '1177B4137BA5ADAA56354AE40F1080C7450E8AE09CECB47DA459D1C52AC99F97'
+$NodeArchiveSha256 = 'CBC74B5E0982C9DBB41525FD8FB5DCD32FBEE237863F7829072F4639A1CE5F20'
 $NodeDownloadUrl = "https://nodejs.org/dist/v$NodeVersion/$NodeArchiveName"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $WebPlatformRoot = Join-Path $ProjectRoot 'web-platform'
