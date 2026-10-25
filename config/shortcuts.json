@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "shortcuts": [
+    { "id": "open", "keys": "Ctrl+O", "description": "文書を開く", "scope": "window", "configurable": false, "changeLocation": "固定" },
+    { "id": "new", "keys": "Ctrl+N", "description": "Markdownを新規作成", "scope": "window", "configurable": false, "changeLocation": "固定" },
+    { "id": "save", "keys": "Ctrl+S", "description": "保存", "scope": "window", "configurable": false, "changeLocation": "固定" }
+  ]
+}

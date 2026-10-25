@@ -2,6 +2,7 @@ import { handleWindowCloseRequest, unchangedTabForAction, confirmUnchangedTabAct
 import { focusAndSelectSearchInput, documentLinkTarget, tocHeadingIdAtPointer, previewSourceBlocks, previewSourceLineAtNode, hasPreviewTextSelection, restoreDocumentSearchFocus } from "./lib/previewDom";
 import { resolveDocumentSidePanel, resolveDocumentPanelForView, canEditMarkdownDocument, shouldBlockF5Reload, applicationWindowTitle } from "./lib/applicationViewPolicy";
 import { useDocumentWatchTargets } from "./hooks/useDocumentWatchTargets";
+import { canStopFromHost, connectManagement } from "./lib/management";
 import { createFenceStorageConverter, type OccurrenceConversionCommit } from "./lib/fenceStorageConversion";
 import { previewOperationPolicy } from "./lib/previewOperationPolicy";
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
@@ -366,6 +367,16 @@ export function App() {
     if (import.meta.env.VITE_MDVISUALIZER_DEBUG_API !== "1") return;
     void reportDebugWindowState(buildDebugWindowState(windowLabel, tabsState, mediaPreview !== null));
   }, [mediaPreview, tabsState, windowLabel]);
+
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void connectManagement(() => canStopFromHost(tabsStateRef.current.tabs,
+      mediaPreview !== null || document.querySelector('[role="dialog"], dialog[open]') !== null))
+      .then(dispose => { if (disposed) dispose(); else unlisten = dispose; })
+      .catch(() => { /* Browserでは管理窓口を利用しない。 */ });
+    return () => { disposed = true; unlisten?.(); };
+  }, [mediaPreview]);
 
   useEffect(() => {
     let confirmingClose = false;

@@ -1,5 +1,6 @@
 import type { DocumentSidePanelTab } from "../components/DocumentSidePanel";
 import type { ViewMode } from "./viewMode";
+import { WindowTitle } from "./windowTitle";
 
 export function resolveDocumentSidePanel(searchOpen: boolean, requestedPanel: Exclude<DocumentSidePanelTab, "search"> | null): DocumentSidePanelTab | null {
   if (searchOpen) return "search";
@@ -19,9 +20,9 @@ export function shouldBlockF5Reload(tab: { dirty: boolean } | null | undefined):
 }
 
 export function applicationWindowTitle(tab: { kind?: "document" | "settings"; path: string } | null | undefined): string {
-  if (!tab) return "MdVisualizer";
-  if (tab.kind === "settings") return "設定 - MdVisualizer";
+  if (!tab) return WindowTitle.create();
+  if (tab.kind === "settings") return WindowTitle.create("設定");
   const segments = tab.path.split(/[\\/]/).filter(Boolean);
   const filename = segments[segments.length - 1] ?? tab.path;
-  return `${filename} - MdVisualizer`;
+  return WindowTitle.create(filename);
 }

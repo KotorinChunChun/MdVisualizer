@@ -14,6 +14,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+anyhow = "1"
 tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
@@ -34,7 +35,7 @@ chrono = "0.4.45"
 base64 = "0.22"
 fs4 = "1.1.0"
 dirs = "6"
-windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Security_Credentials", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Ole", "Win32_UI_Shell"] }
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Security_Credentials", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Pipes", "Win32_System_RemoteDesktop", "Win32_System_Threading", "Win32_System_IO", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Ole", "Win32_UI_Shell"] }
 url = "2"
 percent-encoding = "2"
 reqwest = { version = "0.13", features = ["json", "form"] }

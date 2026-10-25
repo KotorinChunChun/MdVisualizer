@@ -2,7 +2,7 @@ use crate::file_lock::{atomic_write, with_lock};
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 const SKILLS_DIRECTORY: &str = "codex-skills";
 const INITIALIZED_MARKER: &str = ".defaults-initialized";
@@ -60,8 +60,7 @@ pub struct CodexSkillFiles {
 }
 
 fn skills_directory(app: &AppHandle) -> Result<PathBuf, String> {
-    app.path()
-        .app_data_dir()
+    crate::launch_options::data_dir(app)
         .map(|path| path.join(SKILLS_DIRECTORY))
         .map_err(|error| format!("Codexスキル保存先を取得できません: {error}"))
 }

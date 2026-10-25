@@ -2555,6 +2555,7 @@ dependencies = [
 name = "mdvisualizer"
 version = "0.0.19+beta.2"
 dependencies = [
+ "anyhow",
  "base64 0.22.1",
  "chardetng",
  "chrono",

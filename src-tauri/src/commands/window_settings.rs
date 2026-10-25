@@ -30,25 +30,19 @@ pub struct MarkdownStyleFile {
 }
 
 fn settings_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
-    app_handle
-        .path()
-        .app_data_dir()
+    crate::launch_options::data_dir(app_handle)
         .map(|path| path.join("settings.json"))
         .map_err(|error| error.to_string())
 }
 
 fn fold_state_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
-    app_handle
-        .path()
-        .app_data_dir()
+    crate::launch_options::data_dir(app_handle)
         .map(|path| path.join("fold-state.json"))
         .map_err(|error| error.to_string())
 }
 
 fn markdown_style_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, String> {
-    app_handle
-        .path()
-        .app_data_dir()
+    crate::launch_options::data_dir(app_handle)
         .map(|path| path.join(MARKDOWN_STYLE_FILENAME))
         .map_err(|error| error.to_string())
 }
@@ -447,9 +441,13 @@ pub async fn open_in_new_window(
     let geometry = adjacent_geometry(source, source_outer_width, area);
     let (width, height, x, y) = logical_geometry(geometry, scale_factor);
 
+    let mut builder = WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()));
+    if let Some(directory) = &app_handle.state::<crate::launch_options::LaunchOptions>().settings_dir {
+        builder = builder.data_directory(directory.join("WebView2"));
+    }
     let created_window =
-        match WebviewWindowBuilder::new(&app_handle, &label, WebviewUrl::App("index.html".into()))
-            .title("MdVisualizer")
+        match builder
+            .title(crate::launch_options::WindowTitle::create(None))
             .inner_size(width, height)
             .position(x, y)
             .prevent_overflow()

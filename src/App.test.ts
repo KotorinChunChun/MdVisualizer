@@ -9,9 +9,9 @@ import { moveZoomLevel, normalizeZoom, ZOOM_LEVELS } from "./lib/zoom";
 
 describe("application window title", () => {
   it("uses the active tab filename followed by the application name", () => {
-    expect(applicationWindowTitle({ path: "C:\\docs\\sample.md" })).toBe("sample.md - MdVisualizer");
-    expect(applicationWindowTitle({ kind: "settings", path: "__settings__" })).toBe("設定 - MdVisualizer");
-    expect(applicationWindowTitle(null)).toBe("MdVisualizer");
+    expect(applicationWindowTitle({ path: "C:\\docs\\sample.md" })).toBe("sample.md - MdVisualizer - ver 0.0.19");
+    expect(applicationWindowTitle({ kind: "settings", path: "__settings__" })).toBe("設定 - MdVisualizer - ver 0.0.19");
+    expect(applicationWindowTitle(null)).toBe("MdVisualizer - ver 0.0.19");
   });
 });
 

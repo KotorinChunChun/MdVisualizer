@@ -5,7 +5,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 const SESSIONS_FILENAME: &str = "codex-sessions.json";
 const DEFAULT_RETENTION_DAYS: u16 = 30;
@@ -154,8 +154,7 @@ pub struct CodexDraftSnapshot {
 }
 
 fn sessions_path(app: &AppHandle) -> Result<PathBuf, String> {
-    app.path()
-        .app_data_dir()
+    crate::launch_options::data_dir(app)
         .map(|directory| directory.join(SESSIONS_FILENAME))
         .map_err(|error| format!("AI会話履歴の保存先を取得できません: {error}"))
 }

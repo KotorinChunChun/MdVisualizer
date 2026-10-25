@@ -14,7 +14,7 @@ use std::{
     },
     time::Duration,
 };
-use tauri::{AppHandle, Manager, State, WebviewWindow};
+use tauri::{AppHandle, State, WebviewWindow};
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
     process::Command,
@@ -633,8 +633,7 @@ async fn run_cli(
 }
 
 fn log_path(app: &AppHandle) -> Result<PathBuf, String> {
-    app.path()
-        .app_data_dir()
+    crate::launch_options::data_dir(app)
         .map(|path| path.join(LOG_FILENAME))
         .map_err(|error| format!("AI通信記録の保存先を取得できません: {error}"))
 }

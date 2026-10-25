@@ -19,6 +19,8 @@ pub mod markdown;
 pub mod settings;
 pub mod sharepoint;
 pub mod watcher;
+mod launch_options;
+mod management;
 
 use app_state::AppState;
 #[cfg(debug_assertions)]
@@ -175,12 +177,29 @@ fn write_debug_application_state(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|arg| arg == "--help") {
+        println!("MdVisualizer [文書 ...] [--launch-origin standalone|host_manual] [--settings-dir フォルダー]\n常駐・自動起動には対応しません。");
+        return;
+    }
+    let options = match launch_options::LaunchOptions::parse(args.iter().skip(1).cloned()) {
+        Ok(options) => options,
+        Err(error) => { eprintln!("{error}"); std::process::exit(2); }
+    };
     let initial_files = document_launch_arguments(
-        args.into_iter().skip(1),
+        options.documents.clone(),
         &std::env::current_dir().expect("Could not determine the current directory"),
     );
 
     let state = AppState::new(initial_files).expect("Failed to initialize AppState");
+    let mut context = tauri::generate_context!();
+    if let Some(key) = options.isolation_key() {
+        context.config_mut().identifier.push_str(&format!(".isolated.{key}"));
+    }
+    if let Some(directory) = &options.settings_dir {
+        for window in &mut context.config_mut().app.windows {
+            window.data_directory = Some(directory.join("WebView2"));
+        }
+    }
 
     tauri::Builder::default()
         // This plugin must be first: a second file-association launch is
@@ -192,7 +211,9 @@ pub fn run() {
                 let _ = write_debug_application_state(app, &response_path);
                 return;
             }
-            let files = document_launch_arguments(args, Path::new(&cwd));
+            let Ok(options) = launch_options::LaunchOptions::parse(args.into_iter().skip(1)) else { return; };
+            let files = document_launch_arguments(options.documents, Path::new(&cwd));
+            let _ = management::show(app);
             if !files.is_empty() {
                 let labels = app.webview_windows().into_keys();
                 if let Some(label) = launch_owner_label(labels) {
@@ -217,6 +238,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
+        .manage(options)
+        .manage(management::Management::default())
         .manage(codex::CodexRuns::default())
         .manage(codex_image_edit::CodexImageRuns::default())
         .manage(codex_image_edit::CodexImageSaveRollbacks::default())
@@ -271,7 +294,10 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            #[cfg(windows)]
+            management::start(app.handle().clone())?;
             if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_title(&launch_options::WindowTitle::create(None));
                 let _ = restore_saved_window_geometry(&app.handle(), &window);
                 if let Ok(geometry) = window_geometry(&window) {
                     let state = app.state::<AppState>();
@@ -288,6 +314,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            management::management_ready,
+            management::management_stop_reply,
             html_export::save_html_export,
             codex::codex_generate,
             codex_models::codex_list_models,
@@ -360,7 +388,7 @@ pub fn run() {
             open_external_url,
             report_debug_window_state
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("error while running tauri application");
 }
 
