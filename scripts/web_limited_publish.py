@@ -8,6 +8,7 @@ import io
 import json
 import os
 import re
+import ssl
 import sys
 import time
 import urllib.error
@@ -44,6 +45,7 @@ class Settings:
     password: str
     port: int
     remote_base: str
+    tls_server_name: str = ""
 
 
 @dataclass(frozen=True)
@@ -73,6 +75,8 @@ def load_env(path: Path) -> dict[str, str]:
 
 def load_settings() -> Settings:
     env = load_env(WEBSITE_ROOT / ".env")
+    if env.get("FTP_TLS", "true").strip().lower() != "true":
+        raise PublishError("Web公開はFTPS専用です。平文FTPには接続しません。")
     required = ("FTP_HOST", "FTP_USER", "FTP_PASS")
     if any(not env.get(key, "").strip() for key in required):
         raise PublishError("既存のFTP設定が不足しています。")
@@ -83,7 +87,7 @@ def load_settings() -> Settings:
     remote_base = env.get("FTP_REMOTE_DIR", "").strip().rstrip("/")
     if not remote_base:
         raise PublishError("既存のFTP公開先設定が不足しています。")
-    return Settings(env["FTP_HOST"].strip(), env["FTP_USER"].strip(), env["FTP_PASS"].strip(), port, remote_base)
+    return Settings(env["FTP_HOST"].strip(), env["FTP_USER"].strip(), env["FTP_PASS"].strip(), port, remote_base, env.get("FTP_TLS_SERVER_NAME", "").strip())
 
 
 class FtpTransport:
@@ -102,15 +106,21 @@ class FtpTransport:
             raise PublishError("FTP対象が許可リストと一致しません。")
 
     def _connect(self) -> ftplib.FTP:
+        ftp = None
         try:
-            ftp = ftplib.FTP()
+            ftp = ftplib.FTP_TLS(context=ssl.create_default_context())
             ftp.encoding = "utf-8"
             ftp.connect(self.settings.host, self.settings.port, timeout=30)
+            ftp.host = self.settings.tls_server_name or {"219.94.129.84": "www1074.sakura.ne.jp"}.get(self.settings.host, self.settings.host)
+            ftp.auth()
             ftp.login(self.settings.user, self.settings.password)
+            ftp.prot_p()
             ftp.set_pasv(True)
             return ftp
         except Exception as exc:
-            raise PublishError("FTPへ接続または認証できません。") from exc
+            if ftp is not None:
+                ftp.close()
+            raise PublishError("FTPSの証明書検証・接続・認証に失敗しました。") from exc
 
     def _change_to_target(self, ftp: ftplib.FTP, *, create: bool) -> None:
         try:

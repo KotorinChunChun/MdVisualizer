@@ -170,6 +170,7 @@ web/tests/.php-zip-fixtures/
 /src/lib/paneSync.ts
 /src/lib/path.ts
 /src/lib/pathIdentity.ts
+/src/lib/stagedImagePreview.ts
 /src/lib/presentationModel.ts
 /src/lib/previewClipboard.ts
 /src/lib/previewContext.ts
