@@ -104,7 +104,7 @@ pub fn start(app: tauri::AppHandle) -> anyhow::Result<()> {
                 }
             } else { result = "failed"; detail = "管理要求が不正です。"; }
             let response = serde_json::json!({ "protocolVersion": 2, "requestId": request.map(|r| r.request_id.as_str()).unwrap_or(""),
-                "pid": std::process::id(), "ready": ready, "version": env!("CARGO_PKG_VERSION").split('+').next().unwrap(),
+                "pid": std::process::id(), "ready": ready, "version": crate::launch_options::product_version(),
                 "launchOrigin": app.state::<crate::launch_options::LaunchOptions>().origin, "capabilities": ["status", "show", "stop"],
                 "result": result, "detail": detail });
             let written = server.write_line(&response.to_string(), deadline).is_ok();

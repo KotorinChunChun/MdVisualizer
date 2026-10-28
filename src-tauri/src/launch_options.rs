@@ -19,7 +19,13 @@ impl LaunchOptions {
     }
 
     pub fn management_id(&self) -> String {
-        self.isolation_key().map(|key| format!("md-visualizer-{key}"))
+        self.management_id_for(package_family().as_deref())
+    }
+
+    fn management_id_for(&self, family: Option<&str>) -> String {
+        use sha2::{Digest, Sha256};
+        if let Some(key) = self.isolation_key() { return format!("md-visualizer-{key}"); }
+        family.map(|value| format!("md-visualizer.{:x}", Sha256::digest(value.as_bytes())))
             .unwrap_or_else(|| "md-visualizer".into())
     }
 
@@ -55,9 +61,26 @@ pub fn data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 }
 
 pub struct WindowTitle;
+pub fn product_version() -> String {
+    env!("CARGO_PKG_VERSION").replace("+beta.", ".")
+}
+
+#[cfg(windows)]
+fn package_family() -> Option<String> {
+    #[link(name = "kernel32")]
+    extern "system" { fn GetCurrentPackageFamilyName(length: *mut u32, name: *mut u16) -> i32; }
+    let mut length = 0;
+    if unsafe { GetCurrentPackageFamilyName(&mut length, std::ptr::null_mut()) } != 122 || !(2..=256).contains(&length) { return None; }
+    let mut buffer = vec![0u16; length as usize];
+    if unsafe { GetCurrentPackageFamilyName(&mut length, buffer.as_mut_ptr()) } != 0 { return None; }
+    String::from_utf16(&buffer[..length as usize - 1]).ok()
+}
+#[cfg(not(windows))]
+fn package_family() -> Option<String> { None }
+
 impl WindowTitle {
     pub fn create(screen: Option<&str>) -> String {
-        let base = format!("MdVisualizer - ver {}", env!("CARGO_PKG_VERSION").split('+').next().unwrap());
+        let base = format!("MdVisualizer - ver {}", product_version());
         screen.map(|name| format!("{name} - {base}")).unwrap_or(base)
     }
 }
@@ -77,12 +100,16 @@ mod tests {
         for args in [vec!["--startup"], vec!["--hidden"], vec!["--settings-dir"], vec!["--launch-origin"], vec!["--launch-origin", "direct_task"]] {
             assert!(LaunchOptions::parse(args.into_iter().map(String::from)).is_err());
         }
-        assert_eq!(WindowTitle::create(None), "MdVisualizer - ver 0.0.19");
+        assert_eq!(WindowTitle::create(None), "MdVisualizer - ver 0.0.19.3");
     }
     #[test]
     fn isolates_management_by_settings_directory_without_changing_normal_identity() {
         let normal = LaunchOptions::default();
-        assert_eq!(normal.management_id(), "md-visualizer");
+        assert_eq!(normal.management_id_for(None), "md-visualizer");
+        let packaged = normal.management_id_for(Some("com.mdvisualizer.viewer_xtxrnffqrdk4w"));
+        assert!(packaged.starts_with("md-visualizer."));
+        assert_eq!(packaged.len(), "md-visualizer.".len() + 64);
+        assert_ne!(packaged, normal.management_id_for(Some("other_family")));
         let first = LaunchOptions { settings_dir: Some(PathBuf::from("C:/test/settings")), ..normal.clone() };
         let same = LaunchOptions { settings_dir: Some(PathBuf::from("c:\\TEST\\settings")), ..normal.clone() };
         let other = LaunchOptions { settings_dir: Some(PathBuf::from("C:/test/other")), ..normal };
