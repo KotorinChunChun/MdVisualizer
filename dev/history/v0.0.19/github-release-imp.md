@@ -6,7 +6,7 @@
 - [x] Git履歴・配布物の秘密検査と共有Web子Gitの公開可否を確認する。
 - [x] 既存の署名・ポータブル生成経路でWindows成果物を作り、署名・版・内容・ハッシュを検査する。
 - [x] 関連回帰と隔離管理連携を検証してコミットする。
-- [ ] 明示承認済みの公開設定変更・GitHub Release・匿名再取得を確認する。
+- [x] 明示承認済みの公開設定変更・GitHub Release・匿名再取得を確認する。
 
 Windows成果物とGitHub公開に限定し、SPFx・FTP配布サイト・利用者環境へのインストール・信頼登録は行わない。起動中の既存MSIXと利用者文書を保護する。
 
@@ -20,3 +20,11 @@ Windows成果物とGitHub公開に限定し、SPFx・FTP配布サイト・利用
 - MdVisualizerと共有Web子Gitの全Git履歴検査は各0件。共有Web子Gitの公開設定は変更許可が未確定のため維持する。今回のWindowsバイナリ公開とは別に扱う。
 - GitHub専用のガード付き公開スクリプトを追加。確認引数なしの実行拒否・PowerShell構文検査を確認。既存版上書き、main不一致、Identity・署名・ZIP内容の不一致を拒否する。
 - 実OSでの新規MSIX導入・更新・削除、未信頼証明書の別PC、実画面での編集／未保存ダイアログは未受入。
+
+## 公開結果
+
+- リポジトリをpublicへ変更し、採用35cc36bをmainへfast-forwardで反映。v0.0.19.3のGitHub prereleaseを公開した。
+- 公開先：https://github.com/KotorinChunChun/MdVisualizer/releases/tag/v0.0.19.3
+- MSIX、ZIP、公開CER、SHA256SUMSを認証なしで再取得し、全SHA-256一致。MSIX 13,658,734 bytes、ZIP 13,280,538 bytes、CER 1,032 bytes。
+- MSIX配布入力100ファイルの秘密検査0件。コミット後の全Git履歴検査も完了して0件。Web子Gitの公開設定は変更していない。
+- GitHub公開スクリプトのWhatIf事前検査・本実行とも成功。SPFx、FTP、既存インストール、証明書信頼登録は変更していない。
