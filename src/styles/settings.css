@@ -3,7 +3,7 @@
 .settings-panel h1 { margin: 0; font-size: 28px; }
 .settings-panel p { color: var(--text-secondary); }
 .settings-save { padding: 7px 20px; color: #fff; background: var(--accent-color); border: 0; border-radius: 6px; cursor: pointer; }
-.settings-error { max-width: 980px; margin: 0 auto 14px; padding: 10px; color: #fff; background: #b42318; border-radius: 6px; }
+.settings-panel .settings-error, .settings-panel .sharepoint-received-error { max-width: 980px; margin: 0 auto 14px; padding: 10px; color: #fff; background: #b42318; border-radius: 6px; }
 .settings-section { max-width: 980px; margin: 0 auto 16px; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 8px; }
 .settings-section label { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--text-secondary); }
 .settings-section input { width: 6rem; padding: 6px 8px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; }
@@ -60,3 +60,7 @@
 .settings-app__actions button, .settings-add-app { padding: 5px 10px; color: var(--text-primary); background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
 .settings-add-app { display: block; margin-top: 12px; }
 @media (max-width: 700px) { .settings-app { grid-template-columns: 1fr; } }
+
+.sharepoint-settings textarea { width: min(34rem, 58vw); min-width: 0; max-width: 100%; box-sizing: border-box; padding: 6px 8px; color: var(--text-primary); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; resize: vertical; }
+.sharepoint-file-list { display: grid; gap: .35rem; max-height: 16rem; overflow: auto; margin: 0; padding: 0; list-style: none; }
+.sharepoint-file-list button { max-width: 100%; text-align: start; white-space: normal; overflow-wrap: anywhere; }

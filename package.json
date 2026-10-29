@@ -49,6 +49,7 @@
     "test:embedded-images:update-baseline": "node ./scripts/test-embedded-image-load.mjs --update-baseline",
     "test:button-style-rules": "node ./scripts/test-button-style-rules.mjs",
     "test:button-layout-web": "node ./scripts/test-web-button-layout.mjs",
+    "test:settings-appearance": "node ./scripts/test-settings-appearance.mjs",
     "test:css-style-stats": "node ./scripts/test-css-style-stats.mjs",
     "test:print-pdf": "tsc --project tests/print-pdf/tsconfig.json && node ./scripts/test-print-pdf.mjs",
     "test:drawio-editing": "vitest run src/components/DrawioEditingFlow.test.tsx src/components/DrawioEditorModal.test.tsx src/components/DrawioBlock.test.tsx src/components/ExternalDrawioBlock.test.tsx src/components/MarkdownPreview.drawio.test.tsx src/components/StandaloneDocumentPreview.test.tsx src/lib/drawio.test.ts src/lib/drawioStorage.test.ts",

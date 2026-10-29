@@ -193,3 +193,12 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][7]).toMatchObject({ storage: "base64", externalFileDisplayName: true });
   });
 });
+
+it("設定の保存ツールチップとCtrl+Sの動作を一致させる", async () => {
+  const onSave=vi.fn().mockResolvedValue(undefined);
+  render(<SettingsPanel apps={DEFAULT_EXTERNAL_APPS} presentationLineThreshold={10} onSave={onSave} />);
+  expect(screen.getByRole("button",{name:"保存"}).title).toBe("設定を保存（Ctrl+S）");
+  fireEvent.keyDown(window,{key:"s",ctrlKey:true});
+  await waitFor(()=>expect(onSave).toHaveBeenCalledTimes(1));
+  cleanup();
+});

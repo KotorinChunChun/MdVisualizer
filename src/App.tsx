@@ -68,6 +68,7 @@ import type { ViewMode } from "./lib/viewMode";
 import type { TableStorageConversionContext } from "./lib/tableStorage";
 import type { TextStorageConversionContext } from "./lib/textStorage";
 import { codeFencePathDecoration, normalizeRelativeAssetPath } from "./lib/externalPathRepresentation";
+import { useDocumentOpenShortcut } from "./hooks/useDocumentOpenShortcut";
 import { sharePointLaunchNeedsSettings } from "./lib/sharePoint";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { isSharePointDocument } from "./lib/sharePoint";
@@ -716,6 +717,8 @@ export function App() {
       setToast({ id: crypto.randomUUID(), message: `ファイルを開けませんでした: ${String(error)}`, type: "error" });
     }
   }, []);
+
+
 
   const toggleDocumentDiff = useCallback(() => {
     if (documentDiff) {
@@ -1887,6 +1890,8 @@ export function App() {
     onError: (message) => setToast({ id: String(Date.now()), message, type: "error" }),
   });
 
+  useDocumentOpenShortcut(openDocument, !printing && !shortcutHelpOpen && !annotationTarget && !cropTarget);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       // Handle F5 before modal-specific early returns. Otherwise the browser's
@@ -2226,13 +2231,13 @@ export function App() {
       <TabBar tabs={tabsState.tabs} activeId={tabsState.activeId} onActivate={activateTab} onClose={closeTab} onMove={(id, toIndex) => dispatch({ type: "MOVE", id, toIndex })} onContext={(id, x, y) => setContextTab({ id, x, y })} />
       {activeTab?.kind !== "settings" && <div className="view-controls" aria-label="表示と文書の操作">
         <div className="control-group document-actions">
-          <button type="button" disabled={printing} onClick={() => { focusNewDocumentRef.current = true; dispatch({ type: "NEW_MARKDOWN" }); }}>新規MD</button>
-          <button type="button" disabled={printing} onClick={() => void openDocument()}>開く</button>
-          <button data-ui-command="document.print" type="button" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷</button>
+          <button type="button" title="新規MD（Ctrl+N）" aria-keyshortcuts="Control+N" disabled={printing} onClick={() => { focusNewDocumentRef.current = true; dispatch({ type: "NEW_MARKDOWN" }); }}>新規MD</button>
+          <button type="button" title="開く（Ctrl+O）" aria-keyshortcuts="Control+O" disabled={printing} onClick={() => void openDocument()}>開く</button>
+          <button data-ui-command="document.print" type="button" title="印刷／PDF（Ctrl+P）" aria-keyshortcuts="Control+P" disabled={!activeTab?.document || printing || editorMode === "edit"} onClick={() => void printDocument()}>印刷</button>
           <DesktopHtmlExport disabled={!activeTab?.document || printing} getSnapshot={() => activeTab?.document ? { document: activeTab.document, content: activeMarkdownContent, theme: theme === "system" ? document.documentElement.dataset.theme ?? "light" : theme, css: markdownStyleCss, assets: activeTab.pendingAssets ?? [] } : null} />
           <DiagnosticsPanel items={diagnostics} isOpen={diagnosticsOpen} onOpenChange={setDiagnosticsOpen} onSelect={jumpToDiagnostic} />
-          <button type="button" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
-          <button data-ui-command="document.save" type="button" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
+          <button type="button" title="再読込（F5）。未保存の編集は保護します" aria-keyshortcuts="F5" disabled={!activeTab?.document || activeTab.untitled} onClick={reload}>再読込</button>
+          <button data-ui-command="document.save" type="button" title="保存（Ctrl+S）" aria-keyshortcuts="Control+S" disabled={!activeTab?.dirty || activeTab.saving} onClick={() => activeTab && void saveTab(activeTab.id)}>{activeTab?.saving ? "保存中…" : "保存"}</button>
         </div>
         <div className="control-group editor-mode-controls" aria-label="編集画面">
           <WorkspaceViewControls interactionMode={interactionMode} onInteractionModeChange={setInteractionMode} betweenPreviewAndDirection={<button data-ui-command="document.diff" type="button" className={`document-action-button${documentDiff !== null ? " is-active" : ""}`} aria-pressed={documentDiff !== null} disabled={!canEditActive || activeTab?.untitled} onClick={() => void toggleDocumentDiff()}>差分</button>} code={editorMode !== "preview"} preview={editorMode === "edit" ? "off" : editorMode === "split" ? "preview" : previewMode} direction={splitDirection} disabled={!canEditActive} onDirectionChange={setSplitDirection} onChange={(code, preview) => { setPreviewMode(preview); changeEditorMode(preview === "off" ? "edit" : code ? "split" : "preview"); }} />

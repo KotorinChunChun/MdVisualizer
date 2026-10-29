@@ -129,10 +129,20 @@ export function SettingsPanel({
     }
   };
 
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "s") return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (!saving && !event.repeat) void save();
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  });
+
   return <section className="settings-panel" aria-labelledby="settings-title">
     <header>
       <div><h1 id="settings-title">設定</h1><p>表示・編集・画像保存・外部アプリとSharePoint連携を管理します。</p></div>
-      <button type="button" className="settings-save" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
+      <button type="button" className="settings-save" title="設定を保存（Ctrl+S）" aria-keyshortcuts="Control+S" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
     </header>
     {error && <p role="alert" className="settings-error">{error}</p>}
     {onOpenSharePoint && <SharePointSettings onOpen={onOpenSharePoint} onSettled={onSharePointSettled} authenticationReady={sharePointAuthenticationReady} />}
