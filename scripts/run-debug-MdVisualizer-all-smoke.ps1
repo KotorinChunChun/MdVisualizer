@@ -6,7 +6,11 @@ param(
     [int]$RemoteDebuggingPort = 9333,
     [switch]$AllSamples,
     [switch]$SkipBuild,
-    [switch]$StopAfterTest
+    [switch]$StopAfterTest,
+    [string[]]$Scenario = @(),
+    [string[]]$ChangedPath = @(),
+    [switch]$PlanOnly,
+    [switch]$AttachOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +23,36 @@ $debugExecutable = Join-Path $projectRoot "src-tauri\target\debug\mdvisualizer.e
 $analyzer = Join-Path $PSScriptRoot "debug-preview-smoke.mjs"
 $sampleAnalyzer = Join-Path $PSScriptRoot "debug-sample-suite.mjs"
 $runDirectory = $resolvedLogDirectory
+if ([string]::IsNullOrWhiteSpace($TargetVersion)) { throw '対象版を-TargetVersionまたはMDVISUALIZER_VERSIONで指定してください。' }
+if ($AllSamples -and ($Scenario.Count -gt 0 -or $ChangedPath.Count -gt 0)) { throw '-AllSamplesと部分選択は同時に使えません。' }
+if ($AttachOnly -and $AllSamples) { throw '-AttachOnlyでは既存サンプルの再投入を行いません。' }
+if ($AttachOnly -and $StopAfterTest) { throw '-AttachOnlyで既存プロセスを停止できません。' }
+$runtime = Get-MdVisualizerNodeRuntime -ProjectRoot $projectRoot
+$analyzerArguments = @($RemoteDebuggingPort, $runDirectory, '--version', $TargetVersion)
+foreach ($id in $Scenario) { $analyzerArguments += @('--scenario', $id) }
+foreach ($file in $ChangedPath) { $analyzerArguments += @('--changed', $file) }
+$previousConsoleEncoding = [Console]::OutputEncoding
+try {
+    # NodeのUTF-8 JSONをWindowsの既定コードページで壊さない。
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+    $planJson = & $runtime.NodeExecutable $analyzer @analyzerArguments --plan-only
+    $planExitCode = $LASTEXITCODE
+} finally { [Console]::OutputEncoding = $previousConsoleEncoding }
+if ($planExitCode -ne 0) { $planJson; throw '検証対象を判定できません。PlanのreviewRequiredを確認し、対象シナリオを明示してください。' }
+if ($PlanOnly) {
+    try { [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); $planJson }
+    finally { [Console]::OutputEncoding = $previousConsoleEncoding }
+    return
+}
+$plan = ($planJson -join "`n") | ConvertFrom-Json
+$needsWebView = @($plan.steps | Where-Object { $_.status -ne 'excluded' -and $_.kind -ne 'manual' }).Count -gt 0
+if ($AttachOnly -or -not $needsWebView) {
+    # 部分検証の推奨入口。既存アプリの探索・停止・ビルド・起動を行わない。
+    & $runtime.NodeExecutable $analyzer @analyzerArguments
+    if ($LASTEXITCODE -eq 2) { Write-Output 'MANUAL_CHECKS_PENDING=gui-summary.jsonの手動工程を個別に観測してください。'; return }
+    if ($LASTEXITCODE -ne 0) { throw '個別GUI検証に失敗しました。gui-summary.jsonを確認してください。' }
+    return
+}
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 
 function Get-MdVisualizerProcesses {
@@ -176,8 +210,8 @@ if ($activeTab -and $activeTab.path) {
     Write-Output "WINDOW_TITLE=$($process.MainWindowTitle)"
 }
 
-$nodePath = (Get-Command node.exe -ErrorAction Stop).Source
-& $nodePath $analyzer $RemoteDebuggingPort $runDirectory
+$nodePath = $runtime.NodeExecutable
+& $nodePath $analyzer @analyzerArguments
 if ($LASTEXITCODE -ne 0) {
     if ($StopAfterTest -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force }
     throw "実画面解析に失敗しました（終了コード: $LASTEXITCODE）。"
@@ -194,6 +228,7 @@ if ($AllSamples) {
 Write-Output "DEBUG_EXECUTABLE=$debugExecutable"
 Write-Output "RESTORED_FILES=$($restoreFiles.Count)"
 Write-Output "REPORT=$(Join-Path $runDirectory 'preview-report.json')"
+Write-Output "GUI_SUMMARY=$(Join-Path $runDirectory 'gui-summary.json')"
 Write-Output "STRUCTURED_LIST_SCREENSHOT=$(Join-Path $runDirectory 'structured-list.png')"
 Write-Output "MERMAID_SCREENSHOT=$(Join-Path $runDirectory 'mermaid-popup.png')"
 Write-Output "DRAWIO_SCREENSHOT=$(Join-Path $runDirectory 'drawio-popup.png')"

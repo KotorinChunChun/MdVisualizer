@@ -6,6 +6,9 @@ import path from 'node:path';
 import { createPlan, normalizeChangedPath } from './gui-smoke/plan.mjs';
 import { runPlan } from './gui-smoke/runner.mjs';
 import { recordManual } from './gui-smoke-manual.mjs';
+import { connectCdp } from './gui-smoke/cdp.mjs';
+import { parseOptions, main } from './debug-preview-smoke.mjs';
+import { spawnSync } from 'node:child_process';
 
 async function fixture(body) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'mdvisualizer-gui-timing-'));
@@ -89,3 +92,83 @@ test('手動は開始・依存・証跡を要求し計測と観測者判定を�
   }
   assert.equal(JSON.parse(await readFile(summaryPath)).passed, true);
 }));
+
+test('CLIは対象版・シナリオ・変更パスを検証し従来の位置引数も保持する', () => {
+  const options = parseOptions(['9334', 'output', '--version', 'v0.0.19', '--scenario', 'mermaid,diff']);
+  assert.equal(options.port, 9334); assert.deepEqual(options.selected, ['mermaid', 'diff']);
+  assert.throws(() => parseOptions(['--version', 'v0.0.19', '--port', '0']), /ポート/);
+  assert.throws(() => parseOptions(['--version', 'v0.0.19', '--scenario']), /値がありません/);
+  assert.throws(() => parseOptions(['--version', 'v0.0.19', '--unknown', 'a']), /不明/);
+  assert.throws(() => parseOptions(['--version', 'v0.0.19', '--document-name', '../a.md']), /ファイル名/);
+});
+
+const moduleCases = [
+  ['view-context', [{ ok: true, stayedPreview: true, selectedText: '本文', labels: ['マークダウンでコピー', 'プレーンテキストでコピー', '編集', '下にブロックを追加', '行選択', 'ブロック全体を選択', 'すべて選択'], requestedLine: 3, highlightedLine: 3 }, undefined], 0, { stayedPreview: false }],
+  ['structured-list', [{ found: true, directItems: 2, orderedDepth: 3, joinedOrderedText: false, standardDirectItems: 2, standardChildItems: 2, standardJoinedText: false, bullets: ['odd', 'even', 'odd', 'even'].map(value => ({ markerClass: `markdown-list-marker-${value}` })) }], 0, { orderedDepth: 1 }],
+  ['mermaid', [undefined, true, { opened: true, maximumFit: true, extraScrollableCanvas: false, canvasBackground: 'rgb(255, 255, 255)', inlineBackground: 'rgb(255, 255, 255)' }, undefined], 2, { maximumFit: false }],
+  ['drawio', [undefined, true, { opened: true, maximumFit: true, extraRightBottomWhitespace: false }, undefined], 2, { extraRightBottomWhitespace: true }],
+  ['diff', [{ opened: true, panes: 2, interactiveDiagrams: 0, durationMs: 10 }, { panes: 2, codePanes: 2, durationMs: 10 }, { panes: 4, codePanes: 2, renderedPanes: 2, interactiveDiagrams: 0, durationMs: 10 }, { synced: true }, true], 3, { synced: false }],
+];
+for (const [id, values, brokenIndex, mutation] of moduleCases) {
+  test(`${id}: 独立実行で従来の期待値を保持し不良結果を拒否する`, async () => {
+    const { run } = await import(`./gui-smoke/${id}.mjs`);
+    function driver(outputs) {
+      const queue = structuredClone(outputs);
+      return { queue, evaluate: async expression => { new Function(`return (${expression});`); assert.ok(queue.length, '想定外の評価呼出し'); return queue.shift(); }, screenshot: async filename => filename };
+    }
+    const valid = driver(values);
+    await run(valid); assert.equal(valid.queue.length, 0);
+    const bad = structuredClone(values); bad[brokenIndex] = { ...bad[brokenIndex], ...mutation };
+    await assert.rejects(run(driver(bad)), /verification failed/);
+  });
+}
+
+test('文書準備は専用タブがない場合に止まり、図の読込を要求しない', async () => {
+  const { run } = await import('./gui-smoke/document.mjs');
+  let expression;
+  await assert.rejects(run({ evaluate: async value => { expression = value; return { ready: false, reason: '専用タブなし' }; } }), /専用タブなし/);
+  new Function(`return (${expression});`);
+  assert.ok(!expression.includes('mermaid') && !expression.includes('drawio'));
+  assert.deepEqual(await run({ evaluate: async () => ({ ready: true }) }), { documentReady: true });
+});
+
+function socketFixture({ silent = false, evaluationError = false } = {}) {
+  return class FixtureSocket extends EventTarget {
+    static instances = [];
+    constructor() { super(); this.constructor.instances.push(this); this.calls = []; queueMicrotask(() => this.dispatchEvent(new Event('open'))); }
+    send(packet) {
+      const message = JSON.parse(packet); this.calls.push(message);
+      if (silent && message.method === 'Runtime.evaluate') return;
+      let result = {};
+      if (message.method === 'Runtime.evaluate') result = evaluationError ? { exceptionDetails: { text: 'fixture例外' } } : { result: { value: 42 } };
+      if (message.method === 'Page.captureScreenshot') result = { data: Buffer.from('fixture').toString('base64') };
+      queueMicrotask(() => this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ id: message.id, result }) })));
+    }
+    close() { this.closed = true; this.dispatchEvent(new Event('close')); }
+  };
+}
+const target = { type: 'page', id: 'fixture-target', url: 'tauri://localhost', webSocketDebuggerUrl: 'ws://127.0.0.1:9333/devtools/page/fixture' };
+const fetchFixture = targets => async () => ({ ok: true, json: async () => targets });
+test('CDPは一意なローカル接続だけを許可し評価例外と待機打切りを伝える', () => fixture(async directory => {
+  const Socket = socketFixture();
+  const session = await connectCdp({ port: 9333, directory, fetchImpl: fetchFixture([target]), Socket });
+  try {
+    assert.equal(await session.evaluate('6*7'), 42);
+    await session.screenshot('fixture.png');
+    await assert.rejects(session.screenshot('../outside.png'), /不正/);
+  } finally { session.close(); }
+  assert.equal(Socket.instances[0].closed, true);
+  await assert.rejects(connectCdp({ port: 9333, directory, fetchImpl: fetchFixture([target, target]), Socket }), /一意/);
+  await assert.rejects(connectCdp({ port: 9333, directory, fetchImpl: fetchFixture([{ ...target, webSocketDebuggerUrl: 'ws://example.com:9333/x' }]), Socket }), /ローカル/);
+  for (const options of [{ silent: true }, { evaluationError: true }]) {
+    const faulty = await connectCdp({ port: 9333, directory, fetchImpl: fetchFixture([target]), Socket: socketFixture(options), commandTimeoutMs: 10 });
+    try { await assert.rejects(faulty.evaluate('1'), /fixture例外|打ち切り/); } finally { faulty.close(); }
+  }
+}));
+
+test('PowerShell PlanOnlyは存在しないサンプルでもビルド・起動なしで選択結果を返す', () => {
+  const script = path.join(import.meta.dirname, 'run-debug-MdVisualizer-all-smoke.ps1');
+  const result = spawnSync('pwsh', ['-NoProfile', '-File', script, '-TargetVersion', 'v0.0.19', '-Scenario', 'drawio', '-PlanOnly', '-FallbackMarkdownPaths', 'Z:\\存在しない専用fixture.md'], { encoding: 'utf8', timeout: 15_000, windowsHide: true });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(ids(JSON.parse(result.stdout)), ['connect', 'document', 'drawio']);
+});

@@ -22,6 +22,8 @@
     "run:release": "pwsh -NoProfile -File ./scripts/run-release-MdVisualizer-all.ps1",
     "run:exe": "pwsh -NoProfile -File ./scripts/run-exe-MdVisualizer-all.ps1",
     "debug:smoke": "pwsh -NoProfile -File ./scripts/run-debug-MdVisualizer-all-smoke.ps1",
+    "debug:gui": "node ./scripts/debug-preview-smoke.mjs",
+    "test:gui-smoke": "node --test scripts/test-gui-smoke.mjs",
     "build:core": "npm --workspace @mdvisualizer/markdown-core run build",
     "build": "npm run build:core && tsc && vite build",
     "build:spfx": "pwsh -NoProfile -File ./scripts/build-release-MdVisualizer-spfx.ps1",
