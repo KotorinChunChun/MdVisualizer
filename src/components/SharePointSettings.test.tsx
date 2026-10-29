@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SharePointSettings } from "./SharePointSettings";
 const invoke = vi.hoisted(() => vi.fn());
@@ -110,4 +110,17 @@ it("フォルダーの応答が設定を閉じた後に届いても操作しな�
   await screen.findByText("embedded-id");fireEvent.change(screen.getByLabelText("SharePointのURL"),{target:{value:"https://contoso.sharepoint.com/Wiki"}});fireEvent.click(screen.getByRole("button",{name:"URLを開く"}));
   await waitFor(()=>expect(finish).toBeTypeOf("function"));unmount();finish({uri:"spmd://contoso.sharepoint.com/Wiki",parentUri:null,entries:[]});await Promise.resolve();await Promise.resolve();
   expect(open).not.toHaveBeenCalled();expect(settled).not.toHaveBeenCalled();
+});
+
+it("古い再確認応答で、新しく受信したURLや入力欄を巻き戻さない", async () => {
+  const { listen } = await import("@tauri-apps/api/event");
+  let finish!: (value:unknown)=>void;
+  invoke.mockImplementation(async command=>command==="last_sharepoint_uri"?new Promise(resolve=>{finish=resolve;}):{clientId:"embedded-id",tenant:"organizations",directProtocolRegistration:false});
+  render(<SharePointSettings onOpen={vi.fn()} />);await screen.findByText("embedded-id");
+  const handler=vi.mocked(listen).mock.calls[vi.mocked(listen).mock.calls.length - 1][1];
+  const latest={value:"spmd://contoso.sharepoint.com/Wiki/latest.md",receivedAt:"2026-10-29T00:00:02Z",origin:"URL入力",error:null};
+  await act(async()=>{handler({event:"sharepoint-uri-received",id:1,payload:latest});});
+  await act(async()=>{finish({...latest,value:"spmd://contoso.sharepoint.com/Wiki/old.md",receivedAt:"2026-10-29T00:00:01Z"});});
+  expect((screen.getByLabelText("直前の受信URL") as HTMLTextAreaElement).value).toBe(latest.value);
+  expect((screen.getByLabelText("SharePointのURL") as HTMLInputElement).value).toBe(latest.value);
 });

@@ -162,3 +162,11 @@ pwsh -NoProfile -File .\scripts\full-release-stable-MdVisualizer.ps1
 #### 性能測定
 
 過去の測定例では、release EXEで10,000行のMarkdownを5回起動した測定では、起動時間の中央値は41ms、初回を含む最大は493ms、ワーキングセット最大は24.1MBでした。再測定には `dev/scripts/measure-performance.ps1` を使用します。
+
+#### SharePoint URLと設定エラーの検証
+
+`npm run test:settings-appearance -- v0.0.19` はEdgeを画面表示せず起動し、実CSSでライト／ダーク、390／1200pxの白文字・赤背景と横溢れを確認します。元selectorへ戻す対照条件でも不具合を再現し、検査の成立を確認します。結果は指定版のlogsへ保存します。外部ネットワークや実SharePoint認証は使用しません。
+
+関連unitはSharePointSettings、sharePoint、SettingsPanel、useDocumentOpenShortcut。Rustのsharepoint::navigationにはlocalhostのHTTP fixtureでGraphの応答と403・ページ送りを確認する試験があります。実テナントへの認証・閲覧権限・文書の取得成功は別の受入です。URL原文はreceived_uriのプロセスメモリーだけに保持し、診断の自動ログへ出しません。
+
+起動と二重起動のURLを確認する場合は、専用の`--settings-dir`とテストURLを渡します。不正URLは設定画面へ案内し、「直前の受信URL」と具体的な理由を確認できます。実テナントのURLを生ログや公開fixtureへ複製しないでください。

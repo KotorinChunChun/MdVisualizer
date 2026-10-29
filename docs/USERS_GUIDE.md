@@ -104,6 +104,7 @@ v0.0.9の編集モード、CSV／TSV、draw.io、Base64画像は`dev/research/20
 | 次／前のタブへ移動 | `Ctrl+Tab` / `Ctrl+Shift+Tab` |
 | 見出しの全展開／全折りたたみを切り替える | `Ctrl+Alt+T` |
 | ズーム | `Ctrl` + `+` / `-` / `0` |
+| ファイルを開く | `Ctrl+O` |
 | 全画面 | `F11` |
 | プレゼンの前／次ページ | `←` / `→` |
 | 操作履歴を戻る／進む | `Alt+←` / `Alt+→`、マウス第4／第5ボタン |
@@ -120,7 +121,15 @@ spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/R
 
 設定画面の「SharePoint連携」で、組み込みアプリケーションID・認証先と、この実行ファイルへのspmd直接登録を確認できます。MSIXのプロトコル登録は別方式なので、直接登録を確認できない表示だけでは未登録と判断できません。「状態を再確認」で情報取得をやり直せます。
 
-「SharePointファイルのURL」へファイルの直接URL（spmd:// または https://）を入力し、「URLを確認して開く」でブラウザー側の関連付けを経由せずに開けます。URL形式の確認はネットワーク接続なしで行い、その後の文書取得で認証・接続が必要になります。URLは設定には保存しませんが、開いた文書は通常のタブ・履歴管理の対象です。共有リンク（/:u:/など）、Forms/AllItems.aspx、クエリやフラグメントを含むURLには対応しません。
+「SharePointのURL」にHTTPS URLを入力して「URLを開く」を押します。`spmd://`はアプリ起動用の方式であり、ファイル形式ではありません。通常の`https://`を手作業で`spmd://`へ変更する必要はありません。
+
+- Markdownの直接URL（例：`https://contoso.sharepoint.com/Wiki/README.md`）は、その文書を開きます。
+- ライブラリ／フォルダーURL（例：`https://contoso.sharepoint.com/Wiki`）は、Markdownとフォルダーの一覧を表示します。フォルダーをたどり、`.md`／`.markdown`を選択して開けます。「親フォルダー」で同じライブラリ内を戻れます。
+- ルートサイトの`/Wiki/`に加え、`/sites/サイト名/ライブラリ/`、`/teams/サイト名/ライブラリ/`へ対応します。SharePoint OnlineのHTTPSが対象です。
+
+形式確認はネットワーク接続なしで行い、文書・一覧の取得には認証・接続が必要です。共有リンク（`/:u:/`など）、`Forms/AllItems.aspx`、クエリやフラグメント付きURL、HTML／`.aspx`のWikiページ自体は対象外です。URLは設定に保存しませんが、開いた文書は通常のタブ・履歴管理の対象です。
+
+「直前の受信URL」では、起動／二重起動で渡されたURL、またはURL欄へ入力して開いた原文を、受信日時・経路・形式エラーとともに確認できます。「受信URLをコピー」は表示中の原文をクリップボードへコピーします。受信原文はプロセス内だけに保持し、設定やログへ自動保存せず、再起動で消えます。不正URLも診断用の原文を残します。トークン等を含んでいた場合はコピー先へ渡るため、共有前に内容を確認してください。
 
 ブラウザーからアプリ自体が起動しない場合は、インストール版の更新とWindowsの既定のアプリでspmdの関連付けを確認してください。ポータブル版・開発版の起動だけでは自動登録しません。起動後の取得失敗はURL、閲覧権限、所属組織の同意ポリシーを確認します。SPFxパッケージ公開用のMicrosoft 365 CLIへのログインと、このアプリ内の認証は独立しています。
 
@@ -132,7 +141,7 @@ spmd://excelchunchun.sharepoint.com/sites/msteams_fcce9d/Shared%20Documents/md/R
 
 ## セキュリティとデータ
 
-Markdown 内の HTML は許可リストで処理し、イベント属性・任意 style・危険な URL スキームを除去します。外部リンクは HTTP(S) と `mailto:` のみを OS へ渡します。`spmd:`はMdVisualizer内の文書移動としてだけ処理し、SharePoint Onlineのホスト、`/sites/`または`/teams/`パス、Markdown拡張子をRust側でも検証します。
+Markdown 内の HTML は許可リストで処理し、イベント属性・任意 style・危険な URL スキームを除去します。外部リンクは HTTP(S) と `mailto:` のみを OS へ渡します。`spmd:`はMdVisualizer内の文書移動としてだけ処理し、SharePoint Onlineのホスト、ルート／sites／teamsのライブラリパス、Markdown拡張子、安全なURL成分をRust側でも検証します。
 
 PowerShellコードは`powershell`、`pwsh`、`ps1`と明示されたフェンスだけが対象です。コードと作業フォルダーを表示する確認操作なしには実行せず、Markdown所在フォルダー固定、非対話、30秒、入力256KiB、出力1MiBの上限をbackendでも検証します。
 

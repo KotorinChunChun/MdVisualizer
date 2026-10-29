@@ -15,6 +15,7 @@ export function SharePointSettings({ onOpen, onSettled, authenticationReady = tr
   const request = useRef(0);
   const edited = useRef(false);
   const automatic = useRef<string | null>(null);
+  const latestReceivedAt = useRef(-Infinity);
   const [info, setInfo] = useState<ConnectionInfo | null>(null);
   const [received, setReceived] = useState<ReceivedUri | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,10 @@ export function SharePointSettings({ onOpen, onSettled, authenticationReady = tr
 
   const receive = (item: ReceivedUri | null) => {
     if (!mounted.current || !item) return;
-    setReceived(current => current && Date.parse(current.receivedAt) > Date.parse(item.receivedAt) ? current : item);
+    const time = Date.parse(item.receivedAt);
+    if (time < latestReceivedAt.current) return;
+    latestReceivedAt.current = time;
+    setReceived(item);
     setCopied(false);
     if (!edited.current) setValue(item.value);
   };
