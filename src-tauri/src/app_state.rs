@@ -47,6 +47,7 @@ pub struct DebugApplicationState {
 }
 
 pub struct AppState {
+    pub received_uri: crate::received_uri::ReceivedUriStore,
     pub initial_files: Mutex<HashMap<String, Vec<String>>>,
     pub window_geometries: Mutex<HashMap<String, WindowGeometry>>,
     pub debug_windows: Mutex<HashMap<String, DebugWindowState>>,
@@ -60,6 +61,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(initial_files: Vec<String>) -> Result<Self, crate::errors::AppError> {
         Ok(Self {
+            received_uri: Default::default(),
             initial_files: Mutex::new(HashMap::from([("main".to_string(), initial_files)])),
             window_geometries: Mutex::new(HashMap::new()),
             debug_windows: Mutex::new(HashMap::new()),

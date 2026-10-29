@@ -27,7 +27,8 @@ use app_state::AppState;
 use app_state::DebugApplicationState;
 use commands::*;
 use markdown::is_supported_document;
-use sharepoint::{is_spmd_uri, parse_spmd_uri};
+mod received_uri;
+use sharepoint::{is_spmd_uri, canonical_sharepoint_uri};
 use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 use tauri::{Emitter, EventTarget, Manager};
@@ -78,10 +79,9 @@ fn document_launch_arguments(
         .into_iter()
         .filter(|argument| !argument.starts_with('-'))
         .filter_map(|argument| {
-            if is_spmd_uri(&argument) {
-                parse_spmd_uri(&argument)
+            if is_spmd_uri(&argument) || argument.get(..6).is_some_and(|prefix| prefix.eq_ignore_ascii_case("https:")) {
+                canonical_sharepoint_uri(argument)
                     .ok()
-                    .map(|parsed| parsed.canonical_uri)
                     // 不正な起動を黙って破棄しない。入力に含まれ得るtoken等は保持しない。
                     .or_else(|| Some("spmd:".to_string()))
             } else {
@@ -191,6 +191,7 @@ pub fn run() {
     );
 
     let state = AppState::new(initial_files).expect("Failed to initialize AppState");
+    state.received_uri.arguments(&options.documents, "起動引数");
     let mut context = tauri::generate_context!();
     if let Some(key) = options.isolation_key() {
         context.config_mut().identifier.push_str(&format!(".isolated.{key}"));
@@ -212,6 +213,9 @@ pub fn run() {
                 return;
             }
             let Ok(options) = launch_options::LaunchOptions::parse(args.into_iter().skip(1)) else { return; };
+            if let Some(received) = app.state::<AppState>().received_uri.arguments(&options.documents, "再起動引数") {
+                let _ = app.emit("sharepoint-uri-received", received);
+            }
             let files = document_launch_arguments(options.documents, Path::new(&cwd));
             let _ = management::show(app);
             if !files.is_empty() {
@@ -342,6 +346,8 @@ pub fn run() {
             load_settings,
             sharepoint_connection_info,
             validate_sharepoint_uri,
+            last_sharepoint_uri,
+            list_sharepoint_folder,
             load_settings_status,
             save_settings,
             load_markdown_style,

@@ -35,9 +35,13 @@ export function SettingsPanel({
   onReloadMarkdownStyle = async () => undefined,
   onSave,
   onOpenSharePoint,
+  onSharePointSettled,
+  sharePointAuthenticationReady = true,
 }: {
   apps: ExternalAppConfig[];
   onOpenSharePoint?: (path: string) => void;
+  onSharePointSettled?: () => void;
+  sharePointAuthenticationReady?: boolean;
   presentationLineThreshold: number;
   codeBlockFoldMinLines?: number;
   imageA4TargetWidth?: number;
@@ -131,7 +135,7 @@ export function SettingsPanel({
       <button type="button" className="settings-save" disabled={saving} onClick={() => void save()}>{saving ? "保存中…" : "保存"}</button>
     </header>
     {error && <p role="alert" className="settings-error">{error}</p>}
-    {onOpenSharePoint && <SharePointSettings onOpen={onOpenSharePoint} />}
+    {onOpenSharePoint && <SharePointSettings onOpen={onOpenSharePoint} onSettled={onSharePointSettled} authenticationReady={sharePointAuthenticationReady} />}
     <CodexSkillSettings />
     <fieldset className="settings-section">
       <legend>コード画面の折畳</legend>

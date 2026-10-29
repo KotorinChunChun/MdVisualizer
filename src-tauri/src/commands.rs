@@ -40,7 +40,7 @@ mod window_settings;
 pub use clipboard::{copy_bmp_to_clipboard, copy_mermaid_file, copy_text_file};
 pub use diagnostics::{diagnose_document, document_watch_targets};
 pub use editor_launch::{open_containing_folder, open_external_editor, open_in_editor};
-pub use sharepoint_settings::{sharepoint_connection_info, validate_sharepoint_uri};
+pub use sharepoint_settings::{sharepoint_connection_info, validate_sharepoint_uri, last_sharepoint_uri, list_sharepoint_folder};
 
 pub use external::{
     open_external_app, open_external_url, run_powershell, OpenExternalAppRequest,

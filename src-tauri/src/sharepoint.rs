@@ -15,6 +15,9 @@ use thiserror::Error;
 use tokio::sync::Mutex as AsyncMutex;
 use url::Url;
 
+mod navigation;
+pub use navigation::{SharePointListing, SharePointEntry};
+
 pub const SPMD_SCHEME: &str = "spmd";
 const GRAPH_ROOT: &str = "https://graph.microsoft.com/v1.0";
 const GRAPH_SCOPE: &str = "offline_access https://graph.microsoft.com/Sites.Read.All https://graph.microsoft.com/Files.ReadWrite";
@@ -53,7 +56,7 @@ pub enum SpmdUriError {
     InvalidHost,
     #[error("spmd URIにユーザー情報、ポート、クエリ、フラグメントは指定できません。")]
     UnsupportedComponent,
-    #[error("spmd URIのパスは/sites/または/teams/から始めてください。")]
+    #[error("SharePointのライブラリまたはMarkdownファイルのURLを指定してください。")]
     InvalidSitePath,
     #[error("spmd URIのパスに安全でない文字または区切りが含まれています。")]
     UnsafePath,
@@ -70,6 +73,31 @@ pub fn is_spmd_uri(value: &str) -> bool {
 }
 
 pub fn parse_spmd_uri(value: &str) -> Result<SpmdUri, SpmdUriError> {
+    let source = parse_spmd_location(value)?;
+    if !source.filename.to_ascii_lowercase().ends_with(".md") && !source.filename.to_ascii_lowercase().ends_with(".markdown") {
+        return Err(SpmdUriError::UnsupportedDocument);
+    }
+    Ok(source)
+}
+
+pub fn canonical_sharepoint_uri(value: String) -> Result<String, String> {
+    let value = value.trim();
+    if value.len() > 32768 { return Err("URLが長すぎます。".into()); }
+    let uri = if value.get(..8).is_some_and(|prefix| prefix.eq_ignore_ascii_case("https://")) {
+        format!("spmd://{}", &value[8..])
+    } else { value.to_owned() };
+    parse_spmd_location(&uri).map(|source| source.canonical_uri).map_err(|error| error.to_string())
+}
+
+pub(crate) fn parse_spmd_location(value: &str) -> Result<SpmdUri, SpmdUriError> {
+    // URL parserが正規化して消す前に、元入力のtraversalを検査する。
+    if let Some((_, authority)) = value.split_once("://") {
+        if let Some((_, path)) = authority.split_once('/') {
+            for segment in path.split(['?', '#']).next().unwrap_or("").split('/').filter(|part| !part.is_empty()) {
+                decode_safe_segment(segment)?;
+            }
+        }
+    }
     let parsed = Url::parse(value).map_err(|_| SpmdUriError::Invalid)?;
     if parsed.scheme() != SPMD_SCHEME || parsed.cannot_be_a_base() {
         return Err(SpmdUriError::Invalid);
@@ -102,11 +130,10 @@ pub fn parse_spmd_uri(value: &str) -> Result<SpmdUri, SpmdUriError> {
         .map(|segment| decode_safe_segment(segment))
         .collect::<Result<Vec<_>, _>>()?;
 
-    if decoded_segments.len() < 4
-        || !decoded_segments.first().is_some_and(|segment|
-            segment.eq_ignore_ascii_case("sites") || segment.eq_ignore_ascii_case("teams"))
-        || decoded_segments[1].is_empty()
-    {
+    let first = decoded_segments.first().ok_or(SpmdUriError::InvalidSitePath)?;
+    let managed = first.eq_ignore_ascii_case("sites") || first.eq_ignore_ascii_case("teams");
+    if (managed && decoded_segments.len() < 3) || first.eq_ignore_ascii_case("personal")
+        || first.starts_with('_') || first.starts_with(':') {
         return Err(SpmdUriError::InvalidSitePath);
     }
 
@@ -114,9 +141,7 @@ pub fn parse_spmd_uri(value: &str) -> Result<SpmdUri, SpmdUriError> {
         .last()
         .cloned()
         .ok_or(SpmdUriError::InvalidSitePath)?;
-    if !filename.to_ascii_lowercase().ends_with(".md")
-        && !filename.to_ascii_lowercase().ends_with(".markdown")
-    {
+    if [".aspx", ".html", ".htm"].iter().any(|extension| filename.to_ascii_lowercase().ends_with(extension)) {
         return Err(SpmdUriError::UnsupportedDocument);
     }
 
@@ -124,7 +149,7 @@ pub fn parse_spmd_uri(value: &str) -> Result<SpmdUri, SpmdUriError> {
         canonical_uri: format!("{SPMD_SCHEME}://{tenant_host}{}", parsed.path()),
         tenant_host,
         server_relative_path: format!("/{}", decoded_segments.join("/")),
-        site_path: format!("/{}/{}", decoded_segments[0], decoded_segments[1]),
+        site_path: if managed { format!("/{}/{}", decoded_segments[0], decoded_segments[1]) } else { "/".into() },
         filename,
     })
 }
@@ -158,12 +183,14 @@ pub fn resolve_spmd_asset_uri(
         .filter(|segment| !segment.is_empty())
         .map(decode_safe_segment)
         .collect::<Result<Vec<_>, _>>()?;
-    let site_segments = path_segments(&document.site_path);
-    if decoded_segments.len() < 4
-        || site_segments.len() != 2
+    let site_segments = if document.site_path == "/" {
+        path_segments(&document.server_relative_path).into_iter().take(1).collect::<Vec<_>>()
+    } else { path_segments(&document.site_path) };
+    if decoded_segments.len() <= site_segments.len()
+        || site_segments.is_empty()
         || !decoded_segments
             .iter()
-            .take(2)
+            .take(site_segments.len())
             .zip(site_segments.iter())
             .all(|(left, right)| left.eq_ignore_ascii_case(right))
     {
