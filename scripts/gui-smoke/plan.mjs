@@ -9,7 +9,10 @@ export const scenarios = [
     ['drawio', 'draw.ioの表示と拡大'],
     ['diff', 'Diffの表示・モード切替・同期・終了'],
   ].map(([id, label]) => ({ id, label, kind: 'automated', requires: ['document'] })),
-  { id: 'native-prepare', label: '専用プロセス・設定・入力先の準備', kind: 'manual', requires: [] },
+  { id: 'native-prepare', label: '専用設定・文書の準備', kind: 'manual', requires: [] },
+  { id: 'native-startup', label: '専用プロセスの起動・応答確認', kind: 'manual', requires: ['native-prepare'] },
+  { id: 'native-target', label: '対象ウィンドウ・入力先の選択', kind: 'manual', requires: ['native-startup'] },
+  { id: 'native-recording', label: '必要な場合だけ録画準備・更新確認', kind: 'manual', requires: ['native-target'] },
   ...[
     ['received-url', '起動・再受信したURLの表示'],
     ['url-copy', '受信URLとOSクリップボードの一致'],
@@ -18,10 +21,10 @@ export const scenarios = [
     ['shortcut-tooltips', 'ボタンのショートカットツールチップ'],
     ['settings-errors', '設定エラーの背景・文字色'],
     ['wiki-open', '実テナントの認証・Wiki文書取得'],
-  ].map(([id, label]) => ({ id, label, kind: 'manual', requires: id === 'url-copy' ? ['received-url'] : ['native-prepare'] })),
+  ].map(([id, label]) => ({ id, label, kind: 'manual', requires: id === 'url-copy' ? ['received-url'] : ['native-target'] })),
 ];
 const automatic = scenarios.filter(s => s.kind === 'automated').map(s => s.id);
-const native = scenarios.filter(s => s.kind === 'manual' && s.id !== 'native-prepare').map(s => s.id);
+const native = scenarios.filter(s => s.kind === 'manual' && !s.id.startsWith('native-')).map(s => s.id);
 
 // 正本とDesktop投影を同じパスへ正規化する。未知のパスは自動省略しない。
 export function normalizeChangedPath(value) {

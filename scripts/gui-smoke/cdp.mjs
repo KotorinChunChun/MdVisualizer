@@ -48,9 +48,9 @@ export async function connectCdp({ port, directory, targetId, fetchImpl = fetch,
       if (message.error) request.reject(new Error(message.error.message));
       else request.resolve(message.result);
     });
-    const command = (method, params = {}) => new Promise((resolve, reject) => {
+    const command = (method, params = {}, timeoutMs = commandTimeoutMs) => new Promise((resolve, reject) => {
       const id = ++sequence;
-      const timer = setTimeout(() => { pending.delete(id); reject(new Error(`${method}: 応答待ちを打ち切りました。`)); }, commandTimeoutMs);
+      const timer = setTimeout(() => { pending.delete(id); reject(new Error(`${method}: 応答待ちを打ち切りました。`)); }, timeoutMs);
       pending.set(id, { resolve, reject, timer });
       try { socket.send(JSON.stringify({ id, method, params })); }
       catch (error) { clearTimeout(timer); pending.delete(id); reject(error); }
@@ -67,8 +67,9 @@ export async function connectCdp({ port, directory, targetId, fetchImpl = fetch,
       await writeFile(output, Buffer.from(capture.data, 'base64'));
       return output;
     };
-    await command('Page.enable');
-    await command('Runtime.enable');
+    // 接続工程全体の30秒より先に失敗してソケットを片付ける。
+    await command('Page.enable', {}, Math.min(commandTimeoutMs, 3000));
+    await command('Runtime.enable', {}, Math.min(commandTimeoutMs, 3000));
     return { evaluate, screenshot, close, targetId: target.id };
   } catch (error) { close(); throw error; }
 }

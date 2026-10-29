@@ -9,6 +9,8 @@ import { recordManual } from './gui-smoke-manual.mjs';
 import { connectCdp } from './gui-smoke/cdp.mjs';
 import { parseOptions, main } from './debug-preview-smoke.mjs';
 import { spawnSync } from 'node:child_process';
+import vm from 'node:vm';
+import { versionLogDirectory } from './version-log-path.mjs';
 
 async function fixture(body) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'mdvisualizer-gui-timing-'));
@@ -30,7 +32,8 @@ test('共有正本・Windowsパスを正規化しDiffだけを選ぶ', () => {
 });
 test('SharePoint修正で無関係な図を選ばずネイティブ観測を要求する', () => {
   const plan = createPlan({ changed: ['src-tauri/src/sharepoint/navigation.rs'] });
-  assert.deepEqual(ids(plan), ['native-prepare', 'received-url', 'url-copy', 'settings-errors', 'wiki-open']);
+  assert.deepEqual(ids(plan), ['native-prepare', 'native-startup', 'native-target', 'received-url', 'url-copy', 'settings-errors', 'wiki-open']);
+  assert.equal(plan.steps.find(s => s.id === 'native-recording').status, 'excluded');
 });
 test('文書だけは対象外、未登録は要判断、横断変更は広く選択する', () => {
   assert.equal(ids(createPlan({ changed: ['docs/user/a.md'] })).length, 0);
@@ -82,7 +85,7 @@ test('手動は開始・依存・証跡を要求し計測と観測者判定を�
   await assert.rejects(recordManual(input), /前提/);
   const begin = new Date('2026-10-29T12:00:00Z');
   await writeFile(path.join(directory, 'observed.txt'), '専用fixtureとの一致を観測した');
-  for (const id of ['native-prepare', 'received-url', 'url-copy']) {
+  for (const id of ['native-prepare', 'native-startup', 'native-target', 'received-url', 'url-copy']) {
     await recordManual({ summaryPath, id, action: 'start', now: begin });
     await assert.rejects(recordManual({ summaryPath, id, action: 'finish', outcome: 'passed', reason: '観測した' }), /証跡/);
     await assert.rejects(recordManual({ summaryPath, id, action: 'finish', outcome: 'passed', reason: '観測した', evidence: ['../outside'] }), /同じ実行/);
@@ -132,13 +135,14 @@ test('文書準備は専用タブがない場合に止まり、図の読込を�
   assert.deepEqual(await run({ evaluate: async () => ({ ready: true }) }), { documentReady: true });
 });
 
-function socketFixture({ silent = false, evaluationError = false } = {}) {
+function socketFixture({ silent = false, silentEnable = false, evaluationError = false } = {}) {
   return class FixtureSocket extends EventTarget {
     static instances = [];
     constructor() { super(); this.constructor.instances.push(this); this.calls = []; queueMicrotask(() => this.dispatchEvent(new Event('open'))); }
     send(packet) {
       const message = JSON.parse(packet); this.calls.push(message);
       if (silent && message.method === 'Runtime.evaluate') return;
+      if (silentEnable && message.method === 'Page.enable') return;
       let result = {};
       if (message.method === 'Runtime.evaluate') result = evaluationError ? { exceptionDetails: { text: 'fixture例外' } } : { result: { value: 42 } };
       if (message.method === 'Page.captureScreenshot') result = { data: Buffer.from('fixture').toString('base64') };
@@ -160,6 +164,9 @@ test('CDPは一意なローカル接続だけを許可し評価例外と待機�
   assert.equal(Socket.instances[0].closed, true);
   await assert.rejects(connectCdp({ port: 9333, directory, fetchImpl: fetchFixture([target, target]), Socket }), /一意/);
   await assert.rejects(connectCdp({ port: 9333, directory, fetchImpl: fetchFixture([{ ...target, webSocketDebuggerUrl: 'ws://example.com:9333/x' }]), Socket }), /ローカル/);
+  const StalledSocket = socketFixture({ silentEnable: true });
+  await assert.rejects(connectCdp({ port: 9333, directory, fetchImpl: fetchFixture([target]), Socket: StalledSocket, commandTimeoutMs: 10 }), /打ち切り/);
+  assert.equal(StalledSocket.instances[0].closed, true);
   for (const options of [{ silent: true }, { evaluationError: true }]) {
     const faulty = await connectCdp({ port: 9333, directory, fetchImpl: fetchFixture([target]), Socket: socketFixture(options), commandTimeoutMs: 10 });
     try { await assert.rejects(faulty.evaluate('1'), /fixture例外|打ち切り/); } finally { faulty.close(); }
@@ -171,4 +178,52 @@ test('PowerShell PlanOnlyは存在しないサンプルでもビルド・起動�
   const result = spawnSync('pwsh', ['-NoProfile', '-File', script, '-TargetVersion', 'v0.0.19', '-Scenario', 'drawio', '-PlanOnly', '-FallbackMarkdownPaths', 'Z:\\存在しない専用fixture.md'], { encoding: 'utf8', timeout: 15_000, windowsHide: true });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(ids(JSON.parse(result.stdout)), ['connect', 'document', 'drawio']);
+});
+
+test('文書準備は現行コマンド属性とWindowsの専用タブ名で実際の評価式を実行する', async () => {
+  const { run } = await import('./gui-smoke/document.mjs');
+  const clicked = [];
+  const button = id => ({ click() { clicked.push(id); }, getAttribute() { return 'true'; } });
+  const visual = button('view.visual');
+  const document = {
+    querySelectorAll: selector => selector === '.tab[title]' ? [{ title: 'C:\\fixture\\v0.0.10-editing.md', click() { clicked.push('専用タブ'); } }] : [],
+    querySelector: selector => ({ '[data-ui-command="view.visual"]': visual, '[data-ui-command="view.browse"]': button('view.browse'), '.markdown-body': {} })[selector],
+  };
+  await run({ evaluate: expression => vm.runInNewContext(expression, { document, setTimeout: callback => queueMicrotask(callback) }) });
+  assert.deepEqual(clicked, ['専用タブ', 'view.browse', 'view.visual']);
+  document.querySelectorAll = () => [];
+  await assert.rejects(run({ evaluate: expression => vm.runInNewContext(expression, { document }) }), /専用サンプル/);
+  assert.equal(clicked.length, 3);
+});
+
+test('手動の時間超過・失敗・二重開始・時計逆行を記録または拒否する', () => fixture(async directory => {
+  const { summaryPath } = await runPlan({ plan: createPlan({ selected: ['received-url', 'open-shortcut'] }), directory, handlers: {} });
+  const begin = new Date('2026-10-29T12:00:00Z');
+  await recordManual({ summaryPath, id: 'native-prepare', action: 'start', now: begin });
+  await assert.rejects(recordManual({ summaryPath, id: 'open-shortcut', action: 'start', now: begin }), /実行中/);
+  await assert.rejects(recordManual({ summaryPath, id: 'native-prepare', action: 'finish', outcome: 'failed', reason: '準備不良', now: new Date(begin.getTime() - 1) }), /時計/);
+  const result = await recordManual({ summaryPath, id: 'native-prepare', action: 'finish', outcome: 'failed', reason: '入力先を確認できなかった', now: new Date(begin.getTime() + 301_000) });
+  assert.equal(result.budgetExceeded, true);
+  const summary = JSON.parse(await readFile(summaryPath));
+  assert.equal(summary.status, 'failed');
+  assert.equal(summary.steps.find(s => s.id === 'received-url').status, 'not-run');
+}));
+
+test('実CLIでSharePoint計画はGUI未実施、文書変更は対象外として接続せず終了する', async () => {
+  const root = path.resolve(import.meta.dirname, '..');
+  for (const [changed, expectedStatus, expectedExit] of [['src-tauri/src/sharepoint.rs', 'pending', 2], ['docs/user/a.md', 'not-required', 0]]) {
+    const directory = versionLogDirectory(root, 'gui-cli-fixture', 'v0.0.19');
+    try {
+      const result = spawnSync(process.execPath, [path.join(import.meta.dirname, 'debug-preview-smoke.mjs'), '--version', 'v0.0.19', '--output', directory, '--changed', changed], { encoding: 'utf8', timeout: 5000, windowsHide: true });
+      assert.equal(result.status, expectedExit, result.stderr);
+      const summary = JSON.parse(await readFile(path.join(directory, 'gui-summary.json')));
+      assert.equal(summary.status, expectedStatus);
+      assert.equal(summary.passed, false);
+      assert.equal(summary.steps[0].status, 'excluded');
+    } finally {
+      const relative = path.relative(path.join(root, 'dev/history/v0.0.19/logs'), directory);
+      assert.ok(relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+      await rm(directory, { recursive: true, force: true });
+    }
+  }
 });

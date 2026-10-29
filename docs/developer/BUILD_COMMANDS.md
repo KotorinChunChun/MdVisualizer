@@ -76,6 +76,8 @@ pwsh -NoProfile -File .\scripts\run-debug-MdVisualizer-all.ps1
 
 `run-debug-MdVisualizer-all-smoke.ps1 -TargetVersion <対象版>`はフルビルドを伴う受入入口です。frontendの編集ごとには呼び出しません。`-SkipBuild`は対象ソースから生成された成果物と起動条件が確認できる場合だけ使用します。
 
+個別のGUI確認は `npm.cmd run debug:gui -- --version <対象版> --scenario <ID>` で専用WebViewへ接続する。まず `--plan-only --changed <変更した相対パス>` で要否を確認する。PowerShell入口も `-Scenario`／`-ChangedPath`／`-PlanOnly`／`-AttachOnly` に対応する。[工程別の時間計測とネイティブ操作の記録](/docs/developer/testing/08-gui-scenarios.md)を参照。
+
 実行ファイルのパス、ビルド種別、生成時刻、WebView接続先、対象タブ・表示モードを確認してから試験を開始します。空ページ、接続拒否、画像0件、対象タブ未選択は環境または試験準備の失敗として扱います。古いボタン名などでスモークが失敗した場合も成功へ読み替えず、ハーネスを修正して再検証します。
 
 開発用と受入用の出力先は分離する方針です。現状の既存入口は同じdebug成果物を使うため、分離実装までは並行ビルドを避け、切替時に由来を確認して必要なら再ビルドします。Viteを参照する開発EXE単独の起動失敗を製品不具合と断定しません。受入用はViteへの依存がない成果物で確認します。

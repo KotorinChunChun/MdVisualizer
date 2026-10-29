@@ -1,4 +1,4 @@
-import { mkdir, writeFile, rename } from 'node:fs/promises';
+import { mkdir, writeFile, rename, open } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
@@ -22,7 +22,7 @@ export async function runPlan({ plan, directory, handlers, evidenceKind = 'webvi
   await mkdir(directory, { recursive: true });
   const summaryPath = path.join(directory, 'gui-summary.json');
   // 再開・再実行で過去結果を上書きしない。
-  const reservation = await import('node:fs/promises').then(fs => fs.open(summaryPath, 'wx'));
+  const reservation = await open(summaryPath, 'wx');
   await reservation.close();
   const summary = { ...structuredClone(plan), evidenceKind, startedAt: new Date().toISOString(), wallMs: 0, passed: false, status: 'pending' };
   const started = performance.now();

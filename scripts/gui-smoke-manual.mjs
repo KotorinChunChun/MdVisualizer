@@ -1,4 +1,4 @@
-import { readFile, open, unlink, stat } from 'node:fs/promises';
+import { readFile, open, unlink, stat, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -25,10 +25,13 @@ export async function recordManual({ summaryPath, id, action, outcome, reason, e
       if (outcome === 'passed' && evidence.length === 0) throw new Error('手動合格には観測した証跡ファイルが必要です。');
       const evidenceRecords = [];
       const directory = path.dirname(summaryPath);
+      const realDirectory = await realpath(directory);
       for (const value of evidence) {
         const file = path.resolve(directory, value);
         const relative = path.relative(directory, file);
         if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error('証跡は同じ実行フォルダー内へ保存してください。');
+        const realRelative = path.relative(realDirectory, await realpath(file));
+        if (!realRelative || realRelative === '..' || realRelative.startsWith(`..${path.sep}`) || path.isAbsolute(realRelative)) throw new Error('証跡のリンク先が同じ実行フォルダー内にありません。');
         const info = await stat(file);
         if (!info.isFile() || info.size > 20 * 1024 * 1024) throw new Error('証跡は20MiB以下のファイルにしてください。');
         evidenceRecords.push({ file: relative, bytes: info.size, sha256: createHash('sha256').update(await readFile(file)).digest('hex') });
@@ -40,7 +43,7 @@ export async function recordManual({ summaryPath, id, action, outcome, reason, e
       entry.status = outcome;
       entry.reason = reason;
       entry.evidence = evidenceRecords;
-      entry.budgetMs = id === 'native-prepare' ? 300_000 : 120_000;
+      entry.budgetMs = ['native-prepare', 'native-startup'].includes(id) ? 300_000 : ['native-target', 'native-recording'].includes(id) ? 60_000 : 120_000;
       entry.budgetExceeded = entry.elapsedMs > entry.budgetMs;
     } else throw new Error('actionはstartまたはfinishを指定してください。');
     summary.updatedAt = now.toISOString();

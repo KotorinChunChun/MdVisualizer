@@ -45,6 +45,9 @@ if ($PlanOnly) {
     return
 }
 $plan = ($planJson -join "`n") | ConvertFrom-Json
+if ($StopAfterTest -and @($plan.steps | Where-Object { $_.kind -eq 'manual' -and $_.status -ne 'excluded' }).Count -gt 0) {
+    throw '手動観測が残る選択では-StopAfterTestを使えません。専用アプリを保持してください。'
+}
 $needsWebView = @($plan.steps | Where-Object { $_.status -ne 'excluded' -and $_.kind -ne 'manual' }).Count -gt 0
 if ($AttachOnly -or -not $needsWebView) {
     # 部分検証の推奨入口。既存アプリの探索・停止・ビルド・起動を行わない。
@@ -212,6 +215,11 @@ if ($activeTab -and $activeTab.path) {
 
 $nodePath = $runtime.NodeExecutable
 & $nodePath $analyzer @analyzerArguments
+if ($LASTEXITCODE -eq 2) {
+    Write-Output "GUI_SUMMARY=$(Join-Path $runDirectory 'gui-summary.json')"
+    Write-Output 'MANUAL_CHECKS_PENDING=手動工程は未実施です。専用アプリを保持します。'
+    return
+}
 if ($LASTEXITCODE -ne 0) {
     if ($StopAfterTest -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force }
     throw "実画面解析に失敗しました（終了コード: $LASTEXITCODE）。"

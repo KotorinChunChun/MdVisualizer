@@ -84,6 +84,8 @@ JSXの祖先コンテナー、HTMLのツールバー・メニュー・ダイア�
 
 ## 高速検証（普段の変更確認）
 
+GUIの時間計測と選択は[GUIシナリオ](/docs/developer/testing/08-gui-scenarios.md)を使用する。`debug:gui -- --version <版> --plan-only --changed <相対パス>`で先に要否を確認し、`test:gui-smoke`で選択・計測基盤自体を検証できる。
+
 対象版を明示します。以下の例のv0.0.19は実際の対象版へ置き換えます。各コマンドの--version引数でも指定できます。package版から開発対象版を推測しません。
 
 ```powershell
