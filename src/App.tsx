@@ -68,6 +68,7 @@ import type { ViewMode } from "./lib/viewMode";
 import type { TableStorageConversionContext } from "./lib/tableStorage";
 import type { TextStorageConversionContext } from "./lib/textStorage";
 import { codeFencePathDecoration, normalizeRelativeAssetPath } from "./lib/externalPathRepresentation";
+import { sharePointLaunchNeedsSettings } from "./lib/sharePoint";
 import { listenForSecondaryLaunches } from "./lib/secondaryLaunchEvents";
 import { isSharePointDocument } from "./lib/sharePoint";
 import { moveZoomLevel } from "./lib/zoom";
@@ -629,7 +630,7 @@ export function App() {
   useEffect(() => {
     void (async () => {
       const paths = await getInitialFiles();
-      paths.forEach((path) => dispatch({ type: "OPEN", path }));
+      paths.forEach((path) => dispatch(sharePointLaunchNeedsSettings(path) ? { type: "OPEN_SETTINGS" } : { type: "OPEN", path }));
     })();
   }, []);
 
@@ -652,6 +653,7 @@ export function App() {
     let disposed = false;
     void listenForSecondaryLaunches((event) => {
       for (const path of event.payload) {
+        if (sharePointLaunchNeedsSettings(path)) { dispatch({ type: "OPEN_SETTINGS" }); continue; }
         void openInNewWindow(path).catch((error) => setToast({ id: String(Date.now()), message: String(error), type: "error" }));
       }
     }).then((dispose) => {
@@ -2378,6 +2380,8 @@ export function App() {
         {activeTab?.kind === "settings" ? (
           <SettingsPanel
             onOpenSharePoint={(path) => dispatch({ type: "OPEN", path })}
+            onSharePointSettled={dismissAuthentication}
+            sharePointAuthenticationReady={authenticationReady}
             apps={externalApps}
             presentationLineThreshold={presentationLineThreshold}
             codeBlockFoldMinLines={codeBlockFoldMinLines}
