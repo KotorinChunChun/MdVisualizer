@@ -100,7 +100,9 @@ mod tests {
         for args in [vec!["--startup"], vec!["--hidden"], vec!["--settings-dir"], vec!["--launch-origin"], vec!["--launch-origin", "direct_task"]] {
             assert!(LaunchOptions::parse(args.into_iter().map(String::from)).is_err());
         }
-        assert_eq!(WindowTitle::create(None), "MdVisualizer - ver 0.0.19.3");
+        let release: serde_json::Value = serde_json::from_str(include_str!("../../packaging/release-config.json")).unwrap();
+        let version = release["application"]["msixVersion"].as_str().unwrap();
+        assert_eq!(WindowTitle::create(None), format!("MdVisualizer - ver {version}"));
     }
     #[test]
     fn isolates_management_by_settings_directory_without_changing_normal_identity() {

@@ -69,6 +69,10 @@ Windows x64用の開発版です。KotorinToys 0.1.16以降のコレクション
 
 MSIXの固定Identityはcom.mdvisualizer.viewer、PublisherはCN=KotorinChunChunです。初回の証明書の信頼登録は利用者が配布元・拇印を確認して行います。証明書を自動登録しません。ZIPは単独EXEのポータブル版です。SHA256SUMS.txtで取得物を確認できます。
 
+HTTPSからWikiライブラリ・フォルダー内のMarkdownを選んで開けるようにしました。直前の受信URLの原文・日時・経路・エラーの確認と明示コピー、ボタンのショートカットツールチップ、Ctrl+O、設定Ctrl+S、赤背景エラーの白文字表示に対応します。受信URLはメモリー内だけに保持します。
+
+実SharePointテナントでの認証・権限・文書取得、実MSIXの導入・更新は今回の受入では未確認です。実画面確認と自動テストの範囲は版別報告を参照してください。
+
 管理契約2と未保存文書の終了保護に対応します。採用コミット: $commit
 "@ | Set-Content $notes -Encoding utf8NoBOM
 if ($PSCmdlet.ShouldProcess("$repo v$version", '検証済みWindows成果物を新規prereleaseとして公開')) {
