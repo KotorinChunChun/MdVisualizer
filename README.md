@@ -35,24 +35,58 @@ MdVisualizerは、Markdownと図・表を視覚的に扱うビューアー／エ
 ## デスクトップ版を使い始める
 
 1. [配布ページ](https://excel-chunchun.sakura.ne.jp/download/MdVisualizer.html)でbeta版を取得します。
-2. [インストール手順](/docs/user/INSTALLATION.md)に従って導入します。
+2. [インストール手順](docs/user/INSTALLATION.md)に従って導入します。
 3. Markdownファイルを開き、読むだけなら閲覧モード、編集するなら「編集／閲覧」を選びます。変更は保存ボタンまたはCtrl+Sで保存します。
 
-操作方法、対応記法、ショートカット、SharePoint連携の条件は[利用ガイド](/docs/USERS_GUIDE.md)にまとめています。まず表示を試す場合は[samples](/samples/)の文書を利用できます。
+操作方法、対応記法、ショートカット、SharePoint連携の条件は[利用ガイド](docs/USERS_GUIDE.md)にまとめています。まず表示を試す場合は[samples](samples/)の文書を利用できます。
+
+## 画面で見る基本操作
+
+画像はWindowsデスクトップ版0.0.19.4で、説明用の文書と専用設定を使って撮影しています。
+
+### 1. 文書を開く
+
+「開く」からMarkdownを選びます。「ビジュアル」では見出し・表・図を読みやすい形で表示します。
+
+![文書と表を表示した画面](docs/images/readme/01-document.png)
+
+### 2. 表示・出力の設定を確認する
+
+右下の歯車から設定を開きます。画像出力サイズ、印刷、コードの配色などを調整できます。変更後は設定画面の保存操作を行ってください。
+
+![画像出力とコード表示の設定](docs/images/readme/02-settings.png)
+
+### 3. 内容を編集する
+
+「コード｜ビジュアル」と「編集」を選ぶと、Markdownと表示結果を並べて確認できます。例では見出しに「（完成版）」を追記しています。
+
+![コードと表示結果を並べて編集](docs/images/readme/03-edit.png)
+
+### 4. 保存して結果を確認する
+
+「保存」またはCtrl+Sを押します。「ビジュアル」「閲覧」に戻すと、編集結果を読む画面に切り替わります。タブの未保存マークが消えたことを確認してください。
+
+![保存後の完成版の文書](docs/images/readme/04-saved.png)
+
+### 5. Mermaidの図を編集する
+
+Mermaidブロックの「編集」からGUI編集を開きます。図の項目を選んで編集・接続などを行い、「反映」で文書へ戻します。その後、文書も保存します。変更しない場合は「キャンセル」で閉じられます。
+
+![Mermaidの項目を選択したGUI編集画面](docs/images/readme/05-diagram.png)
 
 ## 開発・ビルドする
 
 デスクトップ版はReact／TypeScriptとRust／Tauri、SPFx版はSharePoint Frameworkで構成しています。両者はMarkdown処理を共有します。自分でビルドしたり、機能を変更したりする場合は次の資料から始めてください。
 
-- [開発者ガイド](/docs/DEVELOPERS_GUIDE.md)：構成、実装境界、設計・検証資料への入口
-- [開発環境のセットアップ](/docs/developer/DEVELOPMENT_SETUP.md)：必要な環境、初回起動、パッケージ作成
-- [ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)：依存導入、ビルド、テストの実行方法
+- [開発者ガイド](docs/DEVELOPERS_GUIDE.md)：構成、実装境界、設計・検証資料への入口
+- [開発環境のセットアップ](docs/developer/DEVELOPMENT_SETUP.md)：必要な環境、初回起動、パッケージ作成
+- [ビルド・検証コマンド](docs/developer/BUILD_COMMANDS.md)：依存導入、ビルド、テストの実行方法
 
 ## 詳しい使い方
 
-- [利用ガイド](/docs/USERS_GUIDE.md)
-- [AI相談・編集](/docs/user/ui/codex.md)／[AIスキル設定](/docs/user/ui/codex-skills.md)
-- [HTML出力CLI](/docs/user/HTML_EXPORT_CLI.md)：文書を単独のHTMLファイルへ出力するツール
+- [利用ガイド](docs/USERS_GUIDE.md)
+- [AI相談・編集](docs/user/ui/codex.md)／[AIスキル設定](docs/user/ui/codex-skills.md)
+- [HTML出力CLI](docs/user/HTML_EXPORT_CLI.md)：文書を単独のHTMLファイルへ出力するツール
 
 ## ライセンス
 
