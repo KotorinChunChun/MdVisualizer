@@ -2,7 +2,7 @@
 
 ## ソースの正本と投影
 
-Web系のcanonicalは子リポジトリ `web-platform/` です。親リポジトリの `web/`、`spfx/`、`packages/markdown-core/`、HTML export関連の旧パスは、`scripts/setup-web-platform.mjs` が作成する互換リンクです。初回取得時は `git clone --recurse-submodules` を使い、既存チェックアウトでは次を実行します。
+Web関連のソースは子リポジトリ `web-platform/` で管理します。親リポジトリの `web/`、`spfx/`、`packages/markdown-core/`、HTML export関連の旧パスは、`scripts/setup-web-platform.mjs` が作成する互換リンクです。初回取得時は `git clone --recurse-submodules` を使い、既存のチェックアウトでは次のコマンドを実行します。
 
 ```powershell
 git submodule update --init --recursive

@@ -2,7 +2,7 @@
 
 ## 検証の入口
 
-日常のfrontend確認は`run-debug-MdVisualizer-all.ps1`のHMRを使用します。以下の統合検証は変更範囲と機能完了時の受入条件に応じて選び、frontendの保存ごとに全件実行しません。工程の選択は[ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)、性能比較は[性能回帰測定](/docs/developer/testing/06-performance-regression.md)に従います。
+日常のfrontendの確認には`run-debug-MdVisualizer-all.ps1`のHMRを使います。以下の統合検証は、変更範囲と機能完了時の受入条件に応じて選び、frontendの保存ごとに全件を実行しません。工程の選択は[ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)、性能比較は[性能回帰測定](/docs/developer/testing/06-performance-regression.md)に従います。
 
 対象版を明示し、変更したホストを指定する。Node.js 22と既存の依存導入が必要。初回設定は[Web構成](/docs/developer/web/ARCHITECTURE.md)を参照する。
 

@@ -1,6 +1,6 @@
 # ワークスペースの配置
 
-Desktop と HTML/PHP Web の文書ワークスペースは、利用できる機能の範囲で同じ操作の相対順序を使う。全操作の登録と名称・順序の検査は [UI_COMMAND_MATRIX.tsv](/docs/developer/ui/UI_COMMAND_MATRIX.tsv) を正本とする。コードブロック、埋め込みファイル、図、表の周辺メニューを変更するときは、まず [ブロックUI仕様](/docs/developer/ui/BLOCK_UI_SPEC.md) を確認する。
+Desktop と HTML/PHP Web の文書ワークスペースでは、利用できる機能の範囲で、同じ操作どうしの並び順をそろえる。全操作の登録と名称・順序の検査では [UI_COMMAND_MATRIX.tsv](/docs/developer/ui/UI_COMMAND_MATRIX.tsv) を基準にする。コードブロック、埋め込みファイル、図、表の周辺メニューを変更するときは、まず [ブロックUI仕様](/docs/developer/ui/BLOCK_UI_SPEC.md) を確認する。
 
 ## メインツールバー
 

@@ -26,7 +26,7 @@ npm.cmd install
 
 `npm.cmd` は Windows のコマンド版ランチャーであり、実行ポリシーを変更せずに使用できます。
 
-開発時は次でサンプルを開きます。
+開発モードでサンプルを開くには、次のコマンドを実行します。
 
 ```powershell
 npm.cmd run tauri -- dev -- -- C:\develop\MdVisualizer\samples\sample.md
@@ -38,7 +38,7 @@ npm.cmd run tauri -- dev -- -- C:\develop\MdVisualizer\samples\sample.md
 npm.cmd run tauri -- dev -- -- C:\Project\README.md C:\Project\design.markdown
 ```
 
-開発中のアプリは `http://localhost:1420` のViteサーバーを表示します。起動したPowerShellを終了するとサーバーも停止するため、アプリには接続拒否画面が表示されます。`src-tauri\target\debug\mdvisualizer.exe` を単独で起動するのではなく、上記コマンドから起動してください。
+開発中のアプリは `http://localhost:1420` のViteサーバーに接続して画面を表示します。起動したPowerShellを終了するとサーバーも停止するため、アプリには接続拒否画面が表示されます。`src-tauri\target\debug\mdvisualizer.exe` は単独で起動せず、上記のコマンドから起動してください。
 
 リリース版は `.md`、`.markdown`、`.svg`、`.mmd`、`.mermaid`、`.drawio`、`.tsv` の関連付けを登録します。WindowsでMdVisualizerを開くアプリに選ぶと、対応する文書として開きます。MSIXでは形式別アイコンを登録します。
 

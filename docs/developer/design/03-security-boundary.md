@@ -8,7 +8,7 @@
 
 ## 背景
 
-現行実装はMarkdown/HTML/SVGサニタイズ、URL制限、ファイル競合保護、Windows資格情報マネージャー、PowerShell確認実行を持つ。一方、Tauri CSPは無効、asset protocolは全域許可であり、同期・AI・CLIを追加する前に境界を縮小する必要がある。
+現行実装ではMarkdown/HTML/SVGのサニタイズ、URLの制限、ファイルの競合からの保護、Windows資格情報マネージャーの利用、確認後のPowerShell実行に対応する。一方、Tauri CSPは無効で、asset protocolは全域を許可しているため、同期・AI・CLIを追加する前に境界を縮小する必要がある。
 
 ## 目的
 

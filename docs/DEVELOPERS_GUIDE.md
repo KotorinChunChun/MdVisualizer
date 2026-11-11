@@ -4,7 +4,7 @@
 
 本リポジトリは、Rust／TauriとReactで構成するWindowsデスクトップ版、SharePoint Framework版、両者が共有するMarkdown処理を管理します。
 
-Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`、`spfx/`、`packages/markdown-core/`、HTML export旧パスは `scripts/setup-web-platform.mjs` の互換リンクとして扱います。初回取得は `git clone --recurse-submodules`、既存環境の再接続は `node scripts/setup-web-platform.mjs` です。
+Web版のソースは子リポジトリ `web-platform` で管理します。親側の `web/`、`spfx/`、`packages/markdown-core/`、HTML exportの旧パスは `scripts/setup-web-platform.mjs` の互換リンクとして扱います。初回は `git clone --recurse-submodules` で取得し、既存環境を再接続するときは `node scripts/setup-web-platform.mjs` を実行します。
 
 | 配置 | 内容 |
 |---|---|
@@ -17,7 +17,7 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 | `dev/` | 版別要求、実装計画・報告、ロードマップ、開発記録 |
 | `release/` | 再生成可能な配布成果物。Git対象外 |
 
-共通UIの唯一の正本は `web-platform/packages/editor-ui/src/`（投影対象は`packages/editor-ui/source-map.json`で管理）です。投影先の手修正は避け、同期時のハッシュガードで検出します。Webの版番号は `web-platform/targets.json` で独立管理します。
+共通UIのソースは `web-platform/packages/editor-ui/src/` だけで管理します。投影対象は`packages/editor-ui/source-map.json`で管理します。投影先は手修正を避け、同期時にはハッシュで手修正を検出します。Webの版番号は `web-platform/targets.json` で独立して管理します。
 
 プロジェクト固有ルールと資料を読む条件はルートの`AGENTS.md`を正本とします。
 
@@ -30,7 +30,7 @@ Web版のcanonicalは `web-platform` 子リポジトリです。親側の `web/`
 
 子リポジトリの依存導入と予定ビルドは `npm.cmd --prefix web-platform ci`、`npm.cmd --prefix web-platform run build:web`、`npm.cmd --prefix web-platform run build:spfx` です。
 
-依存導入、ビルド、テストの再現可能な入口は[ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)にまとめています。PowerShellは`pwsh`を使用します。
+依存関係の導入、ビルド、テストを再現するコマンドは[ビルド・検証コマンド](/docs/developer/BUILD_COMMANDS.md)にまとめています。PowerShellは`pwsh`を使用します。
 
 ## 実装境界
 

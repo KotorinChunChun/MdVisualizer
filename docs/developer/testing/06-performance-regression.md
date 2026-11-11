@@ -2,7 +2,7 @@
 
 ## 固定入力と区間
 
-`/samples/v0.0.18.4-100-embedded-images.md`を使う。生成元は`/scripts/generate-embedded-image-load-fixture.mjs`で、100枚の500×500 PNGをdata URLとして含む。本文hash・画像件数・自然寸法を照合し、0枚、壊れた画像、空ページを正常測定にしない。
+`/samples/v0.0.18.4-100-embedded-images.md`を使う。`/scripts/generate-embedded-image-load-fixture.mjs`で生成した試験ファイルで、500×500のPNGを100枚、data URLとして含む。本文のhash、画像の件数、画像の自然寸法を照合する。画像が0枚の場合、壊れた画像がある場合、空ページの場合は、測定を正常と判定しない。
 
 Desktopの計測は専用fixtureタブだけに対して行う。利用者の文書や未保存本文を測定用に書き換えない。エディター内の本文hashがfixtureと異なれば中止する。編集計測は試験文書の先頭へ一時文字列を挿入し、プレビュー反映後に元の本文へ戻す。ファイル保存は行わない。
 

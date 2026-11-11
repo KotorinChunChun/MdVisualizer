@@ -1,6 +1,6 @@
 # MdVisualizer Web版 PHP運用
 
-この資料は、canonicalである `web-platform/apps/web/php/` のPHPバックエンドと `web-platform/apps/web/php/php-config.example.json` を正本にした運用基準です。親リポジトリの旧 `web/php/` は互換リンクです。対象は、ブラウザーで暗号化したZIPを一時保管するWeb版です。
+この資料は、ブラウザーで暗号化したZIPを一時保管するWeb版の運用基準です。基準にするファイルは `web-platform/apps/web/php/` のPHPバックエンドと `web-platform/apps/web/php/php-config.example.json` です。親リポジトリの旧 `web/php/` は互換リンクです。
 
 `index.php`はSSOセッションを確認し、未認証ならサインイン画面を返します。認証済みの場合だけ生成済み`app.html`を読み出します。Apacheの`.htaccess`は`app.html`への直接アクセスを拒否するため、設置時はこのファイルも必ず配置してください。PHPの開発サーバーは`.htaccess`を解釈しません。ローカル検証用であり、そのまま公開する構成ではありません。
 

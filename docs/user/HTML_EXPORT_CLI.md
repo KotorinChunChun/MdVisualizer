@@ -8,7 +8,7 @@ Markdownを閲覧用の単一HTMLへ変換する独立CLIです。MdVisualizer�
 
 ## 実行
 
-既存のプロジェクト依存関係がインストール済みであることが前提です。生成にはNode.jsとChromium系ブラウザーを使用します。検証環境はWindows、Node.js 24.19.0、Edgeです。Windowsではインストール済みEdge、Chromeを順に探します。別の場所にある場合は`--browser`を指定します。
+プロジェクトの依存関係をインストール済みの環境で実行します。生成にはNode.jsとChromium系ブラウザーを使用します。検証環境はWindows、Node.js 24.19.0、Edgeです。Windowsではインストール済みのEdge、Chromeの順に探します。別の場所にある場合は`--browser`を指定します。
 
 ```powershell
 Set-Location C:\develop\MdVisualizer

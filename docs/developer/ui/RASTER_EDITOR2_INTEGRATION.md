@@ -2,7 +2,7 @@
 
 `web-platform/reference/screenpresso-original.html`がユーザー提供HTMLの保存原本です。SHA-256は`B2761C48EDCCD297FF6916507EE1AFE1BA1BFBC8DE4000483E0A89C37F0B5F80`。製品用のassets/rasterEditor2.htmlで名称と書出し表示を変更し、`rasterEditor2Host.ts`でCSPと通信処理を付加します。
 
-DesktopのAppとWebImageEditorは共通のImageEditingDialogを呼び出します。PNG/JPEGは新旧を選択し、それ以外は従来のImageAnnotationEditorへ渡します。SPFxに編集起動経路は追加していません。操作方法は[画像編集](/docs/user/ui/image-editing.md)を参照してください。
+DesktopのAppとWebImageEditorは共通のImageEditingDialogを呼び出します。PNG/JPEGでは新旧の編集画面を選択します。それ以外の画像は従来のImageAnnotationEditorへ渡します。SPFxには編集を開く操作を追加していません。操作方法は[画像編集](/docs/user/ui/image-editing.md)を参照してください。
 
 ## 隔離と保存契約
 

@@ -11,9 +11,9 @@ pwsh -NoProfile -File .\scripts\publish-release-MdVisualizer-all.ps1 -Mode Build
 
 `release\msix`へ署名済み`.msix`と公開鍵`MdVisualizer.cer`を出力する。公開鍵のファイル名は
 バージョンにかかわらず固定し、同じ証明書を使用している間は既存ファイルを再利用する。
-署名はKotorinChunChun共通設定 `%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json` の拇印で指定した
-`CurrentUser\My` の証明書を使用する。秘密鍵はWindows管理下に保持し、アプリごとには作らない。
-共通設定なし・鍵欠落・期限切れでは停止し、証明書を自動発行しない。
+署名には、KotorinChunChun共通設定 `%LOCALAPPDATA%\KotorinChunChun\MSIX\signing.json` の拇印で指定した
+`CurrentUser\My` の証明書を使う。秘密鍵はWindows管理下に保持し、アプリごとには作らない。
+共通設定や鍵がない場合、または期限が切れている場合は、証明書を自動発行せず停止する。
 
 共通設定の初期登録、新しい開発PCへの移植、他アプリへの導入は
 [KotorinChunChun共通MSIX署名](MSIX_SIGNING.md)を参照する。

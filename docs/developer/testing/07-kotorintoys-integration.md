@@ -1,6 +1,6 @@
 # KotorinToys管理連携の検証
 
-KotorinToys 0.1.16以降の親リポジトリで dotnet build tests/KotorinToys.Tests/KotorinToys.Tests.csproj -c Debug --artifacts-path artifacts/mdvisualizer-release を実行し、生成された試験EXEを引数なしで実行する。実MSIXの照合は同EXEの --verify-mdvisualizer-msix <絶対パス>、production版EXEの隔離連携試験は --md-visualizer-ipc で行う。連携試験は tools/MdVisualizer/src-tauri/target/release/mdvisualizer.exe を使う。同じ試験EXEが既に起動していれば中止し、別配置の通常版とは設定・単一起動識別子・管理窓口を分離する。生ログは対象版のlogsへ保存する。
+KotorinToys 0.1.16以降の親リポジトリで dotnet build tests/KotorinToys.Tests/KotorinToys.Tests.csproj -c Debug --artifacts-path artifacts/mdvisualizer-release を実行し、生成された試験EXEを引数なしで実行する。実MSIXの照合では同じEXEに --verify-mdvisualizer-msix <絶対パス> を渡す。production版EXEの隔離連携試験では --md-visualizer-ipc を渡す。連携試験には tools/MdVisualizer/src-tauri/target/release/mdvisualizer.exe を使う。同じ試験EXEが既に起動していれば中止する。別の場所にある通常版とは、設定・単一起動識別子・管理窓口を分離する。生ログは対象版のlogsへ保存する。
 
 開発EXEは`src-tauri/target/kotorintoys/debug/mdvisualizer.exe`。`--settings-dir`で通常設定、AI会話・記録・スキル、WebView2プロファイルを分離する。試験で作成した文書だけを使用し、終了拒否は成功へ置き換えない。共有UIの正本は編集せず、従来の投影を照合する。移動後に旧パスを指すjunctionが残る場合、リンク先を確認して現在の子フォルダー内へ修復し、依存再導入や版更新とは区別する。
 

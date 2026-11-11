@@ -1,6 +1,6 @@
 # 検証手順
 
-実行条件は[AGENTS.md](../../../AGENTS.md)、コマンドは[ビルド・検証](/docs/developer/BUILD_COMMANDS.md)を参照する。必要な変更領域だけを検証し、結果は対象版の実装報告へ記録する。
+実行条件は[AGENTS.md](../../../AGENTS.md)、コマンドは[ビルド・検証](/docs/developer/BUILD_COMMANDS.md)で確認する。変更した領域のうち必要な範囲を検証し、結果を対象版の実装報告へ記録する。
 
 - frontend: npm.cmd test。限定できる場合は対象testファイルを指定する。
 - Rust: cargo test --manifest-path ./src-tauri/Cargo.toml。

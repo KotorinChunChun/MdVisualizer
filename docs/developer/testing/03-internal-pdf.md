@@ -9,7 +9,7 @@ npm.cmd ci
 npm.cmd run test:print-pdf
 ```
 
-既定ではインストール済みEdgeをheadlessで起動する。ブラウザーを別途指定する場合は、`PRINT_PDF_BROWSER_PATH`へChromium系実行ファイルの絶対パス、または`PRINT_PDF_BROWSER_CHANNEL`へPlaywrightのchannel名を設定する。ブラウザーの自動インストール、仮想プリンター登録、既定プリンター変更は行わない。
+既定ではインストール済みのEdgeをheadlessで起動する。ブラウザーを別途指定するには、`PRINT_PDF_BROWSER_PATH`にChromium系実行ファイルの絶対パスを指定するか、`PRINT_PDF_BROWSER_CHANNEL`にPlaywrightのchannel名を設定する。ブラウザーの自動インストール、仮想プリンターの登録、既定プリンターの変更は行わない。
 
 出力先は`tmp/print-pdf/<実行時刻>/`。各PDFと`report.json`に、ケース名、ページ数、バイト数、SHA-256、ブラウザー版、失敗内容を保存する。失敗時は終了コード1となり、前回成功のPDFを再利用しない。生成物はGit管理対象外である。
 

@@ -1,6 +1,6 @@
 # HTML出力統合仕様
 
-独立CLI、デスクトップ、SPFx、Web版は共通の出力仕様を使用する。本書は出力仕様・API・保存契約・検証条件を扱う。CLIの操作は[HTML出力CLI](/docs/user/HTML_EXPORT_CLI.md)、ブラウザー側の構成は[Web版と共通編集・出力](/docs/developer/web/ARCHITECTURE.md)を参照する。
+独立CLI、デスクトップ、SPFx、Web版は共通の出力仕様を使用する。本書は出力仕様、API、保存時に守る条件、検証条件を扱う。CLIの操作は[HTML出力CLI](/docs/user/HTML_EXPORT_CLI.md)、ブラウザー側の構成は[Web版と共通編集・出力](/docs/developer/web/ARCHITECTURE.md)を参照する。
 
 ## 確定した出力仕様
 

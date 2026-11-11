@@ -42,7 +42,7 @@ betaの工程別入口はすべてbetaに固定している。stableを正式公
 
 ## 通常のbeta更新から公開まで
 
-通常は次の順番で実行する。すべての版情報は`packaging/release-config.json`へ反映されるため、公開前に同ファイルの表示版が意図した値になっていることを確認する。
+通常は次の順番で実行する。すべての版情報は`packaging/release-config.json`へ反映されるため、公開前にそのファイルの表示版が意図した値か確認する。
 
 ### 1. Versionを更新する
 
@@ -83,7 +83,7 @@ pwsh -NoProfile -File "C:\develop\MdVisualizer\scripts\Invoke-MdVisualizerReleas
 
 ステージング検証まで成功していて、`PythonPath is required for FTP publication`で停止した場合はこの復旧方法を使用する。`Channel beta`を変更しない限りstableへ送信しない。stable公開は、将来ユーザーが明示的に開始するときだけ`full-release-stable-MdVisualizer.ps1`を使用する。
 
-公開工程の途中で停止した場合は、同じ版の成果物を確認してから、成功済みの直前工程より後だけを再実行する。Planで停止した場合は何も変更されていないため、BuildまたはFullを開始する。
+公開工程の途中で停止した場合は、同じ版の成果物を確認し、最後に成功した工程の次から再実行する。Planで停止した場合は何も変更されていないため、BuildまたはFullを開始する。
 
 ## 起動用スクリプト
 

@@ -1,6 +1,6 @@
 # MdVisualizer ビルド・検証コマンド
 
-すべてリポジトリルート`C:\develop\MdVisualizer`から実行します。PowerShellは`pwsh`を使用し、PowerShell実行ポリシーの影響を避けるためnpmは`npm.cmd`を使用します。
+すべてのコマンドをリポジトリルート`C:\develop\MdVisualizer`から実行します。PowerShellは`pwsh`を使います。npmの実行には、PowerShellの実行ポリシーの影響を避けるため`npm.cmd`を使います。
 
 ## 依存導入
 
@@ -8,7 +8,7 @@
 npm.cmd install
 ```
 
-依存導入はロックファイルと既存環境を確認してから行います。オフライン環境では新しい依存解決を開始しません。
+ロックファイルと既存環境を確認してから依存関係を導入します。オフライン環境では新しい依存解決を開始しません。
 
 ## デスクトップfrontend
 
