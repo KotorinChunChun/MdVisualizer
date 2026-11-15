@@ -88,6 +88,12 @@ Mermaidブロックの「編集」からGUI編集を開きます。図の項目�
 - [AI相談・編集](docs/user/ui/codex.md)／[AIスキル設定](docs/user/ui/codex-skills.md)
 - [HTML出力CLI](docs/user/HTML_EXPORT_CLI.md)：文書を単独のHTMLファイルへ出力するツール
 
+## 使用言語とライブラリ
+
+- 使用言語はRust、TypeScriptです。
+- デスクトップ版はTauriとReact、SharePoint版はSharePoint Framework（SPFx）を使います。Markdownの編集にはCodeMirror、デスクトップ版の表示にはreact-markdown、図表の描画にはMermaidを使います。
+- 依存定義と資料 [Rustの依存定義](src-tauri/Cargo.toml)・[デスクトップ版の依存定義](package.json)
+
 ## ライセンス
 
-MIT License。
+アプリ本体には[MITライセンス](LICENSE)が適用されます。
